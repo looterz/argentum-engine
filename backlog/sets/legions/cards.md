@@ -2,12 +2,12 @@
 
 **Set Size:** 145 cards
 **Release Date:** February 3, 2003
-**Implemented:** 109 / 145
+**Implemented:** 111 / 145
 
 | Color      | Count |
 |------------|-------|
-| White      | 22/29 |
-| Blue       | 21/29 |
+| White      | 23/29 |
+| Blue       | 22/29 |
 | Black      | 22/29 |
 | Red        | 22/29 |
 | Green      | 22/29 |
@@ -58,7 +58,7 @@
 - [x] Elvish Soultiller
 - [x] Embalmed Brawler
 - [x] Enormous Baloth
-- [ ] Essence Sliver
+- [x] Essence Sliver
 - [x] Feral Throwback
 - [x] Flamewave Invoker
 - [x] Frenetic Raptor
@@ -100,7 +100,7 @@
 - [ ] Master of the Veil
 - [x] Merchant of Secrets
 - [x] Mistform Seaswift
-- [ ] Mistform Sliver
+- [x] Mistform Sliver
 - [x] Mistform Ultimus
 - [ ] Mistform Wakecaster
 - [x] Nantuko Vigilante
