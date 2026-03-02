@@ -123,6 +123,7 @@ object LegionsSet {
         // Green creatures
         BerserkMurlodont,
         BranchsnapLorian,
+        BroodSliver,
         CanopyCrawler,
         GempalmStrider,
         GloweringRogon,

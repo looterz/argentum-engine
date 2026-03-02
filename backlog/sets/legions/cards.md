@@ -2,7 +2,7 @@
 
 **Set Size:** 145 cards
 **Release Date:** February 3, 2003
-**Implemented:** 112 / 145
+**Implemented:** 113 / 145
 
 | Color      | Count |
 |------------|-------|
@@ -10,7 +10,7 @@
 | Blue       | 22/29 |
 | Black      | 22/29 |
 | Red        | 23/29 |
-| Green      | 22/29 |
+| Green      | 23/29 |
 
 ---
 
@@ -28,7 +28,7 @@
 - [x] Bloodstoke Howler
 - [x] Branchsnap Lorian
 - [x] Brontotherium
-- [ ] Brood Sliver
+- [x] Brood Sliver
 - [ ] Caller of the Claw
 - [x] Canopy Crawler
 - [ ] Celestial Gatekeeper
