@@ -2,13 +2,13 @@
 
 **Set Size:** 145 cards
 **Release Date:** February 3, 2003
-**Implemented:** 114 / 145
+**Implemented:** 115 / 145
 
 | Color      | Count |
 |------------|-------|
 | White      | 23/29 |
 | Blue       | 23/29 |
-| Black      | 22/29 |
+| Black      | 23/29 |
 | Red        | 23/29 |
 | Green      | 23/29 |
 
@@ -36,7 +36,7 @@
 - [ ] Chromeshell Crab
 - [x] Clickslither
 - [x] Cloudreach Cavalry
-- [ ] Corpse Harvester
+- [x] Corpse Harvester
 - [x] Covert Operative
 - [x] Crested Craghorn
 - [ ] Crookclaw Elder
