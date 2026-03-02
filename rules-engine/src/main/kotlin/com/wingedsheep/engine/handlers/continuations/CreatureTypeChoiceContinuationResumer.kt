@@ -399,9 +399,10 @@ class CreatureTypeChoiceContinuationResumer(
         val chosenType = continuation.creatureTypes.getOrNull(response.optionIndex)
             ?: return ExecutionResult.error(state, "Invalid creature type index: ${response.optionIndex}")
 
-        // Find all creatures on the battlefield
+        // Find creatures on the battlefield (optionally filtered by controller)
         val affectedEntities = mutableSetOf<EntityId>()
         val events = mutableListOf<GameEvent>()
+        val projected = if (continuation.controllerOnly) StateProjector().project(state) else null
 
         for (entityId in state.getBattlefield()) {
             val container = state.getEntity(entityId) ?: continue
@@ -409,6 +410,12 @@ class CreatureTypeChoiceContinuationResumer(
 
             // Check if creature (face-down permanents are always creatures per Rule 707.2)
             if (!cardComponent.typeLine.isCreature && !container.has<FaceDownComponent>()) continue
+
+            // If controllerOnly, only affect creatures the controller controls
+            if (continuation.controllerOnly && projected != null) {
+                val controller = projected.getController(entityId)
+                if (controller != continuation.controllerId) continue
+            }
 
             affectedEntities.add(entityId)
             events.add(

@@ -931,6 +931,7 @@ data class BecomeChosenTypeAllCreaturesContinuation(
     val sourceId: EntityId?,
     val sourceName: String?,
     val creatureTypes: List<String>,
+    val controllerOnly: Boolean = false,
     val duration: Duration
 ) : ContinuationFrame
 

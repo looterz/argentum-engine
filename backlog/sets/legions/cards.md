@@ -2,14 +2,14 @@
 
 **Set Size:** 145 cards
 **Release Date:** February 3, 2003
-**Implemented:** 113 / 145
+**Implemented:** 118 / 145
 
 | Color      | Count |
 |------------|-------|
 | White      | 23/29 |
-| Blue       | 22/29 |
-| Black      | 22/29 |
-| Red        | 23/29 |
+| Blue       | 24/29 |
+| Black      | 24/29 |
+| Red        | 24/29 |
 | Green      | 23/29 |
 
 ---
@@ -36,10 +36,10 @@
 - [ ] Chromeshell Crab
 - [x] Clickslither
 - [x] Cloudreach Cavalry
-- [ ] Corpse Harvester
+- [x] Corpse Harvester
 - [x] Covert Operative
 - [x] Crested Craghorn
-- [ ] Crookclaw Elder
+- [x] Crookclaw Elder
 - [x] Crypt Sliver
 - [ ] Dark Supplicant
 - [x] Daru Mender
@@ -68,7 +68,7 @@
 - [x] Gempalm Polluter
 - [x] Gempalm Sorcerer
 - [x] Gempalm Strider
-- [ ] Ghastly Remains
+- [x] Ghastly Remains
 - [x] Glintwing Invoker
 - [x] Glowering Rogon
 - [x] Glowrider
@@ -85,7 +85,7 @@
 - [ ] Hollow Specter
 - [x] Hundroog
 - [x] Hunter Sliver
-- [ ] Imperial Hellkite
+- [x] Imperial Hellkite
 - [x] Infernal Caretaker
 - [x] Keeneye Aven
 - [ ] Keeper of the Nine Gales
@@ -102,7 +102,7 @@
 - [x] Mistform Seaswift
 - [x] Mistform Sliver
 - [x] Mistform Ultimus
-- [ ] Mistform Wakecaster
+- [x] Mistform Wakecaster
 - [x] Nantuko Vigilante
 - [x] Needleshot Gourna
 - [x] Noxious Ghoul

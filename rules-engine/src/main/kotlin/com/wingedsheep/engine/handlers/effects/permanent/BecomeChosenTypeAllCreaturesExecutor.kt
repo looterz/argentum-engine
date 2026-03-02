@@ -56,6 +56,7 @@ class BecomeChosenTypeAllCreaturesExecutor : EffectExecutor<BecomeChosenTypeAllC
             sourceId = context.sourceId,
             sourceName = sourceName,
             creatureTypes = allCreatureTypes,
+            controllerOnly = effect.controllerOnly,
             duration = effect.duration
         )
 

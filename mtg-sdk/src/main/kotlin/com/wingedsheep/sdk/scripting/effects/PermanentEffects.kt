@@ -428,12 +428,15 @@ data class ChooseCreatureTypeModifyStatsEffect(
 @Serializable
 data class BecomeChosenTypeAllCreaturesEffect(
     val excludedTypes: List<String> = emptyList(),
+    val controllerOnly: Boolean = false,
     val duration: Duration = Duration.EndOfTurn
 ) : Effect {
     override val description: String = buildString {
         append("Choose a creature type")
         if (excludedTypes.isNotEmpty()) append(" other than ${excludedTypes.joinToString(", ")}")
-        append(". Each creature becomes that type")
+        append(". Each creature ")
+        if (controllerOnly) append("you control ")
+        append("becomes that type")
         if (duration.description.isNotEmpty()) append(" ${duration.description}")
     }
 }
