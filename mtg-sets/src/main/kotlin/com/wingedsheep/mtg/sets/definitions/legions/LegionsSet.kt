@@ -139,6 +139,7 @@ object LegionsSet {
         EnormousBaloth,
         FeralThrowback,
         Hundroog,
+        KrosanCloudscraper,
         KrosanVorine,
         NantukoVigilante,
         NeedleshotGourna,

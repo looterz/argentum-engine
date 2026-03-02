@@ -2,7 +2,7 @@
 
 **Set Size:** 145 cards
 **Release Date:** February 3, 2003
-**Implemented:** 119 / 145
+**Implemented:** 120 / 145
 
 | Color      | Count |
 |------------|-------|
@@ -10,7 +10,7 @@
 | Blue       | 24/29 |
 | Black      | 24/29 |
 | Red        | 24/29 |
-| Green      | 23/29 |
+| Green      | 24/29 |
 
 ---
 
@@ -90,7 +90,7 @@
 - [x] Keeneye Aven
 - [ ] Keeper of the Nine Gales
 - [ ] Kilnmouth Dragon
-- [ ] Krosan Cloudscraper
+- [x] Krosan Cloudscraper
 - [x] Krosan Vorine
 - [x] Lavaborn Muse
 - [x] Liege of the Axe
