@@ -835,6 +835,10 @@ Set via `staticAbility { ability = ... }`:
 - `GlobalEffect(effectType: GlobalEffectType, filter)` — global anthem/debuff
 - `GrantProtection(color, target)` — grant protection from color
 
+### Land Animation
+
+- `AnimateLandGroup(filter: GroupFilter, power, toughness, creatureSubtypes, colors)` — lands matching filter become P/T creatures with subtypes/colors (still lands). Generates multi-layer continuous effects (TYPE, COLOR, P/T).
+
 ### Combat Restrictions
 
 - `CantAttack(target)` / `CantBlock(target)` / `MustAttack(target)`

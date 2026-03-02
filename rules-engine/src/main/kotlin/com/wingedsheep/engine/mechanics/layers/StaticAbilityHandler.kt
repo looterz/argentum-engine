@@ -23,6 +23,7 @@ import com.wingedsheep.sdk.scripting.GrantKeywordByCounter
 import com.wingedsheep.sdk.scripting.GrantProtection
 import com.wingedsheep.sdk.scripting.ModifyStatsByCounterOnSource
 import com.wingedsheep.sdk.scripting.ModifyStatsPerSharedCreatureType
+import com.wingedsheep.sdk.scripting.AnimateLandGroup
 import com.wingedsheep.sdk.scripting.GrantShroudToController
 import com.wingedsheep.sdk.scripting.conditions.EnchantedCreatureHasSubtype
 import com.wingedsheep.sdk.scripting.conditions.Exists
@@ -88,8 +89,8 @@ class StaticAbilityHandler(
         var result = container
 
         // Convert static abilities to continuous effect data
-        val effectsData = cardDefinition.staticAbilities.mapNotNull { ability ->
-            convertStaticAbility(ability)
+        val effectsData = cardDefinition.staticAbilities.flatMap { ability ->
+            convertStaticAbilities(ability)
         }
 
         if (effectsData.isNotEmpty()) {
@@ -102,6 +103,64 @@ class StaticAbilityHandler(
         }
 
         return result
+    }
+
+    /**
+     * Convert a static ability to a list of ContinuousEffectData.
+     * Most abilities produce a single effect, but some (like AnimateLandGroup) produce multiple.
+     */
+    private fun convertStaticAbilities(ability: StaticAbility): List<ContinuousEffectData> {
+        return when (ability) {
+            is AnimateLandGroup -> convertAnimateLandGroup(ability)
+            else -> listOfNotNull(convertStaticAbility(ability))
+        }
+    }
+
+    /**
+     * Convert AnimateLandGroup to multiple continuous effects across layers.
+     * "Forests you control are 1/1 green Elf creatures that are still lands."
+     */
+    private fun convertAnimateLandGroup(ability: AnimateLandGroup): List<ContinuousEffectData> {
+        val filter = convertGroupFilter(ability.filter)
+        val effects = mutableListOf<ContinuousEffectData>()
+
+        // Layer 4 (TYPE): Add "Creature" type
+        effects.add(ContinuousEffectData(
+            layer = Layer.TYPE,
+            sublayer = null,
+            modification = Modification.AddType("CREATURE"),
+            affectsFilter = filter
+        ))
+
+        // Layer 4 (TYPE): Add creature subtypes (e.g., "Elf")
+        for (subtype in ability.creatureSubtypes) {
+            effects.add(ContinuousEffectData(
+                layer = Layer.TYPE,
+                sublayer = null,
+                modification = Modification.AddSubtype(subtype),
+                affectsFilter = filter
+            ))
+        }
+
+        // Layer 5 (COLOR): Add colors (e.g., GREEN)
+        if (ability.colors.isNotEmpty()) {
+            effects.add(ContinuousEffectData(
+                layer = Layer.COLOR,
+                sublayer = null,
+                modification = Modification.AddColor(ability.colors.map { it.name }.toSet()),
+                affectsFilter = filter
+            ))
+        }
+
+        // Layer 7b (POWER_TOUGHNESS, SET_VALUES): Set P/T
+        effects.add(ContinuousEffectData(
+            layer = Layer.POWER_TOUGHNESS,
+            sublayer = Sublayer.SET_VALUES,
+            modification = Modification.SetPowerToughness(ability.power, ability.toughness),
+            affectsFilter = filter
+        ))
+
+        return effects
     }
 
     /**

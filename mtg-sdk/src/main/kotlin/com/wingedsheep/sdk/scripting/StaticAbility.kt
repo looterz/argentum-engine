@@ -1063,6 +1063,42 @@ data class IncreaseSpellCostByFilter(
 }
 
 // =============================================================================
+// Land Animation Static Abilities
+// =============================================================================
+
+/**
+ * Animates a group of lands into creatures while keeping them as lands.
+ * Used for Ambush Commander: "Forests you control are 1/1 green Elf creatures that are still lands."
+ *
+ * This generates multiple continuous effects across different layers:
+ * - Layer 4 (TYPE): AddType("CREATURE") + AddSubtype for each creature subtype
+ * - Layer 5 (COLOR): AddColor for specified colors
+ * - Layer 7b (POWER_TOUGHNESS, SET_VALUES): SetPowerToughness
+ *
+ * @property filter Which lands to animate (e.g., Forests you control)
+ * @property power Base power to set
+ * @property toughness Base toughness to set
+ * @property creatureSubtypes Creature subtypes to add (e.g., ["Elf"])
+ * @property colors Colors to add to the animated lands
+ */
+@SerialName("AnimateLandGroup")
+@Serializable
+data class AnimateLandGroup(
+    val filter: GroupFilter,
+    val power: Int,
+    val toughness: Int,
+    val creatureSubtypes: List<String> = emptyList(),
+    val colors: Set<Color> = emptySet()
+) : StaticAbility {
+    override val description: String = buildString {
+        append("Lands matching filter are $power/$toughness")
+        if (colors.isNotEmpty()) append(" ${colors.joinToString("/") { it.name.lowercase() }}")
+        if (creatureSubtypes.isNotEmpty()) append(" ${creatureSubtypes.joinToString(" ")}")
+        append(" creatures that are still lands")
+    }
+}
+
+// =============================================================================
 // Casting Permission Static Abilities
 // =============================================================================
 

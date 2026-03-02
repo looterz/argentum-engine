@@ -39,6 +39,7 @@ object ScourgeSet {
         ConsumptiveGoo,
 
         // Green creatures
+        AmbushCommander,
         AncientOoze,
         ElvishAberration,
         FierceEmpath,
