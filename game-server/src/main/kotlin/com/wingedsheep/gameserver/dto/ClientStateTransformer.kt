@@ -1026,6 +1026,19 @@ class ClientStateTransformer(
             )
         }
 
+        // Check for MustAttackThisTurnComponent (e.g., Walking Desecration effect)
+        val mustAttack = state.getEntity(entityId)?.has<MustAttackThisTurnComponent>() == true
+        if (mustAttack) {
+            effects.add(
+                ClientCardEffect(
+                    effectId = "must_attack_this_turn",
+                    name = "Must Attack",
+                    description = "This creature must attack this turn if able",
+                    icon = "must-attack"
+                )
+            )
+        }
+
         // Check for triggered ability condition indicators (intervening-if progress)
         effects.addAll(buildTriggerConditionBadges(state, entityId))
 

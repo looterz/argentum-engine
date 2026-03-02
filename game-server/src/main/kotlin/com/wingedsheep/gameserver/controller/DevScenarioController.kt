@@ -451,11 +451,11 @@ class DevScenarioController(
             gameSession.injectStateForDevScenario(state)
 
             // Apply per-step stop overrides (prevents auto-pass at specified steps)
-            if (request.player1StopAtSteps.isNotEmpty()) {
-                gameSession.setStopOverrides(player1Id, request.player1StopAtSteps.toSet(), emptySet())
+            if (request.player1StopAtSteps.isNotEmpty() || request.player1OpponentStopAtSteps.isNotEmpty()) {
+                gameSession.setStopOverrides(player1Id, request.player1StopAtSteps.toSet(), request.player1OpponentStopAtSteps.toSet())
             }
-            if (request.player2StopAtSteps.isNotEmpty()) {
-                gameSession.setStopOverrides(player2Id, request.player2StopAtSteps.toSet(), emptySet())
+            if (request.player2StopAtSteps.isNotEmpty() || request.player2OpponentStopAtSteps.isNotEmpty()) {
+                gameSession.setStopOverrides(player2Id, request.player2StopAtSteps.toSet(), request.player2OpponentStopAtSteps.toSet())
             }
 
             // Save the session
@@ -735,7 +735,11 @@ data class ScenarioRequest(
     /** Steps where player 1 should stop on their own turn (prevents auto-pass) */
     val player1StopAtSteps: List<Step> = emptyList(),
     /** Steps where player 2 should stop on their own turn (prevents auto-pass) */
-    val player2StopAtSteps: List<Step> = emptyList()
+    val player2StopAtSteps: List<Step> = emptyList(),
+    /** Steps where player 1 should stop on opponent's turn (prevents auto-pass) */
+    val player1OpponentStopAtSteps: List<Step> = emptyList(),
+    /** Steps where player 2 should stop on opponent's turn (prevents auto-pass) */
+    val player2OpponentStopAtSteps: List<Step> = emptyList()
 )
 
 data class PlayerConfig(

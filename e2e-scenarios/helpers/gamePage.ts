@@ -500,6 +500,18 @@ export class GamePage {
     await expect(card).toContainText(stats, { timeout: 10_000 })
   }
 
+  /** Assert that a battlefield card has a specific active effect badge (case-insensitive text match). */
+  async expectBadge(cardName: string, badgeText: string) {
+    const cardWrapper = this.page.locator(BATTLEFIELD).locator(`[data-card-id]`).filter({ has: this.page.locator(cardByName(cardName)) })
+    await expect(cardWrapper.getByText(badgeText, { exact: false })).toBeVisible({ timeout: 10_000 })
+  }
+
+  /** Assert that a battlefield card does NOT have a specific active effect badge. */
+  async expectNoBadge(cardName: string, badgeText: string) {
+    const cardWrapper = this.page.locator(BATTLEFIELD).locator(`[data-card-id]`).filter({ has: this.page.locator(cardByName(cardName)) })
+    await expect(cardWrapper.getByText(badgeText, { exact: false })).not.toBeVisible({ timeout: 5_000 })
+  }
+
   /**
    * Increase damage allocation for a card in the DamageDistributionModal.
    * Clicks the "+" button in the section containing the named card's image.

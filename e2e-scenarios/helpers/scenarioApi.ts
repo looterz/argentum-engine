@@ -27,6 +27,10 @@ export interface ScenarioRequest {
   player1StopAtSteps?: string[]
   /** Steps where player 2 should stop on their own turn (prevents auto-pass) */
   player2StopAtSteps?: string[]
+  /** Steps where player 1 should stop on opponent's turn (prevents auto-pass) */
+  player1OpponentStopAtSteps?: string[]
+  /** Steps where player 2 should stop on opponent's turn (prevents auto-pass) */
+  player2OpponentStopAtSteps?: string[]
 }
 
 export interface PlayerInfo {
