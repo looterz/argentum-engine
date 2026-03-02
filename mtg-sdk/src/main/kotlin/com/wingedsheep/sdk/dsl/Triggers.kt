@@ -60,6 +60,17 @@ object Triggers {
     )
 
     /**
+     * When another creature enters the battlefield (any controller).
+     */
+    val AnyOtherCreatureEnters: TriggerSpec = TriggerSpec(
+        event = ZoneChangeEvent(
+            filter = GameObjectFilter.Creature,
+            to = Zone.BATTLEFIELD
+        ),
+        binding = TriggerBinding.OTHER
+    )
+
+    /**
      * When this permanent leaves the battlefield.
      */
     val LeavesBattlefield: TriggerSpec = TriggerSpec(

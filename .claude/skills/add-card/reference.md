@@ -455,7 +455,7 @@ each player reveals and creates tokens
 ### Zone Changes
 
 - `Triggers.EntersBattlefield` / `Triggers.AnyEntersBattlefield`
-- `Triggers.OtherCreatureEnters` / `Triggers.OtherCreatureWithSubtypeDies(subtype)`
+- `Triggers.OtherCreatureEnters` / `Triggers.AnyOtherCreatureEnters` / `Triggers.OtherCreatureWithSubtypeDies(subtype)`
 - `Triggers.LeavesBattlefield` / `Triggers.Dies` / `Triggers.AnyCreatureDies` / `Triggers.YourCreatureDies`
 - `Triggers.PutIntoGraveyardFromBattlefield`
 

@@ -2,11 +2,11 @@
 
 **Set Size:** 145 cards
 **Release Date:** February 3, 2003
-**Implemented:** 108 / 145
+**Implemented:** 109 / 145
 
 | Color      | Count |
 |------------|-------|
-| White      | 21/29 |
+| White      | 22/29 |
 | Blue       | 21/29 |
 | Black      | 22/29 |
 | Red        | 22/29 |
@@ -133,7 +133,7 @@
 - [x] Starlight Invoker
 - [x] Stoic Champion
 - [x] Stonewood Invoker
-- [ ] Sunstrike Legionnaire
+- [x] Sunstrike Legionnaire
 - [x] Swooping Talon
 - [x] Synapse Sliver
 - [x] Timberwatch Elf
