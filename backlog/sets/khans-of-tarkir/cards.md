@@ -2,12 +2,12 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 76 / 249
+**Implemented:** 77 / 249
 
 | Color      | Count |
 |------------|-------|
 | White      | 12    |
-| Blue       | 12    |
+| Blue       | 13    |
 | Black      | 13    |
 | Red        | 13    |
 | Green      | 13    |
@@ -224,7 +224,7 @@
 - [ ] Swarm of Bloodflies
 - [ ] Swift Kick
 - [ ] Swiftwater Cliffs
-- [ ] Taigam's Scheming
+- [x] Taigam's Scheming
 - [x] Take Up Arms
 - [ ] Temur Ascendancy
 - [ ] Temur Banner
