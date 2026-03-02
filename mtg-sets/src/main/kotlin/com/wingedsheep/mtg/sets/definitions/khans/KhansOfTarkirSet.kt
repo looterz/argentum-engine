@@ -101,6 +101,7 @@ object KhansOfTarkirSet {
         // Red spells
         BringLow,
         HordelingOutburst,
+        Shatter,
         TormentingVoice,
         TrumpetBlast,
 

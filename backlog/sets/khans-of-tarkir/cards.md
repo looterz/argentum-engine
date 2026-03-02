@@ -2,14 +2,14 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 75 / 249
+**Implemented:** 76 / 249
 
 | Color      | Count |
 |------------|-------|
 | White      | 12    |
 | Blue       | 12    |
 | Black      | 13    |
-| Red        | 12    |
+| Red        | 13    |
 | Green      | 13    |
 | Multicolor | 7     |
 | Colorless  | 3     |
@@ -201,7 +201,7 @@
 - [ ] See the Unwritten
 - [ ] Set Adrift
 - [ ] Shambling Attendants
-- [ ] Shatter
+- [x] Shatter
 - [ ] Sidisi, Brood Tyrant
 - [x] Sidisi's Pet
 - [x] Siegecraft
