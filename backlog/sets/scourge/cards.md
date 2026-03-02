@@ -3,14 +3,14 @@
 
 **Set Size:** 143 cards
 **Release Date:** May 26, 2003
-**Implemented:** 136 / 143
+**Implemented:** 137 / 143
 
 | Color | Count |
 |-------|-------|
 | White | 26 |
 | Blue | 26 |
 | Black | 27 |
-| Red | 25 |
+| Red | 26 |
 | Green | 26 |
 | Multicolor | 2 |
 | Colorless | 4 |
@@ -48,7 +48,7 @@
 - [x] Dawn Elemental
 - [x] Day of the Dragons
 - [x] Death's-Head Buzzard
-- [ ] Decree of Annihilation
+- [x] Decree of Annihilation
 - [x] Decree of Justice
 - [x] Decree of Pain
 - [x] Decree of Savagery
