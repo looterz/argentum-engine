@@ -103,6 +103,7 @@ object LegionsSet {
         Clickslither,
         CrestedCraghorn,
         HunterSliver,
+        ImperialHellkite,
         FlamewaveInvoker,
         GoblinClearcutter,
         GoblinDynamo,
