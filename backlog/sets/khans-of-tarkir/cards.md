@@ -2,13 +2,13 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 69 / 249
+**Implemented:** 70 / 249
 
 | Color      | Count |
 |------------|-------|
 | White      | 11    |
 | Blue       | 11    |
-| Black      | 11    |
+| Black      | 12    |
 | Red        | 12    |
 | Green      | 11    |
 | Multicolor | 7     |
@@ -203,7 +203,7 @@
 - [ ] Shambling Attendants
 - [ ] Shatter
 - [ ] Sidisi, Brood Tyrant
-- [ ] Sidisi's Pet
+- [x] Sidisi's Pet
 - [x] Siegecraft
 - [ ] Siege Rhino
 - [ ] Singing Bell Strike

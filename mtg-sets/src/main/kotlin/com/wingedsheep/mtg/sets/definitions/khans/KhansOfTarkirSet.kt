@@ -55,6 +55,7 @@ object KhansOfTarkirSet {
         BellowingSaddlebrute,
         GurmagSwiftwing,
         RottingMastodon,
+        SidisisPet,
         SultaiScavenger,
         UnyieldingKrumar,
 
