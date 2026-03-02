@@ -867,8 +867,16 @@ is PermanentsSacrificedEvent -> {
                 reason = event.reason
             )
 
+            is CardRevealedFromDrawEvent -> {
+                ClientEvent.CardsRevealed(
+                    revealingPlayerId = event.playerId,
+                    cardIds = listOf(event.cardEntityId),
+                    cardNames = listOf(event.cardName),
+                    source = "first draw reveal"
+                )
+            }
+
             // Events that don't need client representation or are handled differently
-            is CardRevealedFromDrawEvent,
             is DrawFailedEvent,
             is BlockerOrderDeclaredEvent,
             is DamageAssignedEvent,
