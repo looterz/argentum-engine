@@ -40,6 +40,7 @@ object KhansOfTarkirSet {
         JeskaiWindscout,
         MonasteryFlock,
         MysticOfTheHiddenWay,
+        RiverwheelAerialists,
         Scaldkin,
         ScionOfGlaciers,
         WetlandSambar,

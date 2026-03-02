@@ -2,12 +2,12 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 70 / 249
+**Implemented:** 71 / 249
 
 | Color      | Count |
 |------------|-------|
 | White      | 11    |
-| Blue       | 11    |
+| Blue       | 12    |
 | Black      | 12    |
 | Red        | 12    |
 | Green      | 11    |
@@ -176,7 +176,7 @@
 - [ ] Retribution of the Ancients
 - [ ] Ride Down
 - [ ] Rite of the Serpent
-- [ ] Riverwheel Aerialists
+- [x] Riverwheel Aerialists
 - [ ] Roar of Challenge
 - [x] Rotting Mastodon
 - [x] Rugged Highlands
