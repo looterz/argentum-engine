@@ -303,7 +303,7 @@ class ClientStateTransformer(
                 controllerId = activatedAbility.controllerId,
                 ownerId = activatedAbility.controllerId,
                 isToken = false,
-                zone = null,
+                zone = ZoneKey(activatedAbility.controllerId, Zone.STACK),
                 attachedTo = null,
                 attachments = emptyList(),
                 isFaceDown = false,
@@ -362,7 +362,7 @@ class ClientStateTransformer(
                 controllerId = triggeredAbility.controllerId,
                 ownerId = triggeredAbility.controllerId,
                 isToken = false,
-                zone = null,
+                zone = ZoneKey(triggeredAbility.controllerId, Zone.STACK),
                 attachedTo = null,
                 attachments = emptyList(),
                 isFaceDown = false,
@@ -408,11 +408,11 @@ class ClientStateTransformer(
         // Use projected controller for battlefield permanents (accounts for control-changing effects)
         val controllerId = projectedValues?.controllerId ?: baseControllerId
 
-        // A card is face-down if it has FaceDownComponent (on battlefield) OR is cast face-down on the stack.
+        // A card is face-down if it has FaceDownComponent (on battlefield/exile) OR is cast face-down on the stack.
         // Per MTG rules, face-down cards are always revealed when they leave the battlefield/stack,
-        // so only allow face-down status in those zones (defense-in-depth).
+        // so only allow face-down status in zones where it makes sense (defense-in-depth).
         val spellOnStack = container.get<SpellOnStackComponent>()
-        val isInFaceDownZone = zoneKey.zoneType == Zone.BATTLEFIELD || zoneKey.zoneType == Zone.STACK
+        val isInFaceDownZone = zoneKey.zoneType == Zone.BATTLEFIELD || zoneKey.zoneType == Zone.STACK || zoneKey.zoneType == Zone.EXILE
         val isFaceDown = isInFaceDownZone && (container.has<FaceDownComponent>() || spellOnStack?.castFaceDown == true)
         // Use projected P/T which correctly handles face-down base 2/2 + any modifications
         val power = projectedValues?.power ?: if (isFaceDown) 2 else cardComponent.baseStats?.basePower
@@ -454,12 +454,57 @@ class ClientStateTransformer(
         // Get morph data for face-down creatures
         val morphData = container.get<MorphDataComponent>()
 
-        // Handle face-down creature masking
+        // Handle face-down card masking
         // Opponents and spectators see modified stats but no card information
         // Controller sees real card info + morph cost (but not spectators)
         if (isFaceDown && (isSpectator || controllerId != viewingPlayerId)) {
-            // Check if the face-down creature has been revealed to the viewing player (e.g., via Spy Network)
+            // Check if the face-down card has been revealed to the viewing player (e.g., via Spy Network)
             val isRevealedToViewer = !isSpectator && isCardRevealedTo(state, entityId, viewingPlayerId)
+
+            // Face-down exiled cards show minimal info (not creatures, no P/T)
+            if (zoneKey.zoneType == Zone.EXILE) {
+                return ClientCard(
+                    id = entityId,
+                    name = "Face-down card",
+                    manaCost = "",
+                    manaValue = 0,
+                    typeLine = "",
+                    cardTypes = emptySet(),
+                    subtypes = emptySet(),
+                    colors = emptySet(),
+                    oracleText = "",
+                    power = null,
+                    toughness = null,
+                    basePower = null,
+                    baseToughness = null,
+                    damage = null,
+                    keywords = emptySet(),
+                    abilityFlags = emptySet(),
+                    protections = emptyList(),
+                    counters = emptyMap(),
+                    isTapped = false,
+                    hasSummoningSickness = false,
+                    isTransformed = false,
+                    isAttacking = false,
+                    isBlocking = false,
+                    attackingTarget = null,
+                    blockingTarget = null,
+                    controllerId = controllerId,
+                    ownerId = ownerId,
+                    isToken = false,
+                    zone = zoneKey,
+                    attachedTo = null,
+                    attachments = emptyList(),
+                    isFaceDown = true,
+                    morphCost = null,
+                    imageUri = "https://cards.scryfall.io/normal/front/e/9/e9375cbe-93c0-41a5-a6e3-fb4416f54a69.jpg",
+                    activeEffects = emptyList(),
+                    revealedName = if (isRevealedToViewer) cardComponent.name else null,
+                    revealedImageUri = if (isRevealedToViewer) cardDef?.metadata?.imageUri else null
+                )
+            }
+
+            // Face-down battlefield/stack creatures (morph)
             // Use projected keywords — granted keywords (e.g., flying from an aura) are public information
             val faceDownKeywords = projectedValues?.keywords?.mapNotNull {
                 try { Keyword.valueOf(it) } catch (_: Exception) { null }
