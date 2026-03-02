@@ -43,6 +43,7 @@ object LegionsSet {
         SunstrikeLegionnaire,
         SwoopingTalon,
         WallOfHope,
+        WhipgrassEntangler,
         WhiteKnight,
         WindbornMuse,
         WingbeatWarrior,

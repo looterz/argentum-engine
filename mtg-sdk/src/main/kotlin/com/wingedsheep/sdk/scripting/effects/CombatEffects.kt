@@ -264,6 +264,28 @@ data class PreventAllDamageDealtByTargetEffect(
 }
 
 /**
+ * Grant a creature "can't attack or block unless its controller pays {X} for each [creature type]
+ * on the battlefield" until end of turn.
+ * Used for Whipgrass Entangler and similar effects.
+ *
+ * @property target The creature gaining the restriction
+ * @property creatureType The creature type to count (e.g., "Cleric")
+ * @property manaCostPer The mana cost per creature of that type (e.g., "{1}")
+ * @property duration How long the restriction lasts
+ */
+@SerialName("GrantAttackBlockTaxPerCreatureType")
+@Serializable
+data class GrantAttackBlockTaxPerCreatureTypeEffect(
+    val target: EffectTarget = EffectTarget.ContextTarget(0),
+    val creatureType: String,
+    val manaCostPer: String,
+    val duration: Duration = Duration.EndOfTurn
+) : Effect {
+    override val description: String =
+        "Target creature gains \"This creature can't attack or block unless its controller pays $manaCostPer for each $creatureType on the battlefield.\""
+}
+
+/**
  * Redirect a creature's combat damage to its controller.
  * "The next time [creature] would deal combat damage this turn,
  *  it deals that damage to you instead."

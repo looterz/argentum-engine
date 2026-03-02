@@ -2,11 +2,11 @@
 
 **Set Size:** 145 cards
 **Release Date:** February 3, 2003
-**Implemented:** 118 / 145
+**Implemented:** 119 / 145
 
 | Color      | Count |
 |------------|-------|
-| White      | 23/29 |
+| White      | 24/29 |
 | Blue       | 24/29 |
 | Black      | 24/29 |
 | Red        | 24/29 |
@@ -150,7 +150,7 @@
 - [ ] Ward Sliver
 - [x] Warped Researcher
 - [ ] Weaver of Lies
-- [ ] Whipgrass Entangler
+- [x] Whipgrass Entangler
 - [x] White Knight
 - [x] Willbender
 - [x] Windborn Muse

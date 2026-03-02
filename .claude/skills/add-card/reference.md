@@ -146,6 +146,7 @@ constructors.
 - `Effects.Provoke(target)` — untap target and force it to block source (provoke keyword)
 - `Effects.PreventCombatDamageToAndBy(target)` — prevent all combat damage to and by creature this turn
 - `Effects.RemoveFromCombat(target)` — remove creature from combat
+- `Effects.GrantAttackBlockTaxPerCreatureType(target, creatureType, manaCostPer, duration)` — grant "can't attack or block unless pays {X} per creature type" (Whipgrass Entangler)
 - `RedirectCombatDamageToControllerEffect(target)` — next time creature deals combat damage this turn, deals it to controller instead (Goblin Psychopath)
 
 ### Chain Copy (Chain of X)
@@ -344,6 +345,7 @@ constructors.
 | `ChooseCreatureTypeMustAttackEffect`                | (object)                                    | Choose type, must attack        |
 | `RedirectNextDamageEffect`                          | `protectedTargets, redirectTo, amount?`     | Redirect next damage (amount=null for all) |
 | `PreventNextDamageFromChosenCreatureTypeEffect`     | (object)                                    | Prevent damage from chosen type |
+| `GrantAttackBlockTaxPerCreatureTypeEffect`          | `target, creatureType, manaCostPer, duration` | Can't attack/block unless pays per type |
 | `PreventAllDamageDealtByTargetEffect`               | `target`                                    | Prevent all damage by target    |
 | `PreventCombatDamageToAndByEffect`                  | `target`                                    | Prevent combat damage to and by creature |
 

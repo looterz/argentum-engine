@@ -439,8 +439,14 @@ class CombatManager(
             return ExecutionResult.error(state, projectedMustBlockValidation)
         }
 
+        // Check and pay block taxes from floating effects (Whipgrass Entangler)
+        val blockTaxResult = validateAndPayBlockTaxes(state, blockingPlayer, blockers)
+        if (!blockTaxResult.isSuccess) {
+            return blockTaxResult
+        }
+
         // Apply blocker components
-        var newState = state
+        var newState = blockTaxResult.newState
         for ((blockerId, attackerIds) in blockers) {
             newState = newState.updateEntity(blockerId) { container ->
                 container.with(BlockingComponent(attackerIds))
@@ -463,6 +469,7 @@ class CombatManager(
         val blockerNameMap = blockers.keys.associateWith { state.getEntity(it)?.get<CardComponent>()?.name ?: "Creature" }
         val attackerNameMap = blockers.values.flatten().distinct().associateWith { state.getEntity(it)?.get<CardComponent>()?.name ?: "Creature" }
         val blockersEvent = BlockersDeclaredEvent(blockers, blockerNameMap, attackerNameMap)
+        val blockTaxEvents = blockTaxResult.events
 
         // Per MTG CR 509.2: After blockers are declared, the attacking player must
         // declare damage assignment order for each attacker blocked by 2+ creatures
@@ -475,13 +482,13 @@ class CombatManager(
                 attackingPlayer = attackingPlayer,
                 firstAttacker = attackersNeedingOrder.first(),
                 remainingAttackers = attackersNeedingOrder.drop(1),
-                precedingEvents = listOf(blockersEvent)
+                precedingEvents = blockTaxEvents + blockersEvent
             )
         }
 
         return ExecutionResult.success(
             newState,
-            listOf(blockersEvent)
+            blockTaxEvents + blockersEvent
         )
     }
 
@@ -2838,24 +2845,27 @@ class CombatManager(
             }
         }
 
-        if (attackersPerDefender.isEmpty()) return ExecutionResult.success(state)
-
-        // Calculate total tax from all AttackTax permanents
+        // Calculate total tax from all AttackTax permanents (Ghostly Prison, Windborn Muse)
         var totalGenericTax = 0
-        for ((defenderId, attackerCount) in attackersPerDefender) {
-            val defenderPermanents = projected.getBattlefieldControlledBy(defenderId)
-            for (entityId in defenderPermanents) {
-                val container = state.getEntity(entityId) ?: continue
-                val cardComponent = container.get<CardComponent>() ?: continue
-                val cardDef = cardRegistry?.getCard(cardComponent.cardDefinitionId) ?: continue
-                for (ability in cardDef.staticAbilities) {
-                    if (ability is AttackTax) {
-                        val taxPerAttacker = ManaCost.parse(ability.manaCostPerAttacker)
-                        totalGenericTax += taxPerAttacker.cmc * attackerCount
+        if (attackersPerDefender.isNotEmpty()) {
+            for ((defenderId, attackerCount) in attackersPerDefender) {
+                val defenderPermanents = projected.getBattlefieldControlledBy(defenderId)
+                for (entityId in defenderPermanents) {
+                    val container = state.getEntity(entityId) ?: continue
+                    val cardComponent = container.get<CardComponent>() ?: continue
+                    val cardDef = cardRegistry?.getCard(cardComponent.cardDefinitionId) ?: continue
+                    for (ability in cardDef.staticAbilities) {
+                        if (ability is AttackTax) {
+                            val taxPerAttacker = ManaCost.parse(ability.manaCostPerAttacker)
+                            totalGenericTax += taxPerAttacker.cmc * attackerCount
+                        }
                     }
                 }
             }
         }
+
+        // Calculate per-creature attack/block tax from floating effects (Whipgrass Entangler)
+        totalGenericTax += calculatePerCreatureTax(state, attackers.keys, projected)
 
         if (totalGenericTax <= 0) return ExecutionResult.success(state)
 
@@ -2911,6 +2921,128 @@ class CombatManager(
             ?: return ExecutionResult.error(currentState, "Cannot pay attack tax after auto-tap")
 
         currentState = currentState.updateEntity(attackingPlayer) { container ->
+            container.with(
+                ManaPoolComponent(
+                    white = newPool.white,
+                    blue = newPool.blue,
+                    black = newPool.black,
+                    red = newPool.red,
+                    green = newPool.green,
+                    colorless = newPool.colorless
+                )
+            )
+        }
+
+        return ExecutionResult.success(currentState, events)
+    }
+
+    /**
+     * Calculate per-creature tax from AttackBlockTaxPerCreatureType floating effects.
+     * For each creature that has this restriction, the tax is {manaCostPer} × (count of creatureType on battlefield).
+     * Multiple applications stack additively.
+     */
+    private fun calculatePerCreatureTax(
+        state: GameState,
+        creatureIds: Set<EntityId>,
+        projected: ProjectedState
+    ): Int {
+        var totalTax = 0
+        for (creatureId in creatureIds) {
+            for (floatingEffect in state.floatingEffects) {
+                val mod = floatingEffect.effect.modification
+                if (mod !is SerializableModification.AttackBlockTaxPerCreatureType) continue
+                if (creatureId !in floatingEffect.effect.affectedEntities) continue
+
+                // Count creatures of the specified type on the battlefield (using projected state)
+                val creatureTypeCount = countCreaturesOfTypeOnBattlefield(state, projected, mod.creatureType)
+                val costPerCreature = ManaCost.parse(mod.manaCostPer).cmc
+                totalTax += costPerCreature * creatureTypeCount
+            }
+        }
+        return totalTax
+    }
+
+    /**
+     * Count creatures of a specific subtype on the battlefield (using projected state for type accuracy).
+     */
+    private fun countCreaturesOfTypeOnBattlefield(
+        state: GameState,
+        projected: ProjectedState,
+        creatureType: String
+    ): Int {
+        return state.getBattlefield().count { entityId ->
+            projected.isCreature(entityId) && projected.hasSubtype(entityId, creatureType)
+        }
+    }
+
+    /**
+     * Validate and pay block taxes from per-creature floating effects (Whipgrass Entangler).
+     * Similar to attack taxes but applied during block declaration.
+     *
+     * @return Success with mana paid, or error if cost can't be paid
+     */
+    private fun validateAndPayBlockTaxes(
+        state: GameState,
+        blockingPlayer: EntityId,
+        blockers: Map<EntityId, List<EntityId>>
+    ): ExecutionResult {
+        if (blockers.isEmpty()) return ExecutionResult.success(state)
+
+        val projected = stateProjector.project(state)
+        val totalGenericTax = calculatePerCreatureTax(state, blockers.keys, projected)
+
+        if (totalGenericTax <= 0) return ExecutionResult.success(state)
+
+        val totalCost = ManaCost(List(totalGenericTax) { ManaSymbol.generic(1) })
+
+        val playerEntity = state.getEntity(blockingPlayer)
+            ?: return ExecutionResult.error(state, "Blocking player not found")
+        val manaPoolComponent = playerEntity.get<ManaPoolComponent>()
+            ?: return ExecutionResult.error(state, "Player has no mana pool")
+
+        val manaPool = ManaPool(
+            manaPoolComponent.white,
+            manaPoolComponent.blue,
+            manaPoolComponent.black,
+            manaPoolComponent.red,
+            manaPoolComponent.green,
+            manaPoolComponent.colorless
+        )
+
+        val partialResult = manaPool.payPartial(totalCost)
+        val remainingCost = partialResult.remainingCost
+        var currentPool = manaPool
+        var currentState = state
+        val events = mutableListOf<GameEvent>()
+
+        if (!remainingCost.isEmpty()) {
+            val manaSolver = ManaSolver()
+            val solution = manaSolver.solve(currentState, blockingPlayer, remainingCost)
+                ?: return ExecutionResult.error(
+                    currentState,
+                    "Cannot pay block tax of {$totalGenericTax} (not enough mana available)"
+                )
+
+            for (source in solution.sources) {
+                currentState = currentState.updateEntity(source.entityId) { c ->
+                    c.with(TappedComponent)
+                }
+                events.add(TappedEvent(source.entityId, source.name))
+            }
+
+            for ((_, production) in solution.manaProduced) {
+                currentPool = if (production.color != null) {
+                    currentPool.add(production.color, production.amount)
+                } else {
+                    currentPool.addColorless(production.colorless)
+                }
+            }
+        }
+
+        val newPool = currentPool.pay(totalCost)
+            ?: return ExecutionResult.error(currentState, "Cannot pay block tax after auto-tap")
+
+        currentState = currentState.updateEntity(blockingPlayer) { container ->
             container.with(
                 ManaPoolComponent(
                     white = newPool.white,

@@ -875,6 +875,19 @@ object Effects {
     fun RemoveFromCombat(target: EffectTarget): Effect =
         RemoveFromCombatEffect(target)
 
+    /**
+     * Grant a creature "can't attack or block unless its controller pays {X} for each [creature type]
+     * on the battlefield" until end of turn.
+     */
+    fun GrantAttackBlockTaxPerCreatureType(
+        target: EffectTarget = EffectTarget.ContextTarget(0),
+        creatureType: String,
+        manaCostPer: String,
+        duration: Duration = Duration.EndOfTurn
+    ): Effect = com.wingedsheep.sdk.scripting.effects.GrantAttackBlockTaxPerCreatureTypeEffect(
+        target, creatureType, manaCostPer, duration
+    )
+
     // =========================================================================
     // Animate Effects
     // =========================================================================
