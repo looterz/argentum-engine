@@ -316,6 +316,25 @@ class TurnManager(
                 }
             }
 
+            // Check for static draw replacement effects (e.g., Parallel Thoughts)
+            val staticResult = checkStaticDrawReplacement(newState, playerId, count - i, drawnCards.toList())
+            if (staticResult != null) {
+                if (drawnCards.isNotEmpty()) {
+                    val cardNames = drawnCards.map { newState.getEntity(it)?.get<CardComponent>()?.name ?: "Card" }
+                    val allEvents = mutableListOf<GameEvent>(
+                        CardsDrawnEvent(playerId, drawnCards.size, drawnCards.toList(), cardNames)
+                    )
+                    allEvents.addAll(events)
+                    allEvents.addAll(staticResult.events)
+                    return ExecutionResult.paused(
+                        staticResult.state,
+                        staticResult.pendingDecision!!,
+                        allEvents
+                    )
+                }
+                return staticResult
+            }
+
             val library = newState.getZone(libraryKey)
             if (library.isEmpty()) {
                 // Player tries to draw from empty library - they lose (Rule 704.5c)
@@ -381,6 +400,80 @@ class TurnManager(
             cardName = drawnCard.name,
             isCreature = drawnCard.typeLine.isCreature
         )
+    }
+
+    /**
+     * Check if a player controls a permanent with an optional static draw replacement effect
+     * (e.g., Parallel Thoughts). If so, present a yes/no decision.
+     */
+    internal fun checkStaticDrawReplacement(
+        state: GameState,
+        playerId: EntityId,
+        drawCount: Int,
+        drawnCardsSoFar: List<EntityId> = emptyList()
+    ): ExecutionResult? {
+        if (cardRegistry == null) return null
+
+        val projected = stateProjector.project(state)
+        val controlledPermanents = projected.getBattlefieldControlledBy(playerId)
+
+        for (permanentId in controlledPermanents) {
+            val container = state.getEntity(permanentId) ?: continue
+            val replacementSource = container.get<com.wingedsheep.engine.state.components.battlefield.ReplacementEffectSourceComponent>()
+                ?: continue
+
+            for (re in replacementSource.replacementEffects) {
+                if (re !is com.wingedsheep.sdk.scripting.ReplaceDrawWithEffect) continue
+                if (!re.optional) continue
+
+                val card = container.get<CardComponent>() ?: continue
+                val linkedExile = container.get<com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent>()
+                val pileCount = linkedExile?.exiledIds?.size ?: 0
+
+                val decisionId = java.util.UUID.randomUUID().toString()
+                val prompt = "Use ${card.name}? Put the top card of the exiled pile ($pileCount cards remaining) into your hand instead of drawing?"
+
+                val decision = YesNoDecision(
+                    id = decisionId,
+                    playerId = playerId,
+                    prompt = prompt,
+                    context = DecisionContext(
+                        sourceId = permanentId,
+                        sourceName = card.name,
+                        phase = DecisionPhase.RESOLUTION
+                    )
+                )
+
+                val continuation = StaticDrawReplacementContinuation(
+                    decisionId = decisionId,
+                    drawingPlayerId = playerId,
+                    sourceId = permanentId,
+                    sourceName = card.name,
+                    replacementEffect = re.replacementEffect,
+                    drawCount = drawCount,
+                    isDrawStep = true,
+                    drawnCardsSoFar = drawnCardsSoFar
+                )
+
+                val stateWithDecision = state.withPendingDecision(decision)
+                val stateWithContinuation = stateWithDecision.pushContinuation(continuation)
+
+                return ExecutionResult.paused(
+                    stateWithContinuation,
+                    decision,
+                    listOf(
+                        DecisionRequestedEvent(
+                            decisionId = decisionId,
+                            playerId = playerId,
+                            decisionType = "YES_NO",
+                            prompt = decision.prompt
+                        )
+                    )
+                )
+            }
+        }
+
+        return null
     }
 
     /**

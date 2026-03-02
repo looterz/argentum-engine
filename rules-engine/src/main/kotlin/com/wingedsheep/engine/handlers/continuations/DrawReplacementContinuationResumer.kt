@@ -369,4 +369,93 @@ class DrawReplacementContinuationResumer(
 
         return checkForMore(newState, events)
     }
+
+    /**
+     * Resume after the player answers yes/no for an optional static draw replacement effect
+     * (e.g., Parallel Thoughts).
+     *
+     * Yes: execute the replacement effect, then draw remaining (drawCount - 1).
+     * No: draw 1 normally, then draw remaining (drawCount - 1).
+     */
+    fun resumeStaticDrawReplacement(
+        state: GameState,
+        continuation: com.wingedsheep.engine.core.StaticDrawReplacementContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        if (response !is com.wingedsheep.engine.core.YesNoResponse) {
+            return ExecutionResult.error(state, "Expected yes/no response for static draw replacement")
+        }
+
+        val playerId = continuation.drawingPlayerId
+        var newState = state
+        val events = mutableListOf<GameEvent>()
+
+        if (response.choice) {
+            // Player chose to replace the draw - execute the replacement effect
+            val opponents = newState.turnOrder.filter { it != playerId }
+            val effectContext = com.wingedsheep.engine.handlers.EffectContext(
+                controllerId = playerId,
+                sourceId = continuation.sourceId,
+                opponentId = opponents.firstOrNull(),
+                targets = emptyList()
+            )
+            val effectResult = ctx.effectExecutorRegistry.execute(
+                newState, continuation.replacementEffect, effectContext
+            )
+            if (effectResult.isSuccess) {
+                newState = effectResult.newState
+                events.addAll(effectResult.events)
+            }
+        } else {
+            // Player declined - draw 1 card normally
+            val singleDrawExecutor = DrawCardsExecutor(effectExecutor = ctx.effectExecutorRegistry::execute)
+            val singleDrawResult = singleDrawExecutor.executeDraws(newState, playerId, 1)
+            if (singleDrawResult.isPaused) {
+                return ExecutionResult.paused(
+                    singleDrawResult.state,
+                    singleDrawResult.pendingDecision!!,
+                    events + singleDrawResult.events
+                )
+            }
+            newState = singleDrawResult.newState
+            events.addAll(singleDrawResult.events)
+        }
+
+        // Continue remaining draws (drawCount - 1)
+        val remainingDraws = continuation.drawCount - 1
+        if (remainingDraws > 0) {
+            val drawExecutor = DrawCardsExecutor(
+                cardRegistry = ctx.stackResolver.cardRegistry,
+                effectExecutor = ctx.effectExecutorRegistry::execute
+            )
+            val drawResult = if (continuation.isDrawStep) {
+                val turnManager = com.wingedsheep.engine.core.TurnManager(
+                    cardRegistry = ctx.stackResolver.cardRegistry,
+                    effectExecutor = ctx.effectExecutorRegistry::execute
+                )
+                turnManager.drawCards(newState, playerId, remainingDraws)
+            } else {
+                drawExecutor.executeDraws(newState, playerId, remainingDraws)
+            }
+            if (drawResult.isPaused) {
+                return ExecutionResult.paused(
+                    drawResult.state,
+                    drawResult.pendingDecision!!,
+                    events + drawResult.events
+                )
+            }
+            newState = drawResult.newState
+            events.addAll(drawResult.events)
+
+            // Set priority for draw step
+            if (continuation.isDrawStep) {
+                newState = newState.withPriority(playerId)
+            }
+        } else if (continuation.isDrawStep) {
+            newState = newState.withPriority(playerId)
+        }
+
+        return checkForMore(newState, events)
+    }
 }

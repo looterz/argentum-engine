@@ -458,7 +458,7 @@ class StaticAbilityHandler(
         container: ComponentContainer,
         cardDefinition: CardDefinition
     ): ComponentContainer {
-        val runtimeEffects = cardDefinition.script.replacementEffects.filter { it is PreventDamage || it is DoubleDamage || it is PreventLifeGain || it is ReplaceDamageWithCounters }
+        val runtimeEffects = cardDefinition.script.replacementEffects.filter { it is PreventDamage || it is DoubleDamage || it is PreventLifeGain || it is ReplaceDamageWithCounters || it is com.wingedsheep.sdk.scripting.ReplaceDrawWithEffect }
         if (runtimeEffects.isEmpty()) return container
         return container.with(ReplacementEffectSourceComponent(runtimeEffects))
     }

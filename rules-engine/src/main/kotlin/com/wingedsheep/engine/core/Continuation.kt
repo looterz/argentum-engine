@@ -1462,6 +1462,30 @@ data class DrawReplacementTargetContinuation(
 
 
 /**
+ * Resume after the player answers yes/no for an optional static draw replacement effect
+ * (e.g., Parallel Thoughts: "you may instead put the top card of the exiled pile into your hand").
+ *
+ * @property drawingPlayerId The player who is about to draw
+ * @property sourceId The permanent with the replacement effect
+ * @property sourceName Name of the source for display
+ * @property replacementEffect The effect to execute if the player says yes
+ * @property drawCount Number of draws remaining (including this one)
+ * @property isDrawStep Whether this is from the draw step (vs spell/ability draws)
+ * @property drawnCardsSoFar Cards already drawn before this replacement was offered
+ */
+@Serializable
+data class StaticDrawReplacementContinuation(
+    override val decisionId: String,
+    val drawingPlayerId: EntityId,
+    val sourceId: EntityId,
+    val sourceName: String,
+    val replacementEffect: Effect,
+    val drawCount: Int,
+    val isDrawStep: Boolean,
+    val drawnCardsSoFar: List<EntityId> = emptyList()
+) : ContinuationFrame
+
+/**
  * Continuation for Read the Runes effect.
  * Tracks the iterative "for each card drawn, discard a card unless you sacrifice a permanent" choices.
  *

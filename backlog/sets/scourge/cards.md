@@ -3,12 +3,12 @@
 
 **Set Size:** 143 cards
 **Release Date:** May 26, 2003
-**Implemented:** 138 / 143
+**Implemented:** 139 / 143
 
 | Color | Count |
 |-------|-------|
 | White | 26 |
-| Blue | 26 |
+| Blue | 27 |
 | Black | 27 |
 | Red | 26 |
 | Green | 27 |
@@ -107,7 +107,7 @@
 - [x] Nefashu
 - [x] Noble Templar
 - [x] One with Nature
-- [ ] Parallel Thoughts
+- [x] Parallel Thoughts
 - [x] Pemmin's Aura
 - [x] Primitive Etchings
 - [x] Proteus Machine

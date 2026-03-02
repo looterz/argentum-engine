@@ -1584,4 +1584,32 @@ object EffectPatterns {
         GrantMayPlayFromExileEffect("exiledCard"),
         GrantPlayWithoutPayingCostEffect("exiledCard")
     ))
+
+    /**
+     * Search library for up to [count] cards, exile them face-down linked to the source
+     * permanent, then shuffle the library.
+     *
+     * Used by Parallel Thoughts: search for 7, exile face-down in a shuffled pile.
+     */
+    fun searchAndExileLinked(
+        count: Int = 7,
+        filter: GameObjectFilter = GameObjectFilter.Any
+    ): CompositeEffect = CompositeEffect(listOf(
+        GatherCardsEffect(
+            source = CardSource.FromZone(Zone.LIBRARY, Player.You, filter),
+            storeAs = "searchable"
+        ),
+        SelectFromCollectionEffect(
+            from = "searchable",
+            selection = SelectionMode.ChooseUpTo(DynamicAmount.Fixed(count)),
+            storeSelected = "found"
+        ),
+        MoveCollectionEffect(
+            from = "found",
+            destination = CardDestination.ToZone(Zone.EXILE),
+            order = CardOrder.Random,
+            linkToSource = true
+        ),
+        ShuffleLibraryEffect()
+    ))
 }

@@ -305,10 +305,14 @@ data class DoubleDamage(
 @Serializable
 data class ReplaceDrawWithEffect(
     val replacementEffect: Effect,
+    val optional: Boolean = false,
     override val appliesTo: GameEvent = GameEvent.DrawEvent()
 ) : ReplacementEffect {
-    override val description: String =
-        "If ${appliesTo.description}, instead ${replacementEffect.description}"
+    override val description: String = buildString {
+        append("If ${appliesTo.description}, ")
+        if (optional) append("you may ")
+        append("instead ${replacementEffect.description}")
+    }
 }
 
 /**

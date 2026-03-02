@@ -13,6 +13,7 @@ import com.wingedsheep.sdk.scripting.effects.AddCountersEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
 import com.wingedsheep.sdk.scripting.effects.AnimateLandEffect
 import com.wingedsheep.sdk.scripting.effects.SetBasePowerEffect
+import com.wingedsheep.sdk.scripting.effects.TakeFromLinkedExileEffect
 import com.wingedsheep.sdk.scripting.effects.ChooseColorAndGrantProtectionToGroupEffect
 import com.wingedsheep.sdk.scripting.effects.ChooseColorAndGrantProtectionToTargetEffect
 import com.wingedsheep.sdk.scripting.effects.ChooseCreatureTypeGainControlEffect
@@ -505,6 +506,12 @@ object Effects {
         filter: GameObjectFilter = GameObjectFilter.Any,
         positionFromTop: Int = 2
     ): Effect = EffectPatterns.searchLibraryNthFromTop(filter, positionFromTop)
+
+    /**
+     * Take the top card from the source's linked exile pile and put it into your hand.
+     * Used by Parallel Thoughts and similar cards.
+     */
+    fun TakeFromLinkedExile(): Effect = TakeFromLinkedExileEffect
 
     /**
      * Scry N.

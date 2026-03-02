@@ -130,6 +130,7 @@ class ContinuationHandler(
             }
             is DrawReplacementActivationContinuation -> drawReplacementResumer.resumeDrawReplacementActivation(stateAfterPop, continuation, response, cfm)
             is DrawReplacementTargetContinuation -> drawReplacementResumer.resumeDrawReplacementTarget(stateAfterPop, continuation, response, cfm)
+            is StaticDrawReplacementContinuation -> drawReplacementResumer.resumeStaticDrawReplacement(stateAfterPop, continuation, response, cfm)
 
             // Card-specific
             is SecretBidContinuation -> cardSpecificResumer.resumeSecretBid(stateAfterPop, continuation, response, cfm)

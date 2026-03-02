@@ -55,3 +55,17 @@ data object PutCreatureFromHandSharingTypeWithTappedEffect : Effect {
         "You may put a creature card from your hand that shares a creature type " +
         "with each creature tapped this way onto the battlefield"
 }
+
+/**
+ * Take the top card from the source permanent's linked exile pile and put it
+ * into the controller's hand. Used by Parallel Thoughts and similar cards that
+ * exile a pile of cards and later retrieve from it.
+ *
+ * If the linked exile pile is empty, nothing happens.
+ */
+@SerialName("TakeFromLinkedExile")
+@Serializable
+data object TakeFromLinkedExileEffect : Effect {
+    override val description: String =
+        "Put the top card of the exiled pile into your hand"
+}

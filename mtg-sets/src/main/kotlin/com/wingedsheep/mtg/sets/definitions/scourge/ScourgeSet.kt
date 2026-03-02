@@ -93,6 +93,7 @@ object ScourgeSet {
         DragonWings,
         FacesOfThePast,
         FrozenSolid,
+        ParallelThoughts,
         PemminsAura,
 
         // Blue instants

@@ -68,8 +68,35 @@ class MoveCollectionExecutor(
         }
 
         return when (destination) {
-            is CardDestination.ToZone -> moveToZone(state, context, cards, destination, effect.order, effect.revealed, effect.moveType)
+            is CardDestination.ToZone -> {
+                val result = moveToZone(state, context, cards, destination, effect.order, effect.revealed, effect.moveType)
+                if (effect.linkToSource && result.isSuccess) {
+                    linkCardsToSource(result, context, cards)
+                } else {
+                    result
+                }
+            }
         }
+    }
+
+    /**
+     * Store the moved card IDs on the source permanent's LinkedExileComponent.
+     * Used by Parallel Thoughts and similar cards that need to track exiled cards.
+     */
+    private fun linkCardsToSource(
+        result: ExecutionResult,
+        context: EffectContext,
+        cards: List<EntityId>
+    ): ExecutionResult {
+        val sourceId = context.sourceId ?: return result
+        var newState = result.state
+        val sourceContainer = newState.getEntity(sourceId) ?: return result
+        val existingLinked = sourceContainer.get<com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent>()
+        val allExiled = (existingLinked?.exiledIds ?: emptyList()) + cards
+        newState = newState.updateEntity(sourceId) { c ->
+            c.with(com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent(allExiled))
+        }
+        return ExecutionResult.success(newState, result.events)
     }
 
     private fun moveToZone(

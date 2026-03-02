@@ -34,7 +34,7 @@ object CompactJsonTransformer {
         // Effect / Trigger / Target
         "trigger", "effect", "target", "spellEffect",
         // Nested effects (composites, conditionals, reflexive triggers, coin flip, pay-or-suffer)
-        "reflexiveEffect", "action", "ifTrue", "ifFalse", "wonEffect", "lostEffect", "suffer",
+        "reflexiveEffect", "replacementEffect", "action", "ifTrue", "ifFalse", "wonEffect", "lostEffect", "suffer",
         // Conditions
         "condition", "triggerCondition",
         // Costs and requirements

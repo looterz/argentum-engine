@@ -113,6 +113,27 @@ class DrawCardsExecutor(
                 }
             }
 
+            // Check for static draw replacement effects (e.g., Parallel Thoughts)
+            val staticResult = checkStaticDrawReplacement(
+                newState, playerId, count - i, isDrawStep = false, drawnCards.toList()
+            )
+            if (staticResult != null) {
+                if (drawnCards.isNotEmpty()) {
+                    val cardNames = drawnCards.map { newState.getEntity(it)?.get<CardComponent>()?.name ?: "Card" }
+                    val allEvents = mutableListOf<GameEvent>(
+                        CardsDrawnEvent(playerId, drawnCards.size, drawnCards.toList(), cardNames)
+                    )
+                    allEvents.addAll(events)
+                    allEvents.addAll(staticResult.events)
+                    return ExecutionResult.paused(
+                        staticResult.state,
+                        staticResult.pendingDecision!!,
+                        allEvents
+                    )
+                }
+                return staticResult
+            }
+
             // No shield exists - check if player wants to activate a promptOnDraw ability
             val promptResult = checkPromptOnDraw(
                 newState, playerId, count - i, drawnCards.toList()
@@ -300,6 +321,83 @@ class DrawCardsExecutor(
                             decisionId = decisionId,
                             playerId = playerId,
                             decisionType = "SELECT_MANA_SOURCES",
+                            prompt = decision.prompt
+                        )
+                    )
+                )
+            }
+        }
+
+        return null
+    }
+
+    /**
+     * Check if a player controls a permanent with an optional static draw replacement effect
+     * (e.g., Parallel Thoughts). If so, present a yes/no decision.
+     *
+     * @return An ExecutionResult paused for the decision, or null if no replacement applies.
+     */
+    internal fun checkStaticDrawReplacement(
+        state: GameState,
+        playerId: EntityId,
+        drawCount: Int,
+        isDrawStep: Boolean,
+        drawnCardsSoFar: List<EntityId> = emptyList()
+    ): ExecutionResult? {
+        if (cardRegistry == null) return null
+
+        val projected = stateProjector.project(state)
+        val controlledPermanents = projected.getBattlefieldControlledBy(playerId)
+
+        for (permanentId in controlledPermanents) {
+            val container = state.getEntity(permanentId) ?: continue
+            val replacementSource = container.get<com.wingedsheep.engine.state.components.battlefield.ReplacementEffectSourceComponent>()
+                ?: continue
+
+            for (re in replacementSource.replacementEffects) {
+                if (re !is com.wingedsheep.sdk.scripting.ReplaceDrawWithEffect) continue
+                if (!re.optional) continue
+
+                val card = container.get<CardComponent>() ?: continue
+                val linkedExile = container.get<com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent>()
+                val pileCount = linkedExile?.exiledIds?.size ?: 0
+
+                val decisionId = java.util.UUID.randomUUID().toString()
+                val prompt = "Use ${card.name}? Put the top card of the exiled pile ($pileCount cards remaining) into your hand instead of drawing?"
+
+                val decision = com.wingedsheep.engine.core.YesNoDecision(
+                    id = decisionId,
+                    playerId = playerId,
+                    prompt = prompt,
+                    context = DecisionContext(
+                        sourceId = permanentId,
+                        sourceName = card.name,
+                        phase = DecisionPhase.RESOLUTION
+                    )
+                )
+
+                val continuation = com.wingedsheep.engine.core.StaticDrawReplacementContinuation(
+                    decisionId = decisionId,
+                    drawingPlayerId = playerId,
+                    sourceId = permanentId,
+                    sourceName = card.name,
+                    replacementEffect = re.replacementEffect,
+                    drawCount = drawCount,
+                    isDrawStep = isDrawStep,
+                    drawnCardsSoFar = drawnCardsSoFar
+                )
+
+                val stateWithDecision = state.withPendingDecision(decision)
+                val stateWithContinuation = stateWithDecision.pushContinuation(continuation)
+
+                return ExecutionResult.paused(
+                    stateWithContinuation,
+                    decision,
+                    listOf(
+                        DecisionRequestedEvent(
+                            decisionId = decisionId,
+                            playerId = playerId,
+                            decisionType = "YES_NO",
                             prompt = decision.prompt
                         )
                     )
