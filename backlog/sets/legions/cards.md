@@ -2,12 +2,12 @@
 
 **Set Size:** 145 cards
 **Release Date:** February 3, 2003
-**Implemented:** 129 / 145
+**Implemented:** 130 / 145
 
 | Color      | Count |
 |------------|-------|
 | White      | 26/29 |
-| Blue       | 25/29 |
+| Blue       | 26/29 |
 | Black      | 26/29 |
 | Red        | 26/29 |
 | Green      | 26/29 |
@@ -97,7 +97,7 @@
 - [x] Lowland Tracker
 - [x] Macetail Hystrodon
 - [ ] Magma Sliver
-- [ ] Master of the Veil
+- [x] Master of the Veil
 - [x] Merchant of Secrets
 - [x] Mistform Seaswift
 - [x] Mistform Sliver
