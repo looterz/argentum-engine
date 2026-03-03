@@ -2,7 +2,7 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 96 / 249
+**Implemented:** 97 / 249
 
 | Color      | Count |
 |------------|-------|
@@ -10,7 +10,7 @@
 | Blue       | 17    |
 | Black      | 17    |
 | Red        | 17    |
-| Green      | 16    |
+| Green      | 17    |
 | Multicolor | 7     |
 | Colorless  | 3     |
 | Land       | 3     |
@@ -41,7 +41,7 @@
 - [x] Awaken the Bear
 - [x] Barrage of Boulders
 - [ ] Bear's Companion
-- [ ] Become Immense
+- [x] Become Immense
 - [x] Bellowing Saddlebrute
 - [x] Bitter Revelation
 - [x] Blinding Spray

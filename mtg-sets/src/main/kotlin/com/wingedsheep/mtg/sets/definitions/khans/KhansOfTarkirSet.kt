@@ -97,6 +97,7 @@ object KhansOfTarkirSet {
 
         // Green spells
         AwakenTheBear,
+        BecomeImmense,
         DragonscaleBoon,
         FeedTheClan,
         Naturalize,
