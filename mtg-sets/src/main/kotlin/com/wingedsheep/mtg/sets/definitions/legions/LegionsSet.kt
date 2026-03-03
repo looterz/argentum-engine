@@ -59,6 +59,7 @@ object LegionsSet {
         GempalmSorcerer,
         GlintwingInvoker,
         KeeneyeAven,
+        KeeperOfTheNineGales,
         MerchantOfSecrets,
         MistformSeaswift,
         MistformSliver,

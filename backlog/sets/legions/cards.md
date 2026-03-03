@@ -2,12 +2,12 @@
 
 **Set Size:** 145 cards
 **Release Date:** February 3, 2003
-**Implemented:** 123 / 145
+**Implemented:** 124 / 145
 
 | Color      | Count |
 |------------|-------|
 | White      | 24/29 |
-| Blue       | 24/29 |
+| Blue       | 25/29 |
 | Black      | 25/29 |
 | Red        | 25/29 |
 | Green      | 25/29 |
@@ -88,7 +88,7 @@
 - [x] Imperial Hellkite
 - [x] Infernal Caretaker
 - [x] Keeneye Aven
-- [ ] Keeper of the Nine Gales
+- [x] Keeper of the Nine Gales
 - [x] Kilnmouth Dragon
 - [x] Krosan Cloudscraper
 - [x] Krosan Vorine
