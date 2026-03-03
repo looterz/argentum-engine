@@ -53,7 +53,7 @@ class ChooseCreatureTypeModifyStatsExecutor(
         if (context.chosenCreatureType != null) {
             return applyCreatureTypeModifyStats(
                 state, context.chosenCreatureType, controllerId, context.sourceId, sourceName,
-                resolvedPower, resolvedToughness, effect.duration
+                resolvedPower, resolvedToughness, effect.duration, effect.grantKeyword
             )
         }
 
@@ -80,7 +80,8 @@ class ChooseCreatureTypeModifyStatsExecutor(
             creatureTypes = allCreatureTypes,
             powerModifier = resolvedPower,
             toughnessModifier = resolvedToughness,
-            duration = effect.duration
+            duration = effect.duration,
+            grantKeyword = effect.grantKeyword
         )
 
         val stateWithDecision = state.withPendingDecision(decision)
@@ -111,7 +112,8 @@ class ChooseCreatureTypeModifyStatsExecutor(
             sourceName: String?,
             powerModifier: Int,
             toughnessModifier: Int,
-            duration: Duration
+            duration: Duration,
+            grantKeyword: String? = null
         ): ExecutionResult {
             val affectedEntities = mutableSetOf<EntityId>()
             val events = mutableListOf<GameEvent>()
@@ -143,7 +145,9 @@ class ChooseCreatureTypeModifyStatsExecutor(
                 return ExecutionResult.success(state, emptyList())
             }
 
-            val floatingEffect = ActiveFloatingEffect(
+            val timestamp = System.currentTimeMillis()
+
+            val statsFloatingEffect = ActiveFloatingEffect(
                 id = EntityId.generate(),
                 effect = FloatingEffectData(
                     layer = Layer.POWER_TOUGHNESS,
@@ -158,11 +162,31 @@ class ChooseCreatureTypeModifyStatsExecutor(
                 sourceId = sourceId,
                 sourceName = sourceName,
                 controllerId = controllerId,
-                timestamp = System.currentTimeMillis()
+                timestamp = timestamp
             )
 
+            var floatingEffects = state.floatingEffects + statsFloatingEffect
+
+            if (grantKeyword != null) {
+                val keywordFloatingEffect = ActiveFloatingEffect(
+                    id = EntityId.generate(),
+                    effect = FloatingEffectData(
+                        layer = Layer.ABILITY,
+                        sublayer = null,
+                        modification = SerializableModification.GrantKeyword(grantKeyword),
+                        affectedEntities = affectedEntities
+                    ),
+                    duration = duration,
+                    sourceId = sourceId,
+                    sourceName = sourceName,
+                    controllerId = controllerId,
+                    timestamp = timestamp
+                )
+                floatingEffects = floatingEffects + keywordFloatingEffect
+            }
+
             val newState = state.copy(
-                floatingEffects = state.floatingEffects + floatingEffect
+                floatingEffects = floatingEffects
             )
 
             return ExecutionResult.success(newState, events)

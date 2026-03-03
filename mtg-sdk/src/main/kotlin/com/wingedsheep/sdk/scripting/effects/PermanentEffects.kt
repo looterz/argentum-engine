@@ -382,6 +382,8 @@ data class TurnFaceUpEffect(
  * until end of turn."
  * Used for Tribal Unity: "Creatures of the creature type of your choice get +X/+X
  * until end of turn."
+ * Used for Tribal Forcemage: "Creatures of the creature type of your choice get +2/+2
+ * and gain trample until end of turn."
  *
  * At resolution time, the executor:
  * 1. Evaluates dynamic amounts (e.g., X value)
@@ -392,20 +394,23 @@ data class TurnFaceUpEffect(
  * @property powerModifier Power bonus (can be dynamic, e.g., DynamicAmount.XValue)
  * @property toughnessModifier Toughness bonus (can be dynamic)
  * @property duration How long the effect lasts
+ * @property grantKeyword Optional keyword to grant to creatures of the chosen type
  */
 @SerialName("ChooseCreatureTypeModifyStats")
 @Serializable
 data class ChooseCreatureTypeModifyStatsEffect(
     val powerModifier: DynamicAmount,
     val toughnessModifier: DynamicAmount,
-    val duration: Duration = Duration.EndOfTurn
+    val duration: Duration = Duration.EndOfTurn,
+    val grantKeyword: String? = null
 ) : Effect {
-    constructor(powerModifier: Int, toughnessModifier: Int, duration: Duration = Duration.EndOfTurn) :
-        this(DynamicAmount.Fixed(powerModifier), DynamicAmount.Fixed(toughnessModifier), duration)
+    constructor(powerModifier: Int, toughnessModifier: Int, duration: Duration = Duration.EndOfTurn, grantKeyword: String? = null) :
+        this(DynamicAmount.Fixed(powerModifier), DynamicAmount.Fixed(toughnessModifier), duration, grantKeyword)
 
     override val description: String = buildString {
         append("Creatures of the creature type of your choice get ")
         append("+${powerModifier.description}/+${toughnessModifier.description}")
+        if (grantKeyword != null) append(" and gain ${grantKeyword.lowercase()}")
         if (duration.description.isNotEmpty()) append(" ${duration.description}")
     }
 }

@@ -2,15 +2,15 @@
 
 **Set Size:** 145 cards
 **Release Date:** February 3, 2003
-**Implemented:** 127 / 145
+**Implemented:** 129 / 145
 
 | Color      | Count |
 |------------|-------|
 | White      | 26/29 |
 | Blue       | 25/29 |
-| Black      | 25/29 |
+| Black      | 26/29 |
 | Red        | 26/29 |
-| Green      | 25/29 |
+| Green      | 26/29 |
 
 ---
 
@@ -82,7 +82,7 @@
 - [x] Goblin Turncoat
 - [x] Graveborn Muse
 - [x] Havoc Demon
-- [ ] Hollow Specter
+- [x] Hollow Specter
 - [x] Hundroog
 - [x] Hunter Sliver
 - [x] Imperial Hellkite
@@ -139,7 +139,7 @@
 - [x] Timberwatch Elf
 - [x] Totem Speaker
 - [x] Toxin Sliver
-- [ ] Tribal Forcemage
+- [x] Tribal Forcemage
 - [ ] Unstable Hulk
 - [x] Vexing Beetle
 - [x] Vile Deacon
