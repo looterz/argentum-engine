@@ -125,6 +125,7 @@ object LegionsSet {
         GoblinGrappler,
         LavabornMuse,
         MacetailHystrodon,
+        MagmaSliver,
         RidgetopRaptor,
         RockshardElemental,
         ShaleskinPlower,
