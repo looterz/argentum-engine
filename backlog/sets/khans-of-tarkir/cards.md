@@ -2,12 +2,12 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 93 / 249
+**Implemented:** 94 / 249
 
 | Color      | Count |
 |------------|-------|
 | White      | 16    |
-| Blue       | 16    |
+| Blue       | 17    |
 | Black      | 16    |
 | Red        | 16    |
 | Green      | 16    |
@@ -239,7 +239,7 @@
 - [ ] Trail of Mystery
 - [ ] Tranquil Cove
 - [ ] Trap Essence
-- [ ] Treasure Cruise
+- [x] Treasure Cruise
 - [x] Trumpet Blast
 - [x] Tusked Colossodon
 - [ ] Tuskguard Captain

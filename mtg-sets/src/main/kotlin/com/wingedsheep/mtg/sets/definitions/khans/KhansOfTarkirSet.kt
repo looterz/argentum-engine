@@ -59,6 +59,7 @@ object KhansOfTarkirSet {
         CripplingChill,
         DisdainfulStroke,
         TaigamsScheming,
+        TreasureCruise,
         WeaveFate,
 
         // Black creatures
