@@ -155,6 +155,7 @@ object LegionsSet {
         StonewoodInvoker,
         TimberwatchElf,
         TotemSpeaker,
+        TribalForcemage,
         VexingBeetle,
         WirewoodChanneler,
         WirewoodHivemaster,

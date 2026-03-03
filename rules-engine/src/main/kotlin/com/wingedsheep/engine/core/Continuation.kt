@@ -918,6 +918,7 @@ data class MayPayManaTriggerContinuation(
  * @property powerModifier Power bonus
  * @property toughnessModifier Toughness bonus
  * @property duration How long the effect lasts
+ * @property grantKeyword Optional keyword to grant to creatures of the chosen type
  */
 @Serializable
 data class ChooseCreatureTypeModifyStatsContinuation(
@@ -928,7 +929,8 @@ data class ChooseCreatureTypeModifyStatsContinuation(
     val creatureTypes: List<String>,
     val powerModifier: Int,
     val toughnessModifier: Int,
-    val duration: Duration
+    val duration: Duration,
+    val grantKeyword: String? = null
 ) : ContinuationFrame
 
 /**

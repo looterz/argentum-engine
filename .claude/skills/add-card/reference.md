@@ -256,7 +256,7 @@ constructors.
 | `SetCreatureSubtypesEffect`                 | `subtypes, target, duration`                                                | Set single target subtypes               |
 | `SetGroupCreatureSubtypesEffect`            | `subtypes, filter, duration`                                                | Set group subtypes                       |
 | `ChangeGroupColorEffect`                    | `colors, filter, duration`                                                  | Change group color                       |
-| `ChooseCreatureTypeModifyStatsEffect`       | `power: DynamicAmount, toughness: DynamicAmount, duration`                  | Choose type, modify stats                |
+| `ChooseCreatureTypeModifyStatsEffect`       | `power: DynamicAmount, toughness: DynamicAmount, duration, grantKeyword?`   | Choose type, modify stats (+ keyword)    |
 | `ChooseCreatureTypeUntapEffect`             | (object)                                                                    | Choose type, untap all of that type      |
 | `GainControlEffect`                         | `target, duration`                                                          | Gain control                             |
 | `GainControlByActivePlayerEffect`           | `target`                                                                    | Active player gains control              |

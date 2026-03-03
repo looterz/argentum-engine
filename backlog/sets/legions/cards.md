@@ -2,7 +2,7 @@
 
 **Set Size:** 145 cards
 **Release Date:** February 3, 2003
-**Implemented:** 127 / 145
+**Implemented:** 128 / 145
 
 | Color      | Count |
 |------------|-------|
@@ -10,7 +10,7 @@
 | Blue       | 25/29 |
 | Black      | 25/29 |
 | Red        | 26/29 |
-| Green      | 25/29 |
+| Green      | 26/29 |
 
 ---
 
@@ -139,7 +139,7 @@
 - [x] Timberwatch Elf
 - [x] Totem Speaker
 - [x] Toxin Sliver
-- [ ] Tribal Forcemage
+- [x] Tribal Forcemage
 - [ ] Unstable Hulk
 - [x] Vexing Beetle
 - [x] Vile Deacon

@@ -282,11 +282,18 @@ class CreatureTypeChoiceContinuationResumer(
         val chosenType = continuation.creatureTypes.getOrNull(response.optionIndex)
             ?: return ExecutionResult.error(state, "Invalid creature type index: ${response.optionIndex}")
 
-        // Find all creatures of the chosen type on the battlefield
-        // Use projected state to check subtypes, so type-changing continuous effects
-        // (e.g., Mistform Dreamer becoming a Cleric) are taken into account
-        val projected = StateProjector().project(state)
-        val affectedEntities = mutableSetOf<EntityId>()
+        val result = com.wingedsheep.engine.handlers.effects.permanent.ChooseCreatureTypeModifyStatsExecutor.applyCreatureTypeModifyStats(
+            state = state,
+            chosenType = chosenType,
+            controllerId = continuation.controllerId,
+            sourceId = continuation.sourceId,
+            sourceName = continuation.sourceName,
+            powerModifier = continuation.powerModifier,
+            toughnessModifier = continuation.toughnessModifier,
+            duration = continuation.duration,
+            grantKeyword = continuation.grantKeyword
+        )
+
         val events = mutableListOf<GameEvent>(
             CreatureTypeChosenEvent(
                 playerId = continuation.controllerId,
@@ -294,56 +301,9 @@ class CreatureTypeChoiceContinuationResumer(
                 sourceName = continuation.sourceName
             )
         )
+        events.addAll(result.events)
 
-        for (entityId in state.getBattlefield()) {
-            val container = state.getEntity(entityId) ?: continue
-            val cardComponent = container.get<CardComponent>() ?: continue
-
-            // Check if creature (face-down permanents are always creatures per Rule 707.2)
-            if (!cardComponent.typeLine.isCreature && !container.has<FaceDownComponent>()) continue
-
-            // Check if creature has the chosen subtype using projected state
-            if (!projected.hasSubtype(entityId, chosenType)) continue
-
-            affectedEntities.add(entityId)
-            events.add(
-                StatsModifiedEvent(
-                    targetId = entityId,
-                    targetName = cardComponent.name,
-                    powerChange = continuation.powerModifier,
-                    toughnessChange = continuation.toughnessModifier,
-                    sourceName = continuation.sourceName ?: "Unknown"
-                )
-            )
-        }
-
-        if (affectedEntities.isEmpty()) {
-            return checkForMore(state, emptyList())
-        }
-
-        val floatingEffect = ActiveFloatingEffect(
-            id = EntityId.generate(),
-            effect = FloatingEffectData(
-                layer = Layer.POWER_TOUGHNESS,
-                sublayer = Sublayer.MODIFICATIONS,
-                modification = SerializableModification.ModifyPowerToughness(
-                    powerMod = continuation.powerModifier,
-                    toughnessMod = continuation.toughnessModifier
-                ),
-                affectedEntities = affectedEntities
-            ),
-            duration = continuation.duration,
-            sourceId = continuation.sourceId,
-            sourceName = continuation.sourceName,
-            controllerId = continuation.controllerId,
-            timestamp = System.currentTimeMillis()
-        )
-
-        val newState = state.copy(
-            floatingEffects = state.floatingEffects + floatingEffect
-        )
-
-        return checkForMore(newState, events)
+        return checkForMore(result.state, events)
     }
 
     /**
