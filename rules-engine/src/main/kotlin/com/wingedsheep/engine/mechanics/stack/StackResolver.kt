@@ -166,7 +166,8 @@ class StackResolver(
                 ability.sourceId,
                 ability.sourceName,
                 ability.controllerId,
-                ability.description
+                ability.description,
+                abilityEntityId = abilityId
             )
         )
 
@@ -208,7 +209,8 @@ class StackResolver(
             AbilityActivatedEvent(
                 ability.sourceId,
                 ability.sourceName,
-                ability.controllerId
+                ability.controllerId,
+                abilityEntityId = abilityId
             )
         )
 

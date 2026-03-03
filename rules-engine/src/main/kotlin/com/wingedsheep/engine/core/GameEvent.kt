@@ -146,7 +146,8 @@ data class SpellCastEvent(
 data class AbilityActivatedEvent(
     val sourceId: EntityId,
     val sourceName: String,
-    val controllerId: EntityId
+    val controllerId: EntityId,
+    val abilityEntityId: EntityId? = null
 ) : GameEvent
 
 /**
@@ -158,7 +159,8 @@ data class AbilityTriggeredEvent(
     val sourceId: EntityId,
     val sourceName: String,
     val controllerId: EntityId,
-    val description: String
+    val description: String,
+    val abilityEntityId: EntityId? = null
 ) : GameEvent
 
 /**

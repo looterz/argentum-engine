@@ -134,6 +134,20 @@ data object ChangeTargetEffect : Effect {
 }
 
 /**
+ * Reselect the target of the triggering spell or ability at random.
+ * "If it has a single target, reselect its target at random."
+ *
+ * Uses context.triggeringEntityId to find the spell/ability on the stack.
+ * If it has exactly one target, finds all legal targets and randomly picks one.
+ * If it has zero or multiple targets, does nothing.
+ */
+@SerialName("ReselectTargetRandomly")
+@Serializable
+data object ReselectTargetRandomlyEffect : Effect {
+    override val description: String = "Reselect its target at random"
+}
+
+/**
  * Create copies of a spell on the stack (Storm mechanic).
  * "Copy it for each spell cast before it this turn. You may choose new targets for the copies."
  *

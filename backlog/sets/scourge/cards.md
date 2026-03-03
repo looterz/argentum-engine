@@ -3,14 +3,14 @@
 
 **Set Size:** 143 cards
 **Release Date:** May 26, 2003
-**Implemented:** 142 / 143
+**Implemented:** 143 / 143
 
 | Color | Count |
 |-------|-------|
 | White | 27 |
 | Blue | 27 |
 | Black | 27 |
-| Red | 26 |
+| Red | 27 |
 | Green | 27 |
 | Multicolor | 4 |
 | Colorless | 4 |
@@ -86,7 +86,7 @@
 - [x] Goblin Psychopath
 - [x] Goblin Warchief
 - [x] Goblin War Strike
-- [ ] Grip of Chaos
+- [x] Grip of Chaos
 - [x] Guilty Conscience
 - [x] Hindering Touch
 - [x] Hunting Pack

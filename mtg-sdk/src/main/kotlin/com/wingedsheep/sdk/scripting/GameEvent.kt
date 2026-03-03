@@ -613,6 +613,19 @@ sealed interface GameEvent {
     // ---- Draw/Reveal Triggers ----
 
     /**
+     * When a spell or ability is put onto the stack.
+     * Used for cards like Grip of Chaos: "Whenever a spell or ability is put onto the stack,
+     * if it has a single target, reselect its target at random."
+     *
+     * Matches engine events: SpellCastEvent, AbilityActivatedEvent, AbilityTriggeredEvent.
+     */
+    @SerialName("SpellOrAbilityOnStackEvent")
+    @Serializable
+    data object SpellOrAbilityOnStackEvent : GameEvent {
+        override val description: String = "a spell or ability is put onto the stack"
+    }
+
+    /**
      * When a card is revealed from the first draw of a turn.
      * Triggered by the RevealFirstDrawEachTurn static ability.
      *

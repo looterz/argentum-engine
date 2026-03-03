@@ -126,6 +126,7 @@ object ScourgeSet {
         DragonBreath,
         ExtraArms,
         FormOfTheDragon,
+        GripOfChaos,
         PyrostaticPillar,
         SulfuricVortex,
         UncontrolledInfestation,

@@ -65,6 +65,7 @@ import com.wingedsheep.sdk.scripting.effects.CounterUnlessPaysEffect
 import com.wingedsheep.sdk.scripting.effects.CounterUnlessDynamicPaysEffect
 import com.wingedsheep.sdk.scripting.effects.ChangeSpellTargetEffect
 import com.wingedsheep.sdk.scripting.effects.ChangeTargetEffect
+import com.wingedsheep.sdk.scripting.effects.ReselectTargetRandomlyEffect
 import com.wingedsheep.sdk.scripting.effects.CopyTargetSpellEffect
 import com.wingedsheep.sdk.scripting.effects.SetCreatureSubtypesEffect
 import com.wingedsheep.sdk.scripting.effects.SkipNextTurnEffect
@@ -720,6 +721,13 @@ object Effects {
      */
     fun ChangeTarget(): Effect =
         ChangeTargetEffect
+
+    /**
+     * Reselect the target of the triggering spell or ability at random.
+     * "If it has a single target, reselect its target at random."
+     */
+    fun ReselectTargetRandomly(): Effect =
+        ReselectTargetRandomlyEffect
 
     /**
      * Copy target instant or sorcery spell. You may choose new targets for the copy.

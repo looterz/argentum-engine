@@ -406,6 +406,19 @@ object Triggers {
     )
 
     // =========================================================================
+    // Stack Triggers
+    // =========================================================================
+
+    /**
+     * Whenever a spell or ability is put onto the stack (any player).
+     * Used for Grip of Chaos: "Whenever a spell or ability is put onto the stack..."
+     */
+    val AnySpellOrAbilityOnStack: TriggerSpec = TriggerSpec(
+        event = SpellOrAbilityOnStackEvent,
+        binding = TriggerBinding.ANY
+    )
+
+    // =========================================================================
     // Damage Triggers
     // =========================================================================
 

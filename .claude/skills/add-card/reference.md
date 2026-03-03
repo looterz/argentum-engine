@@ -130,6 +130,7 @@ constructors.
 - `Effects.CounterUnlessDynamicPays(amount: DynamicAmount)` — counter unless dynamic amount paid
 - `Effects.ChangeSpellTarget(targetMustBeSource = false)` — redirect a spell's creature target to another creature
 - `Effects.ChangeTarget()` — change the target of a spell or ability with a single target
+- `Effects.ReselectTargetRandomly()` — reselect the target of the triggering spell/ability at random (Grip of Chaos)
 - `Effects.CopyTargetSpell(target)` — copy target instant or sorcery spell on stack, may choose new targets
 
 ### Sacrifice
@@ -378,6 +379,7 @@ constructors.
 | `CounterUnlessDynamicPaysEffect` | `amount: DynamicAmount`       | Counter unless dynamic pay |
 | `ChangeSpellTargetEffect`        | `targetMustBeSource: Boolean` | Redirect spell target      |
 | `ChangeTargetEffect`             | (object)                      | Change target of spell/ability with single target |
+| `ReselectTargetRandomlyEffect`   | (object)                      | Randomly reselect triggering spell/ability's target |
 | `StormCopyEffect`                | `copyCount, spellEffect, spellTargetRequirements, spellName` | Create Storm copies of a spell |
 | `CopyTargetSpellEffect`          | `target: EffectTarget` | Copy target instant or sorcery spell on stack |
 
@@ -493,6 +495,7 @@ constructors.
 - `Triggers.YouCastSpell` / `Triggers.YouCastCreature`
 - `Triggers.YouCastNoncreature` / `Triggers.YouCastInstantOrSorcery`
 - `Triggers.YouCastEnchantment`
+- `Triggers.AnySpellOrAbilityOnStack` — whenever any spell or ability is put onto the stack (any player)
 
 ### Card Drawing
 

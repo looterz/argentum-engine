@@ -1,5 +1,7 @@
 package com.wingedsheep.engine.event
 
+import com.wingedsheep.engine.core.AbilityActivatedEvent
+import com.wingedsheep.engine.core.AbilityTriggeredEvent
 import com.wingedsheep.engine.core.AttackersDeclaredEvent
 import com.wingedsheep.engine.core.BecomesTargetEvent
 import com.wingedsheep.engine.core.BlockersDeclaredEvent
@@ -27,6 +29,7 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageDealtToCreaturesThisTurnComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.stack.TargetsComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
@@ -1366,6 +1369,19 @@ class TriggerDetector(
                     matchesPlayer(trigger.player, event.casterId, controllerId) &&
                     matchesSpellTypeFilter(trigger, event, state)
             }
+            is GameEvent.SpellOrAbilityOnStackEvent -> {
+                // Intervening-if: only trigger if the spell/ability has a single target
+                val stackEntityId = when (event) {
+                    is SpellCastEvent -> event.spellEntityId
+                    is AbilityActivatedEvent -> event.abilityEntityId
+                    is AbilityTriggeredEvent -> event.abilityEntityId
+                    else -> null
+                }
+                if (stackEntityId == null) return false
+                val targets = state.getEntity(stackEntityId)
+                    ?.get<TargetsComponent>()?.targets
+                targets != null && targets.size == 1
+            }
             is GameEvent.CycleEvent -> {
                 event is CardCycledEvent &&
                     matchesPlayer(trigger.player, event.playerId, controllerId) &&
@@ -1789,6 +1805,14 @@ data class TriggerContext(
                 )
                 is BecomesTargetEvent -> TriggerContext(
                     triggeringEntityId = event.targetEntityId
+                )
+                is AbilityActivatedEvent -> TriggerContext(
+                    triggeringEntityId = event.abilityEntityId,
+                    triggeringPlayerId = event.controllerId
+                )
+                is AbilityTriggeredEvent -> TriggerContext(
+                    triggeringEntityId = event.abilityEntityId,
+                    triggeringPlayerId = event.controllerId
                 )
                 else -> TriggerContext()
             }
