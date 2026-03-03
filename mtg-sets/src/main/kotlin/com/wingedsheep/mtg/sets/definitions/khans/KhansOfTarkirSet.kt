@@ -80,6 +80,7 @@ object KhansOfTarkirSet {
 
         // Green creatures
         AlpineGrizzly,
+        ArchersParapet,
         HeirOfTheWilds,
         HighlandGame,
         HootingMandrills,

@@ -2,7 +2,7 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 88 / 249
+**Implemented:** 89 / 249
 
 | Color      | Count |
 |------------|-------|
@@ -10,7 +10,7 @@
 | Blue       | 15    |
 | Black      | 15    |
 | Red        | 15    |
-| Green      | 15    |
+| Green      | 16    |
 | Multicolor | 7     |
 | Colorless  | 3     |
 | Land       | 3     |
@@ -32,7 +32,7 @@
 - [ ] Altar of the Brood
 - [ ] Anafenza, the Foremost
 - [ ] Ankle Shanker
-- [ ] Archers' Parapet
+- [x] Archers' Parapet
 - [ ] Arc Lightning
 - [ ] Armament Corps
 - [ ] Arrow Storm
