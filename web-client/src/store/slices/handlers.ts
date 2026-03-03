@@ -185,7 +185,7 @@ export function createMessageHandlers(set: SetState, get: GetState): MessageHand
     },
 
     onStateUpdate: (msg) => {
-      const { playerId, addDrawAnimation, addDamageAnimation, addRevealAnimation, addCoinFlipAnimation } = get()
+      const { playerId, addDrawAnimation, addDamageAnimation, addRevealAnimation, addCoinFlipAnimation, addTargetReselectedAnimation } = get()
 
       // Check for hand reveal events
       const handLookedAtEvent = msg.events.find(
@@ -303,6 +303,26 @@ export function createMessageHandlers(set: SetState, get: GetState): MessageHand
           sourceName: event.sourceName,
           won: isOpponent ? !event.won : event.won,
           isOpponent,
+          startTime: Date.now() + index * 200,
+        })
+      })
+
+      // Process target reselection events for animations
+      const targetReselectedEvents = msg.events.filter((e) => e.type === 'targetReselected') as {
+        type: 'targetReselected'
+        spellOrAbilityName: string
+        oldTargetName: string
+        newTargetName: string
+        sourceName: string
+      }[]
+
+      targetReselectedEvents.forEach((event, index) => {
+        addTargetReselectedAnimation({
+          id: `reselect-${Date.now()}-${index}`,
+          spellOrAbilityName: event.spellOrAbilityName,
+          oldTargetName: event.oldTargetName,
+          newTargetName: event.newTargetName,
+          sourceName: event.sourceName,
           startTime: Date.now() + index * 200,
         })
       })

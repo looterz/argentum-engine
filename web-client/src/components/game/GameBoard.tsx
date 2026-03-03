@@ -13,6 +13,7 @@ import { DrawAnimations } from '../animations/DrawAnimations'
 import { DamageAnimations } from '../animations/DamageAnimations'
 import { RevealAnimations } from '../animations/RevealAnimations'
 import { CoinFlipAnimations } from '../animations/CoinFlipAnimations'
+import { TargetReselectedAnimations } from '../animations/TargetReselectedAnimations'
 import { useResponsive } from '../../hooks/useResponsive'
 
 // Import extracted components
@@ -586,6 +587,9 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
 
       {/* Coin flip animations */}
       <CoinFlipAnimations />
+
+      {/* Target reselection animations (Grip of Chaos, etc.) */}
+      <TargetReselectedAnimations />
     </div>
     </ResponsiveContext.Provider>
   )

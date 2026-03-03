@@ -409,6 +409,18 @@ export interface CoinFlipAnimation {
 }
 
 /**
+ * A target reselection animation (Grip of Chaos, etc.).
+ */
+export interface TargetReselectedAnimation {
+  id: string
+  spellOrAbilityName: string
+  oldTargetName: string
+  newTargetName: string
+  sourceName: string
+  startTime: number
+}
+
+/**
  * A life change animation (damage or life gain).
  */
 export interface DamageAnimation {
@@ -550,6 +562,7 @@ export type GameStore = {
   damageAnimations: readonly DamageAnimation[]
   revealAnimations: readonly RevealAnimation[]
   coinFlipAnimations: readonly CoinFlipAnimation[]
+  targetReselectedAnimations: readonly TargetReselectedAnimation[]
   selectCard: (cardId: EntityId | null) => void
   hoverCard: (cardId: EntityId | null) => void
   startTargeting: (state: TargetingState) => void
@@ -607,6 +620,8 @@ export type GameStore = {
   removeRevealAnimation: (id: string) => void
   addCoinFlipAnimation: (animation: CoinFlipAnimation) => void
   removeCoinFlipAnimation: (id: string) => void
+  addTargetReselectedAnimation: (animation: TargetReselectedAnimation) => void
+  removeTargetReselectedAnimation: (id: string) => void
   setAutoTapPreview: (preview: readonly EntityId[] | null) => void
   matchIntro: MatchIntro | null
   setMatchIntro: (intro: MatchIntro) => void

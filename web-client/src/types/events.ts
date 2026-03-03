@@ -41,6 +41,7 @@ export type ClientEvent =
   | LibraryShuffledEvent
   | AbilityFizzledEvent
   | PermanentsSacrificedEvent
+  | TargetReselectedEvent
 
 // ============================================================================
 // Life/Damage Events
@@ -370,6 +371,19 @@ export interface PermanentsSacrificedEvent {
   readonly playerId: EntityId
   readonly permanentNames: readonly string[]
   readonly isYours: boolean | null
+  readonly description: string
+}
+
+// ============================================================================
+// Target Reselection Events
+// ============================================================================
+
+export interface TargetReselectedEvent {
+  readonly type: 'targetReselected'
+  readonly spellOrAbilityName: string
+  readonly oldTargetName: string
+  readonly newTargetName: string
+  readonly sourceName: string
   readonly description: string
 }
 
