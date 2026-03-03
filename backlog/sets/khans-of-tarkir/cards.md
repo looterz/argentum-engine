@@ -2,12 +2,12 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 89 / 249
+**Implemented:** 90 / 249
 
 | Color      | Count |
 |------------|-------|
 | White      | 15    |
-| Blue       | 15    |
+| Blue       | 16    |
 | Black      | 15    |
 | Red        | 15    |
 | Green      | 16    |
@@ -96,7 +96,7 @@
 - [x] Force Away
 - [ ] Frontier Bivouac
 - [ ] Ghostfire Blade
-- [ ] Glacial Stalker
+- [x] Glacial Stalker
 - [ ] Goblinslide
 - [ ] Grim Haruspex
 - [x] Gurmag Swiftwing

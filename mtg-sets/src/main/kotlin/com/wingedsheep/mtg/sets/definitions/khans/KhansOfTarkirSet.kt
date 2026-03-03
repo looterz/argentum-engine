@@ -41,6 +41,7 @@ object KhansOfTarkirSet {
         TakeUpArms,
 
         // Blue creatures
+        GlacialStalker,
         JeskaiWindscout,
         MonasteryFlock,
         MysticOfTheHiddenWay,
