@@ -30,6 +30,7 @@ object KhansOfTarkirSet {
         MarduHateblade,
         MarduHordechief,
         SaltRoadPatrol,
+        SeekerOfTheWay,
         VenerableLammasu,
 
         // White spells

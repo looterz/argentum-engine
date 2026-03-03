@@ -2,11 +2,11 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 97 / 249
+**Implemented:** 98 / 249
 
 | Color      | Count |
 |------------|-------|
-| White      | 16    |
+| White      | 17    |
 | Blue       | 17    |
 | Black      | 17    |
 | Red        | 17    |
@@ -196,7 +196,7 @@
 - [ ] Scoured Barrens
 - [ ] Scout the Borders
 - [ ] Secret Plans
-- [ ] Seeker of the Way
+- [x] Seeker of the Way
 - [ ] Seek the Horizon
 - [ ] See the Unwritten
 - [ ] Set Adrift
