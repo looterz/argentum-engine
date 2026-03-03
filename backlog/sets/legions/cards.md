@@ -2,11 +2,11 @@
 
 **Set Size:** 145 cards
 **Release Date:** February 3, 2003
-**Implemented:** 124 / 145
+**Implemented:** 125 / 145
 
 | Color      | Count |
 |------------|-------|
-| White      | 24/29 |
+| White      | 25/29 |
 | Blue       | 25/29 |
 | Black      | 25/29 |
 | Red        | 25/29 |
@@ -31,7 +31,7 @@
 - [x] Brood Sliver
 - [ ] Caller of the Claw
 - [x] Canopy Crawler
-- [ ] Celestial Gatekeeper
+- [x] Celestial Gatekeeper
 - [x] Cephalid Pathmage
 - [ ] Chromeshell Crab
 - [x] Clickslither

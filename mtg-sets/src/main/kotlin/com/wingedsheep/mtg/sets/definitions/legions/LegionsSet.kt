@@ -26,6 +26,7 @@ object LegionsSet {
         AkromasDevoted,
         AvenRedeemer,
         AvenWarhawk,
+        CelestialGatekeeper,
         CloudreachCavalry,
         DaruMender,
         DaruSanctifier,
