@@ -67,18 +67,15 @@ test.describe('Imagecrafter + Boneknitter interaction', () => {
     await p1.pass()
 
     // P2 activates Boneknitter's regenerate ability targeting itself
-    // Combat arrow overlay intercepts pointer events — use dispatchEvent for direct DOM click
-    await p2.page.locator('img[alt="Boneknitter"]').first().dispatchEvent('click')
+    // Boneknitter is the only Zombie, so the ability auto-targets
+    await p2.clickCard('Boneknitter')
     await p2.selectAction('Regenerate')
-    await p2.page.locator('img[alt="Boneknitter"]').first().dispatchEvent('click')
-    await p2.confirmTargets()
 
     // P1 gets priority (sees Boneknitter's ability on stack)
     // P1 responds with Imagecrafter's ability targeting Boneknitter
     await p1.clickCard('Imagecrafter')
     await p1.selectAction('becomes the creature type')
-    // Combat arrow overlay intercepts pointer events — use dispatchEvent for direct DOM click
-    await p1.page.locator('img[alt="Boneknitter"]').first().dispatchEvent('click')
+    await p1.selectTarget('Boneknitter')
     await p1.confirmTargets()
 
     // P2 must resolve Imagecrafter's ability (top of stack)

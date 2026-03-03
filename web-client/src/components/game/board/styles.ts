@@ -571,6 +571,7 @@ export const styles: Record<string, React.CSSProperties> = {
     right: 0,
     bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    pointerEvents: 'none',
   },
   summoningSicknessOverlay: {
     position: 'absolute',
