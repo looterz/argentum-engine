@@ -2,15 +2,15 @@
 
 **Set Size:** 145 cards
 **Release Date:** February 3, 2003
-**Implemented:** 122 / 145
+**Implemented:** 125 / 145
 
 | Color      | Count |
 |------------|-------|
-| White      | 24/29 |
-| Blue       | 24/29 |
+| White      | 25/29 |
+| Blue       | 25/29 |
 | Black      | 25/29 |
 | Red        | 25/29 |
-| Green      | 24/29 |
+| Green      | 25/29 |
 
 ---
 
@@ -31,7 +31,7 @@
 - [x] Brood Sliver
 - [ ] Caller of the Claw
 - [x] Canopy Crawler
-- [ ] Celestial Gatekeeper
+- [x] Celestial Gatekeeper
 - [x] Cephalid Pathmage
 - [ ] Chromeshell Crab
 - [x] Clickslither
@@ -88,7 +88,7 @@
 - [x] Imperial Hellkite
 - [x] Infernal Caretaker
 - [x] Keeneye Aven
-- [ ] Keeper of the Nine Gales
+- [x] Keeper of the Nine Gales
 - [x] Kilnmouth Dragon
 - [x] Krosan Cloudscraper
 - [x] Krosan Vorine
@@ -110,7 +110,7 @@
 - [ ] Phage the Untouchable
 - [ ] Planar Guide
 - [x] Plated Sliver
-- [ ] Primal Whisperer
+- [x] Primal Whisperer
 - [x] Primoc Escapee
 - [x] Quick Sliver
 - [x] Ridgetop Raptor

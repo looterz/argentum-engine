@@ -34,6 +34,7 @@ import com.wingedsheep.sdk.scripting.GlobalEffectType
 import com.wingedsheep.sdk.scripting.GrantKeyword
 import com.wingedsheep.sdk.scripting.GrantKeywordForChosenCreatureType
 import com.wingedsheep.sdk.scripting.GrantCantBeBlockedExceptBySubtype
+import com.wingedsheep.sdk.scripting.GrantDynamicStatsEffect
 import com.wingedsheep.sdk.scripting.GrantKeywordToCreatureGroup
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
@@ -208,6 +209,14 @@ class StaticAbilityHandler(
                     layer = Layer.POWER_TOUGHNESS,
                     sublayer = Sublayer.MODIFICATIONS,
                     modification = Modification.ModifyPowerToughness(ability.powerBonus, ability.toughnessBonus),
+                    affectsFilter = convertStaticTarget(ability.target)
+                )
+            }
+            is GrantDynamicStatsEffect -> {
+                ContinuousEffectData(
+                    layer = Layer.POWER_TOUGHNESS,
+                    sublayer = Sublayer.MODIFICATIONS,
+                    modification = Modification.ModifyPowerToughnessDynamic(ability.powerBonus, ability.toughnessBonus),
                     affectsFilter = convertStaticTarget(ability.target)
                 )
             }

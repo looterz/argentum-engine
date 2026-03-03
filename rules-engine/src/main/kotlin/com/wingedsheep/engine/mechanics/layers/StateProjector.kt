@@ -988,6 +988,22 @@ class StateProjector(
                 is Modification.CantBeBlockedExceptBySubtype -> {
                     values.cantBeBlockedExceptBySubtypes.add(mod.subtype)
                 }
+                is Modification.ModifyPowerToughnessDynamic -> {
+                    val controllerId = projectedValues[effect.sourceId]?.controllerId
+                        ?: state.getEntity(effect.sourceId)?.get<ControllerComponent>()?.playerId
+                    if (controllerId != null) {
+                        val context = EffectContext(
+                            sourceId = effect.sourceId,
+                            controllerId = controllerId,
+                            opponentId = state.getOpponent(controllerId)
+                        )
+                        val intermediateProjected = buildIntermediateProjectedState(state, projectedValues)
+                        val powerMod = dynamicAmountEvaluator.evaluate(state, mod.powerBonus, context, intermediateProjected)
+                        val toughnessMod = dynamicAmountEvaluator.evaluate(state, mod.toughnessBonus, context, intermediateProjected)
+                        values.power = (values.power ?: 0) + powerMod
+                        values.toughness = (values.toughness ?: 0) + toughnessMod
+                    }
+                }
                 is Modification.NoOp -> {
                     // No-op: effect doesn't modify projected state (e.g., combat restrictions)
                 }
@@ -1364,6 +1380,17 @@ sealed interface Modification {
      */
     @Serializable
     data class CantBeBlockedExceptBySubtype(val subtype: String) : Modification
+
+    /**
+     * Dynamic power/toughness modification based on a DynamicAmount.
+     * The actual modification is computed at projection time by evaluating the DynamicAmount.
+     * Used for effects like "gets +2/+2 for each face-down creature on the battlefield."
+     */
+    @Serializable
+    data class ModifyPowerToughnessDynamic(
+        val powerBonus: DynamicAmount,
+        val toughnessBonus: DynamicAmount
+    ) : Modification
 
     /** No-op modification for effects that don't modify projected state (e.g., combat restrictions) */
     @Serializable
