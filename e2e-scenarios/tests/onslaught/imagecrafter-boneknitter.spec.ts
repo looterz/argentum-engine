@@ -67,18 +67,18 @@ test.describe('Imagecrafter + Boneknitter interaction', () => {
     await p1.pass()
 
     // P2 activates Boneknitter's regenerate ability targeting itself
-    // Force click — the combat blocking arrow overlay intercepts pointer events on Boneknitter
-    await p2.page.locator('img[alt="Boneknitter"]').first().click({ force: true })
+    // Combat arrow overlay intercepts pointer events — use dispatchEvent for direct DOM click
+    await p2.page.locator('img[alt="Boneknitter"]').first().dispatchEvent('click')
     await p2.selectAction('Regenerate')
-    await p2.page.locator('img[alt="Boneknitter"]').first().click({ force: true })
+    await p2.page.locator('img[alt="Boneknitter"]').first().dispatchEvent('click')
     await p2.confirmTargets()
 
     // P1 gets priority (sees Boneknitter's ability on stack)
     // P1 responds with Imagecrafter's ability targeting Boneknitter
     await p1.clickCard('Imagecrafter')
     await p1.selectAction('becomes the creature type')
-    // Force click — Playwright hit-test is blocked by overlay div during combat
-    await p1.page.locator('img[alt="Boneknitter"]').first().click({ force: true })
+    // Combat arrow overlay intercepts pointer events — use dispatchEvent for direct DOM click
+    await p1.page.locator('img[alt="Boneknitter"]').first().dispatchEvent('click')
     await p1.confirmTargets()
 
     // P2 must resolve Imagecrafter's ability (top of stack)
