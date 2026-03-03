@@ -1,17 +1,18 @@
 package com.wingedsheep.engine.scenarios
 
-import com.wingedsheep.engine.core.DistributeDecision
-import com.wingedsheep.engine.core.DistributionResponse
-import com.wingedsheep.engine.core.OrderObjectsDecision
-import com.wingedsheep.engine.core.OrderedResponse
+import com.wingedsheep.engine.core.*
+import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
+import com.wingedsheep.mtg.sets.definitions.onslaught.cards.ShieldmageElder
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.Deck
+import com.wingedsheep.sdk.scripting.AdditionalCostPayment
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.types.shouldNotBeInstanceOf
 
 /**
  * Tests for Butcher Orgg's "divide combat damage freely" ability.
@@ -231,6 +232,122 @@ class ButcherOrggTest : FunSpec({
         driver.assertLifeTotal(opponent, 17)
 
         // Butcher Orgg survives with 3 damage marked (6 toughness - 3 damage)
+        driver.findPermanent(activePlayer, "Butcher Orgg") shouldNotBe null
+    }
+
+    test("damage prevention skips distribute decision - Shieldmage Elder prevents all damage") {
+        val driver = createDriver()
+        driver.initMirrorMatch(
+            deck = Deck.of("Mountain" to 20, "Plains" to 20),
+            startingLife = 20
+        )
+
+        val activePlayer = driver.activePlayer!!
+        val opponent = driver.getOpponent(activePlayer)
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val orgg = driver.putCreatureOnBattlefield(activePlayer, "Butcher Orgg")
+        driver.removeSummoningSickness(orgg)
+
+        // Opponent has Shieldmage Elder + another Cleric to tap
+        val elder = driver.putCreatureOnBattlefield(opponent, "Shieldmage Elder")
+        val cleric = driver.putCreatureOnBattlefield(opponent, "Test Cleric")
+        // Also give opponent a creature that could be a damage target
+        val bear = driver.putCreatureOnBattlefield(opponent, "Grizzly Bears")
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.declareAttackers(activePlayer, listOf(orgg), opponent).isSuccess shouldBe true
+
+        // After declaring attackers, active player passes priority; opponent activates Shieldmage Elder
+        driver.passPriority(activePlayer)
+
+        val clericAbilityId = ShieldmageElder.activatedAbilities[0].id
+        val activateResult = driver.submit(
+            ActivateAbility(
+                playerId = opponent,
+                sourceId = elder,
+                abilityId = clericAbilityId,
+                targets = listOf(ChosenTarget.Permanent(orgg)),
+                costPayment = AdditionalCostPayment(
+                    tappedPermanents = listOf(elder, cleric)
+                )
+            )
+        )
+        activateResult.isSuccess shouldBe true
+
+        // Resolve the ability
+        driver.bothPass()
+
+        // Both pass again to move past declare attackers
+        driver.bothPass()
+
+        // No blocks
+        driver.declareNoBlockers(opponent)
+
+        // Move through combat damage - should NOT get a DistributeDecision
+        driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
+
+        // Butcher Orgg's damage was fully prevented — no damage dealt
+        driver.assertLifeTotal(opponent, 20)
+        driver.findPermanent(opponent, "Grizzly Bears") shouldNotBe null
+    }
+
+    test("damage prevention skips distribute decision when blocked") {
+        val driver = createDriver()
+        driver.initMirrorMatch(
+            deck = Deck.of("Mountain" to 20, "Plains" to 20),
+            startingLife = 20
+        )
+
+        val activePlayer = driver.activePlayer!!
+        val opponent = driver.getOpponent(activePlayer)
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val orgg = driver.putCreatureOnBattlefield(activePlayer, "Butcher Orgg")
+        driver.removeSummoningSickness(orgg)
+
+        val elder = driver.putCreatureOnBattlefield(opponent, "Shieldmage Elder")
+        val cleric = driver.putCreatureOnBattlefield(opponent, "Test Cleric")
+        val blocker = driver.putCreatureOnBattlefield(opponent, "Grizzly Bears")
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.declareAttackers(activePlayer, listOf(orgg), opponent).isSuccess shouldBe true
+
+        // Opponent activates Shieldmage Elder to prevent Butcher Orgg's damage
+        driver.passPriority(activePlayer)
+
+        val clericAbilityId = ShieldmageElder.activatedAbilities[0].id
+        driver.submit(
+            ActivateAbility(
+                playerId = opponent,
+                sourceId = elder,
+                abilityId = clericAbilityId,
+                targets = listOf(ChosenTarget.Permanent(orgg)),
+                costPayment = AdditionalCostPayment(
+                    tappedPermanents = listOf(elder, cleric)
+                )
+            )
+        ).isSuccess shouldBe true
+
+        // Resolve the ability
+        driver.bothPass()
+        // Both pass to move past declare attackers
+        driver.bothPass()
+
+        // Opponent blocks with Grizzly Bears
+        driver.declareBlockers(opponent, mapOf(blocker to listOf(orgg))).isSuccess shouldBe true
+
+        // Move through combat damage - should NOT get a DistributeDecision
+        // because Butcher Orgg's damage is fully prevented
+        driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
+
+        // Opponent's life untouched
+        driver.assertLifeTotal(opponent, 20)
+        // Grizzly Bears survives (Butcher Orgg dealt 0 damage)
+        driver.findPermanent(opponent, "Grizzly Bears") shouldNotBe null
+        // Butcher Orgg takes 2 damage from blocker but survives
         driver.findPermanent(activePlayer, "Butcher Orgg") shouldNotBe null
     }
 })

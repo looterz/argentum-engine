@@ -1400,6 +1400,12 @@ class CombatManager(
             }
             if (!attackerDealsDamageThisStep) continue
 
+            // Check if all damage from this creature is prevented
+            val allDamagePrevented = EffectExecutorUtils.isAllDamageFromSourcePrevented(state, attackerId)
+            val groupPrevented = isCombatDamagePreventedByGroupFilter(state, attackerId, projected)
+            val toAndByPrevented = isCombatDamageToAndByPrevented(state, attackerId)
+            if (allDamagePrevented || groupPrevented || toAndByPrevented) continue
+
             val attackerPower = projected.getPower(attackerId) ?: 0
             if (attackerPower <= 0) continue
 
@@ -2140,10 +2146,12 @@ class CombatManager(
                     }
                 }
 
-                // Check if combat damage from this attacker is prevented by a group filter
+                // Check if combat damage from this attacker is prevented
                 val attackerGroupPrevented = isCombatDamagePreventedByGroupFilter(newState, attackerId, projected)
+                val attackerAllDamagePrevented = EffectExecutorUtils.isAllDamageFromSourcePrevented(newState, attackerId)
+                val attackerToAndByPrevented = isCombatDamageToAndByPrevented(newState, attackerId)
 
-                if (attackerGroupPrevented) {
+                if (attackerGroupPrevented || attackerAllDamagePrevented || attackerToAndByPrevented) {
                     // Combat damage from this attacker is prevented; skip to blocker counterattack
                 } else if (damageAssignment != null) {
                     // Use player's chosen distribution
