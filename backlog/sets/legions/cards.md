@@ -2,14 +2,14 @@
 
 **Set Size:** 145 cards
 **Release Date:** February 3, 2003
-**Implemented:** 131 / 145
+**Implemented:** 132 / 145
 
 | Color      | Count |
 |------------|-------|
 | White      | 26/29 |
 | Blue       | 26/29 |
 | Black      | 26/29 |
-| Red        | 26/29 |
+| Red        | 27/29 |
 | Green      | 27/29 |
 
 ---
@@ -96,7 +96,7 @@
 - [x] Liege of the Axe
 - [x] Lowland Tracker
 - [x] Macetail Hystrodon
-- [ ] Magma Sliver
+- [x] Magma Sliver
 - [x] Master of the Veil
 - [x] Merchant of Secrets
 - [x] Mistform Seaswift
