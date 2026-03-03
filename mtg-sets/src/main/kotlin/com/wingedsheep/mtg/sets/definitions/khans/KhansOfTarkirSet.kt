@@ -106,6 +106,7 @@ object KhansOfTarkirSet {
         ValleyDasher,
 
         // Red spells
+        BarrageOfBoulders,
         BringLow,
         HordelingOutburst,
         Shatter,

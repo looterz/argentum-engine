@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.scripting.effects.TakeFromLinkedExileEffect
 import com.wingedsheep.sdk.scripting.effects.ChooseColorAndGrantProtectionToGroupEffect
 import com.wingedsheep.sdk.scripting.effects.ChooseColorAndGrantProtectionToTargetEffect
 import com.wingedsheep.sdk.scripting.effects.ChooseCreatureTypeGainControlEffect
+import com.wingedsheep.sdk.scripting.effects.CantBlockGroupEffect
 import com.wingedsheep.sdk.scripting.effects.CantCastSpellsEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.DealDamageEffect
@@ -847,6 +848,12 @@ object Effects {
             filter = filter,
             effect = DealDamageEffect(amount, EffectTarget.Self)
         )
+
+    /**
+     * All creatures matching a filter can't block this turn.
+     */
+    fun CantBlockGroup(filter: GroupFilter, duration: Duration = Duration.EndOfTurn): Effect =
+        CantBlockGroupEffect(filter, duration)
 
     // =========================================================================
     // Special Effects

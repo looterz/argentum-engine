@@ -85,6 +85,7 @@ constructors.
 - `Effects.SetCreatureSubtypes(subtypes: Set<String>, target, duration)` — set creature subtypes on single target
 - `Effects.ModifyStatsForAll(power, toughness, filter: GroupFilter, duration)` — P/T for group
 - `Effects.DealDamageToAll(amount, filter: GroupFilter)` — also accepts `DynamicAmount`
+- `Effects.CantBlockGroup(filter: GroupFilter, duration)` — group can't block this turn
 
 ### Control
 
@@ -342,6 +343,7 @@ constructors.
 | `PreventAllCombatDamageThisTurnEffect`              | (object)                                    | Prevent all combat damage       |
 | `GrantCantBeBlockedExceptByColorEffect`             | `filter, canOnlyBeBlockedByColor, duration` | Color evasion                   |
 | `ProvokeEffect`                                     | `target`                                    | Untap + force block source      |
+| `CantBlockGroupEffect`                              | `filter: GroupFilter, duration`             | Group can't block this turn     |
 | `CantBlockTargetCreaturesEffect`                    | `duration`                                  | Can't block target creatures    |
 | `PreventNextDamageEffect`                           | `amount: DynamicAmount, target`             | Prevent next N damage           |
 | `RemoveFromCombatEffect`                            | `target`                                    | Remove from combat              |

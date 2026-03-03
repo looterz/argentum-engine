@@ -131,6 +131,25 @@ data class GrantCantBeBlockedExceptByColorEffect(
 }
 
 /**
+ * All creatures matching a filter can't block this turn.
+ * Used for Barrage of Boulders: "creatures can't block this turn."
+ *
+ * Unlike CantBlockTargetCreaturesEffect which operates on targeted creatures,
+ * this applies to all creatures matching a filter on the battlefield at resolution.
+ *
+ * @property filter Which creatures can't block (e.g., GroupFilter.AllCreatures)
+ * @property duration How long the restriction lasts
+ */
+@SerialName("CantBlockGroup")
+@Serializable
+data class CantBlockGroupEffect(
+    val filter: GroupFilter,
+    val duration: Duration = Duration.EndOfTurn
+) : Effect {
+    override val description: String = "${filter.description} can't block this turn"
+}
+
+/**
  * Target creatures can't block this turn.
  * Used for Wave of Indifference: "X target creatures can't block this turn."
  *

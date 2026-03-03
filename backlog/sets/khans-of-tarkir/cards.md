@@ -2,14 +2,14 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 84 / 249
+**Implemented:** 85 / 249
 
 | Color      | Count |
 |------------|-------|
 | White      | 15    |
 | Blue       | 14    |
 | Black      | 14    |
-| Red        | 14    |
+| Red        | 15    |
 | Green      | 14    |
 | Multicolor | 7     |
 | Colorless  | 3     |
@@ -39,7 +39,7 @@
 - [ ] Ashcloud Phoenix
 - [ ] Avalanche Tusker
 - [x] Awaken the Bear
-- [ ] Barrage of Boulders
+- [x] Barrage of Boulders
 - [ ] Bear's Companion
 - [ ] Become Immense
 - [x] Bellowing Saddlebrute
