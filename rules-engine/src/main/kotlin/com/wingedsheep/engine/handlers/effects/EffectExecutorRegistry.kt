@@ -47,7 +47,7 @@ class EffectExecutorRegistry(
         // Register all effect executors by module
         registerModule(LifeExecutors(amountEvaluator))
         registerModule(DamageExecutors(amountEvaluator, decisionHandler))
-        registerModule(PermanentExecutors(decisionHandler, amountEvaluator))
+        registerModule(PermanentExecutors(decisionHandler, amountEvaluator, cardRegistry))
         registerModule(ManaExecutors(amountEvaluator))
         registerModule(TokenExecutors(amountEvaluator))
         registerModule(LibraryExecutors(cardRegistry = cardRegistry, targetFinder = TargetFinder()))

@@ -1,6 +1,7 @@
 package com.wingedsheep.gameserver.scenarios
 
 import com.wingedsheep.engine.core.CastSpell
+import com.wingedsheep.engine.core.TurnFaceUp
 import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
@@ -108,6 +109,57 @@ class PrimalWhispererScenarioTest : ScenarioTestBase() {
                 withClue("Primal Whisperer should be 4/4 counting opponent's face-down creature") {
                     projected.getPower(whisperer) shouldBe 4
                     projected.getToughness(whisperer) shouldBe 4
+                }
+            }
+
+            test("static ability works after being turned face up via morph") {
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardInHand(1, "Primal Whisperer")
+                    .withCardInHand(1, "Willbender")
+                    .withCardInHand(1, "Krosan Cloudscraper")
+                    .withLandsOnBattlefield(1, "Forest", 14)
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                // Cast Willbender face-down
+                val willbenderId = game.state.getHand(game.player1Id).first { entityId ->
+                    game.state.getEntity(entityId)?.get<CardComponent>()?.name == "Willbender"
+                }
+                game.execute(CastSpell(game.player1Id, willbenderId, castFaceDown = true))
+                game.resolveStack()
+
+                // Cast Krosan Cloudscraper face-down
+                val cloudscraperId = game.state.getHand(game.player1Id).first { entityId ->
+                    game.state.getEntity(entityId)?.get<CardComponent>()?.name == "Krosan Cloudscraper"
+                }
+                game.execute(CastSpell(game.player1Id, cloudscraperId, castFaceDown = true))
+                game.resolveStack()
+
+                // Cast Primal Whisperer face-down
+                val whispererId = game.state.getHand(game.player1Id).first { entityId ->
+                    game.state.getEntity(entityId)?.get<CardComponent>()?.name == "Primal Whisperer"
+                }
+                game.execute(CastSpell(game.player1Id, whispererId, castFaceDown = true))
+                game.resolveStack()
+
+                // 3 face-down creatures, but Whisperer has no abilities face-down
+                val projectedFaceDown = stateProjector.project(game.state)
+                withClue("Face-down Primal Whisperer should be 2/2") {
+                    projectedFaceDown.getPower(whispererId) shouldBe 2
+                    projectedFaceDown.getToughness(whispererId) shouldBe 2
+                }
+
+                // Turn Primal Whisperer face up by paying morph cost {3}{G}
+                game.execute(TurnFaceUp(game.player1Id, whispererId))
+
+                // Now Primal Whisperer is face-up with 2 face-down creatures on the battlefield
+                // Should be 2 + (2 * 2) = 6/6
+                val projectedFaceUp = stateProjector.project(game.state)
+                withClue("Primal Whisperer should be 6/6 after turning face up with 2 face-down creatures") {
+                    projectedFaceUp.getPower(whispererId) shouldBe 6
+                    projectedFaceUp.getToughness(whispererId) shouldBe 6
                 }
             }
 

@@ -5,6 +5,8 @@ import com.wingedsheep.engine.core.TurnFaceUpEvent
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.resolveTarget
+import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
+import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
@@ -20,7 +22,11 @@ import kotlin.reflect.KClass
  * Unlike the morph special action (TurnFaceUpHandler), this does not require
  * payment of the morph cost — the spell effect simply flips the creature.
  */
-class TurnFaceUpExecutor : EffectExecutor<TurnFaceUpEffect> {
+class TurnFaceUpExecutor(
+    cardRegistry: CardRegistry? = null
+) : EffectExecutor<TurnFaceUpEffect> {
+
+    private val staticAbilityHandler = StaticAbilityHandler(cardRegistry)
 
     override val effectType: KClass<TurnFaceUpEffect> = TurnFaceUpEffect::class
 
@@ -44,7 +50,10 @@ class TurnFaceUpExecutor : EffectExecutor<TurnFaceUpEffect> {
         val cardName = container.get<CardComponent>()?.name ?: "Unknown"
 
         val newState = state.updateEntity(targetId) { c ->
-            c.without<FaceDownComponent>()
+            var updated = c.without<FaceDownComponent>()
+            updated = staticAbilityHandler.addContinuousEffectComponent(updated)
+            updated = staticAbilityHandler.addReplacementEffectComponent(updated)
+            updated
         }
 
         return ExecutionResult.success(

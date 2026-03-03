@@ -19,6 +19,7 @@ import com.wingedsheep.engine.handlers.actions.ActionContext
 import com.wingedsheep.engine.handlers.actions.ActionHandler
 import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
 import com.wingedsheep.engine.mechanics.layers.StateProjector
+import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.mechanics.mana.CostCalculator
 import com.wingedsheep.engine.mechanics.mana.ManaPool
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
@@ -53,7 +54,8 @@ class TurnFaceUpHandler(
     private val costCalculator: CostCalculator,
     private val triggerDetector: TriggerDetector,
     private val triggerProcessor: TriggerProcessor,
-    private val stateProjector: StateProjector
+    private val stateProjector: StateProjector,
+    private val staticAbilityHandler: StaticAbilityHandler = StaticAbilityHandler(cardRegistry)
 ) : ActionHandler<TurnFaceUp> {
     override val actionType: KClass<TurnFaceUp> = TurnFaceUp::class
 
@@ -409,9 +411,12 @@ class TurnFaceUpHandler(
             else -> return ExecutionResult.error(state, "Unsupported morph cost type: ${morphData.morphCost::class.simpleName}")
         }
 
-        // Turn the creature face up
+        // Turn the creature face up and add static ability components
         currentState = currentState.updateEntity(action.sourceId) { c ->
-            c.without<FaceDownComponent>()
+            var updated = c.without<FaceDownComponent>()
+            updated = staticAbilityHandler.addContinuousEffectComponent(updated)
+            updated = staticAbilityHandler.addReplacementEffectComponent(updated)
+            updated
         }
 
         val turnFaceUpEvent = TurnFaceUpEvent(
