@@ -90,6 +90,7 @@ constructors.
 ### Control
 
 - `Effects.GainControl(target, duration = Permanent)` — gain control of target
+- `Effects.ExchangeControl(target1, target2)` — exchange control of two target creatures
 - `Effects.GainControlByMostOfSubtype(subtype, target)` — control if you have most of subtype
 - `Effects.GainControlOfGroup(filter: GroupFilter, duration)` — gain control of group
 - `Effects.ChooseCreatureTypeGainControl(duration)` — choose type, gain control

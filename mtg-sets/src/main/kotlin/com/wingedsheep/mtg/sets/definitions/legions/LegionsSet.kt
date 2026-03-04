@@ -53,6 +53,7 @@ object LegionsSet {
 
         // Blue creatures
         AvenEnvoy,
+        ChromeshellCrab,
         CephalidPathmage,
         CovertOperative,
         CrookclawElder,

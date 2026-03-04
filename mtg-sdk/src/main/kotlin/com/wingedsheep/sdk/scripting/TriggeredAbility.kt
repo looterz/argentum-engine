@@ -23,6 +23,8 @@ data class TriggeredAbility(
     val effect: Effect,
     val optional: Boolean = false,
     val targetRequirement: TargetRequirement? = null,
+    /** Additional target requirements for multi-target triggered abilities (e.g., exchange control). */
+    val additionalTargetRequirements: List<TargetRequirement> = emptyList(),
     val elseEffect: Effect? = null,
     val activeZone: Zone = Zone.BATTLEFIELD,
     /** Intervening-if condition (Rule 603.4): checked when trigger would fire AND at resolution. */
@@ -31,6 +33,10 @@ data class TriggeredAbility(
      * instead of the source permanent's controller. Used for cards like Death Match. */
     val controlledByTriggeringEntityController: Boolean = false
 ) {
+    /** All target requirements for this ability (primary + additional). */
+    val allTargetRequirements: List<TargetRequirement>
+        get() = listOfNotNull(targetRequirement) + additionalTargetRequirements
+
     val description: String
         get() = buildString {
             append(trigger.description)
@@ -63,6 +69,7 @@ data class TriggeredAbility(
             effect: Effect,
             optional: Boolean = false,
             targetRequirement: TargetRequirement? = null,
+            additionalTargetRequirements: List<TargetRequirement> = emptyList(),
             elseEffect: Effect? = null,
             activeZone: Zone = Zone.BATTLEFIELD,
             triggerCondition: Condition? = null,
@@ -75,6 +82,7 @@ data class TriggeredAbility(
                 effect = effect,
                 optional = optional,
                 targetRequirement = targetRequirement,
+                additionalTargetRequirements = additionalTargetRequirements,
                 elseEffect = elseEffect,
                 activeZone = activeZone,
                 triggerCondition = triggerCondition,

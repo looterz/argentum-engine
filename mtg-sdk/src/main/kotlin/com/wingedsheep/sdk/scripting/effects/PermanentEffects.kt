@@ -488,6 +488,27 @@ data class GiveControlToTargetPlayerEffect(
 }
 
 /**
+ * Exchange control of two target creatures.
+ * "You may exchange control of target creature you control and target creature an opponent controls."
+ *
+ * Creates two floating effects at Layer.CONTROL:
+ * 1. Target A (yours) → opponent gains control
+ * 2. Target B (opponent's) → you gain control
+ *
+ * @property target1 The creature you control (becomes opponent's)
+ * @property target2 The creature an opponent controls (becomes yours)
+ */
+@SerialName("ExchangeControl")
+@Serializable
+data class ExchangeControlEffect(
+    val target1: EffectTarget = EffectTarget.ContextTarget(0),
+    val target2: EffectTarget = EffectTarget.ContextTarget(1)
+) : Effect {
+    override val description: String =
+        "Exchange control of ${target1.description} and ${target2.description}"
+}
+
+/**
  * Grant stats and/or a keyword to the enchanted creature and all other creatures
  * that share a creature type with it.
  *

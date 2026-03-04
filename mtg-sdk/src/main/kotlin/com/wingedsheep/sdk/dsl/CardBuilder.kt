@@ -674,26 +674,37 @@ class TriggeredAbilityBuilder {
     /** When true, the triggered ability is controlled by the triggering entity's controller. */
     var controlledByTriggeringEntityController: Boolean = false
 
+    private val namedTargets = mutableListOf<Pair<String, TargetRequirement>>()
+
     /**
      * Declare a named target for this triggered ability and get an EffectTarget reference.
+     * Can be called multiple times for multi-target triggered abilities.
      *
      * @param name A descriptive name for the target
      * @param requirement The target requirement specification
      * @return An EffectTarget.BoundVariable that references this target by name
      */
     fun target(name: String, requirement: TargetRequirement): EffectTarget.BoundVariable {
-        target = requirement.withId(name)
+        namedTargets.add(name to requirement.withId(name))
         return EffectTarget.BoundVariable(name)
     }
 
     fun build(): TriggeredAbility {
         requireNotNull(effect) { "Triggered ability must have an effect" }
+        val allTargets = if (namedTargets.isNotEmpty()) {
+            namedTargets.map { it.second }
+        } else {
+            listOfNotNull(target)
+        }
+        val primaryTarget = allTargets.firstOrNull()
+        val additionalTargets = if (allTargets.size > 1) allTargets.drop(1) else emptyList()
         return TriggeredAbility.create(
             trigger = trigger.event,
             binding = trigger.binding,
             effect = effect!!,
             optional = optional,
-            targetRequirement = target,
+            targetRequirement = primaryTarget,
+            additionalTargetRequirements = additionalTargets,
             elseEffect = elseEffect,
             activeZone = triggerZone,
             triggerCondition = triggerCondition,

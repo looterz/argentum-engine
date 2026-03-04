@@ -295,58 +295,65 @@ class TriggerProcessor(
         targetRequirement: TargetRequirement
     ): ExecutionResult {
         val ability = trigger.ability
+        val allRequirements = ability.allTargetRequirements
 
-        // Find legal targets for this requirement
-        val legalTargets = targetFinder.findLegalTargets(
-            state = state,
-            requirement = targetRequirement,
-            controllerId = trigger.controllerId,
-            sourceId = trigger.sourceId
-        )
+        // Find legal targets for each requirement
+        val allLegalTargets = mutableMapOf<Int, List<EntityId>>()
+        for ((index, req) in allRequirements.withIndex()) {
+            val legalTargets = targetFinder.findLegalTargets(
+                state = state,
+                requirement = req,
+                controllerId = trigger.controllerId,
+                sourceId = trigger.sourceId
+            )
+            allLegalTargets[index] = legalTargets
+        }
 
-        // If no legal targets exist and targets are required (not optional),
+        // If no legal targets exist for any required requirement and targets are required (not optional),
         // the ability is removed from the stack without resolving (Rule 603.3d)
-        if (legalTargets.isEmpty() && targetRequirement.effectiveMinCount > 0) {
-            // If the ability has an else effect (e.g., "If you don't, tap this creature"),
-            // put it on the stack with the else effect instead of fizzling
-            if (ability.elseEffect != null) {
-                return putTriggerOnStack(state, trigger, emptyList(), ability.elseEffect)
-            }
-            // No legal targets - ability doesn't go on stack
-            return ExecutionResult.success(
-                state,
-                listOf(
-                    AbilityFizzledEvent(
-                        trigger.sourceId,
-                        ability.description,
-                        "No legal targets available"
+        for ((index, req) in allRequirements.withIndex()) {
+            val legalTargets = allLegalTargets[index] ?: emptyList()
+            if (legalTargets.isEmpty() && req.effectiveMinCount > 0 && !ability.optional) {
+                if (ability.elseEffect != null) {
+                    return putTriggerOnStack(state, trigger, emptyList(), ability.elseEffect)
+                }
+                return ExecutionResult.success(
+                    state,
+                    listOf(
+                        AbilityFizzledEvent(
+                            trigger.sourceId,
+                            ability.description,
+                            "No legal targets available"
+                        )
                     )
                 )
-            )
+            }
         }
 
         // Auto-select player targets when there's exactly one legal target and requirement is for exactly one target.
-        // This applies to TargetPlayer and TargetOpponent - in a 2-player game with TargetOpponent,
-        // there's always exactly one choice so we skip the prompt for better UX.
-        // We don't auto-select for creature/permanent targets because players may want to decline optional
-        // abilities or need to confirm their targeting choice.
-        val isPlayerTarget = targetRequirement is com.wingedsheep.sdk.scripting.targets.TargetPlayer ||
-                             targetRequirement is com.wingedsheep.sdk.scripting.targets.TargetOpponent
-        if (isPlayerTarget && legalTargets.size == 1 && targetRequirement.effectiveMinCount == 1 && targetRequirement.count == 1) {
-            val autoSelectedTarget = legalTargets.first()
-            val chosenTarget = createChosenTarget(state, autoSelectedTarget)
-            return putTriggerOnStack(state, trigger, listOf(chosenTarget))
+        // Only applies for single-target abilities (not multi-target).
+        if (allRequirements.size == 1) {
+            val isPlayerTarget = targetRequirement is com.wingedsheep.sdk.scripting.targets.TargetPlayer ||
+                                 targetRequirement is com.wingedsheep.sdk.scripting.targets.TargetOpponent
+            val legalTargets = allLegalTargets[0] ?: emptyList()
+            if (isPlayerTarget && legalTargets.size == 1 && targetRequirement.effectiveMinCount == 1 && targetRequirement.count == 1) {
+                val autoSelectedTarget = legalTargets.first()
+                val chosenTarget = createChosenTarget(state, autoSelectedTarget)
+                return putTriggerOnStack(state, trigger, listOf(chosenTarget))
+            }
         }
 
-        // Create target requirement info for the decision
+        // Create target requirement infos for the decision
         // If the ability is optional (e.g., "you may"), allow selecting 0 targets to decline
-        val effectiveMinTargets = if (ability.optional) 0 else targetRequirement.effectiveMinCount
-        val requirementInfo = TargetRequirementInfo(
-            index = 0,
-            description = targetRequirement.description,
-            minTargets = effectiveMinTargets,
-            maxTargets = targetRequirement.count
-        )
+        val requirementInfos = allRequirements.mapIndexed { index, req ->
+            val effectiveMinTargets = if (ability.optional) 0 else req.effectiveMinCount
+            TargetRequirementInfo(
+                index = index,
+                description = req.description,
+                minTargets = effectiveMinTargets,
+                maxTargets = req.count
+            )
+        }
 
         // Create the target selection decision
         val decisionResult = decisionHandler.createTargetDecision(
@@ -354,8 +361,8 @@ class TriggerProcessor(
             playerId = trigger.controllerId,
             sourceId = trigger.sourceId,
             sourceName = trigger.sourceName,
-            requirements = listOf(requirementInfo),
-            legalTargets = mapOf(0 to legalTargets)
+            requirements = requirementInfos,
+            legalTargets = allLegalTargets
         )
 
         if (!decisionResult.isPaused || decisionResult.pendingDecision == null) {
@@ -373,7 +380,7 @@ class TriggerProcessor(
             triggerDamageAmount = trigger.triggerContext.damageAmount,
             triggeringEntityId = trigger.triggerContext.triggeringEntityId,
             elseEffect = ability.elseEffect,
-            targetRequirements = listOf(targetRequirement)
+            targetRequirements = allRequirements
         )
 
         // Push the continuation onto the stack

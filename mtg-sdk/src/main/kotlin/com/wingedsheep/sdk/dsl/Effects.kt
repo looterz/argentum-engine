@@ -31,6 +31,7 @@ import com.wingedsheep.sdk.scripting.effects.FightEffect
 import com.wingedsheep.sdk.scripting.effects.ForEachInGroupEffect
 import com.wingedsheep.sdk.scripting.effects.ForceSacrificeEffect
 import com.wingedsheep.sdk.scripting.effects.SacrificeTargetEffect
+import com.wingedsheep.sdk.scripting.effects.ExchangeControlEffect
 import com.wingedsheep.sdk.scripting.effects.GainControlByMostOfSubtypeEffect
 import com.wingedsheep.sdk.scripting.effects.GainControlEffect
 import com.wingedsheep.sdk.scripting.effects.GainLifeEffect
@@ -622,6 +623,14 @@ object Effects {
      */
     fun GainControl(target: EffectTarget, duration: Duration = Duration.Permanent): Effect =
         GainControlEffect(target, duration)
+
+    /**
+     * Exchange control of two target creatures.
+     */
+    fun ExchangeControl(
+        target1: EffectTarget = EffectTarget.ContextTarget(0),
+        target2: EffectTarget = EffectTarget.ContextTarget(1)
+    ): Effect = ExchangeControlEffect(target1, target2)
 
     /**
      * The player who controls the most creatures of the given subtype gains control of the target.
