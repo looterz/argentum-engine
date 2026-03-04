@@ -2,7 +2,7 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 105 / 249
+**Implemented:** 106 / 249
 
 | Color      | Count |
 |------------|-------|
@@ -10,7 +10,7 @@
 | Blue       | 18    |
 | Black      | 19    |
 | Red        | 19    |
-| Green      | 18    |
+| Green      | 19    |
 | Multicolor | 7     |
 | Colorless  | 3     |
 | Land       | 3     |
@@ -242,7 +242,7 @@
 - [x] Treasure Cruise
 - [x] Trumpet Blast
 - [x] Tusked Colossodon
-- [ ] Tuskguard Captain
+- [x] Tuskguard Captain
 - [ ] Ugin's Nexus
 - [x] Unyielding Krumar
 - [x] Utter End

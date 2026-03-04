@@ -98,6 +98,7 @@ object KhansOfTarkirSet {
         SaguArcher,
         SmokeTeller,
         TuskedColossodon,
+        TuskguardCaptain,
         WoollyLoxodon,
 
         // Green spells
