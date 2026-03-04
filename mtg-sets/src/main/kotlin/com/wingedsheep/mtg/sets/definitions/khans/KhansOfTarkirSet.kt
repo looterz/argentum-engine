@@ -29,7 +29,9 @@ object KhansOfTarkirSet {
         JeskaiStudent,
         MarduHateblade,
         MarduHordechief,
+        SageEyeHarrier,
         SaltRoadPatrol,
+        SeekerOfTheWay,
         VenerableLammasu,
 
         // White spells
@@ -60,6 +62,7 @@ object KhansOfTarkirSet {
         DisdainfulStroke,
         TaigamsScheming,
         TreasureCruise,
+        Waterwhirl,
         WeaveFate,
 
         // Black creatures
@@ -67,6 +70,7 @@ object KhansOfTarkirSet {
         BellowingSaddlebrute,
         GurmagSwiftwing,
         KheruDreadmaw,
+        KrumarBondKin,
         RottingMastodon,
         SidisisPet,
         ShamblingAttendants,
@@ -97,10 +101,12 @@ object KhansOfTarkirSet {
 
         // Green spells
         AwakenTheBear,
+        BecomeImmense,
         DragonscaleBoon,
         FeedTheClan,
         Naturalize,
         SavagePunch,
+        SeekTheHorizon,
         Windstorm,
 
         // Red creatures
@@ -116,10 +122,13 @@ object KhansOfTarkirSet {
         WarNameAspirant,
 
         // Red spells
+        ActOfTreason,
+        ArrowStorm,
         BarrageOfBoulders,
         BringLow,
         HordelingOutburst,
         Shatter,
+        SwiftKick,
         TormentingVoice,
         TrumpetBlast,
 

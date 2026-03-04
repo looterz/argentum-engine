@@ -2,15 +2,15 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 95 / 249
+**Implemented:** 104 / 249
 
 | Color      | Count |
 |------------|-------|
-| White      | 16    |
-| Blue       | 17    |
-| Black      | 17    |
-| Red        | 16    |
-| Green      | 16    |
+| White      | 18    |
+| Blue       | 18    |
+| Black      | 18    |
+| Red        | 19    |
+| Green      | 18    |
 | Multicolor | 7     |
 | Colorless  | 3     |
 | Land       | 3     |
@@ -24,7 +24,7 @@
 - [ ] Abzan Charm
 - [ ] Abzan Falconer
 - [ ] Abzan Guide
-- [ ] Act of Treason
+- [x] Act of Treason
 - [x] Ainok Bond-Kin
 - [x] Ainok Tracker
 - [x] Alabaster Kirin
@@ -35,13 +35,13 @@
 - [x] Archers' Parapet
 - [ ] Arc Lightning
 - [ ] Armament Corps
-- [ ] Arrow Storm
+- [x] Arrow Storm
 - [ ] Ashcloud Phoenix
 - [ ] Avalanche Tusker
 - [x] Awaken the Bear
 - [x] Barrage of Boulders
 - [ ] Bear's Companion
-- [ ] Become Immense
+- [x] Become Immense
 - [x] Bellowing Saddlebrute
 - [x] Bitter Revelation
 - [x] Blinding Spray
@@ -131,7 +131,7 @@
 - [x] Kill Shot
 - [ ] Kin-Tree Invocation
 - [ ] Kin-Tree Warden
-- [ ] Krumar Bond-Kin
+- [x] Krumar Bond-Kin
 - [x] Leaping Master
 - [ ] Lens of Clarity
 - [x] Longshot Squad
@@ -182,7 +182,7 @@
 - [x] Rugged Highlands
 - [x] Rush of Battle
 - [ ] Ruthless Ripper
-- [ ] Sage-Eye Harrier
+- [x] Sage-Eye Harrier
 - [ ] Sage of the Inward Eye
 - [x] Sagu Archer
 - [ ] Sagu Mauler
@@ -196,8 +196,8 @@
 - [ ] Scoured Barrens
 - [ ] Scout the Borders
 - [ ] Secret Plans
-- [ ] Seeker of the Way
-- [ ] Seek the Horizon
+- [x] Seeker of the Way
+- [x] Seek the Horizon
 - [ ] See the Unwritten
 - [ ] Set Adrift
 - [x] Shambling Attendants
@@ -222,7 +222,7 @@
 - [ ] Surrak Dragonclaw
 - [ ] Suspension Field
 - [x] Swarm of Bloodflies
-- [ ] Swift Kick
+- [x] Swift Kick
 - [ ] Swiftwater Cliffs
 - [x] Taigam's Scheming
 - [x] Take Up Arms
@@ -253,7 +253,7 @@
 - [ ] Warden of the Eye
 - [x] War-Name Aspirant
 - [ ] Watcher of the Roost
-- [ ] Waterwhirl
+- [x] Waterwhirl
 - [x] Weave Fate
 - [x] Wetland Sambar
 - [x] Whirlwind Adept
