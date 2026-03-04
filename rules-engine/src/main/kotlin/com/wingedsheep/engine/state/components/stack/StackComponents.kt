@@ -23,7 +23,8 @@ data class SpellOnStackComponent(
     val castFaceDown: Boolean = false,  // For morph - creature enters face-down
     val damageDistribution: Map<EntityId, Int>? = null,  // For DividedDamageEffect - pre-chosen damage allocation
     val chosenCreatureType: String? = null,  // For spells that choose a creature type during casting (e.g., Aphetto Dredging)
-    val exiledCardCount: Int = 0  // For variable exile additional costs (e.g., Chill Haunting)
+    val exiledCardCount: Int = 0,  // For variable exile additional costs (e.g., Chill Haunting)
+    val castFromZone: Zone? = null  // Zone the spell was cast from (e.g., HAND for normal casting)
 ) : Component
 
 /**

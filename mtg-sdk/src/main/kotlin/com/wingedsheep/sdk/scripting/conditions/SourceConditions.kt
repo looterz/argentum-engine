@@ -78,6 +78,18 @@ data object SourceEnteredThisTurn : Condition {
 }
 
 /**
+ * Condition: "If you cast this spell from your hand"
+ * Used for Phage the Untouchable's ETB trigger condition.
+ * Checks whether the source permanent was cast from the hand (as opposed to
+ * being put onto the battlefield by another effect).
+ */
+@SerialName("WasCastFromHand")
+@Serializable
+data object WasCastFromHand : Condition {
+    override val description: String = "you cast it from your hand"
+}
+
+/**
  * Condition: "As long as this creature is a [subtype]"
  * Used for cards like Mistform Wall: "This creature has defender as long as it's a Wall."
  *

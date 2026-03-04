@@ -81,6 +81,7 @@ object LegionsSet {
         VoidmageApprentice,
         WallOfDeceit,
         WarpedResearcher,
+        WeaverOfLies,
         Willbender,
 
         // Black creatures
@@ -103,6 +104,7 @@ object LegionsSet {
         HavocDemon,
         HollowSpecter,
         NoxiousGhoul,
+        PhageTheUntouchable,
         ScionOfDarkness,
         Skinthinner,
         SmokespewInvoker,

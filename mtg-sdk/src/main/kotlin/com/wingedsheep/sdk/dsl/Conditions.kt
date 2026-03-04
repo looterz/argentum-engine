@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.scripting.conditions.Compare
 import com.wingedsheep.sdk.scripting.conditions.ComparisonOperator
 import com.wingedsheep.sdk.scripting.conditions.Exists
 import com.wingedsheep.sdk.scripting.conditions.NotCondition
+import com.wingedsheep.sdk.scripting.conditions.WasCastFromHand as WasCastFromHandCondition
 import com.wingedsheep.sdk.scripting.conditions.SourceIsAttacking as SourceIsAttackingCondition
 import com.wingedsheep.sdk.scripting.conditions.SourceIsBlocking as SourceIsBlockingCondition
 import com.wingedsheep.sdk.scripting.conditions.SourceIsTapped as SourceIsTappedCondition
@@ -225,6 +226,13 @@ object Conditions {
     // =========================================================================
     // Source Conditions
     // =========================================================================
+
+    /**
+     * If this permanent was cast from your hand.
+     * Used for Phage the Untouchable.
+     */
+    val WasCastFromHand: ConditionInterface =
+        WasCastFromHandCondition
 
     /**
      * If this creature is attacking.

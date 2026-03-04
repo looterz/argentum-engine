@@ -71,6 +71,7 @@ import com.wingedsheep.sdk.scripting.effects.ChangeTargetEffect
 import com.wingedsheep.sdk.scripting.effects.ReselectTargetRandomlyEffect
 import com.wingedsheep.sdk.scripting.effects.CopyTargetSpellEffect
 import com.wingedsheep.sdk.scripting.effects.SetCreatureSubtypesEffect
+import com.wingedsheep.sdk.scripting.effects.LoseGameEffect
 import com.wingedsheep.sdk.scripting.effects.SkipNextTurnEffect
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.references.Player
@@ -149,6 +150,12 @@ object Effects {
      */
     fun LoseLife(amount: DynamicAmount, target: EffectTarget = EffectTarget.PlayerRef(Player.TargetOpponent)): Effect =
         LoseLifeEffect(amount, target)
+
+    /**
+     * Target player loses the game.
+     */
+    fun LoseGame(target: EffectTarget = EffectTarget.Controller, message: String? = null): Effect =
+        LoseGameEffect(target, message)
 
     /**
      * Set a player's life total to a fixed amount.

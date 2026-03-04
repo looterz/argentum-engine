@@ -16,6 +16,7 @@ class PlayerExecutors(
         CreateGlobalTriggeredAbilityUntilEndOfTurnExecutor(),
         CreatePermanentGlobalTriggeredAbilityExecutor(),
         GrantShroudExecutor(),
+        LoseGameExecutor(),
         PlayAdditionalLandsExecutor(),
         PreventLandPlaysThisTurnExecutor(),
         SecretBidExecutor(decisionHandler),

@@ -3,6 +3,7 @@ package com.wingedsheep.engine.handlers
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
+import com.wingedsheep.engine.state.components.battlefield.CastFromHandComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.combat.AttackingComponent
 import com.wingedsheep.engine.state.components.combat.BlockingComponent
@@ -37,6 +38,7 @@ import com.wingedsheep.sdk.scripting.conditions.SourceIsAttacking
 import com.wingedsheep.sdk.scripting.conditions.SourceIsBlocking
 import com.wingedsheep.sdk.scripting.conditions.SourceIsTapped
 import com.wingedsheep.sdk.scripting.conditions.SourceIsUntapped
+import com.wingedsheep.sdk.scripting.conditions.WasCastFromHand
 import com.wingedsheep.sdk.scripting.conditions.YouAttackedThisTurn
 import com.wingedsheep.sdk.scripting.conditions.YouWereAttackedThisStep
 import com.wingedsheep.sdk.scripting.conditions.YouWereDealtCombatDamageThisTurn
@@ -66,6 +68,7 @@ class ConditionEvaluator {
             is EnchantedCreatureHasSubtype -> evaluateEnchantedCreatureHasSubtype(state, condition, context)
 
             // Source conditions
+            is WasCastFromHand -> evaluateWasCastFromHand(state, context)
             is SourceIsAttacking -> evaluateSourceAttacking(state, context)
             is SourceIsBlocking -> evaluateSourceBlocking(state, context)
             is SourceIsTapped -> evaluateSourceTapped(state, context)
@@ -138,6 +141,11 @@ class ConditionEvaluator {
         }
 
         return if (condition.negate) !found else found
+    }
+
+    private fun evaluateWasCastFromHand(state: GameState, context: EffectContext): Boolean {
+        val sourceId = context.sourceId ?: return false
+        return state.getEntity(sourceId)?.has<CastFromHandComponent>() == true
     }
 
     private fun evaluateSourceAttacking(state: GameState, context: EffectContext): Boolean {

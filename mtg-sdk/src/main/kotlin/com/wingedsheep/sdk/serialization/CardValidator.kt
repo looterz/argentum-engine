@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.ExileAndReplaceWithTokenEffect
 import com.wingedsheep.sdk.scripting.effects.ExileUntilLeavesEffect
 import com.wingedsheep.sdk.scripting.effects.FlipCoinEffect
+import com.wingedsheep.sdk.scripting.effects.LoseGameEffect
 import com.wingedsheep.sdk.scripting.effects.ForEachInGroupEffect
 import com.wingedsheep.sdk.scripting.effects.ForEachTargetEffect
 import com.wingedsheep.sdk.scripting.effects.ForceSacrificeEffect
@@ -246,6 +247,7 @@ object CardValidator {
             is TransformEffect -> effect.target
             is GainControlByMostOfSubtypeEffect -> effect.target
             is SacrificeTargetEffect -> effect.target
+            is LoseGameEffect -> effect.target
             else -> null
         }
 

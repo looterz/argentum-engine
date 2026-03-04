@@ -165,6 +165,22 @@ data class CantCastSpellsEffect(
 }
 
 /**
+ * Target player loses the game.
+ * Used for cards like Phage the Untouchable: "that player loses the game."
+ *
+ * @param target The player who loses the game
+ * @param message Optional message describing why they lost (shown in game-over screen)
+ */
+@SerialName("LoseGame")
+@Serializable
+data class LoseGameEffect(
+    val target: EffectTarget = EffectTarget.Controller,
+    val message: String? = null
+) : Effect {
+    override val description: String = "${target.description.replaceFirstChar { it.uppercase() }} loses the game"
+}
+
+/**
  * Grant shroud to a target entity for the specified duration.
  * Works for players, creatures, and planeswalkers.
  *

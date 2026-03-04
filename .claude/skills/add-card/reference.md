@@ -31,6 +31,7 @@ constructors.
 
 - `Effects.GainLife(amount, target = Controller)` — also accepts `DynamicAmount`
 - `Effects.LoseLife(amount, target = TargetOpponent)` — also accepts `DynamicAmount`
+- `Effects.LoseGame(target = Controller, message = null)` — target player loses the game immediately
 - `Effects.SetLifeTotal(amount, target = Controller)` — set a player's life total to a specific value
 
 ### Drawing
@@ -191,6 +192,7 @@ constructors.
 |------------------------------------------|----------------------------------|---------------------------|
 | `GainLifeEffect`                         | `amount: DynamicAmount, target`  | Gain life                 |
 | `LoseLifeEffect`                         | `amount: DynamicAmount, target`  | Lose life                 |
+| `LoseGameEffect`                         | `target, message?`               | Target player loses the game |
 | `PayLifeEffect`                          | `amount: Int`                    | Pay life cost             |
 | `LoseHalfLifeEffect`                     | `roundUp, target`                | Lose half life total      |
 | `OwnerGainsLifeEffect`                   | `amount: DynamicAmount`          | Card owner gains life     |
@@ -618,6 +620,7 @@ constructors.
 
 ### Source State
 
+- `Conditions.WasCastFromHand` — source permanent was cast from hand
 - `Conditions.SourceIsAttacking` / `.SourceIsBlocking`
 - `Conditions.SourceIsTapped` / `.SourceIsUntapped`
 - `Conditions.SourceHasSubtype(subtype)` — source has specific subtype

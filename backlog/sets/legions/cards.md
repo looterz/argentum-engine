@@ -2,13 +2,13 @@
 
 **Set Size:** 145 cards
 **Release Date:** February 3, 2003
-**Implemented:** 143 / 145
+**Implemented:** 145 / 145
 
 | Color      | Count |
 |------------|-------|
 | White      | 29/29 |
-| Blue       | 28/29 |
-| Black      | 28/29 |
+| Blue       | 29/29 |
+| Black      | 29/29 |
 | Red        | 29/29 |
 | Green      | 29/29 |
 
@@ -107,7 +107,7 @@
 - [x] Needleshot Gourna
 - [x] Noxious Ghoul
 - [x] Patron of the Wild
-- [ ] Phage the Untouchable
+- [x] Phage the Untouchable
 - [x] Planar Guide
 - [x] Plated Sliver
 - [x] Primal Whisperer
@@ -149,7 +149,7 @@
 - [x] Warbreak Trumpeter
 - [x] Ward Sliver
 - [x] Warped Researcher
-- [ ] Weaver of Lies
+- [x] Weaver of Lies
 - [x] Whipgrass Entangler
 - [x] White Knight
 - [x] Willbender

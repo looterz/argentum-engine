@@ -10,6 +10,7 @@ import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
+import com.wingedsheep.engine.state.components.battlefield.CastFromHandComponent
 import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
@@ -87,6 +88,9 @@ class StackResolver(
         val cardComponent = container.get<CardComponent>()
             ?: return ExecutionResult.error(state, "Not a card: $cardId")
 
+        // Determine which zone the spell is being cast from (before removal)
+        val castFromZone = findCastFromZone(state, cardId, casterId)
+
         // Remove from current zone (typically hand)
         var newState = removeFromCurrentZone(state, cardId, casterId)
 
@@ -100,7 +104,8 @@ class StackResolver(
                 castFaceDown = castFaceDown,
                 damageDistribution = damageDistribution,
                 chosenCreatureType = chosenCreatureType,
-                exiledCardCount = exiledCardCount
+                exiledCardCount = exiledCardCount,
+                castFromZone = castFromZone
             ))
             if (targets.isNotEmpty()) {
                 updated = updated.with(TargetsComponent(targets, targetRequirements))
@@ -563,6 +568,11 @@ class StackResolver(
             // Creatures enter with summoning sickness (including face-down creatures)
             if (cardComponent?.typeLine?.isCreature == true || spellComponent.castFaceDown) {
                 updated = updated.with(SummoningSicknessComponent)
+            }
+
+            // Track if this permanent was cast from hand (for cards like Phage the Untouchable)
+            if (spellComponent.castFromZone == Zone.HAND) {
+                updated = updated.with(CastFromHandComponent)
             }
 
             // Add continuous effects from static abilities (but not for face-down creatures)
@@ -1142,6 +1152,23 @@ class StackResolver(
     // =========================================================================
     // Helpers
     // =========================================================================
+
+    /**
+     * Determine which zone a card is being cast from.
+     */
+    private fun findCastFromZone(
+        state: GameState,
+        cardId: EntityId,
+        playerId: EntityId
+    ): Zone? {
+        val zones = listOf(Zone.HAND, Zone.GRAVEYARD, Zone.EXILE, Zone.LIBRARY)
+        for (zone in zones) {
+            if (cardId in state.getZone(ZoneKey(playerId, zone))) {
+                return zone
+            }
+        }
+        return null
+    }
 
     /**
      * Remove a card from its current zone (for casting).

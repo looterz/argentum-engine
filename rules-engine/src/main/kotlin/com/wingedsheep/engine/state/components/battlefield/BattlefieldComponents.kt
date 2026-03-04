@@ -21,6 +21,14 @@ data object TappedComponent : Component
 data object SummoningSicknessComponent : Component
 
 /**
+ * Marks a permanent as having been cast from its controller's hand.
+ * Added when a creature spell resolves from the stack after being cast from hand.
+ * Used by cards like Phage the Untouchable to check how a creature entered the battlefield.
+ */
+@Serializable
+data object CastFromHandComponent : Component
+
+/**
  * Counters on a permanent.
  */
 @Serializable

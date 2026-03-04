@@ -20,6 +20,7 @@ import com.wingedsheep.engine.state.components.battlefield.DamageComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageDealtToCreaturesThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.EnteredThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.ReplacementEffectSourceComponent
+import com.wingedsheep.engine.state.components.battlefield.CastFromHandComponent
 import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.battlefield.TimestampComponent
@@ -136,6 +137,7 @@ object EffectExecutorUtils {
             // Battlefield
             .without<TappedComponent>()
             .without<SummoningSicknessComponent>()
+            .without<CastFromHandComponent>()
             .without<DamageComponent>()
             .without<DamageDealtToCreaturesThisTurnComponent>()
             .without<CountersComponent>()
