@@ -2,15 +2,15 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 104 / 249
+**Implemented:** 107 / 249
 
 | Color      | Count |
 |------------|-------|
 | White      | 18    |
-| Blue       | 18    |
-| Black      | 18    |
+| Blue       | 19    |
+| Black      | 19    |
 | Red        | 19    |
-| Green      | 18    |
+| Green      | 19    |
 | Multicolor | 7     |
 | Colorless  | 3     |
 | Land       | 3     |
@@ -144,7 +144,7 @@
 - [ ] Mardu Heart-Piercer
 - [x] Mardu Hordechief
 - [ ] Mardu Roughrider
-- [ ] Mardu Skullhunter
+- [x] Mardu Skullhunter
 - [ ] Mardu Warshrieker
 - [ ] Master of Pearls
 - [ ] Master the Way
@@ -211,7 +211,7 @@
 - [x] Smoke Teller
 - [x] Snowhorn Rider
 - [ ] Sorin, Solemn Visitor
-- [ ] Stubborn Denial
+- [x] Stubborn Denial
 - [ ] Sultai Ascendancy
 - [ ] Sultai Banner
 - [ ] Sultai Charm
@@ -242,7 +242,7 @@
 - [x] Treasure Cruise
 - [x] Trumpet Blast
 - [x] Tusked Colossodon
-- [ ] Tuskguard Captain
+- [x] Tuskguard Captain
 - [ ] Ugin's Nexus
 - [x] Unyielding Krumar
 - [x] Utter End

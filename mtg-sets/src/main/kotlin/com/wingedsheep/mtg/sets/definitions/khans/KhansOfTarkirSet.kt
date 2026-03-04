@@ -60,6 +60,7 @@ object KhansOfTarkirSet {
         Cancel,
         CripplingChill,
         DisdainfulStroke,
+        StubbornDenial,
         TaigamsScheming,
         TreasureCruise,
         Waterwhirl,
@@ -71,6 +72,7 @@ object KhansOfTarkirSet {
         GurmagSwiftwing,
         KheruDreadmaw,
         KrumarBondKin,
+        MarduSkullhunter,
         RottingMastodon,
         SidisisPet,
         ShamblingAttendants,
@@ -97,6 +99,7 @@ object KhansOfTarkirSet {
         SaguArcher,
         SmokeTeller,
         TuskedColossodon,
+        TuskguardCaptain,
         WoollyLoxodon,
 
         // Green spells

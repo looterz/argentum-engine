@@ -309,11 +309,11 @@ class TriggerProcessor(
             allLegalTargets[index] = legalTargets
         }
 
-        // If no legal targets exist for any required requirement and targets are required (not optional),
-        // the ability is removed from the stack without resolving (Rule 603.3d)
+        // If no legal targets exist for any required requirement, the ability is not put on the stack
+        // (Rule 603.3d). This applies regardless of whether the ability is optional ("you may").
         for ((index, req) in allRequirements.withIndex()) {
             val legalTargets = allLegalTargets[index] ?: emptyList()
-            if (legalTargets.isEmpty() && req.effectiveMinCount > 0 && !ability.optional) {
+            if (legalTargets.isEmpty() && req.effectiveMinCount > 0) {
                 if (ability.elseEffect != null) {
                     return putTriggerOnStack(state, trigger, emptyList(), ability.elseEffect)
                 }

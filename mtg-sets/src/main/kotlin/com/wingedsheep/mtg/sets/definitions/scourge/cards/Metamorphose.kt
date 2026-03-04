@@ -65,7 +65,7 @@ val Metamorphose = card("Metamorphose") {
                 ),
                 MoveCollectionEffect(
                     from = "putting",
-                    destination = CardDestination.ToZone(Zone.BATTLEFIELD)
+                    destination = CardDestination.ToZone(Zone.BATTLEFIELD, player = Player.Opponent)
                 )
             )
         )
