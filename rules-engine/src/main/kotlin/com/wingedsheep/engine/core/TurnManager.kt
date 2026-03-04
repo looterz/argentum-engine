@@ -1180,6 +1180,9 @@ class TurnManager(
                 if (result.has<com.wingedsheep.engine.state.components.player.DamageReceivedThisTurnComponent>()) {
                     result = result.without<com.wingedsheep.engine.state.components.player.DamageReceivedThisTurnComponent>()
                 }
+                if (result.has<com.wingedsheep.engine.state.components.player.NonTokenCreaturesDiedThisTurnComponent>()) {
+                    result = result.without<com.wingedsheep.engine.state.components.player.NonTokenCreaturesDiedThisTurnComponent>()
+                }
                 result
             }
         }

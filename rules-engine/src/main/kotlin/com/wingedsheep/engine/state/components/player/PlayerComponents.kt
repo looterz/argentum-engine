@@ -285,6 +285,19 @@ data class DamageReceivedThisTurnComponent(
 ) : Component
 
 /**
+ * Tracks the number of nontoken creatures put into this player's graveyard
+ * from the battlefield during the current turn.
+ * Cleared at end of turn by TurnManager.
+ *
+ * Used by Caller of the Claw: "create a 2/2 green Bear creature token for each
+ * nontoken creature put into your graveyard from the battlefield this turn."
+ */
+@Serializable
+data class NonTokenCreaturesDiedThisTurnComponent(
+    val count: Int = 0
+) : Component
+
+/**
  * Marker component indicating that a player should skip their entire next turn.
  * Applied by effects like Last Chance (which gives the opponent an "extra turn"
  * by skipping the other player's turn in a 2-player game).

@@ -2,7 +2,7 @@
 
 **Set Size:** 145 cards
 **Release Date:** February 3, 2003
-**Implemented:** 137 / 145
+**Implemented:** 138 / 145
 
 | Color      | Count |
 |------------|-------|
@@ -10,7 +10,7 @@
 | Blue       | 27/29 |
 | Black      | 27/29 |
 | Red        | 28/29 |
-| Green      | 27/29 |
+| Green      | 28/29 |
 
 ---
 
@@ -29,7 +29,7 @@
 - [x] Branchsnap Lorian
 - [x] Brontotherium
 - [x] Brood Sliver
-- [ ] Caller of the Claw
+- [x] Caller of the Claw
 - [x] Canopy Crawler
 - [x] Celestial Gatekeeper
 - [x] Cephalid Pathmage

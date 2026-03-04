@@ -1,10 +1,12 @@
 package com.wingedsheep.engine.handlers.actions.priority
 
 import com.wingedsheep.engine.core.ExecutionResult
+import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.PassPriority
 import com.wingedsheep.engine.core.PriorityChangedEvent
 import com.wingedsheep.engine.core.StepChangedEvent
 import com.wingedsheep.engine.core.TurnManager
+import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.event.TriggerDetector
 import com.wingedsheep.engine.event.TriggerProcessor
 import com.wingedsheep.engine.handlers.actions.ActionContext
@@ -14,10 +16,14 @@ import com.wingedsheep.engine.mechanics.stack.StackResolver
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.combat.AttackersDeclaredThisCombatComponent
 import com.wingedsheep.engine.state.components.combat.BlockersDeclaredThisCombatComponent
+import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.identity.TokenComponent
+import com.wingedsheep.engine.state.components.player.NonTokenCreaturesDiedThisTurnComponent
 import com.wingedsheep.engine.state.components.stack.ActivatedAbilityOnStackComponent
 import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
 import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.core.Zone
 import kotlin.reflect.KClass
 
 /**
@@ -77,8 +83,8 @@ class PassPriorityHandler(
                 if (!advanceResult.isSuccess || advanceResult.events.isEmpty()) {
                     return advanceResult
                 }
-                // Detect triggers from step transition events
-                var currentState = advanceResult.newState
+                // Track nontoken creature deaths from step advancement (e.g., combat damage)
+                var currentState = trackNonTokenCreatureDeaths(advanceResult.newState, advanceResult.events)
                 val triggers = triggerDetector.detectTriggers(currentState, advanceResult.events).toMutableList()
 
                 // Also detect delayed triggers and phase/step triggers for the new step
@@ -143,23 +149,29 @@ class PassPriorityHandler(
             return result
         }
 
+        // Track nontoken creature deaths from resolution events
+        val trackedState = trackNonTokenCreatureDeaths(result.newState, result.events)
+
         // Detect triggers from resolution events BEFORE SBAs (so damage triggers
         // see the creature still on the battlefield, per MTG rules 603.10)
-        val preSbaTriggers = triggerDetector.detectTriggers(result.newState, result.events)
+        val preSbaTriggers = triggerDetector.detectTriggers(trackedState, result.events)
 
         // Check state-based actions after resolution
-        val sbaResult = sbaChecker.checkAndApply(result.newState)
+        val sbaResult = sbaChecker.checkAndApply(trackedState)
         var combinedEvents = result.events + sbaResult.events
 
         if (sbaResult.newState.gameOver) {
             return ExecutionResult.success(sbaResult.newState, combinedEvents)
         }
 
+        // Track nontoken creature deaths from SBA events
+        val sbaTrackedState = trackNonTokenCreatureDeaths(sbaResult.newState, sbaResult.events)
+
         // Detect triggers from SBA events (e.g., death triggers) on post-SBA state
-        val sbaTriggers = triggerDetector.detectTriggers(sbaResult.newState, sbaResult.events)
+        val sbaTriggers = triggerDetector.detectTriggers(sbaTrackedState, sbaResult.events)
         val triggers = preSbaTriggers + sbaTriggers
         if (triggers.isNotEmpty()) {
-            val triggerResult = triggerProcessor.processTriggers(sbaResult.newState, triggers)
+            val triggerResult = triggerProcessor.processTriggers(sbaTrackedState, triggers)
 
             if (triggerResult.isPaused) {
                 return ExecutionResult.paused(
@@ -177,13 +189,40 @@ class PassPriorityHandler(
         }
 
         return ExecutionResult.success(
-            sbaResult.newState.withPriority(stackItemController),
+            sbaTrackedState.withPriority(stackItemController),
             combinedEvents
         )
     }
 
     private fun advanceGame(state: GameState): ExecutionResult {
         return turnManager.advanceStep(state)
+    }
+
+    /**
+     * Scan events for ZoneChangeEvents where a nontoken creature moved from
+     * battlefield to graveyard, and update the owner's death tracking component.
+     */
+    private fun trackNonTokenCreatureDeaths(state: GameState, events: List<GameEvent>): GameState {
+        var newState = state
+        for (event in events) {
+            if (event is ZoneChangeEvent &&
+                event.fromZone == Zone.BATTLEFIELD &&
+                event.toZone == Zone.GRAVEYARD
+            ) {
+                val container = newState.getEntity(event.entityId) ?: continue
+                if (container.has<TokenComponent>()) continue
+                val card = container.get<CardComponent>() ?: continue
+                if (!card.typeLine.isCreature) continue
+
+                val ownerId = event.ownerId
+                newState = newState.updateEntity(ownerId) { playerContainer ->
+                    val existing = playerContainer.get<NonTokenCreaturesDiedThisTurnComponent>()
+                        ?: NonTokenCreaturesDiedThisTurnComponent()
+                    playerContainer.with(NonTokenCreaturesDiedThisTurnComponent(existing.count + 1))
+                }
+            }
+        }
+        return newState
     }
 
     companion object {

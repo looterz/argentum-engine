@@ -492,4 +492,17 @@ sealed interface DynamicAmount {
     data object CreaturesSharingTypeWithTriggeringEntity : DynamicAmount {
         override val description: String = "the number of creatures you control that share a creature type with it"
     }
+
+    /**
+     * Count of nontoken creatures put into a player's graveyard from the battlefield this turn.
+     * Used for Caller of the Claw: "create a 2/2 green Bear creature token for each nontoken creature
+     * put into your graveyard from the battlefield this turn."
+     *
+     * Reads from NonTokenCreaturesDiedThisTurnComponent on the player entity.
+     */
+    @SerialName("NonTokenCreaturesDiedThisTurn")
+    @Serializable
+    data class NonTokenCreaturesDiedThisTurn(val player: Player) : DynamicAmount {
+        override val description: String = "the number of nontoken creatures put into ${player.possessive} graveyard from the battlefield this turn"
+    }
 }

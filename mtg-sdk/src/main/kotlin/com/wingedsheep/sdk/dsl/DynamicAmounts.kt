@@ -161,4 +161,11 @@ object DynamicAmounts {
 
     fun numberOfBlockers(): DynamicAmount =
         DynamicAmount.NumberOfBlockers
+
+    // =========================================================================
+    // Turn-based death tracking
+    // =========================================================================
+
+    fun nonTokenCreaturesDiedThisTurn(player: Player = Player.You): DynamicAmount =
+        DynamicAmount.NonTokenCreaturesDiedThisTurn(player)
 }

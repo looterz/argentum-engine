@@ -141,6 +141,7 @@ object LegionsSet {
         WarbreakTrumpeter,
 
         // Green creatures
+        CallerOfTheClaw,
         BerserkMurlodont,
         BranchsnapLorian,
         BroodSliver,

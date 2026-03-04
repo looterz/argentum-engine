@@ -654,6 +654,7 @@ constructors.
 - `DynamicAmount.VariableReference(variableName)` / `.StoredCardManaValue(collectionName)` / `.AdditionalCostExiledCount`
 - `DynamicAmount.NumberOfBlockers` / `DynamicAmounts.numberOfBlockers()` — number of creatures blocking the triggering entity
 - `DynamicAmount.DamageDealtToTargetPlayerThisTurn(targetIndex)` — total damage dealt to a target player this turn
+- `DynamicAmount.NonTokenCreaturesDiedThisTurn(player)` / `DynamicAmounts.nonTokenCreaturesDiedThisTurn(player)` — count of nontoken creatures put into a player's graveyard from battlefield this turn
 - `DynamicAmount.Count(player, zone, filter)` /
   `DynamicAmount.AggregateBattlefield(player, filter, aggregation?, property?, excludeSelf?)`
 - `DynamicAmount.Conditional(condition, ifTrue, ifFalse)` — conditional amount
