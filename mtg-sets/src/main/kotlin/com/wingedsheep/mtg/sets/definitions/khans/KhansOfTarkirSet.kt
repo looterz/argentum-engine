@@ -111,6 +111,7 @@ object KhansOfTarkirSet {
         FeedTheClan,
         Naturalize,
         SavagePunch,
+        ScoutTheBorders,
         SeekTheHorizon,
         Windstorm,
 
