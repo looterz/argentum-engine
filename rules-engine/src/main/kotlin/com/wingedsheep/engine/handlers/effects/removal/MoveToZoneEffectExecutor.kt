@@ -59,6 +59,11 @@ class MoveToZoneEffectExecutor : EffectExecutor<MoveToZoneEffect> {
         val currentZone = findEntityZone(state, targetId)
             ?: return ExecutionResult.error(state, "Card not found in any zone: $targetId")
 
+        // If fromZone is specified, skip the move if the target is not in the expected zone
+        if (effect.fromZone != null && currentZone.zoneType != effect.fromZone) {
+            return ExecutionResult.success(state, emptyList())
+        }
+
         // Resolve controller override for "under your control" effects
         val controllerOverride = effect.controllerOverride
         val controllerId = if (controllerOverride != null && effect.destination == Zone.BATTLEFIELD) {

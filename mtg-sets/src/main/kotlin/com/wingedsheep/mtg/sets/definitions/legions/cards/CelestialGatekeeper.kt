@@ -50,7 +50,7 @@ val CelestialGatekeeper = card("Celestial Gatekeeper") {
         )
         effect = MoveToZoneEffect(EffectTarget.Self, Zone.EXILE) then
             ForEachTargetEffect(
-                effects = listOf(MoveToZoneEffect(EffectTarget.ContextTarget(0), Zone.BATTLEFIELD))
+                effects = listOf(MoveToZoneEffect(EffectTarget.ContextTarget(0), Zone.BATTLEFIELD, fromZone = Zone.GRAVEYARD))
             )
     }
 

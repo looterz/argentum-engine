@@ -126,6 +126,7 @@ function DeckBuilder({ state }: { state: DeckBuildingState }) {
   const [colorFilter, setColorFilter] = useState<Set<string>>(new Set())
   const [typeFilter, setTypeFilter] = useState<string | null>(null)
   const [searchText, setSearchText] = useState('')
+  const [creatureTypeFilter, setCreatureTypeFilter] = useState<string | null>(null)
 
   const handleHover = useCallback((card: SealedCardInfo | null, e?: React.MouseEvent) => {
     setHoveredCard(card)
@@ -265,6 +266,9 @@ function DeckBuilder({ state }: { state: DeckBuildingState }) {
         if (typeFilter) {
           if (!matchesTypeFilter(card, typeFilter)) continue
         }
+        if (creatureTypeFilter) {
+          if (!matchesCreatureTypeFilter(card, creatureTypeFilter)) continue
+        }
         if (searchText) {
           if (!matchesSearch(card, searchText)) continue
         }
@@ -281,7 +285,7 @@ function DeckBuilder({ state }: { state: DeckBuildingState }) {
         return getRarityOrder(a.card) - getRarityOrder(b.card) || getCmc(a.card) - getCmc(b.card)
       }
     })
-  }, [state.cardPool, state.deck, sortBy, colorFilter, typeFilter, searchText])
+  }, [state.cardPool, state.deck, sortBy, colorFilter, typeFilter, creatureTypeFilter, searchText])
 
   const totalPoolCards = poolCardGroups.reduce((sum, g) => sum + g.availableCount, 0)
 
@@ -663,14 +667,16 @@ function DeckBuilder({ state }: { state: DeckBuildingState }) {
               {poolCreatureTypes.slice(0, 8).map(({ type, count }) => (
                 <span
                   key={type}
+                  onClick={() => setCreatureTypeFilter(creatureTypeFilter === type ? null : type)}
                   style={{
                     padding: '1px 6px',
-                    backgroundColor: '#2e2e2e',
+                    backgroundColor: creatureTypeFilter === type ? '#3a5a2a' : '#2e2e2e',
                     borderRadius: 3,
                     fontSize: 10,
-                    color: '#999',
-                    border: '1px solid #3a3a3a',
+                    color: creatureTypeFilter === type ? '#c5e1a5' : '#999',
+                    border: `1px solid ${creatureTypeFilter === type ? '#8bc34a' : '#3a3a3a'}`,
                     whiteSpace: 'nowrap',
+                    cursor: 'pointer',
                   }}
                 >
                   {type} <span style={{ color: '#8bc34a', fontWeight: 600 }}>{count}</span>
@@ -878,14 +884,16 @@ function DeckBuilder({ state }: { state: DeckBuildingState }) {
                   {deckAnalytics.creatureTypes.slice(0, 6).map(({ type, count }) => (
                     <span
                       key={type}
+                      onClick={() => setCreatureTypeFilter(creatureTypeFilter === type ? null : type)}
                       style={{
                         padding: '1px 6px',
-                        backgroundColor: '#333',
+                        backgroundColor: creatureTypeFilter === type ? '#3a5a2a' : '#333',
                         borderRadius: 3,
                         fontSize: 9,
-                        color: '#bbb',
-                        border: '1px solid #444',
+                        color: creatureTypeFilter === type ? '#c5e1a5' : '#bbb',
+                        border: `1px solid ${creatureTypeFilter === type ? '#8bc34a' : '#444'}`,
                         whiteSpace: 'nowrap',
+                        cursor: 'pointer',
                       }}
                     >
                       {type} <span style={{ color: '#8bc34a', fontWeight: 600 }}>{count}</span>
@@ -1651,6 +1659,16 @@ function matchesSearch(card: SealedCardInfo, query: string): boolean {
 function matchesTypeFilter(card: SealedCardInfo, filter: string): boolean {
   const typeLine = card.typeLine.toLowerCase()
   return typeLine.includes(filter)
+}
+
+function matchesCreatureTypeFilter(card: SealedCardInfo, subtype: string): boolean {
+  const typeLine = card.typeLine
+  const dashIndex = typeLine.indexOf('\u2014')
+  const hyphenIndex = typeLine.indexOf(' - ')
+  const splitIndex = dashIndex !== -1 ? dashIndex : hyphenIndex
+  if (splitIndex === -1) return false
+  const subtypePart = typeLine.slice(splitIndex + (dashIndex !== -1 ? 1 : 3)).trim()
+  return subtypePart.split(/\s+/).some((s) => s === subtype)
 }
 
 function getColorOrder(card: SealedCardInfo): number {

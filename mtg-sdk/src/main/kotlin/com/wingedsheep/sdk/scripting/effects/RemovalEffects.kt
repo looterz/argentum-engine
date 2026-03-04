@@ -322,7 +322,9 @@ data class MoveToZoneEffect(
     val placement: ZonePlacement = ZonePlacement.Default,
     val byDestruction: Boolean = false,
     /** When set, the card enters the battlefield under this player's control instead of the owner's. */
-    val controllerOverride: EffectTarget? = null
+    val controllerOverride: EffectTarget? = null,
+    /** When set, the move is skipped if the target is not currently in this zone. */
+    val fromZone: Zone? = null
 ) : Effect {
     override val description: String = buildString {
         when {

@@ -5,6 +5,7 @@ import com.wingedsheep.engine.core.SelectManaSourcesDecision
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.mtg.sets.definitions.onslaught.cards.WordsOfWorship
+import com.wingedsheep.mtg.sets.definitions.scourge.cards.CallToTheGrave
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Step
@@ -428,6 +429,78 @@ class WordsOfWorshipTest : FunSpec({
         driver.getLifeTotal(activePlayer) shouldBe initialLife + 5
         // initialHandSize + 1 (putCardInHand) - 1 (cast Inspiration) + 1 (normal draw 2) = initialHandSize + 1
         driver.getHandSize(activePlayer) shouldBe initialHandSize + 1
+    }
+
+    test("draw step prompts for Words of Worship even when upkeep triggers exist (Call to the Grave)") {
+        val driver = createDriver()
+        driver.registerCards(listOf(CallToTheGrave))
+        driver.initMirrorMatch(
+            deck = Deck.of("Grizzly Bears" to 40),
+            startingLife = 20
+        )
+
+        val activePlayer = driver.activePlayer!!
+        val opponent = driver.getOpponent(activePlayer)
+
+        driver.putPermanentOnBattlefield(activePlayer, "Words of Worship")
+        driver.putPermanentOnBattlefield(activePlayer, "Plains")
+        driver.putPermanentOnBattlefield(activePlayer, "Call to the Grave")
+        // Put non-Zombie creatures for Call to the Grave sacrifice
+        // Need enough to survive through 3 upkeeps (turn 1 P1, turn 2 P2, turn 3 P1)
+        repeat(3) { driver.putPermanentOnBattlefield(activePlayer, "Grizzly Bears") }
+        repeat(2) { driver.putPermanentOnBattlefield(opponent, "Grizzly Bears") }
+
+        // Advance past turn 1 to reach active player's upkeep on turn 3
+        // (Same pattern as existing promptOnDraw tests)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+        driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
+        driver.passPriorityUntil(Step.UPKEEP)
+        driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
+        driver.passPriorityUntil(Step.UPKEEP)
+
+        driver.state.activePlayerId shouldBe activePlayer
+        val initialLife = driver.getLifeTotal(activePlayer)
+        val initialHandSize = driver.getHandSize(activePlayer)
+
+        // Debug: check state before resolving trigger
+        println("DEBUG: step=${driver.state.step}, stack=${driver.state.stack.size}, priority=${driver.state.priorityPlayerId}, pending=${driver.pendingDecision?.javaClass?.simpleName}")
+
+        // At UPKEEP, Call to the Grave trigger is on the stack.
+        // Both pass to resolve it (sacrifice a non-Zombie creature).
+        val resolveResult = driver.bothPass()
+        println("DEBUG after 1st bothPass: step=${driver.state.step}, stack=${driver.state.stack.size}, priority=${driver.state.priorityPlayerId}, pending=${driver.pendingDecision?.javaClass?.simpleName}, paused=${resolveResult.isPaused}, success=${resolveResult.isSuccess}")
+
+        // Handle any pending sacrifice decision
+        if (driver.pendingDecision != null && driver.state.step == Step.UPKEEP) {
+            println("DEBUG: auto-resolving decision: ${driver.pendingDecision?.javaClass?.simpleName}")
+            driver.autoResolveDecision()
+            println("DEBUG after auto-resolve: step=${driver.state.step}, stack=${driver.state.stack.size}, priority=${driver.state.priorityPlayerId}, pending=${driver.pendingDecision?.javaClass?.simpleName}")
+        }
+
+        // After trigger resolved, we're still at UPKEEP with priority.
+        // Both pass to advance to DRAW step.
+        if (driver.state.priorityPlayerId != null && driver.state.step == Step.UPKEEP) {
+            driver.bothPass()
+            println("DEBUG after 2nd bothPass: step=${driver.state.step}, stack=${driver.state.stack.size}, priority=${driver.state.priorityPlayerId}, pending=${driver.pendingDecision?.javaClass?.simpleName}")
+        }
+
+        if (driver.state.priorityPlayerId != null && driver.state.step == Step.UPKEEP) {
+            driver.bothPass()
+            println("DEBUG after 3rd bothPass: step=${driver.state.step}, stack=${driver.state.stack.size}, priority=${driver.state.priorityPlayerId}, pending=${driver.pendingDecision?.javaClass?.simpleName}")
+        }
+
+        // Should now be at DRAW with a mana source selection decision (Words of Worship prompt)
+        driver.state.step shouldBe Step.DRAW
+        val decision = driver.pendingDecision
+        decision shouldNotBe null
+        (decision is SelectManaSourcesDecision) shouldBe true
+
+        // Accept: pay to activate Words of Worship
+        driver.submitManaAutoPayOrDecline(activePlayer, autoPay = true)
+
+        // Draw replaced with +5 life, no card drawn
+        driver.getLifeTotal(activePlayer) shouldBe initialLife + 5
+        driver.getHandSize(activePlayer) shouldBe initialHandSize
     }
 
     test("draw step does not prompt when Words of Worship activation is not affordable") {
