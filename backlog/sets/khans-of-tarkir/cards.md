@@ -2,7 +2,7 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 101 / 249
+**Implemented:** 102 / 249
 
 | Color      | Count |
 |------------|-------|
@@ -10,7 +10,7 @@
 | Blue       | 18    |
 | Black      | 18    |
 | Red        | 18    |
-| Green      | 17    |
+| Green      | 18    |
 | Multicolor | 7     |
 | Colorless  | 3     |
 | Land       | 3     |
@@ -197,7 +197,7 @@
 - [ ] Scout the Borders
 - [ ] Secret Plans
 - [x] Seeker of the Way
-- [ ] Seek the Horizon
+- [x] Seek the Horizon
 - [ ] See the Unwritten
 - [ ] Set Adrift
 - [x] Shambling Attendants

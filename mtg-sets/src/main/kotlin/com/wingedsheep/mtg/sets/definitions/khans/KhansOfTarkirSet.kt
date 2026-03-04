@@ -105,6 +105,7 @@ object KhansOfTarkirSet {
         FeedTheClan,
         Naturalize,
         SavagePunch,
+        SeekTheHorizon,
         Windstorm,
 
         // Red creatures
