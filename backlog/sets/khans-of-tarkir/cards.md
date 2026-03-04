@@ -2,12 +2,12 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 106 / 249
+**Implemented:** 107 / 249
 
 | Color      | Count |
 |------------|-------|
 | White      | 18    |
-| Blue       | 18    |
+| Blue       | 19    |
 | Black      | 19    |
 | Red        | 19    |
 | Green      | 19    |
@@ -211,7 +211,7 @@
 - [x] Smoke Teller
 - [x] Snowhorn Rider
 - [ ] Sorin, Solemn Visitor
-- [ ] Stubborn Denial
+- [x] Stubborn Denial
 - [ ] Sultai Ascendancy
 - [ ] Sultai Banner
 - [ ] Sultai Charm

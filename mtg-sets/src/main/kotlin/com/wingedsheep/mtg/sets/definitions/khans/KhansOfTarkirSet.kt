@@ -60,6 +60,7 @@ object KhansOfTarkirSet {
         Cancel,
         CripplingChill,
         DisdainfulStroke,
+        StubbornDenial,
         TaigamsScheming,
         TreasureCruise,
         Waterwhirl,
