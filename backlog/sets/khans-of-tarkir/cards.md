@@ -2,7 +2,7 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 120 / 249
+**Implemented:** 121 / 249
 
 | Color      | Count |
 |------------|-------|
@@ -11,7 +11,7 @@
 | Black      | 21    |
 | Red        | 21    |
 | Green      | 21    |
-| Multicolor | 9     |
+| Multicolor | 10    |
 | Colorless  | 3     |
 | Land       | 3     |
 
@@ -189,7 +189,7 @@
 - [x] Salt Road Patrol
 - [ ] Sandsteppe Citadel
 - [ ] Sarkhan, the Dragonspeaker
-- [ ] Savage Knuckleblade
+- [x] Savage Knuckleblade
 - [x] Savage Punch
 - [x] Scaldkin
 - [x] Scion of Glaciers

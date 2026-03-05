@@ -154,6 +154,7 @@ object KhansOfTarkirSet {
         HighspireMantis,
         MantisRider,
         PonybackBrigade,
+        SavageKnuckleblade,
         SiegeRhino,
         SnowhornRider,
         UtterEnd,
