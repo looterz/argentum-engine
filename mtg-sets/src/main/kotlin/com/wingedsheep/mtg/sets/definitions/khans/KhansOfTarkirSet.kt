@@ -74,6 +74,7 @@ object KhansOfTarkirSet {
         // Black creatures
         DisownedAncestor,
         BellowingSaddlebrute,
+        GrimHaruspex,
         GurmagSwiftwing,
         KheruDreadmaw,
         KrumarBondKin,
