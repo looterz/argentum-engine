@@ -109,6 +109,34 @@ sealed interface PayCost {
      * @property filter Which permanents can be returned
      * @property count How many permanents must be returned (default 1)
      */
+    /**
+     * Reveal a card from hand matching a filter.
+     * "Morph—Reveal a white card in your hand."
+     *
+     * The card stays in hand; it is merely shown publicly.
+     *
+     * @property filter Which cards can be revealed
+     * @property count How many cards must be revealed (default 1)
+     */
+    @SerialName("RevealCard")
+    @Serializable
+    data class RevealCard(
+        val filter: GameObjectFilter = GameObjectFilter.Companion.Any,
+        val count: Int = 1
+    ) : PayCost {
+        override val description: String = buildString {
+            append("Reveal ")
+            val filterDesc = filter.description
+            if (count == 1) {
+                append(if (filterDesc.first().lowercaseChar() in "aeiou") "an" else "a")
+                append(" $filterDesc")
+            } else {
+                append("$count ${filterDesc}s")
+            }
+            append(" in your hand")
+        }
+    }
+
     @SerialName("ReturnToHand")
     @Serializable
     data class ReturnToHand(

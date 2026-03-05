@@ -35,6 +35,7 @@ object KhansOfTarkirSet {
         TimelyHordemate,
         VenerableLammasu,
         WarBehemoth,
+        WatcherOfTheRoost,
 
         // White spells
         DefiantStrike,

@@ -1052,6 +1052,7 @@ Used in `OptionalCostEffect`, `MayPayManaEffect`, `AnyPlayerMayPayEffect`, `PayO
 - `PayCost.Sacrifice(filter, count)`
 - `PayCost.PayLife(amount)`
 - `PayCost.ReturnToHand(filter, count)` — Return permanents you control to hand (e.g., morph cost)
+- `PayCost.RevealCard(filter, count)` — Reveal cards from hand matching filter (e.g., "Morph—Reveal a white card")
 
 ---
 

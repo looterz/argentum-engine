@@ -2,11 +2,11 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 115 / 249
+**Implemented:** 116 / 249
 
 | Color      | Count |
 |------------|-------|
-| White      | 20    |
+| White      | 21    |
 | Blue       | 21    |
 | Black      | 20    |
 | Red        | 21    |
@@ -252,7 +252,7 @@
 - [x] War Behemoth
 - [ ] Warden of the Eye
 - [x] War-Name Aspirant
-- [ ] Watcher of the Roost
+- [x] Watcher of the Roost
 - [x] Waterwhirl
 - [x] Weave Fate
 - [x] Wetland Sambar
