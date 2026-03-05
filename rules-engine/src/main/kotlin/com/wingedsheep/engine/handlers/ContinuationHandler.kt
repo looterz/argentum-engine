@@ -21,7 +21,7 @@ import com.wingedsheep.sdk.scripting.effects.MayEffect
  * onto the state's continuation stack. When the player submits their decision,
  * this handler pops the frame and resumes execution based on the frame type.
  *
- * Delegates to specialized resumer modules for each continuation category.
+ * Delegates to specialized resumer modules via the ContinuationResumerRegistry.
  */
 class ContinuationHandler(
     private val effectExecutorRegistry: EffectExecutorRegistry,
@@ -41,17 +41,23 @@ class ContinuationHandler(
         targetFinder = targetFinder
     )
 
-    private val combatResumer = CombatContinuationResumer(ctx)
-    private val colorChoiceResumer = ColorChoiceContinuationResumer(ctx)
-    private val chainSpellResumer = ChainSpellContinuationResumer(ctx)
-    private val creatureTypeResumer = CreatureTypeChoiceContinuationResumer(ctx)
-    private val drawReplacementResumer = DrawReplacementContinuationResumer(ctx, ::entityIdToChosenTarget)
-    private val cardSpecificResumer = CardSpecificContinuationResumer(ctx)
-    private val discardAndDrawResumer = DiscardAndDrawContinuationResumer(ctx)
-    private val sacrificeAndPayResumer = SacrificeAndPayContinuationResumer(ctx)
-    private val manaPaymentResumer = ManaPaymentContinuationResumer(ctx)
-    private val libraryAndZoneResumer = LibraryAndZoneContinuationResumer(ctx)
-    private val modalAndCloneResumer = ModalAndCloneContinuationResumer(ctx)
+    private val registry = ContinuationResumerRegistry().apply {
+        // Core engine resumers
+        registerModule(CoreContinuationResumers())
+
+        // Specialized resumer modules
+        registerModule(CombatContinuationResumer(ctx))
+        registerModule(ColorChoiceContinuationResumer(ctx))
+        registerModule(ChainSpellContinuationResumer(ctx))
+        registerModule(CreatureTypeChoiceContinuationResumer(ctx))
+        registerModule(DrawReplacementContinuationResumer(ctx, ::entityIdToChosenTarget))
+        registerModule(CardSpecificContinuationResumer(ctx))
+        registerModule(DiscardAndDrawContinuationResumer(ctx))
+        registerModule(SacrificeAndPayContinuationResumer(ctx))
+        registerModule(ManaPaymentContinuationResumer(ctx))
+        registerModule(LibraryAndZoneContinuationResumer(ctx))
+        registerModule(ModalAndCloneContinuationResumer(ctx))
+    }
 
     /**
      * Resume execution after a decision is submitted.
@@ -74,131 +80,38 @@ class ContinuationHandler(
             )
         }
 
-        val cfm = ::checkForMoreContinuations
+        return registry.resume(stateAfterPop, continuation, response, ::checkForMoreContinuations)
+    }
 
-        return when (continuation) {
-            // Core engine plumbing (kept in this class)
-            is EffectContinuation -> resumeEffect(stateAfterPop, continuation, response)
-            is TriggeredAbilityContinuation -> resumeTriggeredAbility(stateAfterPop, continuation, response)
-            is ResolveSpellContinuation -> resumeSpellResolution(stateAfterPop, continuation, response)
-            is MayAbilityContinuation -> resumeMayAbility(stateAfterPop, continuation, response)
-            is MayTriggerContinuation -> resumeMayTrigger(stateAfterPop, continuation, response)
-            is PendingTriggersContinuation -> {
-                ExecutionResult.error(state, "PendingTriggersContinuation should not be at top of stack during decision resume")
-            }
+    // ─── Core engine resumers ───
 
-            // Combat
-            is DamageAssignmentContinuation -> combatResumer.resumeDamageAssignment(stateAfterPop, continuation, response)
-            is DamagePreventionContinuation -> combatResumer.resumeDamagePrevention(stateAfterPop, continuation, response, cfm)
-            is BlockerOrderContinuation -> combatResumer.resumeBlockerOrder(stateAfterPop, continuation, response, cfm)
-            is DistributeDamageContinuation -> combatResumer.resumeDistributeDamage(stateAfterPop, continuation, response, cfm)
+    private inner class CoreContinuationResumers : ContinuationResumerModule {
+        override fun resumers(): List<ContinuationResumer<*>> = listOf(
+            resumer(EffectContinuation::class, ::resumeEffect),
+            resumer(TriggeredAbilityContinuation::class, ::resumeTriggeredAbility),
+            resumer(ResolveSpellContinuation::class) { state, _, _, _ ->
+                ExecutionResult.success(state)
+            },
+            resumer(MayAbilityContinuation::class, ::resumeMayAbility),
+            resumer(MayTriggerContinuation::class, ::resumeMayTrigger),
 
-            // Color choice
-            is ChooseColorProtectionContinuation -> colorChoiceResumer.resumeChooseColorProtection(stateAfterPop, continuation, response, cfm)
-            is ChooseColorProtectionTargetContinuation -> colorChoiceResumer.resumeChooseColorProtectionTarget(stateAfterPop, continuation, response, cfm)
+            // Standalone resumers
+            resumer(DrawUpToContinuation::class, ::resumeDrawUpTo),
+            resumer(RepeatWhileContinuation::class, ::resumeRepeatWhile),
+            resumer(StormCopyTargetContinuation::class, ::resumeStormCopyTarget),
+            resumer(DistributeCountersContinuation::class, ::resumeDistributeCounters),
+            resumer(ReturnFromLinkedExileContinuation::class) { state, continuation, response, checkForMore ->
+                resumeReturnFromLinkedExile(state, continuation, response)
+            },
 
-            // Chain spells
-            is ChainCopyPrimaryDiscardContinuation -> chainSpellResumer.resumeChainCopyPrimaryDiscard(stateAfterPop, continuation, response, cfm)
-            is ChainCopyDecisionContinuation -> chainSpellResumer.resumeChainCopyDecision(stateAfterPop, continuation, response, cfm)
-            is ChainCopyCostContinuation -> chainSpellResumer.resumeChainCopyCost(stateAfterPop, continuation, response, cfm)
-            is ChainCopyTargetContinuation -> chainSpellResumer.resumeChainCopyTarget(stateAfterPop, continuation, response, cfm)
-
-            // Creature type choices
-            is ChooseFromCreatureTypeContinuation -> creatureTypeResumer.resumeChooseFromCreatureType(stateAfterPop, continuation, response, cfm)
-            is ChooseToCreatureTypeContinuation -> creatureTypeResumer.resumeChooseToCreatureType(stateAfterPop, continuation, response, cfm)
-            is ChooseCreatureTypePipelineContinuation -> creatureTypeResumer.resumeChooseCreatureTypePipeline(stateAfterPop, continuation, response, cfm)
-            is ChooseOptionPipelineContinuation -> creatureTypeResumer.resumeChooseOptionPipeline(stateAfterPop, continuation, response, cfm)
-            is BecomeCreatureTypeContinuation -> creatureTypeResumer.resumeBecomeCreatureType(stateAfterPop, continuation, response, cfm)
-            is ChooseCreatureTypeModifyStatsContinuation -> creatureTypeResumer.resumeChooseCreatureTypeModifyStats(stateAfterPop, continuation, response, cfm)
-            is ChooseCreatureTypeGainControlContinuation -> creatureTypeResumer.resumeChooseCreatureTypeGainControl(stateAfterPop, continuation, response, cfm)
-            is BecomeChosenTypeAllCreaturesContinuation -> creatureTypeResumer.resumeBecomeChosenTypeAllCreatures(stateAfterPop, continuation, response, cfm)
-            is ChooseCreatureTypeMustAttackContinuation -> creatureTypeResumer.resumeChooseCreatureTypeMustAttack(stateAfterPop, continuation, response, cfm)
-            is ChooseCreatureTypeUntapContinuation -> creatureTypeResumer.resumeChooseCreatureTypeUntap(stateAfterPop, continuation, response, cfm)
-            is EachPlayerChoosesCreatureTypeContinuation -> creatureTypeResumer.resumeEachPlayerChoosesCreatureType(stateAfterPop, continuation, response, cfm)
-            is PatriarchsBiddingContinuation -> creatureTypeResumer.resumePatriarchsBidding(stateAfterPop, continuation, response, cfm)
-
-            // Cycling/typecycling deferred actions
-            is CycleDrawContinuation -> {
-                ExecutionResult.error(state, "CycleDrawContinuation should not be at top of stack during decision resume")
-            }
-            is TypecycleSearchContinuation -> {
-                ExecutionResult.error(state, "TypecycleSearchContinuation should not be at top of stack during decision resume")
-            }
-
-            // Draw replacements
-            is DrawReplacementRemainingDrawsContinuation -> {
-                ExecutionResult.error(state, "DrawReplacementRemainingDrawsContinuation should not be at top of stack during decision resume")
-            }
-            is DrawReplacementActivationContinuation -> drawReplacementResumer.resumeDrawReplacementActivation(stateAfterPop, continuation, response, cfm)
-            is DrawReplacementTargetContinuation -> drawReplacementResumer.resumeDrawReplacementTarget(stateAfterPop, continuation, response, cfm)
-            is StaticDrawReplacementContinuation -> drawReplacementResumer.resumeStaticDrawReplacement(stateAfterPop, continuation, response, cfm)
-
-            // Card-specific
-            is SecretBidContinuation -> cardSpecificResumer.resumeSecretBid(stateAfterPop, continuation, response, cfm)
-            is ReadTheRunesContinuation -> cardSpecificResumer.resumeReadTheRunes(stateAfterPop, continuation, response, cfm)
-
-            // Generic drawing/repeat
-            is DrawUpToContinuation -> resumeDrawUpTo(stateAfterPop, continuation, response, cfm)
-            is RepeatWhileContinuation -> resumeRepeatWhile(stateAfterPop, continuation, response, cfm)
-
-            // Discard and draw
-            is DiscardContinuation -> discardAndDrawResumer.resumeDiscard(stateAfterPop, continuation, response, cfm)
-            is HandSizeDiscardContinuation -> discardAndDrawResumer.resumeHandSizeDiscard(stateAfterPop, continuation, response, cfm)
-            is EachPlayerDiscardsOrLoseLifeContinuation -> discardAndDrawResumer.resumeEachPlayerDiscardsOrLoseLife(stateAfterPop, continuation, response, cfm)
-
-            // Sacrifice and pay
-            is SacrificeContinuation -> sacrificeAndPayResumer.resumeSacrifice(stateAfterPop, continuation, response, cfm)
-            is PayOrSufferContinuation -> sacrificeAndPayResumer.resumePayOrSuffer(stateAfterPop, continuation, response, cfm)
-            is AnyPlayerMayPayContinuation -> sacrificeAndPayResumer.resumeAnyPlayerMayPay(stateAfterPop, continuation, response, cfm)
-            is UntapChoiceContinuation -> sacrificeAndPayResumer.resumeUntapChoice(stateAfterPop, continuation, response, cfm)
-
-            // Mana payment
-            is CounterUnlessPaysContinuation -> manaPaymentResumer.resumeCounterUnlessPays(stateAfterPop, continuation, response, cfm)
-            is ChangeSpellTargetContinuation -> manaPaymentResumer.resumeChangeSpellTarget(stateAfterPop, continuation, response, cfm)
-            is MayPayManaContinuation -> manaPaymentResumer.resumeMayPayMana(stateAfterPop, continuation, response, cfm)
-            is MayPayManaTriggerContinuation -> manaPaymentResumer.resumeMayPayManaTrigger(stateAfterPop, continuation, response, cfm)
-            is MayPayXContinuation -> manaPaymentResumer.resumeMayPayX(stateAfterPop, continuation, response, cfm)
-            is ManaSourceSelectionContinuation -> manaPaymentResumer.resumeManaSourceSelection(stateAfterPop, continuation, response, cfm)
-
-            // Library and zone
-            is ReturnFromGraveyardContinuation -> libraryAndZoneResumer.resumeReturnFromGraveyard(stateAfterPop, continuation, response, cfm)
-            is MoveCollectionOrderContinuation -> libraryAndZoneResumer.resumeMoveCollectionOrder(stateAfterPop, continuation, response, cfm)
-            is PutOnBottomOfLibraryContinuation -> libraryAndZoneResumer.resumePutOnBottomOfLibrary(stateAfterPop, continuation, response, cfm)
-            is ForEachTargetContinuation -> {
-                ExecutionResult.error(state, "ForEachTargetContinuation should not be at top of stack during decision resume")
-            }
-            is ForEachPlayerContinuation -> {
-                ExecutionResult.error(state, "ForEachPlayerContinuation should not be at top of stack during decision resume")
-            }
-            is PutFromHandContinuation -> libraryAndZoneResumer.resumePutFromHand(stateAfterPop, continuation, response, cfm)
-            is SelectFromCollectionContinuation -> libraryAndZoneResumer.resumeSelectFromCollection(stateAfterPop, continuation, response, cfm)
-            is SelectTargetPipelineContinuation -> libraryAndZoneResumer.resumeSelectTargetPipeline(stateAfterPop, continuation, response, cfm)
-            is MoveCollectionAuraTargetContinuation -> libraryAndZoneResumer.resumeMoveCollectionAuraTarget(stateAfterPop, continuation, response, cfm)
-            is ReturnFromLinkedExileContinuation -> resumeReturnFromLinkedExile(stateAfterPop, continuation, response)
-
-            // Modal and clone
-            is ModalContinuation -> modalAndCloneResumer.resumeModal(stateAfterPop, continuation, response, cfm)
-            is ModalTargetContinuation -> modalAndCloneResumer.resumeModalTarget(stateAfterPop, continuation, response, cfm)
-            is CloneEntersContinuation -> modalAndCloneResumer.resumeCloneEnters(stateAfterPop, continuation, response, cfm)
-            is ChooseColorEntersContinuation -> modalAndCloneResumer.resumeChooseColorEnters(stateAfterPop, continuation, response, cfm)
-            is ChooseCreatureTypeEntersContinuation -> modalAndCloneResumer.resumeChooseCreatureTypeEnters(stateAfterPop, continuation, response, cfm)
-            is AmplifyEntersContinuation -> modalAndCloneResumer.resumeAmplifyEnters(stateAfterPop, continuation, response, cfm)
-            is CastWithCreatureTypeContinuation -> modalAndCloneResumer.resumeCastWithCreatureType(stateAfterPop, continuation, response, cfm)
-
-            // Storm copies
-            is StormCopyTargetContinuation -> resumeStormCopyTarget(stateAfterPop, continuation, response, cfm)
-
-            // Counter distribution
-            is DistributeCountersContinuation -> resumeDistributeCounters(stateAfterPop, continuation, response, cfm)
-
-            // Cycling/typecycling (non-decision continuations, should not appear during decision resume)
-            is CycleDrawContinuation -> {
-                ExecutionResult.error(state, "CycleDrawContinuation should not be at top of stack during decision resume")
-            }
-            is TypecycleSearchContinuation -> {
-                ExecutionResult.error(state, "TypecycleSearchContinuation should not be at top of stack during decision resume")
-            }
-        }
+            // Error-returning resumers: these should not be at top of stack during decision resume
+            errorResumer<PendingTriggersContinuation>("PendingTriggersContinuation"),
+            errorResumer<CycleDrawContinuation>("CycleDrawContinuation"),
+            errorResumer<TypecycleSearchContinuation>("TypecycleSearchContinuation"),
+            errorResumer<DrawReplacementRemainingDrawsContinuation>("DrawReplacementRemainingDrawsContinuation"),
+            errorResumer<ForEachTargetContinuation>("ForEachTargetContinuation"),
+            errorResumer<ForEachPlayerContinuation>("ForEachPlayerContinuation")
+        )
     }
 
     // ─── Core engine methods (kept here, tightly coupled to checkForMoreContinuations) ───
@@ -206,7 +119,8 @@ class ContinuationHandler(
     private fun resumeEffect(
         state: GameState,
         continuation: EffectContinuation,
-        response: DecisionResponse
+        response: DecisionResponse,
+        checkForMore: CheckForMore
     ): ExecutionResult {
         var currentContext = continuation.toEffectContext()
         var currentState = state
@@ -271,13 +185,14 @@ class ContinuationHandler(
             }
         }
 
-        return checkForMoreContinuations(currentState, allEvents)
+        return checkForMore(currentState, allEvents)
     }
 
     private fun resumeTriggeredAbility(
         state: GameState,
         continuation: TriggeredAbilityContinuation,
-        response: DecisionResponse
+        response: DecisionResponse,
+        checkForMore: CheckForMore
     ): ExecutionResult {
         if (response !is TargetsResponse) {
             return ExecutionResult.error(state, "Expected target selection response for triggered ability")
@@ -300,9 +215,9 @@ class ContinuationHandler(
                 )
                 val stackResult = stackResolver.putTriggeredAbility(state, elseComponent, emptyList())
                 if (!stackResult.isSuccess) return stackResult
-                return checkForMoreContinuations(stackResult.newState, stackResult.events.toList())
+                return checkForMore(stackResult.newState, stackResult.events.toList())
             }
-            return checkForMoreContinuations(state, emptyList())
+            return checkForMore(state, emptyList())
         }
 
         val abilityComponent = TriggeredAbilityOnStackComponent(
@@ -323,20 +238,21 @@ class ContinuationHandler(
             return stackResult
         }
 
-        return checkForMoreContinuations(stackResult.newState, stackResult.events.toList())
+        return checkForMore(stackResult.newState, stackResult.events.toList())
     }
 
     private fun resumeMayTrigger(
         state: GameState,
         continuation: MayTriggerContinuation,
-        response: DecisionResponse
+        response: DecisionResponse,
+        checkForMore: CheckForMore
     ): ExecutionResult {
         if (response !is YesNoResponse) {
             return ExecutionResult.error(state, "Expected yes/no response for may trigger")
         }
 
         if (!response.choice) {
-            return checkForMoreContinuations(state, emptyList())
+            return checkForMore(state, emptyList())
         }
 
         val trigger = continuation.trigger
@@ -359,21 +275,14 @@ class ContinuationHandler(
             return result
         }
 
-        return checkForMoreContinuations(result.newState, result.events.toList())
-    }
-
-    private fun resumeSpellResolution(
-        state: GameState,
-        continuation: ResolveSpellContinuation,
-        response: DecisionResponse
-    ): ExecutionResult {
-        return ExecutionResult.success(state)
+        return checkForMore(result.newState, result.events.toList())
     }
 
     private fun resumeMayAbility(
         state: GameState,
         continuation: MayAbilityContinuation,
-        response: DecisionResponse
+        response: DecisionResponse,
+        checkForMore: CheckForMore
     ): ExecutionResult {
         if (response !is YesNoResponse) {
             return ExecutionResult.error(state, "Expected yes/no response for may ability")
@@ -387,7 +296,7 @@ class ContinuationHandler(
         }
 
         if (effectToExecute == null) {
-            return checkForMoreContinuations(state, emptyList())
+            return checkForMore(state, emptyList())
         }
 
         val result = effectExecutorRegistry.execute(state, effectToExecute, context)
@@ -396,7 +305,7 @@ class ContinuationHandler(
             return result
         }
 
-        return checkForMoreContinuations(result.state, result.events.toList())
+        return checkForMore(result.state, result.events.toList())
     }
 
     // ─── Central coordinator ───
@@ -661,7 +570,7 @@ class ContinuationHandler(
         state: GameState,
         continuation: DrawUpToContinuation,
         response: DecisionResponse,
-        checkForMore: (GameState, List<GameEvent>) -> ExecutionResult
+        checkForMore: CheckForMore
     ): ExecutionResult {
         if (response !is NumberChosenResponse) {
             return ExecutionResult.error(state, "Expected number chosen response for DrawUpTo")
@@ -703,7 +612,7 @@ class ContinuationHandler(
         state: GameState,
         continuation: RepeatWhileContinuation,
         response: DecisionResponse,
-        checkForMore: (GameState, List<GameEvent>) -> ExecutionResult
+        checkForMore: CheckForMore
     ): ExecutionResult {
         return when (continuation.phase) {
             RepeatWhilePhase.AFTER_BODY -> {
@@ -767,7 +676,7 @@ class ContinuationHandler(
         state: GameState,
         continuation: StormCopyTargetContinuation,
         response: DecisionResponse,
-        checkForMore: (GameState, List<GameEvent>) -> ExecutionResult
+        checkForMore: CheckForMore
     ): ExecutionResult {
         if (response !is TargetsResponse) {
             return ExecutionResult.error(state, "Expected target selection response for Storm copy")
@@ -856,7 +765,7 @@ class ContinuationHandler(
         state: GameState,
         continuation: DistributeCountersContinuation,
         response: DecisionResponse,
-        checkForMore: (GameState, List<GameEvent>) -> ExecutionResult
+        checkForMore: CheckForMore
     ): ExecutionResult {
         if (response !is DistributionResponse) {
             return ExecutionResult.error(state, "Expected distribution response for counter distribution")
@@ -942,4 +851,14 @@ class ContinuationHandler(
 
         return checkForMoreContinuations(result.state, result.events)
     }
+}
+
+/**
+ * Creates a [ContinuationResumer] that always returns an error for continuation types
+ * that should never be at the top of the stack during a decision resume.
+ */
+private inline fun <reified T : ContinuationFrame> errorResumer(
+    typeName: String
+): ContinuationResumer<T> = resumer(T::class) { state, _, _, _ ->
+    ExecutionResult.error(state, "$typeName should not be at top of stack during decision resume")
 }

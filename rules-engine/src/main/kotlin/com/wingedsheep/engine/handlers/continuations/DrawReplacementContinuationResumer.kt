@@ -16,7 +16,13 @@ import com.wingedsheep.sdk.model.EntityId
 class DrawReplacementContinuationResumer(
     private val ctx: ContinuationContext,
     private val entityIdToChosenTarget: (GameState, EntityId) -> ChosenTarget
-) {
+) : ContinuationResumerModule {
+
+    override fun resumers(): List<ContinuationResumer<*>> = listOf(
+        resumer(DrawReplacementActivationContinuation::class, ::resumeDrawReplacementActivation),
+        resumer(DrawReplacementTargetContinuation::class, ::resumeDrawReplacementTarget),
+        resumer(StaticDrawReplacementContinuation::class, ::resumeStaticDrawReplacement)
+    )
 
     /**
      * Resume after the player selects mana sources (or declines) for a "prompt on draw"

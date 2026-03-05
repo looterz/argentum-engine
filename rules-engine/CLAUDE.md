@@ -50,7 +50,7 @@ Client action
 If paused: client submits decision
   → ContinuationHandler.resume()
   → pops ContinuationFrame from state.continuationStack
-  → resumes matching execution path
+  → ContinuationResumerRegistry dispatches by KClass to matching ContinuationResumer
   → checkForMoreContinuations() drains any stacked continuations
 ```
 
@@ -69,7 +69,9 @@ Effects are defined in `mtg-sdk` — the engine only implements executors:
 
 ### Adding a new continuation type
 1. Add case to `core/Continuation.kt` (sealed interface)
-2. Add resume branch in `ContinuationHandler` (or a new resumer module)
+2. Add a `ContinuationResumer<YourContinuation>` via `resumer()` helper in the appropriate
+   `ContinuationResumerModule` (or create a new module and register it in `ContinuationHandler`)
+3. No changes needed to `ContinuationHandler.resume()` — dispatch is automatic via `ContinuationResumerRegistry`
 
 ### Continuous effects (Rule 613)
 Never mutate base components. Instead create a `ContinuousEffect` that `StateProjector` applies

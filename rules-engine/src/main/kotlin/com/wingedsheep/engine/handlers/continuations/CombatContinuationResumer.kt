@@ -13,7 +13,16 @@ import com.wingedsheep.sdk.model.EntityId
 
 class CombatContinuationResumer(
     private val ctx: ContinuationContext
-) {
+) : ContinuationResumerModule {
+
+    override fun resumers(): List<ContinuationResumer<*>> = listOf(
+        resumer(DamageAssignmentContinuation::class) { state, continuation, response, _ ->
+            resumeDamageAssignment(state, continuation, response)
+        },
+        resumer(DamagePreventionContinuation::class, ::resumeDamagePrevention),
+        resumer(BlockerOrderContinuation::class, ::resumeBlockerOrder),
+        resumer(DistributeDamageContinuation::class, ::resumeDistributeDamage)
+    )
 
     fun resumeDamageAssignment(
         state: GameState,

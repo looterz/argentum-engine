@@ -11,7 +11,12 @@ import com.wingedsheep.sdk.model.EntityId
 
 class CardSpecificContinuationResumer(
     private val ctx: ContinuationContext
-) {
+) : ContinuationResumerModule {
+
+    override fun resumers(): List<ContinuationResumer<*>> = listOf(
+        resumer(SecretBidContinuation::class, ::resumeSecretBid),
+        resumer(ReadTheRunesContinuation::class, ::resumeReadTheRunes)
+    )
 
     fun resumeSecretBid(
         state: GameState,

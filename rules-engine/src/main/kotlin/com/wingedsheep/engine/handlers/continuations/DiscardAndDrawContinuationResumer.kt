@@ -11,7 +11,13 @@ import com.wingedsheep.sdk.core.Zone
 
 class DiscardAndDrawContinuationResumer(
     private val ctx: ContinuationContext
-) {
+) : ContinuationResumerModule {
+
+    override fun resumers(): List<ContinuationResumer<*>> = listOf(
+        resumer(DiscardContinuation::class, ::resumeDiscard),
+        resumer(HandSizeDiscardContinuation::class, ::resumeHandSizeDiscard),
+        resumer(EachPlayerDiscardsOrLoseLifeContinuation::class, ::resumeEachPlayerDiscardsOrLoseLife)
+    )
 
     fun resumeDiscard(
         state: GameState,

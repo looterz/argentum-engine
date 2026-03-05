@@ -14,7 +14,12 @@ import com.wingedsheep.sdk.model.EntityId
 
 class ColorChoiceContinuationResumer(
     private val ctx: ContinuationContext
-) {
+) : ContinuationResumerModule {
+
+    override fun resumers(): List<ContinuationResumer<*>> = listOf(
+        resumer(ChooseColorProtectionContinuation::class, ::resumeChooseColorProtection),
+        resumer(ChooseColorProtectionTargetContinuation::class, ::resumeChooseColorProtectionTarget)
+    )
 
     fun resumeChooseColorProtection(
         state: GameState,

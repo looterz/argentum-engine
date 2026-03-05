@@ -20,7 +20,22 @@ import com.wingedsheep.sdk.model.EntityId
 
 class CreatureTypeChoiceContinuationResumer(
     private val ctx: ContinuationContext
-) {
+) : ContinuationResumerModule {
+
+    override fun resumers(): List<ContinuationResumer<*>> = listOf(
+        resumer(ChooseFromCreatureTypeContinuation::class, ::resumeChooseFromCreatureType),
+        resumer(ChooseToCreatureTypeContinuation::class, ::resumeChooseToCreatureType),
+        resumer(ChooseCreatureTypePipelineContinuation::class, ::resumeChooseCreatureTypePipeline),
+        resumer(ChooseOptionPipelineContinuation::class, ::resumeChooseOptionPipeline),
+        resumer(BecomeCreatureTypeContinuation::class, ::resumeBecomeCreatureType),
+        resumer(ChooseCreatureTypeModifyStatsContinuation::class, ::resumeChooseCreatureTypeModifyStats),
+        resumer(ChooseCreatureTypeGainControlContinuation::class, ::resumeChooseCreatureTypeGainControl),
+        resumer(BecomeChosenTypeAllCreaturesContinuation::class, ::resumeBecomeChosenTypeAllCreatures),
+        resumer(ChooseCreatureTypeMustAttackContinuation::class, ::resumeChooseCreatureTypeMustAttack),
+        resumer(ChooseCreatureTypeUntapContinuation::class, ::resumeChooseCreatureTypeUntap),
+        resumer(EachPlayerChoosesCreatureTypeContinuation::class, ::resumeEachPlayerChoosesCreatureType),
+        resumer(PatriarchsBiddingContinuation::class, ::resumePatriarchsBidding)
+    )
 
     /**
      * Resume after player chooses the FROM creature type for text replacement.

@@ -19,7 +19,14 @@ import com.wingedsheep.sdk.scripting.costs.PayCost
 
 class SacrificeAndPayContinuationResumer(
     private val ctx: ContinuationContext
-) {
+) : ContinuationResumerModule {
+
+    override fun resumers(): List<ContinuationResumer<*>> = listOf(
+        resumer(SacrificeContinuation::class, ::resumeSacrifice),
+        resumer(PayOrSufferContinuation::class, ::resumePayOrSuffer),
+        resumer(AnyPlayerMayPayContinuation::class, ::resumeAnyPlayerMayPay),
+        resumer(UntapChoiceContinuation::class, ::resumeUntapChoice)
+    )
 
     fun resumeSacrifice(
         state: GameState,

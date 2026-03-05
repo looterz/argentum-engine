@@ -22,7 +22,14 @@ import com.wingedsheep.sdk.scripting.targets.TargetPlayer
 
 class ChainSpellContinuationResumer(
     private val ctx: ContinuationContext
-) {
+) : ContinuationResumerModule {
+
+    override fun resumers(): List<ContinuationResumer<*>> = listOf(
+        resumer(ChainCopyPrimaryDiscardContinuation::class, ::resumeChainCopyPrimaryDiscard),
+        resumer(ChainCopyDecisionContinuation::class, ::resumeChainCopyDecision),
+        resumer(ChainCopyCostContinuation::class, ::resumeChainCopyCost),
+        resumer(ChainCopyTargetContinuation::class, ::resumeChainCopyTarget)
+    )
 
     // =========================================================================
     // 1. Primary Discard (Chain of Smog — card selection before chain offer)

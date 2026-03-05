@@ -14,7 +14,17 @@ import com.wingedsheep.sdk.scripting.targets.TargetPlayer
 
 class ModalAndCloneContinuationResumer(
     private val ctx: ContinuationContext
-) {
+) : ContinuationResumerModule {
+
+    override fun resumers(): List<ContinuationResumer<*>> = listOf(
+        resumer(ModalContinuation::class, ::resumeModal),
+        resumer(ModalTargetContinuation::class, ::resumeModalTarget),
+        resumer(CloneEntersContinuation::class, ::resumeCloneEnters),
+        resumer(ChooseColorEntersContinuation::class, ::resumeChooseColorEnters),
+        resumer(ChooseCreatureTypeEntersContinuation::class, ::resumeChooseCreatureTypeEnters),
+        resumer(AmplifyEntersContinuation::class, ::resumeAmplifyEnters),
+        resumer(CastWithCreatureTypeContinuation::class, ::resumeCastWithCreatureType)
+    )
 
     fun resumeModal(
         state: GameState,

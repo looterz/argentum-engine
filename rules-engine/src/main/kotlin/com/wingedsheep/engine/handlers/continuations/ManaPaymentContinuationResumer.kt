@@ -12,7 +12,16 @@ import com.wingedsheep.sdk.scripting.effects.MayPayManaEffect
 
 class ManaPaymentContinuationResumer(
     private val ctx: ContinuationContext
-) {
+) : ContinuationResumerModule {
+
+    override fun resumers(): List<ContinuationResumer<*>> = listOf(
+        resumer(CounterUnlessPaysContinuation::class, ::resumeCounterUnlessPays),
+        resumer(ChangeSpellTargetContinuation::class, ::resumeChangeSpellTarget),
+        resumer(MayPayManaContinuation::class, ::resumeMayPayMana),
+        resumer(MayPayManaTriggerContinuation::class, ::resumeMayPayManaTrigger),
+        resumer(MayPayXContinuation::class, ::resumeMayPayX),
+        resumer(ManaSourceSelectionContinuation::class, ::resumeManaSourceSelection)
+    )
 
     fun resumeCounterUnlessPays(
         state: GameState,

@@ -12,7 +12,17 @@ import com.wingedsheep.sdk.scripting.effects.ZonePlacement
 
 class LibraryAndZoneContinuationResumer(
     private val ctx: ContinuationContext
-) {
+) : ContinuationResumerModule {
+
+    override fun resumers(): List<ContinuationResumer<*>> = listOf(
+        resumer(ReturnFromGraveyardContinuation::class, ::resumeReturnFromGraveyard),
+        resumer(MoveCollectionOrderContinuation::class, ::resumeMoveCollectionOrder),
+        resumer(PutOnBottomOfLibraryContinuation::class, ::resumePutOnBottomOfLibrary),
+        resumer(PutFromHandContinuation::class, ::resumePutFromHand),
+        resumer(SelectFromCollectionContinuation::class, ::resumeSelectFromCollection),
+        resumer(SelectTargetPipelineContinuation::class, ::resumeSelectTargetPipeline),
+        resumer(MoveCollectionAuraTargetContinuation::class, ::resumeMoveCollectionAuraTarget)
+    )
 
     fun resumeReturnFromGraveyard(
         state: GameState,
