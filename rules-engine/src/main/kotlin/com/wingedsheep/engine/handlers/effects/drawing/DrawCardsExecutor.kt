@@ -15,7 +15,6 @@ import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
@@ -42,7 +41,6 @@ class DrawCardsExecutor(
 
     override val effectType: KClass<DrawCardsEffect> = DrawCardsEffect::class
 
-    private val stateProjector = StateProjector()
 
     override fun execute(
         state: GameState,
@@ -209,7 +207,7 @@ class DrawCardsExecutor(
     ): CardRevealedFromDrawEvent? {
         if (cardRegistry == null) return null
 
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val hasRevealAbility = projected.getBattlefieldControlledBy(playerId).any { permanentId ->
             val card = state.getEntity(permanentId)?.get<CardComponent>() ?: return@any false
             val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: return@any false
@@ -243,7 +241,7 @@ class DrawCardsExecutor(
     ): ExecutionResult? {
         if (cardRegistry == null) return null
 
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val controlledPermanents = projected.getBattlefieldControlledBy(playerId)
 
         for (permanentId in controlledPermanents) {
@@ -264,7 +262,7 @@ class DrawCardsExecutor(
                     else -> null
                 } ?: continue
 
-                val manaSolver = ManaSolver(cardRegistry, stateProjector)
+                val manaSolver = ManaSolver(cardRegistry)
                 if (!manaSolver.canPay(state, playerId, manaCost)) continue
 
                 val sources = manaSolver.findAvailableManaSources(state, playerId)
@@ -346,7 +344,7 @@ class DrawCardsExecutor(
     ): ExecutionResult? {
         if (cardRegistry == null) return null
 
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val controlledPermanents = projected.getBattlefieldControlledBy(playerId)
 
         for (permanentId in controlledPermanents) {

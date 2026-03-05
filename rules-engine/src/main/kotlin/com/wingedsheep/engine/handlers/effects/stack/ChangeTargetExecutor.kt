@@ -8,7 +8,6 @@ import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
@@ -111,7 +110,7 @@ class ChangeTargetExecutor : EffectExecutor<ChangeTargetEffect> {
         targetRequirements: List<TargetRequirement>,
         controllerId: EntityId
     ): List<EntityId> {
-        val projected = StateProjector().project(state)
+        val projected = state.projectedState
         val currentTargetId = getTargetEntityId(currentTarget)
 
         // If we have target requirements, use the first one to determine legal targets

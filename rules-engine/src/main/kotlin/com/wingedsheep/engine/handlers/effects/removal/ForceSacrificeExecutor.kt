@@ -7,7 +7,6 @@ import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.resolvePlayerTarget
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -33,7 +32,6 @@ class ForceSacrificeExecutor(
     override val effectType: KClass<ForceSacrificeEffect> = ForceSacrificeEffect::class
 
     private val predicateEvaluator = PredicateEvaluator()
-    private val stateProjector = StateProjector()
 
     override fun execute(
         state: GameState,
@@ -78,7 +76,7 @@ class ForceSacrificeExecutor(
         // Use projected state to account for control-changing effects (e.g., Threaten).
         // A player sacrifices permanents they *control*, which may differ from what's in
         // their zone key when control-changing effects are in play.
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val controlledPermanents = projected.getBattlefieldControlledBy(playerId)
         val context = PredicateContext(controllerId = playerId)
 

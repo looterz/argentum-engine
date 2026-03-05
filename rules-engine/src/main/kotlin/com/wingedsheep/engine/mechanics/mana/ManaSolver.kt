@@ -4,7 +4,6 @@ import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -94,7 +93,6 @@ data class ManaProduction(
  */
 class ManaSolver(
     private val cardRegistry: CardRegistry? = null,
-    private val stateProjector: StateProjector = StateProjector(),
     private val dynamicAmountEvaluator: DynamicAmountEvaluator = DynamicAmountEvaluator()
 ) {
 
@@ -410,7 +408,7 @@ class ManaSolver(
      */
     internal fun findAvailableManaSources(state: GameState, playerId: EntityId): List<ManaSource> {
         // Project state once to get all keywords and projected controllers
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
 
         // Use projected controller to find all permanents controlled by this player
         // (accounts for control-changing effects like Annex)
@@ -761,7 +759,7 @@ class ManaSolver(
     ): TapPermanentsBonusMana {
         if (cardRegistry == null) return TapPermanentsBonusMana()
 
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val battlefieldCards = projected.getBattlefieldControlledBy(playerId)
         val regularSourceIds = findAvailableManaSources(state, playerId).map { it.entityId }.toSet()
 

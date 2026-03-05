@@ -10,6 +10,8 @@ import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.engine.mechanics.layers.ProjectedState
+import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.sdk.model.EntityId
 import kotlinx.serialization.Serializable
 
@@ -84,6 +86,15 @@ data class GameState(
     /** Number of spells cast this turn (by all players), used for Storm count */
     val spellsCastThisTurn: Int = 0
 ) {
+    /**
+     * Cached projection of the game state with all continuous effects (Rule 613) applied.
+     * Evaluated exactly once per immutable GameState instance.
+     * Not serialized — body properties are excluded from kotlinx.serialization.
+     */
+    val projectedState: ProjectedState by lazy {
+        StateProjector().project(this)
+    }
+
     // =========================================================================
     // Entity Operations
     // =========================================================================

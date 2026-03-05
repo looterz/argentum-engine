@@ -5,7 +5,6 @@ import com.wingedsheep.engine.core.GameEvent as EngineGameEvent
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.destroyPermanent
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.scripting.effects.DestroyAllSharingTypeWithSacrificedEffect
@@ -25,7 +24,6 @@ class DestroyAllSharingTypeWithSacrificedExecutor : EffectExecutor<DestroyAllSha
     override val effectType: KClass<DestroyAllSharingTypeWithSacrificedEffect> =
         DestroyAllSharingTypeWithSacrificedEffect::class
 
-    private val stateProjector = StateProjector()
 
     override fun execute(
         state: GameState,
@@ -49,7 +47,7 @@ class DestroyAllSharingTypeWithSacrificedExecutor : EffectExecutor<DestroyAllSha
 
         // Destroy all creatures on the battlefield sharing at least one creature type
         // Use projected state to account for text replacements on battlefield creatures
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         var newState = state
         val events = mutableListOf<EngineGameEvent>()
 

@@ -15,7 +15,6 @@ import com.wingedsheep.engine.state.components.player.LandDropsComponent
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Zone
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.sdk.scripting.*
 import com.wingedsheep.sdk.scripting.conditions.APlayerControlsMostOfSubtype
 import com.wingedsheep.sdk.scripting.conditions.AllConditions
@@ -112,7 +111,7 @@ class ConditionEvaluator {
     private fun evaluateExists(state: GameState, condition: Exists, context: EffectContext): Boolean {
         val predicateEvaluator = PredicateEvaluator()
         val predicateContext = PredicateContext.fromEffectContext(context)
-        val projected = StateProjector().project(state)
+        val projected = state.projectedState
 
         val playerIds = when (condition.player) {
             is com.wingedsheep.sdk.scripting.references.Player.You -> listOf(context.controllerId)

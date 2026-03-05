@@ -10,7 +10,6 @@ import com.wingedsheep.engine.handlers.MulliganHandler
 import com.wingedsheep.engine.handlers.effects.EffectExecutorRegistry
 import com.wingedsheep.engine.mechanics.StateBasedActionChecker
 import com.wingedsheep.engine.mechanics.combat.CombatManager
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.mechanics.mana.AlternativePaymentHandler
 import com.wingedsheep.engine.mechanics.mana.CostCalculator
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
@@ -40,8 +39,7 @@ data class ActionContext(
     val triggerDetector: TriggerDetector,
     val triggerProcessor: TriggerProcessor,
     val conditionEvaluator: ConditionEvaluator,
-    val targetValidator: TargetValidator,
-    val stateProjector: StateProjector = StateProjector()
+    val targetValidator: TargetValidator
 ) {
     companion object {
         /**
@@ -59,9 +57,9 @@ data class ActionContext(
                 turnManager = TurnManager(combatManager, cardRegistry = cardRegistry, effectExecutor = effectExecutorRegistry::execute),
                 stackResolver = StackResolver(effectHandler = com.wingedsheep.engine.handlers.EffectHandler(cardRegistry = cardRegistry), cardRegistry = cardRegistry),
                 manaSolver = ManaSolver(cardRegistry),
-                costCalculator = CostCalculator(cardRegistry, StateProjector()),
+                costCalculator = CostCalculator(cardRegistry),
                 alternativePaymentHandler = AlternativePaymentHandler(),
-                costHandler = CostHandler(StateProjector()),
+                costHandler = CostHandler(),
                 mulliganHandler = MulliganHandler(),
                 effectExecutorRegistry = effectExecutorRegistry,
                 continuationHandler = ContinuationHandler(effectExecutorRegistry, triggerProcessor = triggerProcessor, triggerDetector = triggerDetector, combatManager = combatManager),
@@ -69,8 +67,7 @@ data class ActionContext(
                 triggerDetector = triggerDetector,
                 triggerProcessor = triggerProcessor,
                 conditionEvaluator = ConditionEvaluator(),
-                targetValidator = TargetValidator(),
-                stateProjector = StateProjector()
+                targetValidator = TargetValidator()
             )
         }
     }

@@ -71,7 +71,7 @@ class MistformWarchiefTest : FunSpec({
         registry.register(TestCards.all)
         registry.register(MistformWarchief)
 
-        val calculator = CostCalculator(registry, projector)
+        val calculator = CostCalculator(registry)
 
         val driver = createDriver()
         driver.initMirrorMatch(
@@ -97,7 +97,7 @@ class MistformWarchiefTest : FunSpec({
         registry.register(TestCards.all)
         registry.register(MistformWarchief)
 
-        val calculator = CostCalculator(registry, projector)
+        val calculator = CostCalculator(registry)
 
         val driver = createDriver()
         driver.initMirrorMatch(
@@ -130,7 +130,7 @@ class MistformWarchiefTest : FunSpec({
         registry.register(MistformWarchief)
         registry.register(DaruWarchief)
 
-        val calculator = CostCalculator(registry, projector)
+        val calculator = CostCalculator(registry)
 
         val driver = GameTestDriver()
         driver.registerCards(TestCards.all)
@@ -179,7 +179,7 @@ class MistformWarchiefTest : FunSpec({
         registry.register(TestCards.all)
         registry.register(MistformWarchief)
 
-        val calculator = CostCalculator(registry, projector)
+        val calculator = CostCalculator(registry)
 
         val driver = createDriver()
         driver.initMirrorMatch(

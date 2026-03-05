@@ -4,7 +4,6 @@ import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.DamageComponent
@@ -55,7 +54,6 @@ import java.util.UUID
 class CombatManager(
     private val cardRegistry: CardRegistry? = null,
     private val damageCalculator: DamageCalculator = DamageCalculator(),
-    private val stateProjector: StateProjector = StateProjector()
 ) {
 
     // =========================================================================
@@ -73,7 +71,7 @@ class CombatManager(
         attackers: Map<EntityId, EntityId>
     ): ExecutionResult {
         // Validate each attacker
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         for ((attackerId, defenderId) in attackers) {
             val validation = validateAttacker(state, attackingPlayer, attackerId)
             if (validation != null) {
@@ -167,7 +165,7 @@ class CombatManager(
             ?: return "Not a card: $attackerId"
 
         // Use projected state for controller, keywords, and types (includes floating effects like animate land)
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
 
         // Must be a creature (use projected types to handle animated lands etc.)
         if (!projected.isCreature(attackerId)) {
@@ -296,7 +294,7 @@ class CombatManager(
         attackers: Map<EntityId, EntityId>
     ): String? {
         val validAttackers = getValidAttackers(state, attackingPlayer)
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
 
         for (attackerId in validAttackers) {
             if (!projected.mustAttack(attackerId)) continue
@@ -319,7 +317,7 @@ class CombatManager(
         blockingPlayer: EntityId,
         blockers: Map<EntityId, List<EntityId>>
     ): String? {
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val potentialBlockers = findPotentialBlockers(state, blockingPlayer)
 
         for (blockerId in potentialBlockers) {
@@ -349,7 +347,7 @@ class CombatManager(
      */
     private fun getValidAttackers(state: GameState, playerId: EntityId): List<EntityId> {
         val battlefield = state.getBattlefield()
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
 
         return battlefield.filter { entityId ->
             val container = state.getEntity(entityId) ?: return@filter false
@@ -601,7 +599,7 @@ class CombatManager(
             ?: return "Not a card: $blockerId"
 
         // Must be controlled by blocking player (use projected controller for control-changing effects)
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
 
         // Must be a creature (use projected types to handle animated lands etc.)
         if (!projected.isCreature(blockerId)) {
@@ -700,7 +698,7 @@ class CombatManager(
             ?: return "Not a card: $attackerId"
 
         // Use projected keywords (includes floating effects)
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
 
         // Unblockable: Cannot be blocked at all
         if (projected.hasKeyword(attackerId, com.wingedsheep.sdk.core.AbilityFlag.CANT_BE_BLOCKED)) {
@@ -856,7 +854,7 @@ class CombatManager(
         playerId: EntityId,
         landSubtype: com.wingedsheep.sdk.core.Subtype
     ): Boolean {
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         return state.getBattlefield().any { entityId ->
             val container = state.getEntity(entityId) ?: return@any false
             val cardComponent = container.get<CardComponent>() ?: return@any false
@@ -1340,7 +1338,7 @@ class CombatManager(
         }
 
         // Use projected keywords (includes floating effects)
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
 
         // Check each attacker with menace
         for ((attackerId, blockerList) in attackerToBlockers) {
@@ -1376,7 +1374,7 @@ class CombatManager(
         val events = mutableListOf<GameEvent>()
 
         // Use projected values for power and keywords (includes floating effects like +4/+4)
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
 
         // Find all attackers
         val attackers = state.findEntitiesWith<AttackingComponent>()
@@ -1834,7 +1832,7 @@ class CombatManager(
         val hasReflection = hasReflectCombatDamage(state, playerId)
         if (hasReflection) {
             // Get the attacker's controller (use projected state for control-changing effects)
-            val projected = stateProjector.project(state)
+            val projected = state.projectedState
             val attackerController = projected.getController(sourceId)
 
             // Only reflect if attacker is controlled by a different player
@@ -1955,7 +1953,7 @@ class CombatManager(
         attackerContainer.get<CardComponent>() ?: return newState to events
 
         // Use projected values for power and keywords (includes floating effects like +4/+4)
-        val projected = stateProjector.project(newState)
+        val projected = newState.projectedState
         val attackerPower = projected.getPower(attackerId) ?: 0
         val hasTrample = projected.hasKeyword(attackerId, Keyword.TRAMPLE)
 
@@ -2168,7 +2166,7 @@ class CombatManager(
         val attackerContainer = newState.getEntity(attackerId) ?: return newState to events
         attackerContainer.get<CardComponent>() ?: return newState to events
 
-        val projected = stateProjector.project(newState)
+        val projected = newState.projectedState
 
         // Get blockers in damage assignment order (or default order)
         val orderedBlockers = attackerContainer.get<DamageAssignmentOrderComponent>()?.orderedBlockers
@@ -2421,7 +2419,7 @@ class CombatManager(
         val events = mutableListOf<GameEvent>()
 
         // Use projected toughness (includes floating effects like +4/+4)
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
 
         for ((entityId, container) in state.entities) {
             container.get<CardComponent>() ?: continue
@@ -2522,7 +2520,7 @@ class CombatManager(
             return null  // No "must be blocked" requirements
         }
 
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
 
         // Find all potential blockers (untapped creatures controlled by blocking player)
         val potentialBlockers = findPotentialBlockers(state, blockingPlayer)
@@ -2577,7 +2575,7 @@ class CombatManager(
         blockingPlayer: EntityId,
         blockers: Map<EntityId, List<EntityId>>
     ): String? {
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
 
         // Find all provoke constraints: blocker -> attacker
         val provokeConstraints = state.floatingEffects
@@ -2685,7 +2683,7 @@ class CombatManager(
      * - MustBeBlockedByAll (Taunting Elf): all able blockers must block the attacker
      */
     fun getMandatoryBlockerAssignments(state: GameState, blockingPlayer: EntityId): Map<EntityId, List<EntityId>> {
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val potentialBlockers = findPotentialBlockers(state, blockingPlayer)
         val result = mutableMapOf<EntityId, MutableList<EntityId>>()
 
@@ -2744,7 +2742,7 @@ class CombatManager(
      * Find all potential blockers (untapped creatures controlled by the blocking player).
      */
     private fun findPotentialBlockers(state: GameState, blockingPlayer: EntityId): List<EntityId> {
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         return state.getBattlefield()
             .filter { entityId ->
                 val container = state.getEntity(entityId) ?: return@filter false
@@ -2769,7 +2767,7 @@ class CombatManager(
         val isFaceDown = blockerContainer.has<FaceDownComponent>()
         if (!isFaceDown && hasCantBlockAbility(blockerCard)) return false
 
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
 
         // Check projected "can't block" (e.g., from Pacifism aura)
         if (projected.cantBlock(blockerId)) return false
@@ -3112,7 +3110,7 @@ class CombatManager(
     ): ExecutionResult {
         if (blockers.isEmpty()) return ExecutionResult.success(state)
 
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val totalGenericTax = calculatePerCreatureTax(state, blockers.keys, projected)
 
         if (totalGenericTax <= 0) return ExecutionResult.success(state)

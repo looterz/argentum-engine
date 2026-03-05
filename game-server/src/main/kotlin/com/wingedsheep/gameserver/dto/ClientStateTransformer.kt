@@ -21,7 +21,6 @@ import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComp
 import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.sdk.scripting.PlayFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.conditions.Compare
@@ -41,7 +40,6 @@ class ClientStateTransformer(
     private val cardRegistry: CardRegistry
 ) {
 
-    private val stateProjector = StateProjector()
 
     /**
      * Transform the game state for a specific player's view.
@@ -56,7 +54,7 @@ class ClientStateTransformer(
         isSpectator: Boolean = false
     ): ClientGameState {
         // Project the game state to apply continuous effects (Rule 613)
-        val projectedState = stateProjector.project(state)
+        val projectedState = state.projectedState
 
         // Build visible cards map
         val cards = mutableMapOf<EntityId, ClientCard>()

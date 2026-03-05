@@ -16,7 +16,6 @@ import com.wingedsheep.engine.mechanics.layers.ActiveFloatingEffect
 import com.wingedsheep.engine.mechanics.layers.FloatingEffectData
 import com.wingedsheep.engine.mechanics.layers.Layer
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -45,7 +44,6 @@ class ChainCopyExecutor(
     override val effectType: KClass<ChainCopyEffect> = ChainCopyEffect::class
 
     private val predicateEvaluator = PredicateEvaluator()
-    private val stateProjector = StateProjector()
 
     override fun execute(
         state: GameState,
@@ -77,7 +75,7 @@ class ChainCopyExecutor(
         val container = state.getEntity(targetId)
             ?: return ExecutionResult.success(state)
 
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val targetControllerId = projected.getController(targetId)
             ?: container.get<CardComponent>()?.ownerId
             ?: return ExecutionResult.success(state)
@@ -102,7 +100,7 @@ class ChainCopyExecutor(
         val container = state.getEntity(targetId)
             ?: return ExecutionResult.success(state)
 
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val targetControllerId = projected.getController(targetId)
             ?: container.get<CardComponent>()?.ownerId
             ?: return ExecutionResult.success(state)
@@ -205,7 +203,7 @@ class ChainCopyExecutor(
         val container = state.getEntity(targetId)
             ?: return ExecutionResult.success(state)
 
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val targetControllerId = projected.getController(targetId)
             ?: container.get<CardComponent>()?.ownerId
             ?: return ExecutionResult.success(state)
@@ -358,7 +356,7 @@ class ChainCopyExecutor(
     }
 
     fun findControllerLands(state: GameState, controllerId: EntityId): List<EntityId> {
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val controlledPermanents = projected.getBattlefieldControlledBy(controllerId)
         val context = PredicateContext(controllerId = controllerId)
         return controlledPermanents.filter { permanentId ->

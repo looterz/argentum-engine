@@ -3,7 +3,6 @@ package com.wingedsheep.engine.handlers.continuations
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -438,7 +437,7 @@ class ChainSpellContinuationResumer(
     }
 
     fun findControllerLands(state: GameState, controllerId: EntityId): List<EntityId> {
-        val projected = StateProjector().project(state)
+        val projected = state.projectedState
         val controlledPermanents = projected.getBattlefieldControlledBy(controllerId)
         val predicateEvaluator = PredicateEvaluator()
         val context = PredicateContext(controllerId = controllerId)

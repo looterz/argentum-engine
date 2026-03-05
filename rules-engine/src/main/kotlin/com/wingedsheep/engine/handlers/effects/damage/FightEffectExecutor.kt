@@ -6,7 +6,6 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.dealDamageToTarget
 import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.resolveTarget
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.scripting.effects.FightEffect
 import kotlin.reflect.KClass
@@ -19,7 +18,6 @@ class FightEffectExecutor : EffectExecutor<FightEffect> {
 
     override val effectType: KClass<FightEffect> = FightEffect::class
 
-    private val stateProjector = StateProjector()
 
     override fun execute(
         state: GameState,
@@ -33,7 +31,7 @@ class FightEffectExecutor : EffectExecutor<FightEffect> {
             ?: return ExecutionResult.error(state, "No valid second target for fight")
 
         // Get projected power for each creature (projected state accounts for buffs/debuffs)
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val power1 = projected.getPower(target1Id) ?: 0
         val power2 = projected.getPower(target2Id) ?: 0
 

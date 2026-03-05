@@ -449,7 +449,7 @@ class SacrificeAndPayContinuationResumer(
     ): ExecutionResult {
         val predicateEvaluator = PredicateEvaluator()
         val cost = continuation.cost
-        val projected = com.wingedsheep.engine.mechanics.layers.StateProjector().project(state)
+        val projected = state.projectedState
 
         // Find next player who can pay among remaining players
         for ((index, nextPlayerId) in continuation.remainingPlayers.withIndex()) {
@@ -540,7 +540,7 @@ class SacrificeAndPayContinuationResumer(
 
         // Remove summoning sickness from all creatures the active player controls
         val activePlayer = continuation.playerId
-        val projected = com.wingedsheep.engine.mechanics.layers.StateProjector().project(newState)
+        val projected = newState.projectedState
         val creaturesToRefresh = newState.entities.filter { (entityId, container) ->
             projected.getController(entityId) == activePlayer &&
                 container.has<com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent>()

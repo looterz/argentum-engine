@@ -9,7 +9,6 @@ import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.cleanupCombatReferences
 import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.stripBattlefieldComponents
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -37,7 +36,7 @@ class ReturnAllToHandExecutor : EffectExecutor<ReturnAllToHandEffect> {
         context: EffectContext
     ): ExecutionResult {
         val sourceId = context.sourceId
-        val projected = StateProjector().project(state)
+        val projected = state.projectedState
         val predicateContext = PredicateContext.fromEffectContext(context)
 
         // Find all matching permanents

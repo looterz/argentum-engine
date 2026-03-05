@@ -13,7 +13,6 @@ import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.ConditionEvaluator
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.mechanics.combat.CombatManager
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.mechanics.mana.CostCalculator
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.registry.CardRegistry
@@ -68,9 +67,8 @@ class GameSession(
 
     private val actionProcessor = ActionProcessor(cardRegistry)
     private val gameInitializer = GameInitializer(cardRegistry)
-    private val stateProjector = StateProjector()
     private val manaSolver = ManaSolver(cardRegistry)
-    private val costCalculator = CostCalculator(cardRegistry, stateProjector)
+    private val costCalculator = CostCalculator(cardRegistry)
     private val conditionEvaluator = ConditionEvaluator()
     private val predicateEvaluator = PredicateEvaluator()
     private val turnManager = TurnManager(combatManager = CombatManager(cardRegistry))
@@ -78,7 +76,7 @@ class GameSession(
     private val spectatorStateBuilder = SpectatorStateBuilder(cardRegistry, stateTransformer)
     private val decisionEnricher = DecisionEnricher(cardRegistry)
     private val legalActionsCalculator = LegalActionsCalculator(
-        cardRegistry, stateProjector, manaSolver, costCalculator,
+        cardRegistry, manaSolver, costCalculator,
         predicateEvaluator, conditionEvaluator, turnManager
     )
 
@@ -557,7 +555,7 @@ class GameSession(
                 action.actionType != "PassPriority" &&
                 (!action.isManaAbility || action.additionalCostInfo?.costType == "SacrificePermanent")
             }
-            autoPassManager.getNextStopPoint(state, playerId, hasMeaningfulActions, stateProjector, playerOverrides.myTurnStops, playerOverrides.opponentTurnStops, stopsMode = playerMode == PriorityMode.STOPS)
+            autoPassManager.getNextStopPoint(state, playerId, hasMeaningfulActions, myTurnStops = playerOverrides.myTurnStops, opponentTurnStops = playerOverrides.opponentTurnStops, stopsMode = playerMode == PriorityMode.STOPS)
         } else {
             null
         }

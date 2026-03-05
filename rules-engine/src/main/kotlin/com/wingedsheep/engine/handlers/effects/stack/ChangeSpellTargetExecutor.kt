@@ -5,7 +5,6 @@ import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.handlers.DecisionHandler
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
@@ -61,7 +60,7 @@ class ChangeSpellTargetExecutor : EffectExecutor<ChangeSpellTargetEffect> {
             return ExecutionResult.success(state)
         }
 
-        val projected = StateProjector().project(state)
+        val projected = state.projectedState
 
         // Check the target is a creature using projected types
         if (!projected.hasType(singleTarget.entityId, "CREATURE")) {

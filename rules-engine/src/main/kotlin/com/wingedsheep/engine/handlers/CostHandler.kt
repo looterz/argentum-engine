@@ -24,13 +24,11 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.AdditionalCost
 import com.wingedsheep.sdk.scripting.GameObjectFilter
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 
 /**
  * Validates and pays costs for spells and abilities.
  */
 class CostHandler(
-    private val stateProjector: StateProjector = StateProjector()
 ) {
 
     private val predicateEvaluator = PredicateEvaluator()
@@ -209,7 +207,7 @@ class CostHandler(
                 }
 
                 val context = PredicateContext(controllerId = controllerId)
-                val projected = stateProjector.project(state)
+                val projected = state.projectedState
 
                 var newState = state
                 val events = mutableListOf<GameEvent>()
@@ -511,7 +509,7 @@ class CostHandler(
         filter: GameObjectFilter
     ): List<EntityId> {
         val context = PredicateContext(controllerId = controllerId)
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         return state.entities.filter { (entityId, container) ->
             container.get<ControllerComponent>()?.playerId == controllerId &&
             predicateEvaluator.matchesWithProjection(state, projected, entityId, filter, context)
@@ -524,7 +522,7 @@ class CostHandler(
         filter: GameObjectFilter
     ): List<EntityId> {
         val context = PredicateContext(controllerId = controllerId)
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         return state.entities.filter { (entityId, container) ->
             container.get<ControllerComponent>()?.playerId == controllerId &&
             !container.has<TappedComponent>() &&
@@ -539,7 +537,7 @@ class CostHandler(
         controllerId: EntityId
     ): List<EntityId> {
         val context = PredicateContext(controllerId = controllerId)
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         return cardIds.filter { cardId ->
             predicateEvaluator.matchesWithProjection(state, projected, cardId, filter, context)
         }

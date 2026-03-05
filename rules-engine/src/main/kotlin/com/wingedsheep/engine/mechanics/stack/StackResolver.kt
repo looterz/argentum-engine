@@ -3,7 +3,6 @@ package com.wingedsheep.engine.mechanics.stack
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.EffectHandler
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
@@ -53,7 +52,6 @@ class StackResolver(
     private val effectHandler: EffectHandler = EffectHandler(),
     internal val cardRegistry: CardRegistry? = null,
     private val staticAbilityHandler: StaticAbilityHandler = StaticAbilityHandler(cardRegistry),
-    private val stateProjector: StateProjector = StateProjector(),
     private val predicateEvaluator: PredicateEvaluator = PredicateEvaluator()
 ) {
 
@@ -1066,7 +1064,7 @@ class StackResolver(
         sourceId: EntityId? = null
     ): List<ChosenTarget> {
         // Always project state for shroud/hexproof checks (Rule 702.18, 702.11)
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val predicateContext = PredicateContext(controllerId = controllerId, sourceId = sourceId)
 
         return targets.filterIndexed { index, target ->

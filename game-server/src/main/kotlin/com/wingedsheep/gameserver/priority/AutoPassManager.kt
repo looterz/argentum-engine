@@ -1,6 +1,5 @@
 package com.wingedsheep.gameserver.priority
 
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.combat.AttackingComponent
 import com.wingedsheep.engine.state.components.combat.BlockingComponent
@@ -511,7 +510,6 @@ class AutoPassManager {
         state: GameState,
         playerId: EntityId,
         hasMeaningfulActions: Boolean,
-        stateProjector: StateProjector? = null,
         myTurnStops: Set<Step> = emptySet(),
         opponentTurnStops: Set<Step> = emptySet(),
         stopsMode: Boolean = false
@@ -534,7 +532,7 @@ class AutoPassManager {
         }
 
         if (hasAttackers && currentStep == Step.DECLARE_BLOCKERS) {
-            return if (hasCombatFirstStrike(state, stateProjector)) {
+            return if (hasCombatFirstStrike(state)) {
                 "Resolve first strike damage"
             } else {
                 "Resolve combat damage"
@@ -670,10 +668,8 @@ class AutoPassManager {
     /**
      * Check if any attacker or blocker in combat has first strike or double strike.
      */
-    private fun hasCombatFirstStrike(state: GameState, stateProjector: StateProjector?): Boolean {
-        if (stateProjector == null) return false
-
-        val projected = stateProjector.project(state)
+    private fun hasCombatFirstStrike(state: GameState): Boolean {
+        val projected = state.projectedState
         return state.getBattlefield().any { entityId ->
             val container = state.getEntity(entityId) ?: return@any false
             val isInCombat = container.get<AttackingComponent>() != null || container.get<BlockingComponent>() != null

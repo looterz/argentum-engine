@@ -23,7 +23,6 @@ import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.actions.ActionContext
 import com.wingedsheep.engine.handlers.actions.ActionHandler
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.mechanics.mana.AlternativePaymentHandler
 import com.wingedsheep.engine.mechanics.mana.CostCalculator
 import com.wingedsheep.engine.mechanics.mana.ManaPool
@@ -81,7 +80,6 @@ class CastSpellHandler(
     private val conditionEvaluator: ConditionEvaluator,
     private val triggerDetector: TriggerDetector,
     private val triggerProcessor: TriggerProcessor,
-    private val stateProjector: StateProjector = StateProjector()
 ) : ActionHandler<CastSpell> {
     override val actionType: KClass<CastSpell> = CastSpell::class
 
@@ -319,7 +317,7 @@ class CastSpellHandler(
         additionalCosts: List<AdditionalCost>,
         action: CastSpell
     ): String? {
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         for (additionalCost in additionalCosts) {
             when (additionalCost) {
                 is AdditionalCost.SacrificePermanent -> {
@@ -433,7 +431,7 @@ class CastSpellHandler(
                 when (additionalCost) {
                     is AdditionalCost.SacrificePermanent -> {
                         // Project state to capture text-changed subtypes before sacrifice
-                        val projectedBeforeSacrifice = stateProjector.project(currentState)
+                        val projectedBeforeSacrifice = currentState.projectedState
                         for (permId in action.additionalCostPayment.sacrificedPermanents) {
                             val permContainer = currentState.getEntity(permId) ?: continue
                             val permCard = permContainer.get<CardComponent>() ?: continue
@@ -1129,8 +1127,7 @@ class CastSpellHandler(
                 context.targetValidator,
                 context.conditionEvaluator,
                 context.triggerDetector,
-                context.triggerProcessor,
-                context.stateProjector
+                context.triggerProcessor
             )
         }
     }

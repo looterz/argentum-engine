@@ -22,7 +22,6 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.mechanics.text.SubtypeReplacer
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
@@ -54,7 +53,6 @@ import com.wingedsheep.sdk.scripting.references.Player
 class TriggerDetector(
     private val cardRegistry: CardRegistry? = null,
     private val abilityRegistry: AbilityRegistry = AbilityRegistry(),
-    private val stateProjector: StateProjector = StateProjector(),
     private val conditionEvaluator: ConditionEvaluator = ConditionEvaluator(),
     private val predicateEvaluator: PredicateEvaluator = PredicateEvaluator()
 ) {
@@ -204,7 +202,7 @@ class TriggerDetector(
         activePlayerId: EntityId
     ): List<PendingTrigger> {
         val triggers = mutableListOf<PendingTrigger>()
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
 
         // Check all permanents on the battlefield for step-based triggers
         for (entityId in state.getBattlefield()) {
@@ -314,7 +312,7 @@ class TriggerDetector(
         event: EngineGameEvent
     ): List<PendingTrigger> {
         val triggers = mutableListOf<PendingTrigger>()
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
 
         // Check all permanents on the battlefield
         for (entityId in state.getBattlefield()) {
@@ -1458,7 +1456,7 @@ class TriggerDetector(
 
         // Check filter
         if (trigger.filter != GameObjectFilter.Any) {
-            val projected = stateProjector.project(state)
+            val projected = state.projectedState
             // Check card predicates (creature type, subtype, etc.)
             for (predicate in trigger.filter.cardPredicates) {
                 when (predicate) {
@@ -1610,7 +1608,7 @@ class TriggerDetector(
 
         // Check targetFilter against the targeted entity
         if (trigger.targetFilter != GameObjectFilter.Any) {
-            val projected = stateProjector.project(state)
+            val projected = state.projectedState
             val targetContainer = state.getEntity(event.targetEntityId) ?: return false
             val targetCard = targetContainer.get<CardComponent>() ?: return false
 

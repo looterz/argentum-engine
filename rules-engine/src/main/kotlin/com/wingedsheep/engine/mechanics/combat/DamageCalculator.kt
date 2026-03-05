@@ -3,7 +3,6 @@ package com.wingedsheep.engine.mechanics.combat
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageComponent
@@ -30,7 +29,6 @@ import com.wingedsheep.sdk.scripting.events.RecipientFilter
  */
 class DamageCalculator {
 
-    private val stateProjector = StateProjector()
     private val predicateEvaluator = PredicateEvaluator()
 
     /**
@@ -76,7 +74,7 @@ class DamageCalculator {
         val damageMarked = creatureContainer?.get<DamageComponent>()?.amount ?: 0
 
         // Use projected values for toughness (includes floating effects like +4/+4)
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val toughness = projected.getToughness(creatureId) ?: 0
 
         // Check if source has deathtouch (using projected keywords)
@@ -119,7 +117,7 @@ class DamageCalculator {
             ?: return DamageDistribution(emptyMap(), 0, 0)
 
         // Use projected values for power and keywords (includes floating effects like +4/+4)
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val attackerPower = projected.getPower(attackerId) ?: 0
         if (attackerPower <= 0) {
             return DamageDistribution(emptyMap(), 0, 0)
@@ -210,7 +208,7 @@ class DamageCalculator {
             ?: return "Attacker is not a card"
 
         // Use projected values for power and keywords (includes floating effects like +4/+4)
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val attackerPower = projected.getPower(attackerId) ?: 0
         val hasTrample = projected.hasKeyword(attackerId, Keyword.TRAMPLE)
 
@@ -291,7 +289,7 @@ class DamageCalculator {
         if (blockerIds.isEmpty()) return false
 
         // Use projected values for keywords and power (includes floating effects like +4/+4)
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
 
         // Single blocker without trample = no choice needed
         if (blockerIds.size <= 1 && !projected.hasKeyword(attackerId, Keyword.TRAMPLE)) {

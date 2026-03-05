@@ -1,6 +1,5 @@
 package com.wingedsheep.engine.handlers
 
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.GrantsControllerShroudComponent
@@ -20,7 +19,6 @@ import com.wingedsheep.sdk.scripting.targets.*
  * and returns a list of valid target EntityIds.
  */
 class TargetFinder(
-    private val stateProjector: StateProjector = StateProjector()
 ) {
     private val predicateEvaluator = PredicateEvaluator()
 
@@ -82,7 +80,7 @@ class TargetFinder(
         sourceId: EntityId?,
         ignoreTargetingRestrictions: Boolean = false
     ): List<EntityId> {
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val battlefield = state.getBattlefield()
         val filter = requirement.filter
 
@@ -112,7 +110,7 @@ class TargetFinder(
         controllerId: EntityId,
         sourceId: EntityId?
     ): List<EntityId> {
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val targets = mutableListOf<EntityId>()
 
         // Add all players (excluding those with shroud)
@@ -165,7 +163,7 @@ class TargetFinder(
         controllerId: EntityId,
         sourceId: EntityId?
     ): List<EntityId> {
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val battlefield = state.getBattlefield()
 
         return battlefield.filter { entityId ->
@@ -253,7 +251,7 @@ class TargetFinder(
         controllerId: EntityId,
         sourceId: EntityId?
     ): List<EntityId> {
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val targets = mutableListOf<EntityId>()
 
         // Add all permanents on the battlefield

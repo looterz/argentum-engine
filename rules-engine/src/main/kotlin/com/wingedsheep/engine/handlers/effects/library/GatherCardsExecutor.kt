@@ -8,7 +8,6 @@ import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -86,7 +85,7 @@ class GatherCardsExecutor : EffectExecutor<GatherCardsEffect> {
             is CardSource.ControlledPermanents -> {
                 val playerId = resolvePlayer(source.player, context, state)
                     ?: return ExecutionResult.error(state, "Could not resolve player for GatherCards ControlledPermanents")
-                val projected = StateProjector().project(state)
+                val projected = state.projectedState
                 val controlled = projected.getBattlefieldControlledBy(playerId)
                 if (source.filter != GameObjectFilter.Any) {
                     val predicateContext = PredicateContext.fromEffectContext(context)

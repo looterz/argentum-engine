@@ -7,7 +7,6 @@ import com.wingedsheep.engine.mechanics.layers.ActiveFloatingEffect
 import com.wingedsheep.engine.mechanics.layers.FloatingEffectData
 import com.wingedsheep.engine.mechanics.layers.Layer
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
@@ -33,7 +32,7 @@ class ColorChoiceContinuationResumer(
         val affectedEntities = mutableSetOf<EntityId>()
         val predicateEvaluator = PredicateEvaluator()
         val predicateContext = PredicateContext(controllerId = controllerId, sourceId = continuation.sourceId)
-        val projected = StateProjector().project(state)
+        val projected = state.projectedState
 
         for (entityId in state.getBattlefield()) {
             val container = state.getEntity(entityId) ?: continue

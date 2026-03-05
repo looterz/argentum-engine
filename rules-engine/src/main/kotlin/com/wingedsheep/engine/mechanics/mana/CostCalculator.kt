@@ -1,6 +1,5 @@
 package com.wingedsheep.engine.mechanics.mana
 
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -36,8 +35,7 @@ import com.wingedsheep.sdk.scripting.predicates.CardPredicate
  * A spell's cost can never be reduced below its colored mana requirements.
  */
 class CostCalculator(
-    private val cardRegistry: CardRegistry? = null,
-    private val stateProjector: StateProjector? = null
+    private val cardRegistry: CardRegistry? = null
 ) {
 
     /**
@@ -123,7 +121,7 @@ class CostCalculator(
      */
     private fun sumPower(state: GameState, playerId: EntityId): Int {
         // Get projected state if projector is available
-        val projectedState = stateProjector?.project(state)
+        val projectedState = state.projectedState
 
         var totalPower = 0
         for (entityId in state.getBattlefield(playerId)) {
@@ -230,7 +228,7 @@ class CostCalculator(
         cardDef: CardDefinition,
         casterId: EntityId
     ): Int {
-        val projectedState = stateProjector?.project(state)
+        val projectedState = state.projectedState
 
         var reduction = 0
         for (entityId in state.getBattlefield(casterId)) {

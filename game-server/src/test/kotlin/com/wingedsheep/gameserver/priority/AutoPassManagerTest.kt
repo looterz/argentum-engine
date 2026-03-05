@@ -796,7 +796,7 @@ class AutoPassManagerTest : FunSpec({
             blockerIds: List<EntityId> = emptyList(),
             firstStrikeEntityIds: Set<EntityId> = emptySet(),
             doubleStrikeEntityIds: Set<EntityId> = emptySet()
-        ): Pair<GameState, StateProjector> {
+        ): GameState {
             val state = mockk<GameState>(relaxed = true)
             every { state.priorityPlayerId } returns player1
             every { state.activePlayerId } returns player1
@@ -824,53 +824,52 @@ class AutoPassManagerTest : FunSpec({
                 every { state.getEntity(blockerId) } returns entity
             }
 
-            // Set up state projector mock
-            val stateProjector = mockk<StateProjector>()
+            // Set up projected state mock
             val projected = mockk<ProjectedState>()
-            every { stateProjector.project(state) } returns projected
+            every { state.projectedState } returns projected
 
             for (entityId in allEntities) {
                 every { projected.hasKeyword(entityId, Keyword.FIRST_STRIKE) } returns (entityId in firstStrikeEntityIds)
                 every { projected.hasKeyword(entityId, Keyword.DOUBLE_STRIKE) } returns (entityId in doubleStrikeEntityIds)
             }
 
-            return state to stateProjector
+            return state
         }
 
         test("at DECLARE_BLOCKERS with attackers and no first strike returns 'Resolve combat damage'") {
             val attacker = EntityId.generate()
-            val (state, projector) = createCombatState(
+            val state = createCombatState(
                 step = Step.DECLARE_BLOCKERS,
                 attackerIds = listOf(attacker)
             )
-            autoPassManager.getNextStopPoint(state, player1, true, projector) shouldBe "Resolve combat damage"
+            autoPassManager.getNextStopPoint(state, player1, true) shouldBe "Resolve combat damage"
         }
 
         test("at DECLARE_BLOCKERS with first strike attacker returns 'Resolve first strike damage'") {
             val attacker = EntityId.generate()
-            val (state, projector) = createCombatState(
+            val state = createCombatState(
                 step = Step.DECLARE_BLOCKERS,
                 attackerIds = listOf(attacker),
                 firstStrikeEntityIds = setOf(attacker)
             )
-            autoPassManager.getNextStopPoint(state, player1, true, projector) shouldBe "Resolve first strike damage"
+            autoPassManager.getNextStopPoint(state, player1, true) shouldBe "Resolve first strike damage"
         }
 
         test("at DECLARE_BLOCKERS with double strike blocker returns 'Resolve first strike damage'") {
             val attacker = EntityId.generate()
             val blocker = EntityId.generate()
-            val (state, projector) = createCombatState(
+            val state = createCombatState(
                 step = Step.DECLARE_BLOCKERS,
                 attackerIds = listOf(attacker),
                 blockerIds = listOf(blocker),
                 doubleStrikeEntityIds = setOf(blocker)
             )
-            autoPassManager.getNextStopPoint(state, player1, true, projector) shouldBe "Resolve first strike damage"
+            autoPassManager.getNextStopPoint(state, player1, true) shouldBe "Resolve first strike damage"
         }
 
         test("at FIRST_STRIKE_COMBAT_DAMAGE with attackers returns 'Resolve combat damage'") {
             val attacker = EntityId.generate()
-            val (state, _) = createCombatState(
+            val state = createCombatState(
                 step = Step.FIRST_STRIKE_COMBAT_DAMAGE,
                 attackerIds = listOf(attacker)
             )
@@ -884,15 +883,15 @@ class AutoPassManagerTest : FunSpec({
             result shouldBe "Pass to Main 2"
         }
 
-        test("at DECLARE_BLOCKERS with no stateProjector defaults to 'Resolve combat damage'") {
+        test("at DECLARE_BLOCKERS with first strike detected via projectedState") {
             val attacker = EntityId.generate()
-            val (state, _) = createCombatState(
+            val state = createCombatState(
                 step = Step.DECLARE_BLOCKERS,
                 attackerIds = listOf(attacker),
-                firstStrikeEntityIds = setOf(attacker) // Has first strike but no projector
+                firstStrikeEntityIds = setOf(attacker)
             )
-            // Without stateProjector, hasCombatFirstStrike returns false
-            autoPassManager.getNextStopPoint(state, player1, true, null) shouldBe "Resolve combat damage"
+            // projectedState always available now, so first strike is correctly detected
+            autoPassManager.getNextStopPoint(state, player1, true) shouldBe "Resolve first strike damage"
         }
     }
 

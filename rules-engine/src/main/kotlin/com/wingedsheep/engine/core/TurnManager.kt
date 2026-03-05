@@ -3,7 +3,6 @@ package com.wingedsheep.engine.core
 import com.wingedsheep.engine.handlers.DecisionHandler
 import com.wingedsheep.engine.handlers.effects.drawing.DrawReplacementShieldConsumer
 import com.wingedsheep.engine.mechanics.combat.CombatManager
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.mechanics.StateBasedActionChecker
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -55,7 +54,6 @@ class TurnManager(
     private val combatManager: CombatManager = CombatManager(),
     private val sbaChecker: StateBasedActionChecker = StateBasedActionChecker(),
     private val decisionHandler: DecisionHandler = DecisionHandler(),
-    private val stateProjector: StateProjector = StateProjector(),
     private val cardRegistry: com.wingedsheep.engine.registry.CardRegistry? = null,
     private val effectExecutor: ((GameState, Effect, EffectContext) -> ExecutionResult)? = null
 ) {
@@ -121,7 +119,7 @@ class TurnManager(
         val skipUntap = newState.getEntity(activePlayer)?.get<SkipUntapComponent>()
 
         // Use projected state for controller checks (control-changing effects like Annex)
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
 
         // Find all tapped permanents controlled by the active player
         val permanentsToUntap = state.entities.filter { (entityId, container) ->
@@ -201,7 +199,7 @@ class TurnManager(
 
         // Untap permanents for non-active players with UntapDuringOtherUntapSteps (e.g., Seedborn Muse)
         if (cardRegistry != null) {
-            val projectedForSeedborn = stateProjector.project(newState)
+            val projectedForSeedborn = newState.projectedState
             for (playerId in newState.turnOrder) {
                 if (playerId == activePlayer) continue
                 val hasUntapAbility = projectedForSeedborn.getBattlefieldControlledBy(playerId).any { permanentId ->
@@ -228,7 +226,7 @@ class TurnManager(
         newState = cleanupWhileSourceTappedEffects(newState)
 
         // Remove summoning sickness from all creatures the player controls (using projected state)
-        val projectedAfterUntap = stateProjector.project(newState)
+        val projectedAfterUntap = newState.projectedState
         val creaturesToRefresh = newState.entities.filter { (entityId, container) ->
             projectedAfterUntap.getController(entityId) == activePlayer &&
                 container.has<SummoningSicknessComponent>()
@@ -409,7 +407,7 @@ class TurnManager(
         if (cardRegistry == null) return null
 
         // Check if any permanent controlled by this player has RevealFirstDrawEachTurn
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val hasRevealAbility = projected.getBattlefieldControlledBy(playerId).any { permanentId ->
             val card = state.getEntity(permanentId)?.get<CardComponent>() ?: return@any false
             val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: return@any false
@@ -439,7 +437,7 @@ class TurnManager(
     ): ExecutionResult? {
         if (cardRegistry == null) return null
 
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val controlledPermanents = projected.getBattlefieldControlledBy(playerId)
 
         for (permanentId in controlledPermanents) {
@@ -516,7 +514,7 @@ class TurnManager(
         if (cardRegistry == null) return null
 
         // Scan the player's battlefield for permanents with promptOnDraw activated abilities
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val controlledPermanents = projected.getBattlefieldControlledBy(playerId)
 
         for (permanentId in controlledPermanents) {
@@ -539,7 +537,7 @@ class TurnManager(
                 } ?: continue
 
                 // Check if the player can afford it
-                val manaSolver = com.wingedsheep.engine.mechanics.mana.ManaSolver(cardRegistry, stateProjector)
+                val manaSolver = com.wingedsheep.engine.mechanics.mana.ManaSolver(cardRegistry)
                 if (!manaSolver.canPay(state, playerId, manaCost)) continue
 
                 // Find available mana sources for the UI
@@ -1311,7 +1309,7 @@ class TurnManager(
         val battlefield = state.getBattlefield()
 
         // Project state once to get all keywords (including granted abilities)
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
 
         return battlefield.any { entityId ->
             val container = state.getEntity(entityId) ?: return@any false
@@ -1369,7 +1367,7 @@ class TurnManager(
         val battlefield = state.getBattlefield()
 
         // Project state once to get all keywords (including granted abilities)
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
 
         return battlefield.filter { entityId ->
             val container = state.getEntity(entityId) ?: return@filter false
@@ -1423,7 +1421,7 @@ class TurnManager(
      */
     fun getValidBlockers(state: GameState, playerId: EntityId): List<EntityId> {
         val battlefield = state.getBattlefield()
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
 
         return battlefield.filter { entityId ->
             val container = state.getEntity(entityId) ?: return@filter false

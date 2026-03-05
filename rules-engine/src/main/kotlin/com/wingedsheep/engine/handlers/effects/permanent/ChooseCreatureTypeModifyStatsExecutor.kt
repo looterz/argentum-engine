@@ -8,7 +8,6 @@ import com.wingedsheep.engine.mechanics.layers.ActiveFloatingEffect
 import com.wingedsheep.engine.mechanics.layers.FloatingEffectData
 import com.wingedsheep.engine.mechanics.layers.Layer
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.mechanics.layers.Sublayer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
@@ -102,7 +101,6 @@ class ChooseCreatureTypeModifyStatsExecutor(
     }
 
     companion object {
-        private val stateProjector = StateProjector()
 
         fun applyCreatureTypeModifyStats(
             state: GameState,
@@ -120,7 +118,7 @@ class ChooseCreatureTypeModifyStatsExecutor(
 
             // Use projected state to check subtypes, so type-changing continuous effects
             // (e.g., Mistform Dreamer becoming a Cleric) are taken into account
-            val projected = stateProjector.project(state)
+            val projected = state.projectedState
 
             for (entityId in state.getBattlefield()) {
                 val container = state.getEntity(entityId) ?: continue

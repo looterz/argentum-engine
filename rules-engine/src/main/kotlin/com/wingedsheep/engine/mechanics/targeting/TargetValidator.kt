@@ -2,7 +2,6 @@ package com.wingedsheep.engine.mechanics.targeting
 
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.GrantsControllerShroudComponent
@@ -29,7 +28,6 @@ import com.wingedsheep.sdk.scripting.targets.*
  */
 class TargetValidator {
     private val predicateEvaluator = PredicateEvaluator()
-    private val stateProjector = StateProjector()
 
     /**
      * Validate all targets for a spell/ability against their requirements.
@@ -128,7 +126,7 @@ class TargetValidator {
         // Only check permanents on the battlefield
         if (entityId !in state.getBattlefield()) return null
 
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         for (color in sourceColors) {
             if (projected.hasKeyword(entityId, "PROTECTION_FROM_${color.name}")) {
                 val cardName = state.getEntity(entityId)?.get<CardComponent>()?.name ?: "target"
@@ -164,7 +162,7 @@ class TargetValidator {
         }
 
         // Use unified filter with projection (face-down creatures have CMC 0 per Rule 707.2)
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val predicateContext = PredicateContext(controllerId = casterId, sourceId = sourceId)
         val matches = predicateEvaluator.matchesWithProjection(state, projected, target.entityId, filter.baseFilter, predicateContext)
         if (!matches) {

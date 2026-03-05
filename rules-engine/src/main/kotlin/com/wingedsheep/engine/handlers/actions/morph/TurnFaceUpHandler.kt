@@ -19,7 +19,6 @@ import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.actions.ActionContext
 import com.wingedsheep.engine.handlers.actions.ActionHandler
 import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.mechanics.mana.CostCalculator
 import com.wingedsheep.engine.mechanics.mana.ManaPool
@@ -55,7 +54,6 @@ class TurnFaceUpHandler(
     private val costCalculator: CostCalculator,
     private val triggerDetector: TriggerDetector,
     private val triggerProcessor: TriggerProcessor,
-    private val stateProjector: StateProjector,
     private val staticAbilityHandler: StaticAbilityHandler = StaticAbilityHandler(cardRegistry)
 ) : ActionHandler<TurnFaceUp> {
     override val actionType: KClass<TurnFaceUp> = TurnFaceUp::class
@@ -491,7 +489,7 @@ class TurnFaceUpHandler(
         cost: PayCost.ReturnToHand,
         excludeEntityId: EntityId
     ): List<EntityId> {
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val playerBattlefield = ZoneKey(playerId, Zone.BATTLEFIELD)
         val predicateContext = PredicateContext(controllerId = playerId)
 
@@ -518,7 +516,7 @@ class TurnFaceUpHandler(
         cost: PayCost.Sacrifice,
         excludeEntityId: EntityId
     ): List<EntityId> {
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val playerBattlefield = ZoneKey(playerId, Zone.BATTLEFIELD)
         val predicateContext = PredicateContext(controllerId = playerId)
 
@@ -577,8 +575,7 @@ class TurnFaceUpHandler(
                 context.costHandler,
                 context.costCalculator,
                 context.triggerDetector,
-                context.triggerProcessor,
-                context.stateProjector
+                context.triggerProcessor
             )
         }
     }

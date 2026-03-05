@@ -6,7 +6,6 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -36,7 +35,6 @@ class SacrificeExecutor(
     override val effectType: KClass<SacrificeEffect> = SacrificeEffect::class
 
     private val predicateEvaluator = PredicateEvaluator()
-    private val stateProjector = StateProjector()
 
     override fun execute(
         state: GameState,
@@ -87,7 +85,7 @@ class SacrificeExecutor(
         effect: SacrificeEffect
     ): List<EntityId> {
         // Use projected state to account for control-changing effects (e.g., Threaten)
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val controlledPermanents = projected.getBattlefieldControlledBy(controllerId)
         val context = PredicateContext(controllerId = controllerId)
 

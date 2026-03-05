@@ -7,7 +7,6 @@ import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.mechanics.mana.CostCalculator
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.mechanics.text.SubtypeReplacer
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
@@ -61,7 +60,6 @@ private val logger = LoggerFactory.getLogger(LegalActionsCalculator::class.java)
 
 class LegalActionsCalculator(
     private val cardRegistry: CardRegistry,
-    private val stateProjector: StateProjector,
     private val manaSolver: ManaSolver,
     private val costCalculator: CostCalculator,
     private val predicateEvaluator: PredicateEvaluator,
@@ -808,7 +806,7 @@ class LegalActionsCalculator(
         // Check for mana abilities on battlefield permanents
         // Use projected state to find all permanents controlled by this player
         // (accounts for control-changing effects like Annex)
-        val projectedState = stateProjector.project(state)
+        val projectedState = state.projectedState
         val battlefieldPermanents = projectedState.getBattlefieldControlledBy(playerId)
         for (entityId in battlefieldPermanents) {
             val container = state.getEntity(entityId) ?: continue
@@ -1767,7 +1765,7 @@ class LegalActionsCalculator(
         filter: TargetFilter,
         sourceId: EntityId? = null
     ): List<EntityId> {
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val battlefield = state.getBattlefield()
         val context = PredicateContext(controllerId = playerId, sourceId = sourceId)
         return battlefield.filter { entityId ->
@@ -2069,7 +2067,7 @@ class LegalActionsCalculator(
         filter: GameObjectFilter,
         excludeEntityId: EntityId
     ): List<EntityId> {
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val playerBattlefield = ZoneKey(playerId, Zone.BATTLEFIELD)
         val predicateContext = PredicateContext(controllerId = playerId)
 
@@ -2094,7 +2092,7 @@ class LegalActionsCalculator(
         filter: GameObjectFilter,
         excludeEntityId: EntityId
     ): List<EntityId> {
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
         val playerBattlefield = ZoneKey(playerId, Zone.BATTLEFIELD)
         val predicateContext = PredicateContext(controllerId = playerId)
 
@@ -2120,7 +2118,7 @@ class LegalActionsCalculator(
     ): List<EntityId> {
         val playerBattlefield = ZoneKey(playerId, Zone.BATTLEFIELD)
         val predicateContext = PredicateContext(controllerId = playerId)
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
 
         return state.getZone(playerBattlefield).filter { entityId ->
             if (entityId == excludeEntityId) return@filter false
@@ -2143,7 +2141,7 @@ class LegalActionsCalculator(
     ): List<EntityId> {
         val playerBattlefield = ZoneKey(playerId, Zone.BATTLEFIELD)
         val predicateContext = PredicateContext(controllerId = playerId)
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
 
         return state.getZone(playerBattlefield).filter { entityId ->
             val container = state.getEntity(entityId) ?: return@filter false

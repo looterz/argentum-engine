@@ -5,7 +5,6 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.mechanics.layers.ActiveFloatingEffect
 import com.wingedsheep.engine.mechanics.layers.FloatingEffectData
 import com.wingedsheep.engine.mechanics.layers.Layer
@@ -27,7 +26,6 @@ class CantBlockGroupExecutor : EffectExecutor<CantBlockGroupEffect> {
     override val effectType: KClass<CantBlockGroupEffect> = CantBlockGroupEffect::class
 
     private val predicateEvaluator = PredicateEvaluator()
-    private val stateProjector = StateProjector()
 
     override fun execute(
         state: GameState,
@@ -37,7 +35,7 @@ class CantBlockGroupExecutor : EffectExecutor<CantBlockGroupEffect> {
         val affectedEntities = mutableSetOf<EntityId>()
         val filter = effect.filter
         val predicateContext = PredicateContext.fromEffectContext(context)
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
 
         for (entityId in state.getBattlefield()) {
             val container = state.getEntity(entityId) ?: continue

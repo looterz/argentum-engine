@@ -8,7 +8,6 @@ import com.wingedsheep.engine.mechanics.layers.ActiveFloatingEffect
 import com.wingedsheep.engine.mechanics.layers.FloatingEffectData
 import com.wingedsheep.engine.mechanics.layers.Layer
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.model.EntityId
@@ -35,7 +34,7 @@ class SetCreatureSubtypesExecutor : EffectExecutor<SetCreatureSubtypesEffect> {
             return ExecutionResult.success(state)
         }
 
-        val projected = StateProjector().project(state)
+        val projected = state.projectedState
         if (!projected.isCreature(targetId)) {
             return ExecutionResult.success(state)
         }

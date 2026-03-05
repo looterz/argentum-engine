@@ -1,7 +1,6 @@
 package com.wingedsheep.engine.handlers
 
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
@@ -188,8 +187,7 @@ class DynamicAmountEvaluator(
                 }
                 // Use projected state for accurate power (accounts for continuous effects)
                 val projected = if (projectForBattlefieldCounting) {
-                    StateProjector(DynamicAmountEvaluator(projectForBattlefieldCounting = false))
-                        .project(state)
+                    state.projectedState
                 } else null
                 if (projected != null) {
                     projected.getPower(targetEntityId) ?: 0
@@ -268,9 +266,7 @@ class DynamicAmountEvaluator(
                 val triggeringId = context.triggeringEntityId ?: return 0
                 // Get the triggering creature's subtypes from projected state
                 val projected = if (projectForBattlefieldCounting) {
-                    com.wingedsheep.engine.mechanics.layers.StateProjector(
-                        DynamicAmountEvaluator(projectForBattlefieldCounting = false)
-                    ).project(state)
+                    state.projectedState
                 } else null
 
                 val triggeringSubtypes = if (projected != null) {
@@ -325,8 +321,7 @@ class DynamicAmountEvaluator(
         // otherwise auto-project when projectForBattlefieldCounting is enabled.
         val projected = if (zoneType == Zone.BATTLEFIELD) {
             explicitProjectedState ?: if (projectForBattlefieldCounting) {
-                StateProjector(DynamicAmountEvaluator(projectForBattlefieldCounting = false))
-                    .project(state)
+                state.projectedState
             } else null
         } else null
 
@@ -366,8 +361,7 @@ class DynamicAmountEvaluator(
         val predicateContext = PredicateContext.fromEffectContext(context)
 
         val projected = explicitProjectedState ?: if (projectForBattlefieldCounting) {
-            StateProjector(DynamicAmountEvaluator(projectForBattlefieldCounting = false))
-                .project(state)
+            state.projectedState
         } else null
 
         // Collect and filter matching entities

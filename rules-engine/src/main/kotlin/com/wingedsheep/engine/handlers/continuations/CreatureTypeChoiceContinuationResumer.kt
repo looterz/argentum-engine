@@ -7,7 +7,6 @@ import com.wingedsheep.engine.mechanics.layers.FloatingEffectData
 import com.wingedsheep.engine.mechanics.layers.Layer
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.mechanics.layers.Sublayer
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -362,7 +361,7 @@ class CreatureTypeChoiceContinuationResumer(
         // Find creatures on the battlefield (optionally filtered by controller)
         val affectedEntities = mutableSetOf<EntityId>()
         val events = mutableListOf<GameEvent>()
-        val projected = if (continuation.controllerOnly) StateProjector().project(state) else null
+        val projected = if (continuation.controllerOnly) state.projectedState else null
 
         for (entityId in state.getBattlefield()) {
             val container = state.getEntity(entityId) ?: continue

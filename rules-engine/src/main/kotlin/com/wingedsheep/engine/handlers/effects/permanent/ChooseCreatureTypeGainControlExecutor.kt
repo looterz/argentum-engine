@@ -7,7 +7,6 @@ import com.wingedsheep.engine.mechanics.layers.ActiveFloatingEffect
 import com.wingedsheep.engine.mechanics.layers.FloatingEffectData
 import com.wingedsheep.engine.mechanics.layers.Layer
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
@@ -81,7 +80,6 @@ class ChooseCreatureTypeGainControlExecutor : EffectExecutor<ChooseCreatureTypeG
     }
 
     companion object {
-        private val stateProjector = StateProjector()
 
         fun applyChooseCreatureTypeGainControl(
             state: GameState,
@@ -91,7 +89,7 @@ class ChooseCreatureTypeGainControlExecutor : EffectExecutor<ChooseCreatureTypeG
             sourceName: String?,
             duration: Duration
         ): ExecutionResult {
-            val projected = stateProjector.project(state)
+            val projected = state.projectedState
 
             // Count creatures of the chosen type per player
             val counts = state.turnOrder.associateWith { playerId ->

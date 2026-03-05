@@ -38,7 +38,6 @@ import com.wingedsheep.engine.state.components.identity.MorphDataComponent
 import com.wingedsheep.engine.state.components.identity.RevealedToComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
@@ -62,7 +61,6 @@ import com.wingedsheep.engine.core.PermanentsSacrificedEvent
  */
 object EffectExecutorUtils {
 
-    private val stateProjector = StateProjector()
     private val predicateEvaluator = PredicateEvaluator()
 
     /**
@@ -325,7 +323,7 @@ object EffectExecutorUtils {
                 return ExecutionResult.success(state)
             }
 
-            val projected = stateProjector.project(state)
+            val projected = state.projectedState
             val sourceColors = projected.getColors(sourceId)
             for (colorName in sourceColors) {
                 if (projected.hasKeyword(targetId, "PROTECTION_FROM_$colorName")) {
@@ -393,7 +391,7 @@ object EffectExecutorUtils {
 
         // Lifelink: if the source has lifelink, its controller gains life equal to the damage dealt (Rule 702.15)
         if (sourceId != null) {
-            val projected = stateProjector.project(newState)
+            val projected = newState.projectedState
             if (projected.hasKeyword(sourceId, Keyword.LIFELINK.name)) {
                 val controllerId = projected.getController(sourceId)
                     ?: newState.getEntity(sourceId)?.get<ControllerComponent>()?.playerId
@@ -491,7 +489,7 @@ object EffectExecutorUtils {
             ?: return ExecutionResult.error(state, "Not a card: $entityId")
 
         // Check for indestructible - indestructible permanents can't be destroyed
-        if (stateProjector.hasProjectedKeyword(state, entityId, Keyword.INDESTRUCTIBLE)) {
+        if (state.projectedState.hasKeyword(entityId, Keyword.INDESTRUCTIBLE)) {
             // Indestructible - the destroy effect has no effect (not an error)
             return ExecutionResult.success(state)
         }
@@ -645,7 +643,7 @@ object EffectExecutorUtils {
 
         // Check for creature-type-specific prevention shields (Circle of Solace)
         if (remainingDamage > 0 && sourceId != null) {
-            val projected = stateProjector.project(state)
+            val projected = state.projectedState
             val sourceSubtypes = projected.getSubtypes(sourceId).map { it.uppercase() }.toSet()
             val sourceCard = state.getEntity(sourceId)?.get<CardComponent>()
             if (sourceCard != null && sourceCard.isCreature) {
@@ -759,7 +757,7 @@ object EffectExecutorUtils {
         if (amount <= 0) return 0
 
         var remainingDamage = amount
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
 
         for (entityId in state.getBattlefield()) {
             if (remainingDamage <= 0) break
@@ -853,7 +851,7 @@ object EffectExecutorUtils {
         if (amount <= 0) return 0
 
         var amplifiedAmount = amount
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
 
         for (entityId in state.getBattlefield()) {
             val container = state.getEntity(entityId) ?: continue

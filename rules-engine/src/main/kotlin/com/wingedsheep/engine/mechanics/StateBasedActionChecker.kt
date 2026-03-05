@@ -17,7 +17,6 @@ import com.wingedsheep.engine.state.components.identity.MorphDataComponent
 import com.wingedsheep.engine.state.components.identity.TokenComponent
 import com.wingedsheep.engine.state.components.player.LossReason
 import com.wingedsheep.engine.state.components.player.PlayerLostComponent
-import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
@@ -38,7 +37,6 @@ import com.wingedsheep.sdk.model.EntityId
  */
 class StateBasedActionChecker {
 
-    private val stateProjector = StateProjector()
 
     /**
      * Check and apply all state-based actions until none apply.
@@ -189,7 +187,7 @@ class StateBasedActionChecker {
     private fun checkZeroToughness(state: GameState): ExecutionResult {
         var newState = state
         val events = mutableListOf<GameEvent>()
-        val projected = stateProjector.project(state)
+        val projected = state.projectedState
 
         for (entityId in state.getBattlefield().toList()) {
             val container = state.getEntity(entityId) ?: continue
@@ -225,7 +223,7 @@ class StateBasedActionChecker {
             val damageComponent = container.get<DamageComponent>() ?: continue
 
             // Use projected types to handle animated lands etc.
-            val projected = stateProjector.project(newState)
+            val projected = newState.projectedState
             if (!projected.isCreature(entityId)) continue
 
             // Check if creature has indestructible
