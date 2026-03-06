@@ -2,15 +2,15 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 123 / 249
+**Implemented:** 127 / 249
 
 | Color      | Count |
 |------------|-------|
-| White      | 21    |
+| White      | 23    |
 | Blue       | 22    |
-| Black      | 21    |
+| Black      | 22    |
 | Red        | 22    |
-| Green      | 21    |
+| Green      | 22    |
 | Multicolor | 10    |
 | Colorless  | 3     |
 | Land       | 3     |
@@ -22,7 +22,7 @@
 - [x] Abzan Banner
 - [ ] Abzan Battle Priest
 - [ ] Abzan Charm
-- [ ] Abzan Falconer
+- [x] Abzan Falconer
 - [ ] Abzan Guide
 - [x] Act of Treason
 - [x] Ainok Bond-Kin
@@ -105,7 +105,7 @@
 - [x] Heir of the Wilds
 - [ ] Herald of Anafenza
 - [x] Highland Game
-- [ ] High Sentinels of Arashin
+- [x] High Sentinels of Arashin
 - [x] Highspire Mantis
 - [ ] Hooded Hydra
 - [x] Hooting Mandrills
@@ -149,7 +149,7 @@
 - [ ] Master of Pearls
 - [ ] Master the Way
 - [ ] Meandering Towershell
-- [ ] Mer-Ek Nightblade
+- [x] Mer-Ek Nightblade
 - [ ] Mindswipe
 - [ ] Mistfire Weaver
 - [ ] Molting Snakeskin
@@ -172,7 +172,7 @@
 - [ ] Rakshasa Deathdealer
 - [x] Rakshasa's Secret
 - [ ] Rakshasa Vizier
-- [ ] Rattleclaw Mystic
+- [x] Rattleclaw Mystic
 - [ ] Retribution of the Ancients
 - [ ] Ride Down
 - [x] Rite of the Serpent

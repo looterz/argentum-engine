@@ -22,6 +22,7 @@ object KhansOfTarkirSet {
      */
     val allCards = listOf(
         // White creatures
+        AbzanFalconer,
         AinokBondKin,
         AlabasterKirin,
         DazzlingRamparts,
@@ -36,6 +37,8 @@ object KhansOfTarkirSet {
         VenerableLammasu,
         WarBehemoth,
         WatcherOfTheRoost,
+
+        HighSentinelsOfArashin,
 
         // White spells
         DefiantStrike,
@@ -80,6 +83,7 @@ object KhansOfTarkirSet {
         KheruDreadmaw,
         KrumarBondKin,
         MarduSkullhunter,
+        MerEkNightblade,
         RottingMastodon,
         SidisisPet,
         ShamblingAttendants,
@@ -108,6 +112,7 @@ object KhansOfTarkirSet {
         SmokeTeller,
         TuskedColossodon,
         TuskguardCaptain,
+        RattleclawMystic,
         WoollyLoxodon,
 
         // Green enchantments
