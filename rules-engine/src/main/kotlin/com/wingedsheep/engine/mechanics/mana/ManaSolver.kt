@@ -467,16 +467,22 @@ class ManaSolver(
                 }
             }
 
-            // Try to find a tap-based mana ability
+            // Collect all tap-based mana abilities to build a combined ManaSource
+            val combinedColors = mutableSetOf<Color>()
+            var producesColorless = false
+            var maxManaAmount = 1
+            var anyAbilityHasNoPainCost = false
+            var minPainAmount = Int.MAX_VALUE
+
             for (ability in manaAbilities) {
                 // Detect pain cost in mana abilities
-                var hasPainCost = false
-                var painAmount = 0
+                var abilityHasPainCost = false
+                var abilityPainAmount = 0
                 val abilityCanBeUsed = when (val cost = ability.cost) {
                     is AbilityCost.Tap -> true
                     is AbilityCost.PayLife -> {
-                        hasPainCost = true
-                        painAmount = cost.amount
+                        abilityHasPainCost = true
+                        abilityPainAmount = cost.amount
                         true
                     }
                     is AbilityCost.Composite -> {
@@ -485,8 +491,8 @@ class ManaSolver(
                             when (subCost) {
                                 is AbilityCost.Tap -> hasTap = true
                                 is AbilityCost.PayLife -> {
-                                    hasPainCost = true
-                                    painAmount = maxOf(painAmount, subCost.amount)
+                                    abilityHasPainCost = true
+                                    abilityPainAmount = maxOf(abilityPainAmount, subCost.amount)
                                 }
                                 else -> {}
                             }
@@ -505,54 +511,47 @@ class ManaSolver(
                     }
                 }
 
-                // Extract production from effect
-                return@mapNotNull when (val effect = ability.effect) {
+                if (!abilityHasPainCost) anyAbilityHasNoPainCost = true
+                if (abilityHasPainCost) minPainAmount = minOf(minPainAmount, abilityPainAmount)
+
+                // Accumulate production from effect
+                when (val effect = ability.effect) {
                     is AddManaEffect -> {
+                        combinedColors.add(effect.color)
                         val manaAmount = (effect.amount as? DynamicAmount.Fixed)?.amount ?: 1
-                        ManaSource(
-                            entityId = entityId,
-                            name = card.name,
-                            producesColors = setOf(effect.color),
-                            producesColorless = false,
-                            isBasicLand = isBasicLand,
-                            isCreature = isCreature,
-                            hasNonManaAbilities = hasNonManaAbilities,
-                            hasPainCost = hasPainCost,
-                            painAmount = painAmount,
-                            canAttack = canAttack,
-                            manaAmount = manaAmount
-                        )
+                        maxManaAmount = maxOf(maxManaAmount, manaAmount)
                     }
                     is AddColorlessManaEffect -> {
+                        producesColorless = true
                         val manaAmount = (effect.amount as? DynamicAmount.Fixed)?.amount ?: 1
-                        ManaSource(
-                            entityId = entityId,
-                            name = card.name,
-                            producesColors = emptySet(),
-                            producesColorless = true,
-                            isBasicLand = isBasicLand,
-                            isCreature = isCreature,
-                            hasNonManaAbilities = hasNonManaAbilities,
-                            hasPainCost = hasPainCost,
-                            painAmount = painAmount,
-                            canAttack = canAttack,
-                            manaAmount = manaAmount
-                        )
+                        maxManaAmount = maxOf(maxManaAmount, manaAmount)
                     }
-                    is AddAnyColorManaEffect -> ManaSource(
-                        entityId = entityId,
-                        name = card.name,
-                        producesColors = Color.entries.toSet(),
-                        producesColorless = false,
-                        isBasicLand = isBasicLand,
-                        isCreature = isCreature,
-                        hasNonManaAbilities = hasNonManaAbilities,
-                        hasPainCost = hasPainCost,
-                        painAmount = painAmount,
-                        canAttack = canAttack
-                    )
-                    else -> null // Unknown effect type, skip this ability
+                    is AddAnyColorManaEffect -> {
+                        combinedColors.addAll(Color.entries)
+                    }
+                    else -> {}
                 }
+            }
+
+            // If we found any usable mana abilities, return the combined source
+            if (combinedColors.isNotEmpty() || producesColorless) {
+                // If any ability has no pain cost, the source is not a pain source
+                val hasPainCost = !anyAbilityHasNoPainCost && minPainAmount < Int.MAX_VALUE
+                val painAmount = if (hasPainCost) minPainAmount else 0
+
+                return@mapNotNull ManaSource(
+                    entityId = entityId,
+                    name = card.name,
+                    producesColors = combinedColors,
+                    producesColorless = producesColorless,
+                    isBasicLand = isBasicLand,
+                    isCreature = isCreature,
+                    hasNonManaAbilities = hasNonManaAbilities,
+                    hasPainCost = hasPainCost,
+                    painAmount = painAmount,
+                    canAttack = canAttack,
+                    manaAmount = maxManaAmount
+                )
             }
 
             // Fall back to land subtype logic for lands without explicit abilities
