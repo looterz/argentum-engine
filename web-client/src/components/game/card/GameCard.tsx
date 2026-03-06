@@ -77,6 +77,8 @@ export function GameCard({
   const draggingCardId = useGameStore((state) => state.draggingCardId)
   const startTargeting = useGameStore((state) => state.startTargeting)
   const startXSelection = useGameStore((state) => state.startXSelection)
+  const startDelveSelection = useGameStore((state) => state.startDelveSelection)
+  const startConvokeSelection = useGameStore((state) => state.startConvokeSelection)
   const pendingDecision = useGameStore((state) => state.pendingDecision)
   const submitTargetsDecision = useGameStore((state) => state.submitTargetsDecision)
   const decisionSelectionState = useGameStore((state) => state.decisionSelectionState)
@@ -319,6 +321,34 @@ export function GameCard({
             maxX: playableAction.maxAffordableX ?? 0,
             selectedX: playableAction.maxAffordableX ?? 0,
           })
+        } else if (playableAction.action.type === 'CastSpell' && playableAction.hasConvoke && playableAction.validConvokeCreatures && playableAction.validConvokeCreatures.length > 0) {
+          // Check if spell has Convoke and there are creatures to tap
+          startConvokeSelection({
+            actionInfo: playableAction,
+            cardName: playableAction.description.replace('Cast ', ''),
+            manaCost: playableAction.manaCostString ?? '',
+            selectedCreatures: [],
+            validCreatures: playableAction.validConvokeCreatures,
+          })
+        } else if (playableAction.action.type === 'CastSpell' && playableAction.hasDelve && playableAction.validDelveCards && playableAction.validDelveCards.length > 0) {
+          // Check if spell has Delve and there are cards in graveyard to exile
+          const manaCostStr = playableAction.manaCostString ?? ''
+          const genericMatch = manaCostStr.match(/\{(\d+)\}/)
+          const genericAmount = genericMatch ? parseInt(genericMatch[1]!, 10) : 0
+          const maxDelve = Math.min(genericAmount, playableAction.validDelveCards.length)
+
+          if (maxDelve > 0) {
+            startDelveSelection({
+              actionInfo: playableAction,
+              cardName: playableAction.description.replace('Cast ', ''),
+              manaCost: manaCostStr,
+              selectedCards: [],
+              validCards: playableAction.validDelveCards,
+              maxDelve,
+            })
+          } else {
+            submitAction(playableAction.action)
+          }
         } else if (playableAction.action.type === 'CastSpell' && (playableAction.additionalCostInfo?.costType === 'SacrificePermanent' || playableAction.additionalCostInfo?.costType === 'SacrificeSelf')) {
           // Check if spell requires sacrifice as additional cost
           const costInfo = playableAction.additionalCostInfo
@@ -382,7 +412,7 @@ export function GameCard({
       window.removeEventListener('mouseup', handleMouseUp)
       window.removeEventListener('touchend', handleTouchEnd)
     }
-  }, [draggingCardId, card.id, playableAction, shouldShowCastModal, submitAction, stopDraggingCard, startTargeting, startXSelection, handleCardClick, selectCard, isInAttackerMode, isValidAttacker, toggleAttacker, isInBlockerMode, isValidBlocker, isSelectedAsBlocker, removeBlockerAssignment])
+  }, [draggingCardId, card.id, playableAction, shouldShowCastModal, submitAction, stopDraggingCard, startTargeting, startXSelection, startDelveSelection, startConvokeSelection, handleCardClick, selectCard, isInAttackerMode, isValidAttacker, toggleAttacker, isInBlockerMode, isValidBlocker, isSelectedAsBlocker, removeBlockerAssignment])
 
   // Global mouse/touch up handler to cancel blocker drag
   // For touch, we also detect drop target since touchend fires on the originating element
