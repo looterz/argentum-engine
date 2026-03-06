@@ -26,6 +26,7 @@ These are the reusable building blocks already in place:
 | `ForEachPlayerEffect` | CompositeEffects.kt | Iterate pipeline per player |
 | `ForEachTargetEffect` | CompositeEffects.kt | Iterate pipeline per target |
 | `ForEachInGroupEffect` | GroupEffects.kt | Apply effect to each entity matching filter |
+| `FilterCollectionEffect` | PipelineEffects.kt | Filter named collection by predicate (no player choice) |
 | `ConditionalOnCollectionEffect` | PipelineEffects.kt | Branch based on collection emptiness |
 | `MoveToZoneEffect` | RemovalEffects.kt | Move single resolved target between zones |
 | `CompositeEffect` | CompositeEffects.kt | Chain effects sequentially via `then` |
@@ -237,13 +238,15 @@ Decompose linked exile patterns (Day of the Dragons, Dimensional Breach, etc.).
       Dimensional Breach uses `ReturnOneFromLinkedExile` (separate effect, not decomposed here)
 - [x] **Removed `ReturnLinkedExileEffect`** and `ReturnLinkedExileExecutor` (no remaining usages)
 
-### 4d. Add `FilterCollectionEffect` (Optional)
+### 4d. Add `CollectionFilter.MatchesFilter(GameObjectFilter)` ✅
 
-- [ ] **New pipeline atom:** Filter a named collection by predicate, output matches + non-matches
-  - Useful for "destroy all except chosen subtypes" (Harsh Mercy) and similar patterns
+- [x] **New `CollectionFilter` variant:** `MatchesFilter(GameObjectFilter)` — general-purpose predicate-based
+      collection filtering using projected state via `PredicateEvaluator.matchesWithProjection()`
+  - Useful for any automatic filter (type, subtype, color, tapped, etc.) without player choice
   - Distinct from `SelectFromCollectionEffect` because no player choice — purely automatic
-- [ ] **Implement `FilterCollectionExecutor`**
-- [ ] **Add to EffectPatterns** where needed
+- [x] **Updated `FilterCollectionExecutor`** to handle `MatchesFilter` using `PredicateEvaluator`
+- [x] **Added tests** (`FilterCollectionMatchesFilterTest` — 8 tests: type filter, subtype filter,
+      all match, none match, null storeNonMatching, projected state, empty collection, missing collection)
 
 ---
 

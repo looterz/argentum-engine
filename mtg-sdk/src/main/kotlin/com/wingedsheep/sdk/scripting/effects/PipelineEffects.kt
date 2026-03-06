@@ -604,6 +604,14 @@ sealed interface CollectionFilter {
     @SerialName("SharesSubtypeWithSacrificed")
     @Serializable
     data object SharesSubtypeWithSacrificed : CollectionFilter
+
+    /**
+     * Keep only entities that match a [GameObjectFilter] using projected state.
+     * This is the general-purpose filter for any predicate-based collection filtering.
+     */
+    @SerialName("MatchesFilter")
+    @Serializable
+    data class MatchesFilter(val filter: GameObjectFilter) : CollectionFilter
 }
 
 /**

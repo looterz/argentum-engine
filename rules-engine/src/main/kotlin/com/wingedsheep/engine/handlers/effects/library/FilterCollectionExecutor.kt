@@ -2,6 +2,8 @@ package com.wingedsheep.engine.handlers.effects.library
 
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.handlers.EffectContext
+import com.wingedsheep.engine.handlers.PredicateContext
+import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -20,6 +22,8 @@ import kotlin.reflect.KClass
 class FilterCollectionExecutor : EffectExecutor<FilterCollectionEffect> {
 
     override val effectType: KClass<FilterCollectionEffect> = FilterCollectionEffect::class
+
+    private val predicateEvaluator = PredicateEvaluator()
 
     override fun execute(
         state: GameState,
@@ -58,6 +62,13 @@ class FilterCollectionExecutor : EffectExecutor<FilterCollectionEffect> {
                         val creatureSubtypes = projected.getSubtypes(cardId)
                         creatureSubtypes.intersect(sacrificedSubtypes).isNotEmpty()
                     }
+                }
+            }
+
+            is CollectionFilter.MatchesFilter -> {
+                val predicateContext = PredicateContext.fromEffectContext(context)
+                cards.partition { cardId ->
+                    predicateEvaluator.matchesWithProjection(state, projected, cardId, filter.filter, predicateContext)
                 }
             }
         }
