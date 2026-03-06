@@ -131,12 +131,14 @@ Eliminates 4-5 bespoke "choose a creature type, then affect that type" executors
 
 ### 3a. Extend GroupFilter to Reference Chosen Values
 
-- [ ] **Add `GroupFilter.ChosenSubtype` variant** (or similar)
-  - At resolution time, reads `chosenValues["chosenCreatureType"]` from EffectContext
+- [x] **Add `GroupFilter.chosenSubtypeKey` field + `ChosenSubtypeCreatures()` factory**
+  - At resolution time, reads `chosenValues[chosenSubtypeKey]` from EffectContext
   - Filters battlefield permanents that have the chosen subtype
-- [ ] **Update `AffectsFilterResolver` / `predicateEvaluator`** to resolve `ChosenSubtype` filters
-      against projected state
-- [ ] **Add tests** for dynamic GroupFilter resolution
+- [x] **Update `ForEachInGroupExecutor.resolveGroup()`** to filter by chosen subtype
+      using `projected.hasSubtype()` (projected state)
+- [x] **Fix `resumeChooseOptionPipeline`** to store `chosenCreatureType` key in both
+      dedicated field AND `chosenValues` map for pipeline compatibility
+- [x] **Add tests** for dynamic GroupFilter resolution (4 tests)
 
 ### 3b. Decompose `ChooseCreatureTypeModifyStatsEffect`
 

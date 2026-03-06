@@ -93,6 +93,15 @@ class ForEachInGroupExecutor(
         val projected = state.projectedState
         val result = mutableListOf<EntityId>()
 
+        // If the filter references a chosen subtype, resolve it from context
+        val chosenSubtype = filter.chosenSubtypeKey?.let { key ->
+            context.chosenValues[key]
+        }
+        // If a chosen subtype key is specified but no value was chosen, return empty
+        if (filter.chosenSubtypeKey != null && chosenSubtype == null) {
+            return emptyList()
+        }
+
         for (entityId in state.getBattlefield()) {
             val container = state.getEntity(entityId) ?: continue
             container.get<CardComponent>() ?: continue
@@ -101,6 +110,11 @@ class ForEachInGroupExecutor(
 
             // Use projected state for type checking (handles animated lands etc.)
             if (!predicateEvaluator.matchesWithProjection(state, projected, entityId, filter.baseFilter, predicateContext)) {
+                continue
+            }
+
+            // Additionally filter by chosen subtype if specified
+            if (chosenSubtype != null && !projected.hasSubtype(entityId, chosenSubtype)) {
                 continue
             }
 

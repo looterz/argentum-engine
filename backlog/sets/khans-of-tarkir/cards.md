@@ -2,7 +2,7 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 140 / 249
+**Implemented:** 141 / 249
 
 | Color      | Count |
 |------------|-------|
@@ -12,7 +12,7 @@
 | Red        | 24    |
 | Green      | 24    |
 | Multicolor | 13    |
-| Colorless  | 4     |
+| Colorless  | 5     |
 | Land       | 3     |
 
 ---
@@ -227,7 +227,7 @@
 - [x] Taigam's Scheming
 - [x] Take Up Arms
 - [ ] Temur Ascendancy
-- [ ] Temur Banner
+- [x] Temur Banner
 - [ ] Temur Charger
 - [ ] Temur Charm
 - [ ] Thornwood Falls

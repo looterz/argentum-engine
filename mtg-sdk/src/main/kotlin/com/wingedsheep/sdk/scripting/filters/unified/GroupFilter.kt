@@ -37,7 +37,13 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class GroupFilter(
     val baseFilter: GameObjectFilter,
-    val excludeSelf: Boolean = false
+    val excludeSelf: Boolean = false,
+    /**
+     * When non-null, additionally filters entities by the creature subtype stored
+     * in `EffectContext.chosenValues[chosenSubtypeKey]` at resolution time.
+     * Used for "creatures of the chosen type" patterns with pipeline effects.
+     */
+    val chosenSubtypeKey: String? = null
 ) : TextReplaceable<GroupFilter> {
     val description: String
         get() = buildDescription()
@@ -126,6 +132,15 @@ data class GroupFilter(
 
         /** All creatures with a specific subtype (e.g., "Destroy all Goblins") */
         fun allCreaturesWithSubtype(subtype: String) = GroupFilter(GameObjectFilter.Companion.Creature.withSubtype(subtype))
+
+        /**
+         * All creatures of the creature type chosen at resolution time.
+         * The chosen type is read from `EffectContext.chosenValues[key]`.
+         *
+         * Pair with `ChooseOptionEffect(CREATURE_TYPE, storeAs = key)` upstream in a pipeline.
+         */
+        fun ChosenSubtypeCreatures(key: String = "chosenCreatureType", excludeSelf: Boolean = false) =
+            GroupFilter(GameObjectFilter.Companion.Creature, excludeSelf = excludeSelf, chosenSubtypeKey = key)
     }
 
     // =============================================================================
