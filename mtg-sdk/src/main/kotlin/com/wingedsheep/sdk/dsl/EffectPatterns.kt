@@ -13,6 +13,8 @@ import com.wingedsheep.sdk.scripting.effects.ChooseOptionEffect
 import com.wingedsheep.sdk.scripting.effects.Chooser
 import com.wingedsheep.sdk.scripting.effects.EachPlayerChoosesCreatureTypeEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
+import com.wingedsheep.sdk.scripting.conditions.YouControlMostOfChosenType
+import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
 import com.wingedsheep.sdk.scripting.effects.GainControlEffect
 import com.wingedsheep.sdk.scripting.effects.GrantKeywordUntilEndOfTurnEffect
 import com.wingedsheep.sdk.scripting.effects.RemoveKeywordUntilEndOfTurnEffect
@@ -1803,6 +1805,38 @@ object EffectPatterns {
                     fromChosenValueKey = key,
                     target = EffectTarget.Self,
                     duration = duration
+                )
+            )
+        ))
+    }
+
+    /**
+     * Choose a creature type. If you control more creatures of that type than each
+     * other player, gain control of all creatures of that type.
+     *
+     * Pipeline: ChooseOption(creature type)
+     *         → Conditional(YouControlMostOfChosenType,
+     *             ForEachInGroup(ChosenSubtype, GainControl))
+     *
+     * Replaces the monolithic ChooseCreatureTypeGainControlEffect.
+     */
+    fun chooseCreatureTypeGainControl(
+        duration: Duration = Duration.Permanent
+    ): CompositeEffect {
+        val key = "chosenCreatureType"
+        return CompositeEffect(listOf(
+            ChooseOptionEffect(
+                optionType = OptionType.CREATURE_TYPE,
+                storeAs = key
+            ),
+            ConditionalEffect(
+                condition = YouControlMostOfChosenType(key),
+                effect = ForEachInGroupEffect(
+                    filter = GroupFilter.ChosenSubtypeCreatures(key),
+                    effect = GainControlEffect(
+                        target = EffectTarget.Self,
+                        duration = duration
+                    )
                 )
             )
         ))

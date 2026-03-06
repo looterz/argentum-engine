@@ -19,13 +19,10 @@ import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
- * Executor for ChooseCreatureTypeGainControlEffect.
- *
- * "Choose a creature type. If you control more creatures of that type than each
- * other player, you gain control of all creatures of that type."
- *
- * Used by Peer Pressure.
+ * @deprecated Use pipeline: ChooseOption → Conditional(YouControlMostOfChosenType) → ForEachInGroup(GainControl).
+ * Kept for backward compatibility with serialized data.
  */
+@Deprecated("Use EffectPatterns.chooseCreatureTypeGainControl() pipeline instead")
 class ChooseCreatureTypeGainControlExecutor : EffectExecutor<ChooseCreatureTypeGainControlEffect> {
 
     override val effectType: KClass<ChooseCreatureTypeGainControlEffect> =

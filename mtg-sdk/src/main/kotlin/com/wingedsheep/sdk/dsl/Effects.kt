@@ -16,7 +16,6 @@ import com.wingedsheep.sdk.scripting.effects.SetBasePowerEffect
 import com.wingedsheep.sdk.scripting.effects.TakeFromLinkedExileEffect
 import com.wingedsheep.sdk.scripting.effects.ChooseColorAndGrantProtectionToGroupEffect
 import com.wingedsheep.sdk.scripting.effects.ChooseColorAndGrantProtectionToTargetEffect
-import com.wingedsheep.sdk.scripting.effects.ChooseCreatureTypeGainControlEffect
 import com.wingedsheep.sdk.scripting.effects.CantBlockGroupEffect
 import com.wingedsheep.sdk.scripting.effects.CantCastSpellsEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
@@ -551,7 +550,7 @@ object Effects {
      * other player, gain control of all creatures of that type.
      */
     fun ChooseCreatureTypeGainControl(duration: Duration = Duration.Permanent): Effect =
-        ChooseCreatureTypeGainControlEffect(duration)
+        EffectPatterns.chooseCreatureTypeGainControl(duration)
 
     // =========================================================================
     // Composite Effects

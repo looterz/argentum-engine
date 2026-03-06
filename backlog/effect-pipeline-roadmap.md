@@ -168,15 +168,19 @@ Eliminates 4-5 bespoke "choose a creature type, then affect that type" executors
 
 ### 3d. Decompose `ChooseCreatureTypeGainControlEffect`
 
-- [ ] **Express as pipeline:**
+- [x] **Express as pipeline:**
   ```
   ChooseOption(CREATURE_TYPE)
-  → Conditional(youControlMostOfChosenType)
+  → Conditional(YouControlMostOfChosenType)
   → ForEachInGroup(ChosenSubtype, GainControl)
   ```
-- [ ] **Requires `Condition.ControlsMostOfChosenType`** or similar
-- [ ] **Migrate card usages** (Peer Pressure)
-- [ ] **Deprecate `ChooseCreatureTypeGainControlExecutor`**
+- [x] **Added `YouControlMostOfChosenType` condition** — reads chosen type from
+      `EffectContext.chosenValues[key]`, counts creatures per player using projected state,
+      returns true if controller has strictly more than each other player
+- [x] **Added `EffectPatterns.chooseCreatureTypeGainControl()`** factory method
+- [x] **Migrate card usages** (Peer Pressure) — `Effects.ChooseCreatureTypeGainControl()` now
+      delegates to `EffectPatterns.chooseCreatureTypeGainControl()`
+- [x] **Deprecate `ChooseCreatureTypeGainControlExecutor`**
 
 ### 3e. Decompose `ChooseCreatureTypeMustAttackEffect`
 

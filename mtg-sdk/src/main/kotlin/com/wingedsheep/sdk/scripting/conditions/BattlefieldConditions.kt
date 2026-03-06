@@ -25,6 +25,20 @@ data class APlayerControlsMostOfSubtype(val subtype: Subtype) : Condition {
 }
 
 /**
+ * Condition: "If you control more creatures of the chosen type than each other player"
+ * Used by Peer Pressure-style effects where a creature type is chosen via
+ * ChooseOptionEffect and stored in EffectContext.chosenValues[chosenValueKey].
+ * Returns true if the controller has strictly more creatures of that type than
+ * each other player.
+ */
+@SerialName("YouControlMostOfChosenType")
+@Serializable
+data class YouControlMostOfChosenType(val chosenValueKey: String = "chosenCreatureType") : Condition {
+    override val description: String = "if you control more creatures of the chosen type than each other player"
+    override fun applyTextReplacement(replacer: TextReplacer): Condition = this
+}
+
+/**
  * Condition: "If enchanted creature is a [subtype]"
  * Used by auras like Lavamancer's Skill that have different effects based on
  * the creature type of the enchanted creature.

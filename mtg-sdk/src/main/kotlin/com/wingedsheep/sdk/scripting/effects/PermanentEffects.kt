@@ -696,17 +696,10 @@ data class GrantActivatedAbilityToGroupEffect(
 }
 
 /**
- * Choose a creature type. If you control more creatures of that type than each other
- * player, you gain control of all creatures of that type. (This effect lasts indefinitely.)
- *
- * Used by Peer Pressure.
- *
- * At resolution time, the executor:
- * 1. Presents a ChooseOptionDecision with all creature types
- * 2. Pushes a ChooseCreatureTypeGainControlContinuation
- * 3. After the player chooses, counts creatures of that type per player
- * 4. If the controller has strictly more than each other player, gains control of all such creatures
+ * @deprecated Use `EffectPatterns.chooseCreatureTypeGainControl()` pipeline instead.
+ * Kept for backward compatibility with serialized data.
  */
+@Deprecated("Use EffectPatterns.chooseCreatureTypeGainControl() pipeline instead")
 @SerialName("ChooseCreatureTypeGainControl")
 @Serializable
 data class ChooseCreatureTypeGainControlEffect(

@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.*
 import com.wingedsheep.sdk.scripting.conditions.APlayerControlsMostOfSubtype
+import com.wingedsheep.sdk.scripting.conditions.YouControlMostOfChosenType
 import com.wingedsheep.sdk.scripting.conditions.AllConditions
 import com.wingedsheep.sdk.scripting.conditions.AnyCondition
 import com.wingedsheep.sdk.scripting.conditions.Compare
@@ -64,6 +65,7 @@ class ConditionEvaluator {
 
             // Battlefield conditions (non-generic)
             is APlayerControlsMostOfSubtype -> evaluateAPlayerControlsMostOfSubtype(state, condition)
+            is YouControlMostOfChosenType -> evaluateYouControlMostOfChosenType(state, condition, context)
             is EnchantedCreatureHasSubtype -> evaluateEnchantedCreatureHasSubtype(state, condition, context)
 
             // Source conditions
@@ -238,6 +240,29 @@ class ConditionEvaluator {
         if (maxCount == 0) return false
         val playersWithMax = counts.count { it.value == maxCount }
         return playersWithMax == 1
+    }
+
+    private fun evaluateYouControlMostOfChosenType(
+        state: GameState,
+        condition: YouControlMostOfChosenType,
+        context: EffectContext
+    ): Boolean {
+        val chosenType = context.chosenValues[condition.chosenValueKey] ?: return false
+        val projected = state.projectedState
+        val controllerId = context.controllerId
+
+        val counts = state.turnOrder.associateWith { playerId ->
+            state.getBattlefield().count { entityId ->
+                val controller = projected.getController(entityId)
+                controller == playerId && projected.hasSubtype(entityId, chosenType) &&
+                    projected.isCreature(entityId)
+            }
+        }
+
+        val controllerCount = counts[controllerId] ?: 0
+        if (controllerCount == 0) return false
+
+        return counts.filter { it.key != controllerId }.all { controllerCount > it.value }
     }
 
     private fun evaluateEnchantedCreatureHasSubtype(
