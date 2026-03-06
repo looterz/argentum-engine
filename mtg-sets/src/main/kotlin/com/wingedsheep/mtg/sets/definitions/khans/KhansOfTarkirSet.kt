@@ -146,6 +146,7 @@ object KhansOfTarkirSet {
 
         // Red spells
         ActOfTreason,
+        ArcLightning,
         DragonGrip,
         ArrowStorm,
         BarrageOfBoulders,

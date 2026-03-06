@@ -111,6 +111,7 @@ fun TargetPermanent(
 @Serializable
 data class AnyTarget(
     override val count: Int = 1,
+    override val minCount: Int = count,
     override val optional: Boolean = false,
     override val id: String? = null
 ) : TargetRequirement {

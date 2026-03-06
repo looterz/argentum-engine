@@ -2,14 +2,14 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 132 / 249
+**Implemented:** 133 / 249
 
 | Color      | Count |
 |------------|-------|
 | White      | 23    |
 | Blue       | 23    |
 | Black      | 23    |
-| Red        | 22    |
+| Red        | 23    |
 | Green      | 23    |
 | Multicolor | 12    |
 | Colorless  | 3     |
@@ -33,7 +33,7 @@
 - [ ] Anafenza, the Foremost
 - [ ] Ankle Shanker
 - [x] Archers' Parapet
-- [ ] Arc Lightning
+- [x] Arc Lightning
 - [ ] Armament Corps
 - [x] Arrow Storm
 - [ ] Ashcloud Phoenix
