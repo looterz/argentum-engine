@@ -2,14 +2,14 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 142 / 249
+**Implemented:** 143 / 249
 
 | Color      | Count |
 |------------|-------|
 | White      | 24    |
 | Blue       | 24    |
 | Black      | 24    |
-| Red        | 24    |
+| Red        | 25    |
 | Green      | 24    |
 | Multicolor | 14    |
 | Colorless  | 5     |
@@ -79,7 +79,7 @@
 - [x] Dragon Grip
 - [x] Dragonscale Boon
 - [ ] Dragon's Eye Savants
-- [ ] Dragon-Style Twins
+- [x] Dragon-Style Twins
 - [ ] Dragon Throne of Tarkir
 - [ ] Duneblast
 - [x] Dutiful Return

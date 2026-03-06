@@ -141,6 +141,7 @@ object KhansOfTarkirSet {
         BloodfireExpert,
         BloodfireMentor,
         CanyonLurkers,
+        DragonStyleTwins,
         LeapingMaster,
         MarduBlazebringer,
         MarduHeartPiercer,
