@@ -1,10 +1,12 @@
 package com.wingedsheep.engine.scenarios
 
+import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
 import com.wingedsheep.mtg.sets.definitions.khans.cards.HighSentinelsOfArashin
+import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Step
@@ -129,8 +131,16 @@ class HighSentinelsOfArashinTest : FunSpec({
         // Provide mana for the ability ({3}{W})
         repeat(4) { driver.putLandOnBattlefield(activePlayer, "Plains") }
 
-        driver.activateAbilityTargeting(sentinels, bears)
-        driver.resolveTopOfStack()
+        val abilityId = HighSentinelsOfArashin.activatedAbilities.first().id
+        driver.submitSuccess(
+            ActivateAbility(
+                playerId = activePlayer,
+                sourceId = sentinels,
+                abilityId = abilityId,
+                targets = listOf(ChosenTarget.Permanent(bears))
+            )
+        )
+        driver.bothPass()
 
         val counters = driver.state.getEntity(bears)?.get<CountersComponent>()
         counters?.getCount(CounterType.PLUS_ONE_PLUS_ONE) shouldBe 1

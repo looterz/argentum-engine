@@ -586,15 +586,14 @@ class PredicateEvaluator {
             is StatePredicate.HasCounter -> {
                 val countersComponent = container.get<CountersComponent>()
                 if (countersComponent == null) return false
-                val counterType = try {
-                    CounterType.valueOf(
-                        predicate.counterType.uppercase()
-                            .replace(' ', '_')
-                            .replace('+', 'P')
-                            .replace('-', 'M')
-                    )
-                } catch (_: IllegalArgumentException) {
-                    return false
+                val counterType = when (predicate.counterType) {
+                    "+1/+1" -> CounterType.PLUS_ONE_PLUS_ONE
+                    "-1/-1" -> CounterType.MINUS_ONE_MINUS_ONE
+                    else -> try {
+                        CounterType.valueOf(predicate.counterType.uppercase().replace(' ', '_'))
+                    } catch (_: IllegalArgumentException) {
+                        return false
+                    }
                 }
                 countersComponent.getCount(counterType) > 0
             }
