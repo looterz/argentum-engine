@@ -63,17 +63,22 @@ These two additions unlock pipeline decomposition of all "destroy group" and "bo
 
 ### 2a. Add `MoveType.Destroy`
 
-- [ ] **Add `Destroy` variant to `MoveType` enum** in `PipelineEffects.kt`
+- [x] **Add `Destroy` variant to `MoveType` enum** in `PipelineEffects.kt`
   - Semantics: respects indestructible, triggers regeneration, emits destruction events
-- [ ] **Update `MoveCollectionExecutor`** to handle `MoveType.Destroy`
-  - Route through `destroyPermanent()` helper (same as `MoveToZoneEffectExecutor` uses for
-    `byDestruction = true`)
-  - Skip indestructible permanents, check regeneration shields
-  - Emit `PermanentDestroyedEvent` per destroyed permanent
-- [ ] **Add tests** for `MoveType.Destroy` in `MoveCollectionExecutor`
+- [x] **Update `MoveCollectionExecutor`** to handle `MoveType.Destroy`
+  - Checks indestructible via projected state (skips those permanents)
+  - Checks regeneration shields (consumes shield, taps creature, creature stays)
+  - Routes destroyed cards to owner's graveyard
+  - Removes floating effects targeting destroyed entities (Rule 400.7)
+- [x] **Add tests** for `MoveType.Destroy` in `MoveCollectionExecutor`
   - Indestructible permanents survive
   - Regeneration shields consume and prevent destruction
-  - Correct events emitted
+  - Mixed collection (indestructible + normal) — only normal die
+  - Routes to owner's graveyard (not controller's)
+  - Strips battlefield components
+  - Removes floating effects
+  - Empty collection is no-op
+  - Correct ZoneChangeEvent emitted
 
 ### 2b. Add `CardSource.BattlefieldMatching`
 

@@ -15,6 +15,7 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
+import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.CardDestination
@@ -441,10 +442,27 @@ class MoveCollectionExecutor(
         val events = mutableListOf<GameEvent>()
         var newState = state
 
+        val destroyedIds = mutableListOf<EntityId>()
+
         // Determine where each card currently lives (for removal)
         for (cardId in cards) {
             val ownerId = newState.getEntity(cardId)?.get<OwnerComponent>()?.playerId ?: destPlayerId
             val cardName = newState.getEntity(cardId)?.get<CardComponent>()?.name ?: "Unknown"
+
+            // For MoveType.Destroy, check indestructible and regeneration before moving
+            if (moveType == MoveType.Destroy) {
+                // Indestructible permanents can't be destroyed — skip entirely
+                if (newState.projectedState.hasKeyword(cardId, Keyword.INDESTRUCTIBLE)) {
+                    continue
+                }
+
+                // Check for regeneration shields
+                val (shieldState, wasRegenerated) = EffectExecutorUtils.applyRegenerationShields(newState, cardId)
+                if (wasRegenerated) {
+                    newState = EffectExecutorUtils.applyRegenerationReplacement(shieldState, cardId).state
+                    continue
+                }
+            }
 
             // Find and remove from current zone
             val fromZone = findCurrentZone(newState, cardId, ownerId)
@@ -458,6 +476,10 @@ class MoveCollectionExecutor(
                     newState = newState.updateEntity(cardId) { c ->
                         EffectExecutorUtils.stripBattlefieldComponents(c)
                     }
+                    // Remove floating effects targeting this entity (Rule 400.7)
+                    if (moveType == MoveType.Destroy) {
+                        newState = EffectExecutorUtils.removeFloatingEffectsTargeting(newState, cardId)
+                    }
                 }
 
                 // Strip face-down status when leaving exile (card becomes visible in new zone)
@@ -469,9 +491,13 @@ class MoveCollectionExecutor(
                 }
             }
 
-            // For sacrifice, cards always go to their owner's graveyard (MTG rule 701.16a),
+            if (moveType == MoveType.Destroy) {
+                destroyedIds.add(cardId)
+            }
+
+            // For sacrifice/destroy, cards always go to their owner's graveyard,
             // regardless of who controlled them. For all other moves, use the specified player.
-            val actualDestPlayerId = if (moveType == MoveType.Sacrifice && destZone == Zone.GRAVEYARD) {
+            val actualDestPlayerId = if ((moveType == MoveType.Sacrifice || moveType == MoveType.Destroy) && destZone == Zone.GRAVEYARD) {
                 ownerId
             } else {
                 destPlayerId

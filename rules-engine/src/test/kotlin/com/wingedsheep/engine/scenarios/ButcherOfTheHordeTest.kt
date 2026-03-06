@@ -28,6 +28,7 @@ class ButcherOfTheHordeTest : FunSpec({
     val TestCreature = CardDefinition.creature(
         name = "Test Soldier",
         manaCost = ManaCost.parse("{1}"),
+        subtypes = emptySet(),
         power = 1,
         toughness = 1
     )

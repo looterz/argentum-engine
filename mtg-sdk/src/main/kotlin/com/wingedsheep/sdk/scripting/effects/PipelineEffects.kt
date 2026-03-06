@@ -291,7 +291,13 @@ enum class MoveType {
      * Cards are routed to their owner's graveyard (not necessarily the destination player),
      * matching MTG rule 701.16a: sacrificed permanents go to their owner's graveyard.
      */
-    Sacrifice
+    Sacrifice,
+    /**
+     * Destroy — respects indestructible (skips those permanents) and regeneration shields.
+     * Cards are routed to their owner's graveyard.
+     * Destination should be Graveyard; the executor enforces owner routing.
+     */
+    Destroy
 }
 
 @SerialName("MoveCollection")
