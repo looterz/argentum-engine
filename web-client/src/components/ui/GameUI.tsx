@@ -367,19 +367,19 @@ function LobbyOverlay({
             {lobbyState.settings.setNames.join(' + ') || 'Lobby'}
           </h1>
           <p className={styles.lobbySubtitle}>
-            {isGridDraft
-              ? `Grid Draft · ${lobbyState.settings.boosterCount} boosters · ${lobbyState.settings.pickTimeSeconds}s per pick`
-              : isWinston
-                ? `Winston Draft · ${lobbyState.settings.boosterCount} boosters · ${lobbyState.settings.pickTimeSeconds}s per turn`
-                : isDraft
-                  ? `${lobbyState.settings.boosterCount} packs · ${lobbyState.settings.pickTimeSeconds}s per pick${lobbyState.settings.picksPerRound === 2 ? ' · Pick 2' : ''}`
-                  : lobbyState.settings.setCodes.length > 1 && Object.keys(lobbyState.settings.boosterDistribution).length > 0
-                    ? Object.entries(lobbyState.settings.boosterDistribution).map(([code, count]) => {
-                        const idx = lobbyState.settings.setCodes.indexOf(code)
-                        const name = idx >= 0 ? (lobbyState.settings.setNames[idx] ?? code) : code
-                        return `${count} ${name}`
-                      }).join(' + ')
-                    : `${lobbyState.settings.boosterCount} boosters per player`}
+            {(() => {
+              const distText = lobbyState.settings.setCodes.length > 1 && Object.keys(lobbyState.settings.boosterDistribution).length > 0
+                ? Object.entries(lobbyState.settings.boosterDistribution).map(([code, count]) => {
+                    const idx = lobbyState.settings.setCodes.indexOf(code)
+                    const name = idx >= 0 ? (lobbyState.settings.setNames[idx] ?? code) : code
+                    return `${count} ${name}`
+                  }).join(' + ')
+                : null
+              if (isGridDraft) return `Grid Draft · ${lobbyState.settings.boosterCount} boosters · ${lobbyState.settings.pickTimeSeconds}s per pick`
+              if (isWinston) return `Winston Draft · ${distText ?? `${lobbyState.settings.boosterCount} boosters`} · ${lobbyState.settings.pickTimeSeconds}s per turn`
+              if (isDraft) return `${distText ?? `${lobbyState.settings.boosterCount} packs`} · ${lobbyState.settings.pickTimeSeconds}s per pick${lobbyState.settings.picksPerRound === 2 ? ' · Pick 2' : ''}`
+              return distText ?? `${lobbyState.settings.boosterCount} boosters per player`
+            })()}
             {(lobbyState.settings.gamesPerMatch ?? 1) > 1 && ` · ${lobbyState.settings.gamesPerMatch} games per matchup`}
           </p>
         </div>
@@ -591,7 +591,50 @@ function LobbyOverlay({
               </div>
             )}
             {/* Packs per player - only for Draft */}
-            {isDraft && (
+            {isDraft && lobbyState.settings.setCodes.length > 1 && (
+              <div className={styles.settingsRow} style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
+                <span className={styles.settingsLabel}>Packs per player</span>
+                <div className={styles.boosterDistribution}>
+                  {lobbyState.settings.setCodes.map((code) => {
+                    const setName = lobbyState.settings.setNames[lobbyState.settings.setCodes.indexOf(code)] ?? code
+                    const dist = lobbyState.settings.boosterDistribution
+                    const count = dist[code] ?? 0
+                    const total = Object.values(dist).reduce((a, b) => a + b, 0)
+                    return (
+                      <div key={code} className={styles.boosterDistributionRow}>
+                        <span className={styles.boosterDistributionSetName}>{setName}</span>
+                        <div className={styles.boosterDistributionControls}>
+                          <button
+                            className={styles.boosterDistributionBtn}
+                            disabled={count <= 0}
+                            onClick={() => {
+                              const newDist = { ...dist, [code]: count - 1 }
+                              updateLobbySettings({ boosterDistribution: newDist, boosterCount: total - 1 })
+                            }}
+                          >-</button>
+                          <span className={styles.boosterDistributionCount}>{count}</span>
+                          <button
+                            className={styles.boosterDistributionBtn}
+                            disabled={total >= 6}
+                            onClick={() => {
+                              const newDist = { ...dist, [code]: count + 1 }
+                              updateLobbySettings({ boosterDistribution: newDist, boosterCount: total + 1 })
+                            }}
+                          >+</button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                  <div className={styles.boosterDistributionTotal}>
+                    <span style={{ flex: 1 }}>Total</span>
+                    <span className={styles.boosterDistributionTotalCount}>
+                      {Object.values(lobbyState.settings.boosterDistribution).reduce((a, b) => a + b, 0)} packs
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+            {isDraft && lobbyState.settings.setCodes.length <= 1 && (
               <div className={styles.settingsRow}>
                 <span className={styles.settingsLabel}>Packs per player</span>
                 <select

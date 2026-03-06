@@ -445,10 +445,25 @@ class TournamentLobby(
 
     /**
      * Generate new packs for all players (called at start of each pack).
+     * Uses boosterDistribution to determine which set each pack round comes from.
+     * E.g., with {ONS: 1, LGN: 1, SCG: 1}, pack 1 = ONS, pack 2 = LGN, pack 3 = SCG.
      */
     private fun distributeNewPacks() {
-        players.forEach { (playerId, playerState) ->
-            val newPack = boosterGenerator.generateBooster(setCodes)
+        // Build a sequence of set codes from the distribution (e.g., [ONS, LGN, SCG] for 1/1/1)
+        val setSequence = if (boosterDistribution.isNotEmpty()) {
+            boosterDistribution.flatMap { (code, count) -> List(count) { code } }
+        } else {
+            null
+        }
+        // Pick the set for this pack round (1-indexed currentPackNumber)
+        val packSetCode = setSequence?.getOrNull(currentPackNumber - 1)
+
+        players.forEach { (_, playerState) ->
+            val newPack = if (packSetCode != null) {
+                boosterGenerator.generateBooster(packSetCode)
+            } else {
+                boosterGenerator.generateBooster(setCodes)
+            }
             playerState.currentPack = newPack
             playerState.hasPicked = false
         }
