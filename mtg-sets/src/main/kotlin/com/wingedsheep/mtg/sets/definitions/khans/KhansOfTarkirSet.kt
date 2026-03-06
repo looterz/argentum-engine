@@ -89,6 +89,7 @@ object KhansOfTarkirSet {
         BellowingSaddlebrute,
         GrimHaruspex,
         GurmagSwiftwing,
+        KheruBloodsucker,
         KheruDreadmaw,
         KrumarBondKin,
         MarduSkullhunter,
