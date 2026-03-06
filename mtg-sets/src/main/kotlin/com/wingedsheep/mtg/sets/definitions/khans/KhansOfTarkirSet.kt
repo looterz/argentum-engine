@@ -117,6 +117,7 @@ object KhansOfTarkirSet {
         ArchersParapet,
         HeirOfTheWilds,
         HighlandGame,
+        KinTreeWarden,
         HootingMandrills,
         LongshotSquad,
         SaguArcher,

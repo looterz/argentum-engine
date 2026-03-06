@@ -2,7 +2,7 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 145 / 249
+**Implemented:** 146 / 249
 
 | Color      | Count |
 |------------|-------|
@@ -10,7 +10,7 @@
 | Blue       | 25    |
 | Black      | 24    |
 | Red        | 25    |
-| Green      | 24    |
+| Green      | 25    |
 | Multicolor | 14    |
 | Colorless  | 5     |
 | Land       | 3     |
@@ -130,7 +130,7 @@
 - [ ] Kheru Spellsnatcher
 - [x] Kill Shot
 - [ ] Kin-Tree Invocation
-- [ ] Kin-Tree Warden
+- [x] Kin-Tree Warden
 - [x] Krumar Bond-Kin
 - [x] Leaping Master
 - [ ] Lens of Clarity
