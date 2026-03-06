@@ -23,7 +23,7 @@ val RattleclawMystic = card("Rattleclaw Mystic") {
     typeLine = "Creature — Human Shaman"
     power = 2
     toughness = 1
-    oracleText = "{T}: Add {G}, {U}, or {R}.\nMorph {2} (You may cast this card face down as a 2/2 creature for {3}. Turn it face up any time for its morph cost.)\nWhen Rattleclaw Mystic is turned face up, add {G}{U}{R}."
+    oracleText = "{T}: Add {G}, {U}, or {R}.\nMorph {2} (You may cast this card face down as a 2/2 creature for {3}. Turn it face up any time for its morph cost.)\nWhen this creature is turned face up, add {G}{U}{R}."
 
     // {T}: Add {G}
     activatedAbility {
@@ -64,8 +64,7 @@ val RattleclawMystic = card("Rattleclaw Mystic") {
     metadata {
         rarity = Rarity.RARE
         collectorNumber = "144"
-        artist = "Min Yum"
-        flavorText = "Rattleclaw shamans see the world as a web of connections."
-        imageUri = "https://cards.scryfall.io/normal/front/2/d/2d41b890-b70e-4f28-90b5-eb8e0dba5dbe.jpg?1562784711"
+        artist = "Tyler Jacobson"
+        imageUri = "https://cards.scryfall.io/normal/front/4/f/4fb6c2e0-eeaa-4d60-aab7-2b8c739a9278.jpg?1562786444"
     }
 }

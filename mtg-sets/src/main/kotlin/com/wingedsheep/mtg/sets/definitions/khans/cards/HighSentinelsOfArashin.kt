@@ -60,9 +60,8 @@ val HighSentinelsOfArashin = card("High Sentinels of Arashin") {
 
     metadata {
         rarity = Rarity.RARE
-        collectorNumber = "189"
+        collectorNumber = "13"
         artist = "James Ryman"
-        flavorText = "\"My lance was forged in the flames of the First Hatching.\""
-        imageUri = "https://cards.scryfall.io/normal/front/a/5/a5a06587-f2a8-4b0c-8a17-da384c522e8e.jpg?1562791296"
+        imageUri = "https://cards.scryfall.io/normal/front/d/b/db5f4bab-f918-4b42-b82c-cfcf5ff0c58a.jpg?1562794547"
     }
 }
