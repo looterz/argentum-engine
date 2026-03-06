@@ -2,7 +2,6 @@
 name: add-card
 description: Implements new Magic: The Gathering cards for the Argentum Engine. Use when adding a new card, the user provides a card name to implement, or asks to implement a specific MTG card.
 argument-hint: <card-name> [--set <set-code>]
-disable-model-invocation: true
 ---
 
 # Add MTG Card
