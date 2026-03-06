@@ -10,6 +10,7 @@ import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
+import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.GrantsControllerShroudComponent
 import com.wingedsheep.engine.state.components.player.CantCastSpellsComponent
 import com.wingedsheep.engine.state.components.player.PlayerShroudComponent
@@ -45,6 +46,7 @@ import com.wingedsheep.sdk.scripting.effects.DividedDamageEffect
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.CanBlockAnyNumber
+import com.wingedsheep.sdk.scripting.GrantActivatedAbilityToAttachedCreature
 import com.wingedsheep.sdk.scripting.GrantActivatedAbilityToCreatureGroup
 import com.wingedsheep.sdk.scripting.GrantFlashToSpellType
 import com.wingedsheep.sdk.scripting.PlayFromTopOfLibrary
@@ -2310,20 +2312,29 @@ class LegalActionsCalculator(
 
             val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
             for (ability in cardDef.staticAbilities) {
-                if (ability !is GrantActivatedAbilityToCreatureGroup) continue
-
-                val filter = ability.filter.baseFilter
-                val matchesAll = filter.cardPredicates.all { predicate ->
-                    when (predicate) {
-                        is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsCreature ->
-                            targetCard.typeLine.isCreature
-                        is com.wingedsheep.sdk.scripting.predicates.CardPredicate.HasSubtype ->
-                            targetCard.typeLine.hasSubtype(predicate.subtype)
-                        else -> true
+                when (ability) {
+                    is GrantActivatedAbilityToCreatureGroup -> {
+                        val filter = ability.filter.baseFilter
+                        val matchesAll = filter.cardPredicates.all { predicate ->
+                            when (predicate) {
+                                is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsCreature ->
+                                    targetCard.typeLine.isCreature
+                                is com.wingedsheep.sdk.scripting.predicates.CardPredicate.HasSubtype ->
+                                    targetCard.typeLine.hasSubtype(predicate.subtype)
+                                else -> true
+                            }
+                        }
+                        if (matchesAll) {
+                            result.add(ability.ability)
+                        }
                     }
-                }
-                if (matchesAll) {
-                    result.add(ability.ability)
+                    is GrantActivatedAbilityToAttachedCreature -> {
+                        val attachedTo = container.get<AttachedToComponent>()
+                        if (attachedTo != null && attachedTo.targetId == entityId) {
+                            result.add(ability.ability)
+                        }
+                    }
+                    else -> {}
                 }
             }
         }

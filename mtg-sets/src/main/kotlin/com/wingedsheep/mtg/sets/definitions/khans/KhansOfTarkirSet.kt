@@ -81,6 +81,9 @@ object KhansOfTarkirSet {
         Waterwhirl,
         WeaveFate,
 
+        // Blue enchantments
+        SingingBellStrike,
+
         // Black creatures
         DisownedAncestor,
         BellowingSaddlebrute,

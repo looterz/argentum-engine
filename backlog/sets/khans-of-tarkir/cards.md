@@ -2,12 +2,12 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 144 / 249
+**Implemented:** 145 / 249
 
 | Color      | Count |
 |------------|-------|
 | White      | 25    |
-| Blue       | 24    |
+| Blue       | 25    |
 | Black      | 24    |
 | Red        | 25    |
 | Green      | 24    |
@@ -206,7 +206,7 @@
 - [x] Sidisi's Pet
 - [x] Siegecraft
 - [x] Siege Rhino
-- [ ] Singing Bell Strike
+- [x] Singing Bell Strike
 - [x] Smite the Monstrous
 - [x] Smoke Teller
 - [x] Snowhorn Rider

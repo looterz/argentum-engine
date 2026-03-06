@@ -113,6 +113,27 @@ data class GrantActivatedAbilityToCreatureGroup(
 }
 
 /**
+ * Grants an activated ability to the creature this aura/equipment is attached to.
+ * E.g., Singing Bell Strike granting "{6}: Untap this creature" to the enchanted creature.
+ *
+ * The LegalActionsCalculator and ActivateAbilityHandler scan for this static ability
+ * when computing legal activated abilities for each creature.
+ *
+ * @property ability The activated ability to grant to the attached creature
+ */
+@SerialName("GrantActivatedAbilityToAttachedCreature")
+@Serializable
+data class GrantActivatedAbilityToAttachedCreature(
+    val ability: ActivatedAbility
+) : StaticAbility {
+    override val description: String = "Enchanted creature has ${ability.description}"
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newAbility = ability.applyTextReplacement(replacer)
+        return if (newAbility !== ability) copy(ability = newAbility) else this
+    }
+}
+
+/**
  * Modifies power/toughness for a group of creatures (continuous static ability).
  * Used for lord effects like "Other Bird creatures get +1/+1."
  */

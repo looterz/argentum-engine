@@ -25,7 +25,7 @@ class TapUntapExecutor : EffectExecutor<TapUntapEffect> {
         effect: TapUntapEffect,
         context: EffectContext
     ): ExecutionResult {
-        val targetId = resolveTarget(effect.target, context)
+        val targetId = resolveTarget(effect.target, context, state)
             ?: return ExecutionResult.error(state, "No valid target for tap/untap")
 
         val cardName = state.getEntity(targetId)?.get<CardComponent>()?.name ?: "Permanent"

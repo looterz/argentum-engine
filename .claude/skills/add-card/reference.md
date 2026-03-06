@@ -356,7 +356,7 @@ constructors.
 | `CantBlockTargetCreaturesEffect`                    | `duration`                                  | Can't block target creatures    |
 | `PreventNextDamageEffect`                           | `amount: DynamicAmount, target`             | Prevent next N damage           |
 | `RemoveFromCombatEffect`                            | `target`                                    | Remove from combat              |
-| `ChooseCreatureTypeMustAttackEffect`                | (object)                                    | Choose type, must attack        |
+| `MarkMustAttackThisTurnEffect`                      | `target`                                    | Mark creature must attack       |
 | `RedirectNextDamageEffect`                          | `protectedTargets, redirectTo, amount?`     | Redirect next damage (amount=null for all) |
 | `PreventNextDamageFromChosenCreatureTypeEffect`     | (object)                                    | Prevent damage from chosen type |
 | `GrantAttackBlockTaxPerCreatureTypeEffect`          | `target, creatureType, manaCostPer, duration` | Can't attack/block unless pays per type |
@@ -845,6 +845,7 @@ Set via `staticAbility { ability = ... }`:
 - `GrantKeywordToCreatureGroup(keyword, filter: AffectsFilter)` — keyword to group
 - `GrantTriggeredAbilityToCreatureGroup(ability: TriggeredAbility, filter: GroupFilter)` — triggered ability to group (e.g., Hunter Sliver granting provoke to all Slivers)
 - `GrantActivatedAbilityToCreatureGroup(ability: ActivatedAbility, filter: GroupFilter)` — activated ability to group (e.g., Spectral Sliver granting pump to all Slivers)
+- `GrantActivatedAbilityToAttachedCreature(ability: ActivatedAbility)` — activated ability to attached creature (e.g., Singing Bell Strike granting "{6}: Untap this creature")
 - `GrantCantBeBlockedExceptBySubtype(filter: GroupFilter, requiredSubtype: String)` — "can't be blocked except by [subtype]" to group (e.g., Shifting Sliver)
 - `GrantKeywordForChosenCreatureType(keyword)` — keyword to chosen creature type
 - `GrantKeywordByCounter(keyword, counterType)` — grant keyword when counter present
