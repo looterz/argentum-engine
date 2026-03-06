@@ -176,6 +176,7 @@ object KhansOfTarkirSet {
         SiegeRhino,
         SaguMauler,
         SnowhornRider,
+        SultaiAscendancy,
         UtterEnd,
         Winterflame,
 
