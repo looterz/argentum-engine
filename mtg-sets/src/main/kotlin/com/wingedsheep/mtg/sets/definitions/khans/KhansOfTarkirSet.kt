@@ -113,6 +113,7 @@ object KhansOfTarkirSet {
         SmokeTeller,
         TuskedColossodon,
         TuskguardCaptain,
+        PineWalker,
         RattleclawMystic,
         WoollyLoxodon,
 

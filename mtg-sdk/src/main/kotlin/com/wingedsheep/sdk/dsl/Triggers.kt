@@ -323,6 +323,15 @@ object Triggers {
     )
 
     /**
+     * Whenever a creature you control is turned face up (including self).
+     * Used by Pine Walker.
+     */
+    val CreatureYouControlTurnedFaceUp: TriggerSpec = TriggerSpec(
+        event = CreatureYouControlTurnedFaceUpEvent,
+        binding = TriggerBinding.ANY
+    )
+
+    /**
      * When you gain control of this permanent from another player.
      * Used by Risky Move.
      */

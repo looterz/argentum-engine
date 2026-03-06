@@ -654,6 +654,18 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
     }
 
     /**
+     * When a creature you control is turned face up.
+     * Used for abilities like Pine Walker's "Whenever Pine Walker or another creature
+     * you control is turned face up, untap that creature."
+     */
+    @SerialName("CreatureYouControlTurnedFaceUpEvent")
+    @Serializable
+    data object CreatureYouControlTurnedFaceUpEvent : GameEvent {
+        override val description: String = "a creature you control is turned face up"
+        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
+    }
+
+    /**
      * When a permanent transforms.
      * [intoBackFace] filters direction: true = to back, false = to front, null = either.
      */

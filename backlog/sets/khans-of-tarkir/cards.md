@@ -2,7 +2,7 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 130 / 249
+**Implemented:** 131 / 249
 
 | Color      | Count |
 |------------|-------|
@@ -10,7 +10,7 @@
 | Blue       | 23    |
 | Black      | 22    |
 | Red        | 22    |
-| Green      | 22    |
+| Green      | 23    |
 | Multicolor | 12    |
 | Colorless  | 3     |
 | Land       | 3     |
@@ -164,7 +164,7 @@
 - [ ] Nomad Outpost
 - [ ] Opulent Palace
 - [ ] Pearl Lake Ancient
-- [ ] Pine Walker
+- [x] Pine Walker
 - [ ] Polluted Delta
 - [x] Ponyback Brigade
 - [ ] Quiet Contemplation
