@@ -622,27 +622,6 @@ data class ChooseToCreatureTypeContinuation(
 ) : ContinuationFrame
 
 /**
- * Resume after player chooses a creature type in a pipeline context.
- *
- * Stores the chosen type into the EffectContinuation below on the stack
- * (via chosenCreatureType field) so subsequent pipeline effects can access it
- * via EffectContext.chosenCreatureType.
- *
- * @property controllerId The player choosing
- * @property sourceId The ability source
- * @property sourceName Name of the source for display
- * @property creatureTypes The creature type options (indexed by OptionChosenResponse.optionIndex)
- */
-@Serializable
-data class ChooseCreatureTypePipelineContinuation(
-    override val decisionId: String,
-    val controllerId: EntityId,
-    val sourceId: EntityId?,
-    val sourceName: String?,
-    val creatureTypes: List<String>
-) : ContinuationFrame
-
-/**
  * Resume after player chooses an option in a generic pipeline context.
  *
  * Stores the chosen value into the EffectContinuation below on the stack

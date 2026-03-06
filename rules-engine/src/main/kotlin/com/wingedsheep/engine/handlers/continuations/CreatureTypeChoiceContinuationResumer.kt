@@ -12,6 +12,7 @@ import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.TextReplacement
 import com.wingedsheep.engine.state.components.identity.TextReplacementCategory
 import com.wingedsheep.engine.state.components.identity.TextReplacementComponent
+import com.wingedsheep.engine.handlers.effects.library.ChooseCreatureTypePipelineExecutor
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.model.EntityId
 
@@ -22,7 +23,6 @@ class CreatureTypeChoiceContinuationResumer(
     override fun resumers(): List<ContinuationResumer<*>> = listOf(
         resumer(ChooseFromCreatureTypeContinuation::class, ::resumeChooseFromCreatureType),
         resumer(ChooseToCreatureTypeContinuation::class, ::resumeChooseToCreatureType),
-        resumer(ChooseCreatureTypePipelineContinuation::class, ::resumeChooseCreatureTypePipeline),
         resumer(ChooseOptionPipelineContinuation::class, ::resumeChooseOptionPipeline),
         resumer(BecomeCreatureTypeContinuation::class, ::resumeBecomeCreatureType),
         resumer(ChooseCreatureTypeModifyStatsContinuation::class, ::resumeChooseCreatureTypeModifyStats),
@@ -150,6 +150,10 @@ class CreatureTypeChoiceContinuationResumer(
      * Stores the chosen value into the EffectContinuation below on the stack
      * (via chosenValues map) so subsequent pipeline effects can access it
      * via EffectContext.chosenValues[storeAs].
+     *
+     * Special case: when storeAs == "chosenCreatureType", additionally injects
+     * into the dedicated chosenCreatureType field for backward compatibility
+     * with RevealUntilExecutor and SelectFromCollectionExecutor.
      */
     fun resumeChooseOptionPipeline(
         state: GameState,
@@ -168,42 +172,13 @@ class CreatureTypeChoiceContinuationResumer(
         val nextFrame = state.peekContinuation()
         val newState = if (nextFrame is EffectContinuation) {
             val (_, stateAfterPop) = state.popContinuation()
-            stateAfterPop.pushContinuation(
+            val updatedFrame = if (continuation.storeAs == ChooseCreatureTypePipelineExecutor.CHOSEN_CREATURE_TYPE_KEY) {
+                // Store into dedicated field for downstream executors that read context.chosenCreatureType
+                nextFrame.copy(chosenCreatureType = chosenValue)
+            } else {
                 nextFrame.copy(chosenValues = nextFrame.chosenValues + (continuation.storeAs to chosenValue))
-            )
-        } else {
-            state
-        }
-
-        return checkForMore(newState, emptyList())
-    }
-
-    /**
-     * Resume after player chose a creature type for "reveal until creature type" effects.
-     *
-     * Stores the chosen creature type into the EffectContinuation below on the stack
-     * so subsequent pipeline effects can access it via EffectContext.chosenCreatureType.
-     */
-    fun resumeChooseCreatureTypePipeline(
-        state: GameState,
-        continuation: ChooseCreatureTypePipelineContinuation,
-        response: DecisionResponse,
-        checkForMore: CheckForMore
-    ): ExecutionResult {
-        if (response !is OptionChosenResponse) {
-            return ExecutionResult.error(state, "Expected option choice response for creature type selection")
-        }
-
-        val chosenType = continuation.creatureTypes.getOrNull(response.optionIndex)
-            ?: return ExecutionResult.error(state, "Invalid creature type index: ${response.optionIndex}")
-
-        // Inject the chosen creature type into the next EffectContinuation on the stack
-        val nextFrame = state.peekContinuation()
-        val newState = if (nextFrame is EffectContinuation) {
-            val (_, stateAfterPop) = state.popContinuation()
-            stateAfterPop.pushContinuation(
-                nextFrame.copy(chosenCreatureType = chosenType)
-            )
+            }
+            stateAfterPop.pushContinuation(updatedFrame)
         } else {
             state
         }

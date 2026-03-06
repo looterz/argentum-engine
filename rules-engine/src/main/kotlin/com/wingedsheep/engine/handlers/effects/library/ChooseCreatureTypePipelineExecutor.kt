@@ -15,7 +15,8 @@ import kotlin.reflect.KClass
  *
  * Presents a ChooseOptionDecision with all creature types. When the player
  * responds, the chosen type is stored in the pipeline's EffectContext
- * (via ChooseCreatureTypePipelineContinuation) for subsequent effects.
+ * (via ChooseOptionPipelineContinuation with storeAs="chosenCreatureType")
+ * for subsequent effects.
  */
 class ChooseCreatureTypePipelineExecutor : EffectExecutor<ChooseCreatureTypeEffect> {
 
@@ -43,12 +44,13 @@ class ChooseCreatureTypePipelineExecutor : EffectExecutor<ChooseCreatureTypeEffe
             options = allCreatureTypes
         )
 
-        val continuation = ChooseCreatureTypePipelineContinuation(
+        val continuation = ChooseOptionPipelineContinuation(
             decisionId = decisionId,
             controllerId = controllerId,
             sourceId = context.sourceId,
             sourceName = sourceName,
-            creatureTypes = allCreatureTypes
+            storeAs = CHOSEN_CREATURE_TYPE_KEY,
+            options = allCreatureTypes
         )
 
         val stateWithDecision = state.withPendingDecision(decision)
@@ -66,5 +68,10 @@ class ChooseCreatureTypePipelineExecutor : EffectExecutor<ChooseCreatureTypeEffe
                 )
             )
         )
+    }
+
+    companion object {
+        /** Key used to store chosen creature type — triggers special handling in the resumer */
+        const val CHOSEN_CREATURE_TYPE_KEY = "chosenCreatureType"
     }
 }
