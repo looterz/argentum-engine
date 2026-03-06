@@ -2,13 +2,12 @@ package com.wingedsheep.mtg.sets.definitions.legions.cards
 
 import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.DynamicAmounts
+import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.references.Player
-import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
-import com.wingedsheep.sdk.scripting.targets.EffectTarget
 
 /**
  * Riptide Director
@@ -29,9 +28,8 @@ val RiptideDirector = card("Riptide Director") {
             Costs.Mana("{2}{U}{U}"),
             Costs.Tap
         )
-        effect = DrawCardsEffect(
-            count = DynamicAmounts.battlefield(Player.You, GameObjectFilter.Creature.withSubtype(Subtype.WIZARD)).count(),
-            target = EffectTarget.Controller
+        effect = Effects.DrawCards(
+            DynamicAmounts.battlefield(Player.You, GameObjectFilter.Creature.withSubtype(Subtype.WIZARD)).count()
         )
     }
 

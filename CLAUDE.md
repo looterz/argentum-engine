@@ -613,3 +613,4 @@ test('card does X', async ({ createGame }) => {
 - **Always** handle layer dependencies correctly (trial application)
 - **Always** emit events for animations, never mutate silently
 - **Always** prefer atomic pipeline effects (Gather/Select/Move via `EffectPatterns`) over monolithic executors for library/zone mechanics
+- **Always** use `Effects.*` facade methods (e.g., `Effects.DrawCards()`, `Effects.Destroy()`) instead of direct effect constructors (e.g., `DrawCardsEffect()`) in card definitions

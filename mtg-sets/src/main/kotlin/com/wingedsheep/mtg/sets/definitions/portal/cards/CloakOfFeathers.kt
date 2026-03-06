@@ -1,12 +1,11 @@
 package com.wingedsheep.mtg.sets.definitions.portal.cards
 
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
-import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import com.wingedsheep.sdk.scripting.effects.GrantKeywordUntilEndOfTurnEffect
-import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetCreature
 
 /**
@@ -24,7 +23,7 @@ val CloakOfFeathers = card("Cloak of Feathers") {
         effect = CompositeEffect(
             listOf(
                 GrantKeywordUntilEndOfTurnEffect(Keyword.FLYING, t),
-                DrawCardsEffect(1, EffectTarget.Controller)
+                Effects.DrawCards(1)
             )
         )
     }

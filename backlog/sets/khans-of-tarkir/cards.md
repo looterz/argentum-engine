@@ -2,7 +2,7 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 127 / 249
+**Implemented:** 128 / 249
 
 | Color      | Count |
 |------------|-------|
@@ -11,7 +11,7 @@
 | Black      | 22    |
 | Red        | 22    |
 | Green      | 22    |
-| Multicolor | 10    |
+| Multicolor | 11    |
 | Colorless  | 3     |
 | Land       | 3     |
 
@@ -185,7 +185,7 @@
 - [x] Sage-Eye Harrier
 - [ ] Sage of the Inward Eye
 - [x] Sagu Archer
-- [ ] Sagu Mauler
+- [x] Sagu Mauler
 - [x] Salt Road Patrol
 - [ ] Sandsteppe Citadel
 - [ ] Sarkhan, the Dragonspeaker

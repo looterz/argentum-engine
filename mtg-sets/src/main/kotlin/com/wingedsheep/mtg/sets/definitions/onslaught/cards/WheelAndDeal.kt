@@ -4,7 +4,6 @@ import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
-import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetOpponent
 
@@ -24,8 +23,8 @@ val WheelAndDeal = card("Wheel and Deal") {
         effect = CompositeEffect(
             listOf(
                 Effects.DiscardHand(t),
-                DrawCardsEffect(7, target = t),
-                DrawCardsEffect(1, target = EffectTarget.Controller)
+                Effects.DrawCards(7, t),
+                Effects.DrawCards(1)
             )
         )
     }

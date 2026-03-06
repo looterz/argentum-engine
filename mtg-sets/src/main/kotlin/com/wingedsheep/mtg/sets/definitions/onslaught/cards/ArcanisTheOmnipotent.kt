@@ -1,10 +1,10 @@
 package com.wingedsheep.mtg.sets.definitions.onslaught.cards
 
 import com.wingedsheep.sdk.dsl.Costs
+import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.AbilityCost
-import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.effects.MoveToZoneEffect
 import com.wingedsheep.sdk.core.Zone
@@ -26,7 +26,7 @@ val ArcanisTheOmnipotent = card("Arcanis the Omnipotent") {
 
     activatedAbility {
         cost = AbilityCost.Tap
-        effect = DrawCardsEffect(3)
+        effect = Effects.DrawCards(3)
     }
 
     activatedAbility {

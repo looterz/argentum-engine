@@ -4,7 +4,6 @@ import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
-import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 
 /**
  * Cruel Bargain
@@ -19,7 +18,7 @@ val CruelBargain = card("Cruel Bargain") {
     spell {
         effect = CompositeEffect(
             listOf(
-                DrawCardsEffect(4),
+                Effects.DrawCards(4),
                 Effects.LoseHalfLife(roundUp = true)
             )
         )

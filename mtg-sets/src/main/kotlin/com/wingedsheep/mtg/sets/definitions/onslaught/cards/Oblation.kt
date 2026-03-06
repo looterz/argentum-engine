@@ -4,7 +4,6 @@ import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.references.Player
 
@@ -22,7 +21,7 @@ val Oblation = card("Oblation") {
     spell {
         val t = target("target", Targets.NonlandPermanent)
         effect = Effects.ShuffleIntoLibrary(t) then
-                DrawCardsEffect(2, EffectTarget.PlayerRef(Player.OwnerOf("target permanent")))
+                Effects.DrawCards(2, EffectTarget.PlayerRef(Player.OwnerOf("target permanent")))
     }
 
     metadata {

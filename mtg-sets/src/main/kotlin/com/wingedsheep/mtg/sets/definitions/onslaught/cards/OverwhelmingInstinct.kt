@@ -1,12 +1,12 @@
 package com.wingedsheep.mtg.sets.definitions.onslaught.cards
 
+import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameEvent.YouAttackEvent
 import com.wingedsheep.sdk.scripting.TriggerBinding
 import com.wingedsheep.sdk.scripting.TriggerSpec
-import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 
 /**
  * Overwhelming Instinct
@@ -21,7 +21,7 @@ val OverwhelmingInstinct = card("Overwhelming Instinct") {
 
     triggeredAbility {
         trigger = TriggerSpec(YouAttackEvent(minAttackers = 3), TriggerBinding.ANY)
-        effect = DrawCardsEffect(1)
+        effect = Effects.DrawCards(1)
     }
 
     metadata {

@@ -2,9 +2,9 @@ package com.wingedsheep.mtg.sets.definitions.onslaught.cards
 
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.dsl.DynamicAmounts
+import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 
 /**
  * Airborne Aid
@@ -18,7 +18,7 @@ val AirborneAid = card("Airborne Aid") {
     oracleText = "Draw a card for each Bird on the battlefield."
 
     spell {
-        effect = DrawCardsEffect(DynamicAmounts.creaturesWithSubtype(Subtype.BIRD))
+        effect = Effects.DrawCards(DynamicAmounts.creaturesWithSubtype(Subtype.BIRD))
     }
 
     metadata {

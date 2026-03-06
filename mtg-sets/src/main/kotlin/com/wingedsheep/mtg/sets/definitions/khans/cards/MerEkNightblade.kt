@@ -39,6 +39,6 @@ val MerEkNightblade = card("Mer-Ek Nightblade") {
         collectorNumber = "81"
         artist = "Lucas Graciano"
         flavorText = "The blades of the Mer-Ek are as poisonous as their intentions."
-        imageUri = "https://cards.scr/cleyfall.io/normal/front/a/f/afa03d63-0b91-4f4a-b655-01bd47c8536b.jpg?1562789660"
+        imageUri = "https://cards.scryfall.io/normal/front/f/e/fe8589b2-9527-46ba-bf9e-0dec7d84d5d2.jpg?1562796624"
     }
 }

@@ -1,12 +1,12 @@
 package com.wingedsheep.mtg.sets.definitions.scourge.cards
 
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.effects.CardDestination
 import com.wingedsheep.sdk.scripting.effects.CardSource
-import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import com.wingedsheep.sdk.scripting.effects.ForEachPlayerEffect
 import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
 import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
@@ -38,7 +38,7 @@ val DragonMage = card("Dragon Mage") {
             effects = listOf(
                 GatherCardsEffect(CardSource.FromZone(Zone.HAND, Player.You), storeAs = "discardedHand"),
                 MoveCollectionEffect("discardedHand", CardDestination.ToZone(Zone.GRAVEYARD, Player.You), moveType = MoveType.Discard),
-                DrawCardsEffect(7)
+                Effects.DrawCards(7)
             )
         )
     }

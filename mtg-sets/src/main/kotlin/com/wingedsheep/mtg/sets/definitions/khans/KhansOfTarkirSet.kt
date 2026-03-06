@@ -163,6 +163,7 @@ object KhansOfTarkirSet {
         PonybackBrigade,
         SavageKnuckleblade,
         SiegeRhino,
+        SaguMauler,
         SnowhornRider,
         UtterEnd,
         Winterflame,

@@ -1,11 +1,10 @@
 package com.wingedsheep.mtg.sets.definitions.onslaught.cards
 
 import com.wingedsheep.sdk.dsl.Costs
+import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
-import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.references.Player
 
@@ -26,9 +25,8 @@ val SlateOfAncestry = card("Slate of Ancestry") {
             Costs.Tap,
             Costs.DiscardHand
         )
-        effect = DrawCardsEffect(
-            count = DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Creature),
-            target = EffectTarget.Controller
+        effect = Effects.DrawCards(
+            DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Creature)
         )
     }
 

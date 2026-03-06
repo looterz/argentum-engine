@@ -1,10 +1,9 @@
 package com.wingedsheep.mtg.sets.definitions.portal.cards
 
 import com.wingedsheep.sdk.dsl.DynamicAmounts
+import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
-import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetOpponent
 
 /**
@@ -19,10 +18,7 @@ val TheftOfDreams = card("Theft of Dreams") {
 
     spell {
         target = TargetOpponent()
-        effect = DrawCardsEffect(
-            count = DynamicAmounts.tappedCreaturesTargetOpponentControls(),
-            target = EffectTarget.Controller
-        )
+        effect = Effects.DrawCards(DynamicAmounts.tappedCreaturesTargetOpponentControls())
     }
 
     metadata {

@@ -7,7 +7,6 @@ import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.effects.DestroyAllEffect
-import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
@@ -30,7 +29,7 @@ val DecreeOfPain = card("Decree of Pain") {
             canRegenerate = false,
             storeDestroyedAs = "destroyed"
         ).then(
-            DrawCardsEffect(DynamicAmount.VariableReference("destroyed_count"))
+            Effects.DrawCards(DynamicAmount.VariableReference("destroyed_count"))
         )
     }
 

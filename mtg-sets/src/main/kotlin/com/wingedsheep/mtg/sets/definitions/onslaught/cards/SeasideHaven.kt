@@ -1,11 +1,11 @@
 package com.wingedsheep.mtg.sets.definitions.onslaught.cards
 
 import com.wingedsheep.sdk.dsl.Costs
+import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.effects.AddColorlessManaEffect
-import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.TimingRule
 
@@ -32,7 +32,7 @@ val SeasideHaven = card("Seaside Haven") {
             Costs.Tap,
             Costs.Sacrifice(GameObjectFilter.Creature.withSubtype("Bird"))
         )
-        effect = DrawCardsEffect(1)
+        effect = Effects.DrawCards(1)
     }
 
     metadata {

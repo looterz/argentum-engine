@@ -1,9 +1,9 @@
 package com.wingedsheep.mtg.sets.definitions.onslaught.cards
 
+import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.core.Subtype
-import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import com.wingedsheep.sdk.scripting.effects.MayEffect
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.GameEvent.ZoneChangeEvent
@@ -30,7 +30,7 @@ val WirewoodSavage = card("Wirewood Savage") {
                 ZoneChangeEvent(filter = GameObjectFilter.Creature.withSubtype(Subtype("Beast")), to = Zone.BATTLEFIELD),
                 TriggerBinding.ANY
             )
-        effect = MayEffect(DrawCardsEffect(1))
+        effect = MayEffect(Effects.DrawCards(1))
     }
 
     metadata {

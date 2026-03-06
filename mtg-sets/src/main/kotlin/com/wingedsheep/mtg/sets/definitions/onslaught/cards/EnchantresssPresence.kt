@@ -1,9 +1,9 @@
 package com.wingedsheep.mtg.sets.definitions.onslaught.cards
 
+import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 
 /**
  * Enchantress's Presence
@@ -18,7 +18,7 @@ val EnchantresssPresence = card("Enchantress's Presence") {
 
     triggeredAbility {
         trigger = Triggers.YouCastEnchantment
-        effect = DrawCardsEffect(1)
+        effect = Effects.DrawCards(1)
     }
 
     metadata {

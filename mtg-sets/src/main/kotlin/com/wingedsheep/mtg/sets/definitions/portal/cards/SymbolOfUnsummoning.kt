@@ -1,9 +1,9 @@
 package com.wingedsheep.mtg.sets.definitions.portal.cards
 
+import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
-import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.effects.MoveToZoneEffect
 import com.wingedsheep.sdk.core.Zone
@@ -24,7 +24,7 @@ val SymbolOfUnsummoning = card("Symbol of Unsummoning") {
         effect = CompositeEffect(
             listOf(
                 MoveToZoneEffect(EffectTarget.ContextTarget(0), Zone.HAND),
-                DrawCardsEffect(1)
+                Effects.DrawCards(1)
             )
         )
     }
