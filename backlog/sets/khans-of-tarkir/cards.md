@@ -2,13 +2,13 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 138 / 249
+**Implemented:** 139 / 249
 
 | Color      | Count |
 |------------|-------|
 | White      | 24    |
 | Blue       | 24    |
-| Black      | 23    |
+| Black      | 24    |
 | Red        | 24    |
 | Green      | 24    |
 | Multicolor | 13    |
@@ -152,7 +152,7 @@
 - [x] Mer-Ek Nightblade
 - [ ] Mindswipe
 - [x] Mistfire Weaver
-- [ ] Molting Snakeskin
+- [x] Molting Snakeskin
 - [x] Monastery Flock
 - [x] Monastery Swiftspear
 - [x] Murderous Cut
