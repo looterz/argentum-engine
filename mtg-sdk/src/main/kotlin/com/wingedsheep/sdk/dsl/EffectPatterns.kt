@@ -1734,13 +1734,34 @@ object EffectPatterns {
         storeAs: String = "linked_return"
     ): CompositeEffect = CompositeEffect(listOf(
         GatherCardsEffect(
-            source = CardSource.FromLinkedExile,
+            source = CardSource.FromLinkedExile(),
             storeAs = storeAs
         ),
         MoveCollectionEffect(
             from = storeAs,
             destination = CardDestination.ToZone(Zone.BATTLEFIELD),
             underOwnersControl = underOwnersControl
+        )
+    ))
+
+    /**
+     * Take the top card from the source permanent's linked exile pile and put it
+     * into the controller's hand. Used by Parallel Thoughts and similar cards.
+     *
+     * Pipeline: GatherCards(FromLinkedExile, count=1) → MoveCollection(Hand)
+     *
+     * Since GatherCards filters to cards currently in exile, a card that was
+     * previously taken will not be re-gathered — no LinkedExileComponent update needed.
+     */
+    fun takeFromLinkedExile(storeAs: String = "linked_take"): CompositeEffect = CompositeEffect(listOf(
+        GatherCardsEffect(
+            source = CardSource.FromLinkedExile(count = 1),
+            storeAs = storeAs
+        ),
+        MoveCollectionEffect(
+            from = storeAs,
+            destination = CardDestination.ToZone(Zone.HAND),
+            unlinkFromSource = true
         )
     ))
 

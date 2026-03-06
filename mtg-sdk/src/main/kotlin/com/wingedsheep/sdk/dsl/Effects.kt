@@ -13,7 +13,7 @@ import com.wingedsheep.sdk.scripting.effects.AddCountersEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
 import com.wingedsheep.sdk.scripting.effects.AnimateLandEffect
 import com.wingedsheep.sdk.scripting.effects.SetBasePowerEffect
-import com.wingedsheep.sdk.scripting.effects.TakeFromLinkedExileEffect
+
 import com.wingedsheep.sdk.scripting.effects.ChooseColorAndGrantProtectionToGroupEffect
 import com.wingedsheep.sdk.scripting.effects.ChooseColorAndGrantProtectionToTargetEffect
 import com.wingedsheep.sdk.scripting.effects.CantBlockGroupEffect
@@ -364,7 +364,7 @@ object Effects {
      * Take the top card from the source's linked exile pile and put it into your hand.
      * Used by Parallel Thoughts and similar cards.
      */
-    fun TakeFromLinkedExile(): Effect = TakeFromLinkedExileEffect
+    fun TakeFromLinkedExile(): Effect = EffectPatterns.takeFromLinkedExile()
 
     // =========================================================================
     // Stat Modification Effects

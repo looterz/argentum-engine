@@ -45,7 +45,7 @@ class GatherCardsFromLinkedExileTest : FunSpec({
     )
 
     fun gatherEffect() = GatherCardsEffect(
-        source = CardSource.FromLinkedExile,
+        source = CardSource.FromLinkedExile(),
         storeAs = "linked"
     )
 

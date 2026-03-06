@@ -351,6 +351,7 @@ data class MoveCollectionEffect(
     val revealed: Boolean = false,
     val moveType: MoveType = MoveType.Default,
     val linkToSource: Boolean = false,
+    val unlinkFromSource: Boolean = false,
     val faceDown: Boolean = false,
     val noRegenerate: Boolean = false,
     val storeMovedAs: String? = null,

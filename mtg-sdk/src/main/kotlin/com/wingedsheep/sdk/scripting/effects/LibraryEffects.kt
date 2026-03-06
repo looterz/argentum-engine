@@ -68,6 +68,7 @@ data object PutCreatureFromHandSharingTypeWithTappedEffect : Effect {
  *
  * If the linked exile pile is empty, nothing happens.
  */
+@Deprecated("Use Effects.TakeFromLinkedExile() or EffectPatterns.takeFromLinkedExile() instead")
 @SerialName("TakeFromLinkedExile")
 @Serializable
 data object TakeFromLinkedExileEffect : Effect {

@@ -71,12 +71,14 @@ class MoveCollectionExecutor(
 
         return when (destination) {
             is CardDestination.ToZone -> {
-                val result = moveToZone(state, context, cards, destination, effect.order, effect.revealed, effect.moveType, effect.faceDown, effect.noRegenerate, effect.storeMovedAs, effect.underOwnersControl)
+                var result = moveToZone(state, context, cards, destination, effect.order, effect.revealed, effect.moveType, effect.faceDown, effect.noRegenerate, effect.storeMovedAs, effect.underOwnersControl)
                 if (effect.linkToSource && result.isSuccess) {
-                    linkCardsToSource(result, context, cards)
-                } else {
-                    result
+                    result = linkCardsToSource(result, context, cards)
                 }
+                if (effect.unlinkFromSource && result.isSuccess) {
+                    result = unlinkCardsFromSource(result, context, cards)
+                }
+                result
             }
         }
     }
@@ -97,6 +99,27 @@ class MoveCollectionExecutor(
         val allExiled = (existingLinked?.exiledIds ?: emptyList()) + cards
         newState = newState.updateEntity(sourceId) { c ->
             c.with(com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent(allExiled))
+        }
+        return ExecutionResult.success(newState, result.events)
+    }
+
+    /**
+     * Remove the moved card IDs from the source permanent's LinkedExileComponent.
+     * Inverse of [linkCardsToSource] — used when taking cards from a linked exile pile.
+     */
+    private fun unlinkCardsFromSource(
+        result: ExecutionResult,
+        context: EffectContext,
+        cards: List<EntityId>
+    ): ExecutionResult {
+        val sourceId = context.sourceId ?: return result
+        var newState = result.state
+        val sourceContainer = newState.getEntity(sourceId) ?: return result
+        val existingLinked = sourceContainer.get<com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent>() ?: return result
+        val movedSet = cards.toSet()
+        val remaining = existingLinked.exiledIds.filter { it !in movedSet }
+        newState = newState.updateEntity(sourceId) { c ->
+            c.with(com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent(remaining))
         }
         return ExecutionResult.success(newState, result.events)
     }

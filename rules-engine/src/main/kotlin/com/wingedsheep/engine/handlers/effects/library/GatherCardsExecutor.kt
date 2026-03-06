@@ -133,11 +133,14 @@ class GatherCardsExecutor : EffectExecutor<GatherCardsEffect> {
                         updatedCollections = mapOf(effect.storeAs to emptyList())
                     )
                 // Filter to only entities currently in exile
-                linked.exiledIds.filter { entityId ->
+                val inExile = linked.exiledIds.filter { entityId ->
                     val ownerId = state.getEntity(entityId)?.get<OwnerComponent>()?.playerId
                         ?: context.controllerId
                     entityId in state.getZone(ZoneKey(ownerId, Zone.EXILE))
                 }
+                // Apply count limit if specified (take first N from the ordered pile)
+                val count = source.count
+                if (count != null) inExile.take(count) else inExile
             }
         }
 
