@@ -21,6 +21,7 @@ import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComp
 import com.wingedsheep.engine.state.components.stack.SpellOnStackComponent
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
+import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.registry.CardRegistry
@@ -286,7 +287,8 @@ class ClientStateTransformer(
                 cardTypes = setOf("Ability"),
                 subtypes = emptySet(),
                 colors = sourceCard?.colors ?: emptySet(),
-                oracleText = activatedAbility.effect.description,
+                oracleText = runtimeAbilityText(state, entityId, activatedAbility.controllerId, activatedAbility.effect, activatedAbility.xValue)
+                    ?: activatedAbility.effect.description,
                 power = null,
                 toughness = null,
                 basePower = null,
@@ -339,7 +341,8 @@ class ClientStateTransformer(
                 cardTypes = setOf("Ability"),
                 subtypes = emptySet(),
                 colors = sourceCard?.colors ?: emptySet(),
-                oracleText = triggeredAbility.description,
+                oracleText = runtimeAbilityText(state, entityId, triggeredAbility.controllerId, triggeredAbility.effect, triggeredAbility.xValue)
+                    ?: triggeredAbility.description,
                 power = null,
                 toughness = null,
                 basePower = null,
@@ -730,6 +733,33 @@ class ClientStateTransformer(
             effect.runtimeDescription { amount -> evaluator.evaluate(state, amount, context) }
         } catch (_: Exception) {
             effect.description
+        }
+    }
+
+    /**
+     * Generate runtime text for an ability on the stack with dynamic amounts resolved.
+     * Returns null if evaluation fails or the effect has no dynamic amounts.
+     */
+    private fun runtimeAbilityText(
+        state: GameState,
+        abilityEntityId: EntityId,
+        controllerId: EntityId,
+        effect: Effect,
+        xValue: Int?
+    ): String? {
+        return try {
+            val evaluator = DynamicAmountEvaluator()
+            val context = EffectContext(
+                sourceId = abilityEntityId,
+                controllerId = controllerId,
+                opponentId = state.getOpponent(controllerId),
+                xValue = xValue
+            )
+            val text = effect.runtimeDescription { amount -> evaluator.evaluate(state, amount, context) }
+            // Only return if it differs from static description (i.e., dynamic amounts were resolved)
+            if (text != effect.description) text else null
+        } catch (_: Exception) {
+            null
         }
     }
 

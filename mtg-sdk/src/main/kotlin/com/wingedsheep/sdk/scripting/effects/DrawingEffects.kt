@@ -32,6 +32,15 @@ data class DrawCardsEffect(
         else -> "${target.description.replaceFirstChar { it.uppercase() }} draws cards equal to ${count.description}"
     }
 
+    override fun runtimeDescription(resolver: (DynamicAmount) -> Int): String {
+        val resolved = resolver(count)
+        val cardText = if (resolved == 1) "a card" else "$resolved cards"
+        return when (target) {
+            EffectTarget.Controller -> "Draw $cardText"
+            else -> "${target.description.replaceFirstChar { it.uppercase() }} draws $cardText"
+        }
+    }
+
     override fun applyTextReplacement(replacer: TextReplacer): Effect {
         val newCount = count.applyTextReplacement(replacer)
         return if (newCount !== count) copy(count = newCount) else this
