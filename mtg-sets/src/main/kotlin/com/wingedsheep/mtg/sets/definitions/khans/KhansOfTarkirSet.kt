@@ -94,6 +94,7 @@ object KhansOfTarkirSet {
 
         // Black spells
         BitterRevelation,
+        DeadDrop,
         DebilitatingInjury,
         Despise,
         DutifulReturn,

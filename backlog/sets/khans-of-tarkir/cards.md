@@ -2,13 +2,13 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 131 / 249
+**Implemented:** 132 / 249
 
 | Color      | Count |
 |------------|-------|
 | White      | 23    |
 | Blue       | 23    |
-| Black      | 22    |
+| Black      | 23    |
 | Red        | 22    |
 | Green      | 23    |
 | Multicolor | 12    |
@@ -66,7 +66,7 @@
 - [x] Crater's Claws
 - [x] Crippling Chill
 - [x] Dazzling Ramparts
-- [ ] Dead Drop
+- [x] Dead Drop
 - [ ] Death Frenzy
 - [x] Debilitating Injury
 - [x] Defiant Strike
