@@ -28,7 +28,7 @@ val MoltingSnakeskin = card("Molting Snakeskin") {
 
     activatedAbility {
         cost = Costs.Mana("{2}{B}")
-        effect = RegenerateEffect(EffectTarget.Self)
+        effect = RegenerateEffect(EffectTarget.EnchantedCreature)
     }
 
     metadata {
