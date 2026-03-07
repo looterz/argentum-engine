@@ -211,6 +211,7 @@ object KhansOfTarkirSet {
         SnowhornRider,
         SultaiAscendancy,
         UtterEnd,
+        WardenOfTheEye,
         Winterflame,
 
         // Colorless

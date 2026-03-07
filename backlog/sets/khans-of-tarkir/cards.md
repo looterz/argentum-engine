@@ -2,7 +2,7 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 169 / 249
+**Implemented:** 170 / 249
 
 | Color      | Count |
 |------------|-------|
@@ -11,7 +11,7 @@
 | Black      | 28    |
 | Red        | 29    |
 | Green      | 28    |
-| Multicolor | 18    |
+| Multicolor | 19    |
 | Colorless  | 7     |
 | Land       | 3     |
 
@@ -250,7 +250,7 @@
 - [x] Venerable Lammasu
 - [ ] Villainous Wealth
 - [x] War Behemoth
-- [ ] Warden of the Eye
+- [x] Warden of the Eye
 - [x] War-Name Aspirant
 - [x] Watcher of the Roost
 - [x] Waterwhirl
