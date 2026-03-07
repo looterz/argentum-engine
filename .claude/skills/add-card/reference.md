@@ -77,6 +77,7 @@ constructors.
 - `Effects.SetBasePower(target = Self, power: DynamicAmount, duration = Permanent)` — set creature's base power
 - `Effects.AnimateLand(target, power, toughness, duration)` — turn land into creature
 - `Effects.DistributeCountersFromSelf(counterType)` — move counters from self to other creatures (player chooses)
+- `Effects.DistributeCountersAmongTargets(totalCounters, counterType, minPerTarget)` — distribute N counters among targets from context (deterministic distribution)
 
 ### Mass Effects (group)
 
@@ -279,6 +280,7 @@ constructors.
 | `SetBasePowerEffect`                        | `target, power: DynamicAmount, duration`                                    | Set base power only (leave toughness)    |
 | `AnimateLandEffect`                         | `target, power, toughness, duration`                                        | Animate land                             |
 | `DistributeCountersFromSelfEffect`          | `counterType`                                                               | Move counters from self to other creatures |
+| `DistributeCountersAmongTargetsEffect`      | `totalCounters, counterType, minPerTarget`                                  | Distribute N counters among targets        |
 | `TurnFaceDownEffect`                        | `target`                                                                    | Turn face down                           |
 | `TurnFaceUpEffect`                          | `target`                                                                    | Turn face up                             |
 | `TransformEffect`                           | `target`                                                                    | Transform DFC                            |

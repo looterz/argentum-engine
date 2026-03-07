@@ -452,6 +452,13 @@ object Effects {
         com.wingedsheep.sdk.scripting.effects.DistributeCountersFromSelfEffect(counterType)
 
     /**
+     * Distribute counters among targets from context.
+     * "Distribute N counters among one or more target creatures."
+     */
+    fun DistributeCountersAmongTargets(totalCounters: Int, counterType: String = "+1/+1", minPerTarget: Int = 1): Effect =
+        com.wingedsheep.sdk.scripting.effects.DistributeCountersAmongTargetsEffect(totalCounters, counterType, minPerTarget)
+
+    /**
      * Set a creature's base power to a dynamic value.
      * "Change this creature's base power to target creature's power."
      */

@@ -2,7 +2,7 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 179 / 249
+**Implemented:** 180 / 249
 
 | Color      | Count |
 |------------|-------|
@@ -11,7 +11,7 @@
 | Black      | 29    |
 | Red        | 29    |
 | Green      | 29    |
-| Multicolor | 23    |
+| Multicolor | 24    |
 | Colorless  | 8     |
 | Land       | 3     |
 
@@ -34,7 +34,7 @@
 - [ ] Ankle Shanker
 - [x] Archers' Parapet
 - [x] Arc Lightning
-- [ ] Armament Corps
+- [x] Armament Corps
 - [x] Arrow Storm
 - [ ] Ashcloud Phoenix
 - [ ] Avalanche Tusker

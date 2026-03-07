@@ -781,6 +781,31 @@ data class DistributeCountersFromSelfEffect(
 }
 
 /**
+ * Distribute a fixed number of counters among the targets from context.
+ * "Distribute N counters among one or more target creatures you control."
+ *
+ * Distribution is deterministic when totalCounters equals number of targets * minPerTarget.
+ * With 1 target, all counters go on it. With multiple targets, counters are divided evenly
+ * (remainder goes to the first target).
+ *
+ * @property totalCounters Total number of counters to distribute
+ * @property counterType The type of counter (e.g., "+1/+1")
+ * @property minPerTarget Minimum counters each target must receive (per MTG rules, typically 1)
+ */
+@SerialName("DistributeCountersAmongTargets")
+@Serializable
+data class DistributeCountersAmongTargetsEffect(
+    val totalCounters: Int,
+    val counterType: String = "+1/+1",
+    val minPerTarget: Int = 1
+) : Effect {
+    override val description: String =
+        "Distribute $totalCounters $counterType counter${if (totalCounters != 1) "s" else ""} among targets"
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
+}
+
+/**
  * Set a creature's base power to a specific value.
  * "{1}{U}: Change this creature's base power to target creature's power."
  *

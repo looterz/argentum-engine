@@ -46,6 +46,7 @@ class PermanentExecutors(
         AnimateLandExecutor(),
         SetBasePowerExecutor(amountEvaluator),
         DistributeCountersFromSelfExecutor(),
+        DistributeCountersAmongTargetsExecutor(),
         AttachEquipmentExecutor()
     )
 }

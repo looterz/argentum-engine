@@ -199,6 +199,7 @@ object KhansOfTarkirSet {
 
         // Multicolor
         AbominationOfGudul,
+        ArmamentCorps,
         KinTreeInvocation,
         AbzanGuide,
         CracklingDoom,
