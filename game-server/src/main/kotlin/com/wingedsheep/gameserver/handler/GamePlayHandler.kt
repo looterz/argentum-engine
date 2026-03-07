@@ -68,6 +68,7 @@ class GamePlayHandler(
             is ClientMessage.SetPriorityMode -> handleSetPriorityMode(session, message)
             is ClientMessage.SetStopOverrides -> handleSetStopOverrides(session, message)
             is ClientMessage.RequestUndo -> handleRequestUndo(session)
+            is ClientMessage.RequestResync -> handleRequestResync(session)
             else -> {}
         }
     }
@@ -686,6 +687,24 @@ class GamePlayHandler(
                 // Should not happen for undo
                 broadcastStateUpdate(gameSession, result.events)
             }
+        }
+    }
+
+    private fun handleRequestResync(session: WebSocketSession) {
+        val playerSession = sessionRegistry.getPlayerSession(session.id)
+        if (playerSession == null) {
+            sender.sendError(session, ErrorCode.NOT_CONNECTED, "Not connected")
+            return
+        }
+
+        val gameSession = getGameSession(session, playerSession) ?: return
+
+        logger.info("Player ${playerSession.playerName} requested state resync")
+        // Clear cached state so the next update sends a full StateUpdate instead of a delta
+        gameSession.clearLastSentState(playerSession.playerId)
+        val update = gameSession.createStateUpdate(playerSession.playerId, emptyList())
+        if (update != null) {
+            sender.send(session, update)
         }
     }
 

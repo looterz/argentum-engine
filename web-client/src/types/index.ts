@@ -356,4 +356,5 @@ export {
   createSetPriorityModeMessage,
   createSetStopOverridesMessage,
   createRequestUndoMessage,
+  createRequestResyncMessage,
 } from './messages'

@@ -72,7 +72,8 @@ class GameWebSocketHandler(
                 is ClientMessage.SetFullControl,
                 is ClientMessage.SetPriorityMode,
                 is ClientMessage.SetStopOverrides,
-                is ClientMessage.RequestUndo -> gamePlayHandler.handle(session, clientMessage)
+                is ClientMessage.RequestUndo,
+                is ClientMessage.RequestResync -> gamePlayHandler.handle(session, clientMessage)
 
                 is ClientMessage.CreateSealedGame,
                 is ClientMessage.JoinSealedGame,

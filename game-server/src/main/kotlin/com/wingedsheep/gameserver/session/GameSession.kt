@@ -99,6 +99,9 @@ class GameSession(
     /** Per-player cache of last sent ClientGameState for delta computation */
     private val lastSentState = java.util.concurrent.ConcurrentHashMap<EntityId, ClientGameState>()
 
+    /** Monotonically increasing version counter, included in every state update so clients can detect missed messages */
+    private val stateVersion = java.util.concurrent.atomic.AtomicLong(0)
+
     data class StopOverrideSettings(
         val myTurnStops: Set<Step> = emptySet(),
         val opponentTurnStops: Set<Step> = emptySet()
@@ -586,15 +589,16 @@ class GameSession(
         // Check if we have a previous state for delta computation
         val previous = lastSentState[playerId]
         lastSentState[playerId] = stateWithLog
+        val version = stateVersion.incrementAndGet()
 
         if (previous != null) {
             // Compute delta and send smaller message
             val delta = StateDiffCalculator.computeDelta(previous, stateWithLog)
-            return ServerMessage.StateDeltaUpdate(delta, clientEvents, legalActions, pendingDecision, nextStopPoint, opponentDecisionStatus, stopOverrideInfo, isUndoAvailable(playerId), priorityModeStr)
+            return ServerMessage.StateDeltaUpdate(delta, clientEvents, legalActions, pendingDecision, nextStopPoint, opponentDecisionStatus, stopOverrideInfo, isUndoAvailable(playerId), priorityModeStr, version)
         }
 
         // First update — send full state
-        return ServerMessage.StateUpdate(stateWithLog, clientEvents, legalActions, pendingDecision, nextStopPoint, opponentDecisionStatus, stopOverrideInfo, isUndoAvailable(playerId), priorityModeStr)
+        return ServerMessage.StateUpdate(stateWithLog, clientEvents, legalActions, pendingDecision, nextStopPoint, opponentDecisionStatus, stopOverrideInfo, isUndoAvailable(playerId), priorityModeStr, version)
     }
 
     /**

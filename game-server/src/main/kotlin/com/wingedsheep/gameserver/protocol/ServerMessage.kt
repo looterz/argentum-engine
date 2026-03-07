@@ -89,7 +89,9 @@ sealed interface ServerMessage {
         /** Whether the player can undo their last action */
         val undoAvailable: Boolean = false,
         /** Current priority mode for this player (auto, stops, fullControl) */
-        val priorityMode: String? = null
+        val priorityMode: String? = null,
+        /** Monotonically increasing version — clients use this to detect missed messages */
+        val stateVersion: Long = 0
     ) : ServerMessage
 
     /**
@@ -113,7 +115,9 @@ sealed interface ServerMessage {
         /** Whether the player can undo their last action */
         val undoAvailable: Boolean = false,
         /** Current priority mode for this player */
-        val priorityMode: String? = null
+        val priorityMode: String? = null,
+        /** Monotonically increasing version — clients use this to detect missed messages */
+        val stateVersion: Long = 0
     ) : ServerMessage
 
     /**

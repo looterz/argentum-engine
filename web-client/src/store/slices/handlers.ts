@@ -410,15 +410,19 @@ export function createMessageHandlers(set: SetState, get: GetState): MessageHand
     },
 
     onStateUpdate: (msg) => {
+      getWebSocket()?.onStateVersionReceived(msg.stateVersion)
       processStateUpdate(msg.state, msg, set, get)
     },
 
     onStateDeltaUpdate: (msg) => {
+      const ws = getWebSocket()
+      ws?.onStateVersionReceived(msg.stateVersion)
+
       const currentState = get().gameState
       if (!currentState) {
-        // No previous state to apply delta to — should not happen in normal flow.
-        // The server sends a full state first. Log and skip.
-        console.warn('[StateDelta] Received delta update but no current gameState exists. Ignoring.')
+        // No previous state to apply delta to — request a full resync.
+        console.warn('[StateDelta] Received delta update but no current gameState exists. Requesting resync.')
+        ws?.requestResync()
         return
       }
       const newState = applyStateDelta(currentState, msg.delta)

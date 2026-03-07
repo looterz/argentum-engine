@@ -152,6 +152,8 @@ export interface StateUpdateMessage {
   readonly undoAvailable?: boolean
   /** Current priority mode for this player (auto, stops, fullControl) */
   readonly priorityMode?: PriorityModeValue | null
+  /** Monotonically increasing version — used to detect missed messages */
+  readonly stateVersion?: number
 }
 
 /**
@@ -198,6 +200,8 @@ export interface StateDeltaUpdateMessage {
   readonly stopOverrides?: StopOverrideInfo | null
   readonly undoAvailable?: boolean
   readonly priorityMode?: PriorityModeValue | null
+  /** Monotonically increasing version — used to detect missed messages */
+  readonly stateVersion?: number
 }
 
 // ============================================================================
@@ -1169,6 +1173,8 @@ export type ClientMessage =
   | SetStopOverridesMessage
   // Undo
   | RequestUndoMessage
+  // Resync
+  | RequestResyncMessage
 
 /**
  * Connect to the server with a player name.
@@ -1538,6 +1544,14 @@ export interface RequestUndoMessage {
   readonly type: 'requestUndo'
 }
 
+/**
+ * Request a full state resync from the server.
+ * Sent when the client detects it may have missed messages (tab backgrounded, version gap).
+ */
+export interface RequestResyncMessage {
+  readonly type: 'requestResync'
+}
+
 // Lobby Message Factories
 export function createCreateTournamentLobbyMessage(
   setCodes: readonly string[],
@@ -1660,6 +1674,10 @@ export function createSetStopOverridesMessage(myTurnStops: readonly string[], op
 
 export function createRequestUndoMessage(): RequestUndoMessage {
   return { type: 'requestUndo' }
+}
+
+export function createRequestResyncMessage(): RequestResyncMessage {
+  return { type: 'requestResync' }
 }
 
 // Draft Type Guards

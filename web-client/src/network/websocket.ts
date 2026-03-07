@@ -19,6 +19,8 @@ export interface WebSocketConfig {
  * - Automatic reconnection
  * - Message serialization/deserialization
  * - Connection status tracking
+ * - Visibility change detection (tab switch resync)
+ * - State version gap detection
  */
 export class GameWebSocket {
   private ws: WebSocket | null = null
@@ -26,6 +28,13 @@ export class GameWebSocket {
   private reconnectCount = 0
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null
   private isIntentionallyClosed = false
+
+  /** Last received stateVersion from the server */
+  private lastStateVersion: number | null = null
+  /** Whether resync has already been requested (debounce) */
+  private resyncRequested = false
+  /** Bound handler for cleanup */
+  private visibilityHandler: (() => void) | null = null
 
   constructor(config: WebSocketConfig) {
     this.config = {
@@ -50,6 +59,7 @@ export class GameWebSocket {
     try {
       this.ws = new WebSocket(this.config.url)
       this.setupEventHandlers()
+      this.setupVisibilityHandler()
     } catch (error) {
       console.error('Failed to create WebSocket:', error)
       this.config.onStatusChange('disconnected')
@@ -63,12 +73,15 @@ export class GameWebSocket {
   disconnect(): void {
     this.isIntentionallyClosed = true
     this.cancelReconnect()
+    this.teardownVisibilityHandler()
 
     if (this.ws) {
       this.ws.close(1000, 'Client disconnected')
       this.ws = null
     }
 
+    this.lastStateVersion = null
+    this.resyncRequested = false
     this.config.onStatusChange('disconnected')
   }
 
@@ -96,12 +109,46 @@ export class GameWebSocket {
     return this.ws?.readyState === WebSocket.OPEN
   }
 
+  /**
+   * Called by the store when a stateUpdate or stateDeltaUpdate is received.
+   * Tracks version and requests resync if a gap is detected.
+   */
+  onStateVersionReceived(version: number | undefined): void {
+    if (version === undefined) return
+
+    if (this.lastStateVersion !== null && version > this.lastStateVersion + 1) {
+      console.warn(
+        `[WebSocket] State version gap detected: expected ${this.lastStateVersion + 1}, got ${version}. Requesting resync.`
+      )
+      this.lastStateVersion = version
+      this.requestResync()
+      return
+    }
+
+    this.lastStateVersion = version
+    this.resyncRequested = false
+  }
+
+  /**
+   * Request a full state resync from the server.
+   */
+  requestResync(): void {
+    if (this.resyncRequested) return
+    if (!this.isConnected()) return
+
+    this.resyncRequested = true
+    console.log('[WebSocket] Requesting state resync from server')
+    this.send({ type: 'requestResync' })
+  }
+
   private setupEventHandlers(): void {
     if (!this.ws) return
 
     this.ws.onopen = () => {
       console.log('WebSocket connected')
       this.reconnectCount = 0
+      this.lastStateVersion = null
+      this.resyncRequested = false
       this.config.onStatusChange('connected')
     }
 
@@ -126,6 +173,28 @@ export class GameWebSocket {
       } catch (error) {
         console.error('Failed to parse message:', error)
       }
+    }
+  }
+
+  /**
+   * Listen for tab visibility changes. When the tab becomes visible again,
+   * request a resync to recover any messages missed while backgrounded.
+   */
+  private setupVisibilityHandler(): void {
+    this.teardownVisibilityHandler()
+    this.visibilityHandler = () => {
+      if (document.visibilityState === 'visible' && this.isConnected()) {
+        console.log('[WebSocket] Tab became visible, requesting resync')
+        this.requestResync()
+      }
+    }
+    document.addEventListener('visibilitychange', this.visibilityHandler)
+  }
+
+  private teardownVisibilityHandler(): void {
+    if (this.visibilityHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityHandler)
+      this.visibilityHandler = null
     }
   }
 

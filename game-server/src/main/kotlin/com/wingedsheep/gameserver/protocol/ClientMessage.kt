@@ -305,4 +305,12 @@ sealed interface ClientMessage {
     @Serializable
     @SerialName("requestUndo")
     data object RequestUndo : ClientMessage
+
+    /**
+     * Request a full state resync. Sent by the client when it detects it may have missed
+     * messages (e.g., tab was backgrounded, or a gap in stateVersion sequence).
+     */
+    @Serializable
+    @SerialName("requestResync")
+    data object RequestResync : ClientMessage
 }
