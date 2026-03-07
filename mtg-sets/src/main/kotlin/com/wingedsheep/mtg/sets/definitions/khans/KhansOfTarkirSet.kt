@@ -160,6 +160,7 @@ object KhansOfTarkirSet {
         BloodfireMentor,
         CanyonLurkers,
         DragonStyleTwins,
+        HordeAmbusher,
         JeeringInstigator,
         LeapingMaster,
         MarduBlazebringer,
