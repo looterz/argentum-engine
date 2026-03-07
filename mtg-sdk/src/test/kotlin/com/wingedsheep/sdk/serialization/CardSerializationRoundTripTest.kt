@@ -9,7 +9,6 @@ import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.CreateTokenEffect
 import com.wingedsheep.sdk.scripting.effects.DealDamageEffect
 import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
-import com.wingedsheep.sdk.scripting.effects.EachOpponentDiscardsEffect
 import com.wingedsheep.sdk.scripting.effects.ForEachInGroupEffect
 import com.wingedsheep.sdk.scripting.effects.GainControlEffect
 import com.wingedsheep.sdk.scripting.effects.GainLifeEffect
@@ -92,22 +91,20 @@ class CardSerializationRoundTripTest : DescribeSpec({
         }
 
         it("should round-trip a composite effect") {
-            val card = card("Syphon Mind") {
-                manaCost = "{3}{B}"
+            val card = card("Drain Life") {
+                manaCost = "{1}{B}"
                 typeLine = "Sorcery"
                 spell {
-                    effect = EachOpponentDiscardsEffect(count = 1) then
-                            DrawCardsEffect(
-                                count = DynamicAmount.Fixed(1),
-                                target = EffectTarget.Controller
-                            )
+                    val any = target("any", Targets.Any)
+                    effect = DealDamageEffect(DynamicAmount.Fixed(3), any) then
+                            GainLifeEffect(DynamicAmount.Fixed(3))
                 }
             }
 
             val serialized = CardLoader.toJson(card)
             serialized shouldContain "Composite"
-            serialized shouldContain "EachOpponentDiscards"
-            serialized shouldContain "DrawCards"
+            serialized shouldContain "DealDamage"
+            serialized shouldContain "GainLife"
 
             val deserialized = CardLoader.fromJson(serialized)
             deserialized.script.spellEffect.shouldBeInstanceOf<CompositeEffect>()

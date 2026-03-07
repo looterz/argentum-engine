@@ -33,24 +33,6 @@ sealed interface ContinuationFrame {
     val decisionId: String
 }
 
-/**
- * Resume after player selects cards to discard.
- *
- * @property playerId The player who is discarding
- * @property sourceId The spell/ability that caused the discard (for events)
- * @property sourceName Name of the source for event messages
- * @property controllerId If non-null, the controller who draws after the discard (for Syphon Mind)
- * @property controllerDrawsPerDiscard Cards the controller draws per card discarded (0 = no draw)
- */
-@Serializable
-data class DiscardContinuation(
-    override val decisionId: String,
-    val playerId: EntityId,
-    val sourceId: EntityId?,
-    val sourceName: String?,
-    val controllerId: EntityId? = null,
-    val controllerDrawsPerDiscard: Int = 0
-) : ContinuationFrame
 
 /**
  * Resume a composite effect with remaining effects to execute.

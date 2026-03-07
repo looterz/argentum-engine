@@ -2,7 +2,6 @@ package com.wingedsheep.engine.handlers.continuations
 
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.DecisionHandler
-import com.wingedsheep.engine.handlers.effects.drawing.EachOpponentDiscardsExecutor
 import com.wingedsheep.engine.handlers.effects.drawing.EachPlayerDiscardsOrLoseLifeExecutor
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -14,52 +13,9 @@ class DiscardAndDrawContinuationResumer(
 ) : ContinuationResumerModule {
 
     override fun resumers(): List<ContinuationResumer<*>> = listOf(
-        resumer(DiscardContinuation::class, ::resumeDiscard),
         resumer(HandSizeDiscardContinuation::class, ::resumeHandSizeDiscard),
         resumer(EachPlayerDiscardsOrLoseLifeContinuation::class, ::resumeEachPlayerDiscardsOrLoseLife)
     )
-
-    fun resumeDiscard(
-        state: GameState,
-        continuation: DiscardContinuation,
-        response: DecisionResponse,
-        checkForMore: CheckForMore
-    ): ExecutionResult {
-        if (response !is CardsSelectedResponse) {
-            return ExecutionResult.error(state, "Expected card selection response for discard")
-        }
-
-        val playerId = continuation.playerId
-        val selectedCards = response.selectedCards
-
-        // Move selected cards from hand to graveyard
-        var newState = state
-        val handZone = ZoneKey(playerId, Zone.HAND)
-        val graveyardZone = ZoneKey(playerId, Zone.GRAVEYARD)
-
-        for (cardId in selectedCards) {
-            newState = newState.removeFromZone(handZone, cardId)
-            newState = newState.addToZone(graveyardZone, cardId)
-        }
-
-        val discardNames = selectedCards.map { state.getEntity(it)?.get<CardComponent>()?.name ?: "Card" }
-        val events = mutableListOf<GameEvent>(
-            CardsDiscardedEvent(playerId, selectedCards, discardNames)
-        )
-
-        // Controller draws for each card discarded (Syphon Mind)
-        if (continuation.controllerDrawsPerDiscard > 0 && continuation.controllerId != null) {
-            val drawCount = selectedCards.size * continuation.controllerDrawsPerDiscard
-            val drawResult = EachOpponentDiscardsExecutor.drawCards(
-                newState, continuation.controllerId, drawCount
-            )
-            newState = drawResult.state
-            events.addAll(drawResult.events)
-        }
-
-        // Check if there are more continuations to process
-        return checkForMore(newState, events)
-    }
 
     fun resumeHandSizeDiscard(
         state: GameState,

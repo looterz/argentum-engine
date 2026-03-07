@@ -44,7 +44,6 @@ class DrawingExecutors(
     override fun executors(): List<EffectExecutor<*>> = listOf(
         drawCardsExecutor,
         DrawUpToExecutor(decisionHandler),
-        EachOpponentDiscardsExecutor(decisionHandler),
         eachPlayerReturnsPermanentToHandExecutor,
         EachPlayerDiscardsOrLoseLifeExecutor(decisionHandler),
         ReplaceNextDrawWithExecutor(),

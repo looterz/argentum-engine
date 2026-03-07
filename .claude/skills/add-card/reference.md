@@ -208,7 +208,6 @@ constructors.
 |------------------------------------------|------------------------------------|---------------------------------|
 | `DrawCardsEffect`                        | `count: DynamicAmount, target`     | Draw cards                      |
 | `DrawUpToEffect`                         | `maxCards: Int, target, lifePerCardNotDrawn` | Draw up to N (with optional life gain) |
-| `EachOpponentDiscardsEffect`             | `count, controllerDrawsPerDiscard` | Each opponent discards          |
 | `EachPlayerDiscardsOrLoseLifeEffect`     | `lifeLoss: Int`                    | Discard or lose life            |
 | `EachPlayerReturnsPermanentToHandEffect` | (object)                           | Each player returns a permanent |
 | `LookAtTargetHandEffect`                 | `target`                           | Look at target's hand           |
@@ -762,7 +761,7 @@ MoveType: `MoveType.Default`, `.Discard`, `.Sacrifice`
   patterns
 - `EffectPatterns.putFromHand(filter, count, entersTapped)` — put card from hand onto battlefield
 - `EffectPatterns.eachOpponentMayPutFromHand(filter)` — each opponent may put from hand
-- `EffectPatterns.eachOpponentDiscards(count)` — each opponent discards
+- `EffectPatterns.eachOpponentDiscards(count, controllerDrawsPerDiscard = 0)` — each opponent discards (with optional controller draw per discard)
 - `EffectPatterns.eachPlayerDiscardsDraws(controllerBonusDraw)` — each player discards and draws
 - `EffectPatterns.eachPlayerDrawsX(includeController, includeOpponents)` — each player draws X
 - `EffectPatterns.eachPlayerSearchesLibrary(filter, count)` — each player searches

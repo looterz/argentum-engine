@@ -21,7 +21,6 @@ import com.wingedsheep.sdk.scripting.effects.CantCastSpellsEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.DealDamageEffect
 import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
-import com.wingedsheep.sdk.scripting.effects.EachOpponentDiscardsEffect
 import com.wingedsheep.sdk.scripting.effects.EachPlayerReturnsPermanentToHandEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.GrantMayPlayFromExileEffect
@@ -221,11 +220,9 @@ object Effects {
 
     /**
      * Each opponent discards N cards.
-     * Note: when used as a replacement effect in ReplaceNextDraw (Words of Waste cycle),
-     * this must stay as EachOpponentDiscardsEffect — the draw replacement system checks
-     * the concrete type. Use EffectPatterns.eachOpponentDiscards() for triggered ability contexts.
+     * Delegates to the EffectPatterns pipeline: ForEachPlayer(EachOpponent) → Gather → Select → Move.
      */
-    fun EachOpponentDiscards(count: Int = 1): Effect = EachOpponentDiscardsEffect(count)
+    fun EachOpponentDiscards(count: Int = 1): Effect = EffectPatterns.eachOpponentDiscards(count)
 
     /**
      * Each player returns a permanent they control to its owner's hand.

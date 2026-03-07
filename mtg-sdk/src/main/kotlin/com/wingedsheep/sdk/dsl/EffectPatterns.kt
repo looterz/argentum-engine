@@ -144,33 +144,69 @@ object EffectPatterns {
      * Composed as ForEachPlayer(EachOpponent) → Gather(hand) → Select(ChooseExactly(N)) → Move(graveyard, Discard).
      * Handles the MTG rule "as much as possible": if an opponent has fewer than N cards, they discard all of them.
      *
-     * For Syphon Mind-style "you draw for each card discarded", use EachOpponentDiscardsEffect directly.
+     * When [controllerDrawsPerDiscard] > 0, the controller draws that many cards for each card
+     * actually discarded (Syphon Mind pattern). This variant uses a flat pipeline targeting
+     * Player.Opponent directly, so the controller can draw based on the discard count.
      *
      * Example:
      * ```kotlin
      * eachOpponentDiscards(1)
      * // -> "Each opponent discards a card."
+     *
+     * eachOpponentDiscards(1, controllerDrawsPerDiscard = 1)
+     * // -> "Each opponent discards a card. You draw a card for each card discarded this way."
      * ```
      */
-    fun eachOpponentDiscards(count: Int): ForEachPlayerEffect = ForEachPlayerEffect(
-        players = Player.EachOpponent,
-        effects = listOf(
-            GatherCardsEffect(
-                source = CardSource.FromZone(Zone.HAND, Player.You),
-                storeAs = "hand"
-            ),
-            SelectFromCollectionEffect(
-                from = "hand",
-                selection = SelectionMode.ChooseExactly(DynamicAmount.Fixed(count)),
-                storeSelected = "discarded"
-            ),
-            MoveCollectionEffect(
-                from = "discarded",
-                destination = CardDestination.ToZone(Zone.GRAVEYARD),
-                moveType = MoveType.Discard
+    fun eachOpponentDiscards(count: Int, controllerDrawsPerDiscard: Int = 0): Effect {
+        if (controllerDrawsPerDiscard > 0) {
+            // Flat pipeline: targets opponent directly so storedCollections are available
+            // for the draw step to count actual discards
+            val drawCount: DynamicAmount = if (controllerDrawsPerDiscard == 1) {
+                DynamicAmount.VariableReference("discarded_count")
+            } else {
+                DynamicAmount.Multiply(DynamicAmount.VariableReference("discarded_count"), controllerDrawsPerDiscard)
+            }
+            return CompositeEffect(listOf(
+                GatherCardsEffect(
+                    source = CardSource.FromZone(Zone.HAND, Player.Opponent),
+                    storeAs = "hand"
+                ),
+                SelectFromCollectionEffect(
+                    from = "hand",
+                    selection = SelectionMode.ChooseExactly(DynamicAmount.Fixed(count)),
+                    chooser = Chooser.Opponent,
+                    storeSelected = "discarded",
+                    prompt = "Choose ${if (count == 1) "a card" else "$count cards"} to discard"
+                ),
+                MoveCollectionEffect(
+                    from = "discarded",
+                    destination = CardDestination.ToZone(Zone.GRAVEYARD, player = Player.Opponent),
+                    moveType = MoveType.Discard
+                ),
+                DrawCardsEffect(count = drawCount)
+            ))
+        }
+
+        return ForEachPlayerEffect(
+            players = Player.EachOpponent,
+            effects = listOf(
+                GatherCardsEffect(
+                    source = CardSource.FromZone(Zone.HAND, Player.You),
+                    storeAs = "hand"
+                ),
+                SelectFromCollectionEffect(
+                    from = "hand",
+                    selection = SelectionMode.ChooseExactly(DynamicAmount.Fixed(count)),
+                    storeSelected = "discarded"
+                ),
+                MoveCollectionEffect(
+                    from = "discarded",
+                    destination = CardDestination.ToZone(Zone.GRAVEYARD),
+                    moveType = MoveType.Discard
+                )
             )
         )
-    )
+    }
 
     /**
      * Controller discards N cards of their choice.

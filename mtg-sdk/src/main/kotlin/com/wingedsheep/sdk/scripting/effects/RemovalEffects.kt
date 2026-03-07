@@ -284,22 +284,6 @@ data class DestroyAllEffect(
     }
 }
 
-/**
- * Return all permanents matching the filter to their owners' hands.
- * Uses GroupFilter to support excludeSelf and any GameObjectFilter predicates.
- */
-@Deprecated("Use EffectPatterns.returnAllToHand() instead")
-@SerialName("ReturnAllToHand")
-@Serializable
-data class ReturnAllToHandEffect(
-    val filter: GroupFilter
-) : Effect {
-    override val description: String = "Return ${filter.description} to their owners' hands"
-    override fun applyTextReplacement(replacer: TextReplacer): Effect {
-        val newFilter = filter.applyTextReplacement(replacer)
-        return if (newFilter !== filter) copy(filter = newFilter) else this
-    }
-}
 
 @SerialName("MoveToZone")
 @Serializable

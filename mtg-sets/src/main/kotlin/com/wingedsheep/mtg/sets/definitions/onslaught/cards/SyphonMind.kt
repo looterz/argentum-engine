@@ -1,8 +1,8 @@
 package com.wingedsheep.mtg.sets.definitions.onslaught.cards
 
+import com.wingedsheep.sdk.dsl.EffectPatterns
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.effects.EachOpponentDiscardsEffect
 
 /**
  * Syphon Mind
@@ -16,7 +16,7 @@ val SyphonMind = card("Syphon Mind") {
     oracleText = "Each other player discards a card. You draw a card for each card discarded this way."
 
     spell {
-        effect = EachOpponentDiscardsEffect(count = 1, controllerDrawsPerDiscard = 1)
+        effect = EffectPatterns.eachOpponentDiscards(1, controllerDrawsPerDiscard = 1)
     }
 
     metadata {
