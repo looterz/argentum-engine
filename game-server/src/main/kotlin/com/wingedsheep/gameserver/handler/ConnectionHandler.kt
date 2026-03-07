@@ -186,6 +186,8 @@ class ConnectionHandler(
                             }
                             // Normal game in progress
                             else -> {
+                                // Clear delta cache so reconnecting player gets full state
+                                gameSession.clearLastSentState(identity.playerId)
                                 // Use broadcastStateUpdate to trigger auto-pass loop for both players
                                 logger.info("Sending state update for game $gameSessionId")
                                 broadcastStateUpdateCallback?.invoke(gameSession, emptyList())

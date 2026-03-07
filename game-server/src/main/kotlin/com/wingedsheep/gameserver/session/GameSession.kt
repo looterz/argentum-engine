@@ -4,6 +4,7 @@ import com.wingedsheep.gameserver.dto.ClientEvent
 import com.wingedsheep.gameserver.dto.ClientEventTransformer
 import com.wingedsheep.gameserver.dto.ClientGameState
 import com.wingedsheep.gameserver.dto.ClientStateTransformer
+import com.wingedsheep.gameserver.dto.StateDiffCalculator
 import com.wingedsheep.gameserver.legalactions.LegalActionsCalculator
 import com.wingedsheep.gameserver.protocol.GameOverReason
 import com.wingedsheep.gameserver.protocol.LegalActionInfo
@@ -94,6 +95,9 @@ class GameSession(
     private val replaySnapshots = CopyOnWriteArrayList<ServerMessage.SpectatorStateUpdate>()
     var replayStartedAt: Instant? = null
         private set
+
+    /** Per-player cache of last sent ClientGameState for delta computation */
+    private val lastSentState = java.util.concurrent.ConcurrentHashMap<EntityId, ClientGameState>()
 
     data class StopOverrideSettings(
         val myTurnStops: Set<Step> = emptySet(),
@@ -527,8 +531,10 @@ class GameSession(
 
     /**
      * Create a state update message for a player.
+     * Returns either a full [ServerMessage.StateUpdate] (first update or after reconnect)
+     * or a [ServerMessage.StateDeltaUpdate] (subsequent updates with only changes).
      */
-    fun createStateUpdate(playerId: EntityId, events: List<GameEvent>): ServerMessage.StateUpdate? {
+    fun createStateUpdate(playerId: EntityId, events: List<GameEvent>): ServerMessage? {
         val state = gameState ?: return null
         val clientState = getClientState(playerId) ?: return null
         val legalActions = getLegalActions(playerId)
@@ -576,7 +582,27 @@ class GameSession(
             PriorityMode.STOPS -> "stops"
             PriorityMode.FULL_CONTROL -> "fullControl"
         }
+
+        // Check if we have a previous state for delta computation
+        val previous = lastSentState[playerId]
+        lastSentState[playerId] = stateWithLog
+
+        if (previous != null) {
+            // Compute delta and send smaller message
+            val delta = StateDiffCalculator.computeDelta(previous, stateWithLog)
+            return ServerMessage.StateDeltaUpdate(delta, clientEvents, legalActions, pendingDecision, nextStopPoint, opponentDecisionStatus, stopOverrideInfo, isUndoAvailable(playerId), priorityModeStr)
+        }
+
+        // First update — send full state
         return ServerMessage.StateUpdate(stateWithLog, clientEvents, legalActions, pendingDecision, nextStopPoint, opponentDecisionStatus, stopOverrideInfo, isUndoAvailable(playerId), priorityModeStr)
+    }
+
+    /**
+     * Clear the last sent state for a player, forcing the next update to be a full state.
+     * Called on reconnect to ensure the client gets a complete state.
+     */
+    fun clearLastSentState(playerId: EntityId) {
+        lastSentState.remove(playerId)
     }
 
     // =========================================================================
@@ -891,6 +917,7 @@ class GameSession(
             undoCheckpoint = null
             gameLogs.clear()
             lastProcessedMessageId.clear()
+            lastSentState.clear()
             // Players map is preserved so connected sessions remain valid
         }
     }
@@ -948,6 +975,7 @@ class GameSession(
             gameLogs.putAll(logs)
             lastProcessedMessageId.clear()
             lastProcessedMessageId.putAll(lastIds)
+            lastSentState.clear()
         }
     }
 

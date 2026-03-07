@@ -400,6 +400,13 @@ abstract class ProtocolTestBase : FunSpec() {
         private val closed = AtomicBoolean(false)
         private val stateUpdateCounter = AtomicInteger(0)
 
+        @Volatile
+        private var resolvedState: ClientGameState? = null
+        @Volatile
+        private var resolvedLegalActions: List<LegalActionInfo> = emptyList()
+        @Volatile
+        private var resolvedPendingDecision: com.wingedsheep.engine.core.PendingDecision? = null
+
         val isOpen: Boolean get() = session?.isOpen == true && !closed.get()
 
         fun stateUpdateCount(): Int = stateUpdateCounter.get()
@@ -418,8 +425,23 @@ abstract class ProtocolTestBase : FunSpec() {
                             try {
                                 val serverMessage = json.decodeFromString<ServerMessage>(message.payload)
                                 messages.add(serverMessage)
-                                if (serverMessage is ServerMessage.StateUpdate) {
-                                    stateUpdateCounter.incrementAndGet()
+                                when (serverMessage) {
+                                    is ServerMessage.StateUpdate -> {
+                                        resolvedState = serverMessage.state
+                                        resolvedLegalActions = serverMessage.legalActions
+                                        resolvedPendingDecision = serverMessage.pendingDecision
+                                        stateUpdateCounter.incrementAndGet()
+                                    }
+                                    is ServerMessage.StateDeltaUpdate -> {
+                                        val prev = resolvedState
+                                        if (prev != null) {
+                                            resolvedState = applyDelta(prev, serverMessage.delta)
+                                            resolvedLegalActions = serverMessage.legalActions
+                                            resolvedPendingDecision = serverMessage.pendingDecision
+                                        }
+                                        stateUpdateCounter.incrementAndGet()
+                                    }
+                                    else -> {}
                                 }
                             } catch (_: Exception) {}
                         }
@@ -463,14 +485,14 @@ abstract class ProtocolTestBase : FunSpec() {
             return messages.filterIsInstance<ServerMessage.Connected>().first().playerId
         }
 
-        fun latestState(): ClientGameState? =
-            messages.filterIsInstance<ServerMessage.StateUpdate>().lastOrNull()?.state
+        fun latestState(): ClientGameState? = resolvedState
 
         fun requireLatestState(): ClientGameState =
             latestState() ?: error("No state update received")
 
-        fun latestLegalActions(): List<LegalActionInfo> =
-            messages.filterIsInstance<ServerMessage.StateUpdate>().lastOrNull()?.legalActions ?: emptyList()
+        fun latestLegalActions(): List<LegalActionInfo> = resolvedLegalActions
+
+        fun latestPendingDecision(): com.wingedsheep.engine.core.PendingDecision? = resolvedPendingDecision
 
         suspend fun submitAndWait(action: GameAction): ClientGameState {
             val countBefore = stateUpdateCount()
@@ -479,6 +501,47 @@ abstract class ProtocolTestBase : FunSpec() {
                 stateUpdateCount() shouldBeGreaterThan countBefore
             }
             return requireLatestState()
+        }
+
+        private fun applyDelta(previous: ClientGameState, delta: com.wingedsheep.gameserver.dto.StateDelta): ClientGameState {
+            val cards = previous.cards.toMutableMap()
+            delta.removedCardIds?.forEach { cards.remove(it) }
+            delta.addedCards?.forEach { (id, card) -> cards[id] = card }
+            delta.updatedCards?.forEach { (id, card) -> cards[id] = card }
+
+            val zones = if (delta.updatedZones != null) {
+                val updatedMap = delta.updatedZones!!.associateBy { it.zoneId }
+                previous.zones.map { updatedMap[it.zoneId] ?: it }
+            } else {
+                previous.zones
+            }
+
+            val gameLog = if (delta.newLogEntries != null) {
+                previous.gameLog + delta.newLogEntries!!
+            } else {
+                previous.gameLog
+            }
+
+            val combat = when {
+                delta.combatCleared == true -> null
+                delta.combat != null -> delta.combat
+                else -> previous.combat
+            }
+
+            return previous.copy(
+                cards = cards,
+                zones = zones,
+                players = delta.players,
+                currentPhase = delta.currentPhase ?: previous.currentPhase,
+                currentStep = delta.currentStep ?: previous.currentStep,
+                activePlayerId = delta.activePlayerId ?: previous.activePlayerId,
+                priorityPlayerId = delta.priorityPlayerId ?: previous.priorityPlayerId,
+                turnNumber = delta.turnNumber ?: previous.turnNumber,
+                isGameOver = delta.isGameOver ?: previous.isGameOver,
+                winnerId = if (delta.winnerId != null) delta.winnerId else previous.winnerId,
+                combat = combat,
+                gameLog = gameLog,
+            )
         }
     }
 }

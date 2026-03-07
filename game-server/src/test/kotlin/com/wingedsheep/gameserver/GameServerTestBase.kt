@@ -3,6 +3,7 @@ package com.wingedsheep.gameserver
 import com.wingedsheep.gameserver.dto.ClientGameState
 import com.wingedsheep.gameserver.dto.ClientPlayer
 import com.wingedsheep.gameserver.dto.ClientZone
+import com.wingedsheep.gameserver.dto.StateDiffCalculator
 import com.wingedsheep.gameserver.protocol.ClientMessage
 import com.wingedsheep.gameserver.protocol.LegalActionInfo
 import com.wingedsheep.gameserver.protocol.ServerMessage
@@ -90,6 +91,18 @@ abstract class GameServerTestBase : FunSpec() {
         private val closed = AtomicBoolean(false)
         private val stateUpdateCounter = java.util.concurrent.atomic.AtomicInteger(0)
 
+        /** The latest resolved (full) game state, built by applying deltas */
+        @Volatile
+        private var resolvedState: ClientGameState? = null
+
+        /** The latest legal actions from any state update (full or delta) */
+        @Volatile
+        private var resolvedLegalActions: List<LegalActionInfo> = emptyList()
+
+        /** The latest pending decision from any state update (full or delta) */
+        @Volatile
+        private var resolvedPendingDecision: com.wingedsheep.engine.core.PendingDecision? = null
+
         val isOpen: Boolean get() = session?.isOpen == true && !closed.get()
 
         fun stateUpdateCount(): Int = stateUpdateCounter.get()
@@ -108,8 +121,23 @@ abstract class GameServerTestBase : FunSpec() {
                             try {
                                 val serverMessage = json.decodeFromString<ServerMessage>(message.payload)
                                 messages.add(serverMessage)
-                                if (serverMessage is ServerMessage.StateUpdate) {
-                                    stateUpdateCounter.incrementAndGet()
+                                when (serverMessage) {
+                                    is ServerMessage.StateUpdate -> {
+                                        resolvedState = serverMessage.state
+                                        resolvedLegalActions = serverMessage.legalActions
+                                        resolvedPendingDecision = serverMessage.pendingDecision
+                                        stateUpdateCounter.incrementAndGet()
+                                    }
+                                    is ServerMessage.StateDeltaUpdate -> {
+                                        val prev = resolvedState
+                                        if (prev != null) {
+                                            resolvedState = applyDelta(prev, serverMessage.delta)
+                                            resolvedLegalActions = serverMessage.legalActions
+                                            resolvedPendingDecision = serverMessage.pendingDecision
+                                        }
+                                        stateUpdateCounter.incrementAndGet()
+                                    }
+                                    else -> { /* other message types */ }
                                 }
                             } catch (e: Exception) {
                                 // Ignore cleanup errors
@@ -157,8 +185,7 @@ abstract class GameServerTestBase : FunSpec() {
             return messages.filterIsInstance<ServerMessage.Connected>().first().playerId
         }
 
-        fun latestState(): ClientGameState? =
-            messages.filterIsInstance<ServerMessage.StateUpdate>().lastOrNull()?.state
+        fun latestState(): ClientGameState? = resolvedState
 
         fun requireLatestState(): ClientGameState =
             latestState() ?: error("No state update received")
@@ -181,8 +208,9 @@ abstract class GameServerTestBase : FunSpec() {
         fun mulliganComplete(): Boolean =
             messages.any { it is ServerMessage.MulliganComplete }
 
-        fun latestLegalActions(): List<LegalActionInfo> =
-            allStateUpdates().lastOrNull()?.legalActions ?: emptyList()
+        fun latestLegalActions(): List<LegalActionInfo> = resolvedLegalActions
+
+        fun latestPendingDecision(): com.wingedsheep.engine.core.PendingDecision? = resolvedPendingDecision
 
         suspend fun submitAndWait(action: GameAction): ClientGameState {
             val countBefore = stateUpdateCount()
@@ -191,6 +219,47 @@ abstract class GameServerTestBase : FunSpec() {
                 stateUpdateCount() shouldBeGreaterThan countBefore
             }
             return requireLatestState()
+        }
+
+        private fun applyDelta(previous: ClientGameState, delta: com.wingedsheep.gameserver.dto.StateDelta): ClientGameState {
+            val prevCards = previous.cards.toMutableMap()
+            delta.removedCardIds?.forEach { prevCards.remove(it) }
+            delta.addedCards?.forEach { (id, card) -> prevCards[id] = card }
+            delta.updatedCards?.forEach { (id, card) -> prevCards[id] = card }
+
+            val zones = if (delta.updatedZones != null) {
+                val updatedMap = delta.updatedZones!!.associateBy { it.zoneId }
+                previous.zones.map { updatedMap[it.zoneId] ?: it }
+            } else {
+                previous.zones
+            }
+
+            val gameLog = if (delta.newLogEntries != null) {
+                previous.gameLog + delta.newLogEntries!!
+            } else {
+                previous.gameLog
+            }
+
+            val combat = when {
+                delta.combatCleared == true -> null
+                delta.combat != null -> delta.combat
+                else -> previous.combat
+            }
+
+            return previous.copy(
+                cards = prevCards,
+                zones = zones,
+                players = delta.players,
+                currentPhase = delta.currentPhase ?: previous.currentPhase,
+                currentStep = delta.currentStep ?: previous.currentStep,
+                activePlayerId = delta.activePlayerId ?: previous.activePlayerId,
+                priorityPlayerId = delta.priorityPlayerId ?: previous.priorityPlayerId,
+                turnNumber = delta.turnNumber ?: previous.turnNumber,
+                isGameOver = delta.isGameOver ?: previous.isGameOver,
+                winnerId = if (delta.winnerId != null) delta.winnerId else previous.winnerId,
+                combat = combat,
+                gameLog = gameLog,
+            )
         }
     }
 

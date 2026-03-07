@@ -2,6 +2,7 @@ package com.wingedsheep.gameserver.protocol
 
 import com.wingedsheep.gameserver.dto.ClientEvent
 import com.wingedsheep.gameserver.dto.ClientGameState
+import com.wingedsheep.gameserver.dto.StateDelta
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.EntityId
@@ -88,6 +89,30 @@ sealed interface ServerMessage {
         /** Whether the player can undo their last action */
         val undoAvailable: Boolean = false,
         /** Current priority mode for this player (auto, stops, fullControl) */
+        val priorityMode: String? = null
+    ) : ServerMessage
+
+    /**
+     * Delta game state update — sends only changes since the last state update.
+     * Used after the first full StateUpdate to reduce payload size.
+     */
+    @Serializable
+    @SerialName("stateDeltaUpdate")
+    data class StateDeltaUpdate(
+        val delta: StateDelta,
+        val events: List<ClientEvent>,
+        val legalActions: List<LegalActionInfo>,
+        /** Pending decision that requires player input */
+        val pendingDecision: PendingDecision? = null,
+        /** Where passing priority will take the player */
+        val nextStopPoint: String? = null,
+        /** Summary of opponent's pending decision */
+        val opponentDecisionStatus: OpponentDecisionStatus? = null,
+        /** Per-step stop overrides for this player */
+        val stopOverrides: StopOverrideInfo? = null,
+        /** Whether the player can undo their last action */
+        val undoAvailable: Boolean = false,
+        /** Current priority mode for this player */
         val priorityMode: String? = null
     ) : ServerMessage
 

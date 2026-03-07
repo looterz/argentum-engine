@@ -6,6 +6,7 @@ import type {
   GameStartedMessage,
   GameCancelledMessage,
   StateUpdateMessage,
+  StateDeltaUpdateMessage,
   MulliganDecisionMessage,
   ChooseBottomCardsMessage,
   MulliganCompleteMessage,
@@ -55,6 +56,7 @@ export interface MessageHandlers {
   onGameStarted: (message: GameStartedMessage) => void
   onGameCancelled: (message: GameCancelledMessage) => void
   onStateUpdate: (message: StateUpdateMessage) => void
+  onStateDeltaUpdate: (message: StateDeltaUpdateMessage) => void
   onMulliganDecision: (message: MulliganDecisionMessage) => void
   onChooseBottomCards: (message: ChooseBottomCardsMessage) => void
   onMulliganComplete: (message: MulliganCompleteMessage) => void
@@ -126,6 +128,9 @@ export function handleServerMessage(message: ServerMessage, handlers: MessageHan
       break
     case 'stateUpdate':
       handlers.onStateUpdate(message)
+      break
+    case 'stateDeltaUpdate':
+      handlers.onStateDeltaUpdate(message)
       break
     case 'mulliganDecision':
       handlers.onMulliganDecision(message)
@@ -285,6 +290,10 @@ export function createLoggingHandlers(handlers: MessageHandlers): MessageHandler
     onStateUpdate: (msg) => {
       console.log('[Server] State update:', msg)
       handlers.onStateUpdate(msg)
+    },
+    onStateDeltaUpdate: (msg) => {
+      console.log('[Server] State delta update:', msg)
+      handlers.onStateDeltaUpdate(msg)
     },
     onMulliganDecision: (msg) => {
       console.log('[Server] Mulligan decision:', msg)

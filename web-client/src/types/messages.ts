@@ -2,7 +2,7 @@ import { ErrorCode, GameOverReason } from './enums'
 import { EntityId } from './entities'
 import { GameAction } from './actions'
 import { ClientEvent } from './events'
-import { ClientGameState } from './gameState'
+import { ClientGameState, ClientCard, ClientZone, ClientPlayer, ClientCombatState } from './gameState'
 
 // ============================================================================
 // Server Messages (received from server)
@@ -19,6 +19,7 @@ export type ServerMessage =
   | GameStartedMessage
   | GameCancelledMessage
   | StateUpdateMessage
+  | StateDeltaUpdateMessage
   | MulliganDecisionMessage
   | ChooseBottomCardsMessage
   | MulliganCompleteMessage
@@ -150,6 +151,52 @@ export interface StateUpdateMessage {
   /** Whether the player can undo their last action */
   readonly undoAvailable?: boolean
   /** Current priority mode for this player (auto, stops, fullControl) */
+  readonly priorityMode?: PriorityModeValue | null
+}
+
+/**
+ * Delta representation of a ClientGameState change.
+ * Only changed fields are populated. Null/undefined fields mean "unchanged".
+ */
+export interface StateDelta {
+  /** Cards added since last update */
+  readonly addedCards?: Readonly<Record<EntityId, ClientCard>> | null
+  /** Card IDs removed since last update */
+  readonly removedCardIds?: readonly EntityId[] | null
+  /** Cards whose data changed since last update */
+  readonly updatedCards?: Readonly<Record<EntityId, ClientCard>> | null
+  /** Zones whose contents changed */
+  readonly updatedZones?: readonly ClientZone[] | null
+  /** Player info — always included */
+  readonly players: readonly ClientPlayer[]
+  /** Scalars — only if changed */
+  readonly currentPhase?: ClientGameState['currentPhase'] | null
+  readonly currentStep?: ClientGameState['currentStep'] | null
+  readonly activePlayerId?: EntityId | null
+  readonly priorityPlayerId?: EntityId | null
+  readonly turnNumber?: number | null
+  readonly isGameOver?: boolean | null
+  readonly winnerId?: EntityId | null
+  /** Combat state changes */
+  readonly combat?: ClientCombatState | null
+  readonly combatCleared?: boolean | null
+  /** New game log entries (append to existing) */
+  readonly newLogEntries?: readonly import('./events').ClientEvent[] | null
+}
+
+/**
+ * Delta game state update — sends only changes since the last state update.
+ */
+export interface StateDeltaUpdateMessage {
+  readonly type: 'stateDeltaUpdate'
+  readonly delta: StateDelta
+  readonly events: readonly ClientEvent[]
+  readonly legalActions: readonly LegalActionInfo[]
+  readonly pendingDecision?: PendingDecision
+  readonly nextStopPoint?: string | null
+  readonly opponentDecisionStatus?: OpponentDecisionStatus | null
+  readonly stopOverrides?: StopOverrideInfo | null
+  readonly undoAvailable?: boolean
   readonly priorityMode?: PriorityModeValue | null
 }
 
@@ -1243,6 +1290,10 @@ export function isGameCancelledMessage(msg: ServerMessage): msg is GameCancelled
 
 export function isStateUpdateMessage(msg: ServerMessage): msg is StateUpdateMessage {
   return msg.type === 'stateUpdate'
+}
+
+export function isStateDeltaUpdateMessage(msg: ServerMessage): msg is StateDeltaUpdateMessage {
+  return msg.type === 'stateDeltaUpdate'
 }
 
 export function isMulliganDecisionMessage(msg: ServerMessage): msg is MulliganDecisionMessage {

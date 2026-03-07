@@ -26,9 +26,7 @@ class GameFlowTest : GameServerTestBase() {
 
         // Check if either player has a pending decision (e.g., discard to hand size at cleanup)
         // Decisions are only visible to the player who must resolve them
-        val p1Decision = player1.client.messages.filterIsInstance<ServerMessage.StateUpdate>().lastOrNull()?.pendingDecision
-        val p2Decision = player2.client.messages.filterIsInstance<ServerMessage.StateUpdate>().lastOrNull()?.pendingDecision
-        val pendingDecision = p1Decision ?: p2Decision
+        val pendingDecision = player1.client.latestPendingDecision() ?: player2.client.latestPendingDecision()
 
         if (pendingDecision is SelectCardsDecision) {
             val selected = pendingDecision.options.take(pendingDecision.minSelections)
