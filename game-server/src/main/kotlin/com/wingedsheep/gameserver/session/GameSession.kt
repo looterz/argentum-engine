@@ -108,7 +108,7 @@ class GameSession(
     private val lastSentState = java.util.concurrent.ConcurrentHashMap<EntityId, ClientGameState>()
 
     /** Monotonically increasing version counter, included in every state update so clients can detect missed messages */
-    private val stateVersion = java.util.concurrent.atomic.AtomicLong(0)
+    private val stateVersions = java.util.concurrent.ConcurrentHashMap<EntityId, Long>()
 
     data class StopOverrideSettings(
         val myTurnStops: Set<Step> = emptySet(),
@@ -609,7 +609,7 @@ class GameSession(
         // Check if we have a previous state for delta computation
         val previous = lastSentState[playerId]
         lastSentState[playerId] = stateWithLog
-        val version = stateVersion.incrementAndGet()
+        val version = stateVersions.merge(playerId, 1L) { old, inc -> old + inc }!!
 
         if (previous != null) {
             // Compute delta and send smaller message
@@ -627,6 +627,7 @@ class GameSession(
      */
     fun clearLastSentState(playerId: EntityId) {
         lastSentState.remove(playerId)
+        stateVersions.remove(playerId)
     }
 
     // =========================================================================
