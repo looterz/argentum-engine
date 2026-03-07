@@ -91,6 +91,7 @@ object KhansOfTarkirSet {
         SingingBellStrike,
 
         // Black creatures
+        BloodsoakedChampion,
         DisownedAncestor,
         BellowingSaddlebrute,
         GrimHaruspex,

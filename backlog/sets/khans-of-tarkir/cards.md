@@ -2,13 +2,13 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 163 / 249
+**Implemented:** 164 / 249
 
 | Color      | Count |
 |------------|-------|
 | White      | 28    |
 | Blue       | 28    |
-| Black      | 27    |
+| Black      | 28    |
 | Red        | 28    |
 | Green      | 28    |
 | Multicolor | 16    |
@@ -48,7 +48,7 @@
 - [ ] Bloodfell Caves
 - [x] Bloodfire Expert
 - [x] Bloodfire Mentor
-- [ ] Bloodsoaked Champion
+- [x] Bloodsoaked Champion
 - [ ] Bloodstained Mire
 - [ ] Blossoming Sands
 - [x] Brave the Sands
