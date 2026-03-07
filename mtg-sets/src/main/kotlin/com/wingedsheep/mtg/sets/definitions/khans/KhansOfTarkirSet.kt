@@ -215,6 +215,7 @@ object KhansOfTarkirSet {
         // Colorless
         AbzanBanner,
         HeartPiercerBow,
+        JeskaiBanner,
         MarduBanner,
         SultaiBanner,
         TemurBanner,

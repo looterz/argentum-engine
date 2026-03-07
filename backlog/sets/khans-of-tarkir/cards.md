@@ -2,7 +2,7 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 167 / 249
+**Implemented:** 168 / 249
 
 | Color      | Count |
 |------------|-------|
@@ -12,7 +12,7 @@
 | Red        | 29    |
 | Green      | 28    |
 | Multicolor | 17    |
-| Colorless  | 6     |
+| Colorless  | 7     |
 | Land       | 3     |
 
 ---
@@ -118,7 +118,7 @@
 - [ ] Ivorytusk Fortress
 - [x] Jeering Instigator
 - [ ] Jeskai Ascendancy
-- [ ] Jeskai Banner
+- [x] Jeskai Banner
 - [ ] Jeskai Charm
 - [x] Jeskai Elder
 - [x] Jeskai Student
