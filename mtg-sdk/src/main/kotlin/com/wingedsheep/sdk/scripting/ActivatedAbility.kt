@@ -193,6 +193,25 @@ sealed interface AbilityCost : TextReplaceable<AbilityCost> {
         }
     }
 
+    /**
+     * Exile X cards from graveyard, where X is the ability's X value.
+     * Used for abilities like Necropolis Fiend: "{X}, {T}, Exile X cards from your graveyard"
+     *
+     * @property filter Which cards can be exiled
+     */
+    @SerialName("CostExileXFromGraveyard")
+    @Serializable
+    data class ExileXFromGraveyard(
+        val filter: GameObjectFilter = GameObjectFilter.Any
+    ) : AbilityCost {
+        override val description: String = "Exile X ${filter.description}s from your graveyard"
+
+        override fun applyTextReplacement(replacer: TextReplacer): AbilityCost {
+            val newFilter = filter.applyTextReplacement(replacer)
+            return if (newFilter !== filter) copy(filter = newFilter) else this
+        }
+    }
+
     /** Discard your entire hand */
     @SerialName("CostDiscardHand")
     @Serializable

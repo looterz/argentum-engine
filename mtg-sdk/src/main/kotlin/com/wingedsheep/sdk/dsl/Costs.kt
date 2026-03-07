@@ -141,6 +141,12 @@ object Costs {
     fun ExileFromGraveyard(count: Int, filter: GameObjectFilter = GameObjectFilter.Any): AbilityCost =
         AbilityCost.ExileFromGraveyard(count, filter)
 
+    /**
+     * Exile X cards from graveyard, where X is the ability's X value.
+     */
+    fun ExileXFromGraveyard(filter: GameObjectFilter = GameObjectFilter.Any): AbilityCost =
+        AbilityCost.ExileXFromGraveyard(filter)
+
     // =========================================================================
     // Loyalty Costs
     // =========================================================================

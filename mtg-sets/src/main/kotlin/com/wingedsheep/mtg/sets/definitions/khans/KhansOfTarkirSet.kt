@@ -121,6 +121,7 @@ object KhansOfTarkirSet {
         Despise,
         DutifulReturn,
         MurderousCut,
+        NecropolisFiend,
         RakshasasSecret,
         RiteOfTheSerpent,
         Throttle,

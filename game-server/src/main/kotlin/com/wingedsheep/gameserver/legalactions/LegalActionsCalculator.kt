@@ -1121,6 +1121,23 @@ class LegalActionsCalculator(
                         ))
                     }
                 }
+                is PayCost.Exile -> {
+                    val validTargets = findMorphExileTargets(state, playerId, cost.filter, cost.zone)
+                    if (validTargets.size >= cost.count) {
+                        result.add(LegalActionInfo(
+                            actionType = "ActivateAbility",
+                            description = "Turn face-up (${cost.description})",
+                            action = TurnFaceUp(playerId, entityId),
+                            additionalCostInfo = AdditionalCostInfo(
+                                description = cost.description,
+                                costType = "ExileFromZone",
+                                validExileTargets = validTargets,
+                                exileMinCount = cost.count,
+                                exileMaxCount = cost.count
+                            )
+                        ))
+                    }
+                }
                 else -> {
                     // Future morph cost types — skip for now
                 }
@@ -1302,6 +1319,17 @@ class LegalActionsCalculator(
                                         break
                                     }
                                 }
+                                is AbilityCost.ExileFromGraveyard -> {
+                                    val graveyardZone = com.wingedsheep.engine.state.ZoneKey(playerId, Zone.GRAVEYARD)
+                                    val graveyardCards = state.getZone(graveyardZone)
+                                    if (graveyardCards.size < subCost.count) {
+                                        costCanBePaid = false
+                                        break
+                                    }
+                                }
+                                is AbilityCost.ExileXFromGraveyard -> {
+                                    // ExileXFromGraveyard: validated via maxAffordableX cap below
+                                }
                                 else -> {}
                             }
                         }
@@ -1363,7 +1391,21 @@ class LegalActionsCalculator(
                 val abilityMaxAffordableX: Int? = if (abilityHasXCost && abilityManaCost != null) {
                     val availableSources = manaSolver.getAvailableManaCount(state, playerId)
                     val fixedCost = abilityManaCost.cmc  // X contributes 0 to CMC
-                    (availableSources - fixedCost).coerceAtLeast(0)
+                    var maxX = (availableSources - fixedCost).coerceAtLeast(0)
+
+                    // Cap by graveyard size if ability has ExileXFromGraveyard cost
+                    val hasExileXCost = when (ability.cost) {
+                        is AbilityCost.Composite -> (ability.cost as AbilityCost.Composite).costs
+                            .any { it is AbilityCost.ExileXFromGraveyard }
+                        else -> false
+                    }
+                    if (hasExileXCost) {
+                        val graveyardZone = com.wingedsheep.engine.state.ZoneKey(playerId, Zone.GRAVEYARD)
+                        val graveyardSize = state.getZone(graveyardZone).size
+                        maxX = minOf(maxX, graveyardSize)
+                    }
+
+                    maxX
                 } else null
 
                 // Compute auto-tap preview for UI highlighting
@@ -2080,6 +2122,25 @@ class LegalActionsCalculator(
             if (controllerId != playerId) return@filter false
 
             predicateEvaluator.matchesWithProjection(state, projected, entityId, filter, predicateContext)
+        }
+    }
+
+    /**
+     * Find valid cards in a zone that can be exiled to pay a morph cost.
+     * Non-battlefield zones use base state per convention.
+     */
+    private fun findMorphExileTargets(
+        state: GameState,
+        playerId: EntityId,
+        filter: GameObjectFilter,
+        zone: Zone
+    ): List<EntityId> {
+        val zoneKey = ZoneKey(playerId, zone)
+        val cards = state.getZone(zoneKey)
+        val predicateContext = PredicateContext(controllerId = playerId)
+
+        return cards.filter { cardId ->
+            predicateEvaluator.matches(state, cardId, filter, predicateContext)
         }
     }
 

@@ -96,6 +96,11 @@ class CostHandler(
                 val graveyardZone = ZoneKey(controllerId, Zone.GRAVEYARD)
                 findMatchingCardsUnified(state, state.getZone(graveyardZone), cost.filter, controllerId).size >= cost.count
             }
+            is AbilityCost.ExileXFromGraveyard -> {
+                // X can be 0, so this is always payable as long as graveyard exists
+                // maxAffordableX is capped by graveyard size in LegalActionsCalculator
+                true
+            }
             is AbilityCost.DiscardSelf -> {
                 // Card must be in hand
                 val handZone = ZoneKey(controllerId, Zone.HAND)
@@ -318,8 +323,15 @@ class CostHandler(
                 CostPaymentResult.success(newState, manaPool, events)
             }
             is AbilityCost.ExileFromGraveyard -> {
-                // TODO: Exile cards
-                CostPaymentResult.success(state, manaPool)
+                exileCardsFromGraveyard(state, controllerId, cost.count, cost.filter, choices.exileChoices, manaPool)
+            }
+            is AbilityCost.ExileXFromGraveyard -> {
+                val xCount = choices.xValue
+                if (xCount == 0) {
+                    CostPaymentResult.success(state, manaPool)
+                } else {
+                    exileCardsFromGraveyard(state, controllerId, xCount, cost.filter, choices.exileChoices, manaPool)
+                }
             }
             is AbilityCost.DiscardSelf -> {
                 // TODO: Discard self
@@ -501,6 +513,54 @@ class CostHandler(
         }
     }
 
+    /**
+     * Exile a specified number of cards from the controller's graveyard.
+     * Uses provided exile choices if available, otherwise auto-selects.
+     */
+    private fun exileCardsFromGraveyard(
+        state: GameState,
+        controllerId: EntityId,
+        count: Int,
+        filter: GameObjectFilter,
+        exileChoices: List<EntityId>,
+        manaPool: ManaPool
+    ): CostPaymentResult {
+        val graveyardZone = ZoneKey(controllerId, Zone.GRAVEYARD)
+        val validCards = findMatchingCardsUnified(state, state.getZone(graveyardZone), filter, controllerId)
+
+        if (validCards.size < count) {
+            return CostPaymentResult.failure("Not enough cards in graveyard to exile")
+        }
+
+        // Use exile choices if provided, otherwise auto-select
+        val toExile = if (exileChoices.isNotEmpty()) {
+            exileChoices.take(count)
+        } else {
+            validCards.take(count)
+        }
+
+        var newState = state
+        val events = mutableListOf<GameEvent>()
+        val exileZone = ZoneKey(controllerId, Zone.EXILE)
+
+        for (cardId in toExile) {
+            val cardName = newState.getEntity(cardId)?.get<CardComponent>()?.name ?: "Card"
+            newState = newState.removeFromZone(graveyardZone, cardId)
+            newState = newState.addToZone(exileZone, cardId)
+            events.add(
+                ZoneChangeEvent(
+                    entityId = cardId,
+                    entityName = cardName,
+                    fromZone = Zone.GRAVEYARD,
+                    toZone = Zone.EXILE,
+                    ownerId = controllerId
+                )
+            )
+        }
+
+        return CostPaymentResult.success(newState, manaPool, events)
+    }
+
     // Helper functions
 
     private fun findMatchingPermanentsUnified(
@@ -578,5 +638,6 @@ data class CostPaymentChoices(
     val discardChoices: List<EntityId> = emptyList(),
     val exileChoices: List<EntityId> = emptyList(),
     val tapChoices: List<EntityId> = emptyList(),
-    val bounceChoices: List<EntityId> = emptyList()
+    val bounceChoices: List<EntityId> = emptyList(),
+    val xValue: Int = 0
 )

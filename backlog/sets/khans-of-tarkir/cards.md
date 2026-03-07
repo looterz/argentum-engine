@@ -2,13 +2,13 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 174 / 249
+**Implemented:** 175 / 249
 
 | Color      | Count |
 |------------|-------|
 | White      | 29    |
 | Blue       | 28    |
-| Black      | 28    |
+| Black      | 29    |
 | Red        | 29    |
 | Green      | 29    |
 | Multicolor | 21    |
@@ -160,7 +160,7 @@
 - [x] Mystic of the Hidden Way
 - [ ] Narset, Enlightened Master
 - [x] Naturalize
-- [ ] Necropolis Fiend
+- [x] Necropolis Fiend
 - [ ] Nomad Outpost
 - [ ] Opulent Palace
 - [ ] Pearl Lake Ancient
