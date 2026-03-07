@@ -194,6 +194,7 @@ object KhansOfTarkirSet {
 
         // Multicolor
         CracklingDoom,
+        EfreetWeaponmaster,
         BearsCompanion,
         ButcherOfTheHorde,
         ChiefOfTheEdge,

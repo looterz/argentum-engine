@@ -2,7 +2,7 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 165 / 249
+**Implemented:** 166 / 249
 
 | Color      | Count |
 |------------|-------|
@@ -11,7 +11,7 @@
 | Black      | 28    |
 | Red        | 28    |
 | Green      | 28    |
-| Multicolor | 16    |
+| Multicolor | 17    |
 | Colorless  | 6     |
 | Land       | 3     |
 
@@ -83,7 +83,7 @@
 - [ ] Dragon Throne of Tarkir
 - [ ] Duneblast
 - [x] Dutiful Return
-- [ ] Efreet Weaponmaster
+- [x] Efreet Weaponmaster
 - [x] Embodiment of Spring
 - [ ] Empty the Pits
 - [ ] End Hostilities
