@@ -118,6 +118,7 @@ object KhansOfTarkirSet {
         BitterRevelation,
         MoltingSnakeskin,
         DeadDrop,
+        DeathFrenzy,
         DebilitatingInjury,
         Despise,
         DutifulReturn,
