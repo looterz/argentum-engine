@@ -2,7 +2,7 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 182 / 249
+**Implemented:** 183 / 249
 
 | Color      | Count |
 |------------|-------|
@@ -11,7 +11,7 @@
 | Black      | 29    |
 | Red        | 29    |
 | Green      | 29    |
-| Multicolor | 26    |
+| Multicolor | 27    |
 | Colorless  | 8     |
 | Land       | 3     |
 
@@ -195,7 +195,7 @@
 - [x] Scion of Glaciers
 - [ ] Scoured Barrens
 - [x] Scout the Borders
-- [ ] Secret Plans
+- [x] Secret Plans
 - [x] Seeker of the Way
 - [x] Seek the Horizon
 - [ ] See the Unwritten

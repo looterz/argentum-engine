@@ -218,6 +218,7 @@ object KhansOfTarkirSet {
         SiegeRhino,
         SaguMauler,
         SnowhornRider,
+        SecretPlans,
         SultaiAscendancy,
         SultaiSoothsayer,
         TemurAscendancy,
