@@ -239,6 +239,7 @@ object KhansOfTarkirSet {
         // Lands
         JungleHollow,
         RuggedHighlands,
+        ThornwoodFalls,
         WindScarredCrag,
 
         // Basic lands
