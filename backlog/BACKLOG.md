@@ -27,7 +27,7 @@ Prioritized checklist across all improvement areas. Each item references its sou
 - [ ] `PayCost.Exile` ([sdk-gaps #1c](sdk-composability-gaps.md#1c-paycostexilefilter-gameobjectfilter-zone-zone-count-int))
 - [ ] `LifeLostEvent` ([sdk-gaps #2c](sdk-composability-gaps.md#2c-lifechangedevent-unified-life-tracking))
 - [x] `HasKeyword` condition ([sdk-gaps #3b](sdk-composability-gaps.md#3b-haskeywordkeyword-keyword-condition-for-source-entity))
-- [ ] `AddCreatureTypeEffect` ([sdk-gaps #6a](sdk-composability-gaps.md#6a-addcreaturetypeeffectsubtype-creaturetype-target-effecttarget-duration-duration))
+- [x] `AddCreatureTypeEffect` ([sdk-gaps #6a](sdk-composability-gaps.md#6a-addcreaturetypeeffectsubtype-creaturetype-target-effecttarget-duration-duration))
 
 ### Web Client
 - [ ] Break up god components (DecisionUI, GameCard, DeckBuilderOverlay, GameUI, App) ([web-client #1](web-client-improvements.md#1-break-up-god-components))
