@@ -57,6 +57,10 @@ class GameSession(
     /** Checkpoint for undoing the last non-respondable action (e.g., play land, declare attackers) */
     @Volatile
     private var undoCheckpoint: GameState? = null
+
+    /** State saved when the active player passes priority in precombat main, used to undo combat entry */
+    @Volatile
+    private var preCombatState: GameState? = null
     private val players = mutableMapOf<EntityId, PlayerSession>()
     private val deckLists = mutableMapOf<EntityId, List<String>>()
     private val spectators = mutableSetOf<PlayerSession>()
@@ -470,14 +474,26 @@ class GameSession(
             }
         }
 
+        // Track pre-combat state: when the active player passes priority in precombat main,
+        // save this state so that declaring attackers can undo all the way back to main phase.
+        if (action is PassPriority && state.step == Step.PRECOMBAT_MAIN && playerId == state.activePlayerId) {
+            preCombatState = state
+        }
+
         // Manage undo checkpoint:
         // - Undo-eligible actions (land, combat declarations, morph): save checkpoint
         // - Checkpoint-neutral actions (pass priority, mana abilities): preserve existing checkpoint
         // - Everything else (cast spell, non-mana abilities, decisions): clear checkpoint
         if (isUndoEligibleAction(action)) {
-            undoCheckpoint = state
+            // For DeclareAttackers, use the pre-combat state if available so undo goes back to main phase
+            undoCheckpoint = if (action is DeclareAttackers && preCombatState != null) {
+                preCombatState
+            } else {
+                state
+            }
         } else if (!isCheckpointNeutralAction(action)) {
             undoCheckpoint = null
+            preCombatState = null
         }
 
         val result = actionProcessor.process(state, action)
@@ -748,6 +764,7 @@ class GameSession(
 
         gameState = checkpoint
         undoCheckpoint = null
+        preCombatState = null
         logger.info("Player $playerId undid their last action")
         ActionResult.Success(checkpoint, emptyList())
     }
