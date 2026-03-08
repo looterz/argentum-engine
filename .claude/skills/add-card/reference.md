@@ -144,6 +144,7 @@ constructors.
 - `Effects.ChangeTarget()` — change the target of a spell or ability with a single target
 - `Effects.ReselectTargetRandomly()` — reselect the target of the triggering spell/ability at random (Grip of Chaos)
 - `Effects.CopyTargetSpell(target)` — copy target instant or sorcery spell on stack, may choose new targets
+- `Effects.CopyNextSpellCast(copies)` — when you next cast an instant or sorcery spell this turn, copy it (Howl of the Horde)
 
 ### Sacrifice
 
@@ -405,6 +406,7 @@ constructors.
 | `ReselectTargetRandomlyEffect`   | (object)                      | Randomly reselect triggering spell/ability's target |
 | `StormCopyEffect`                | `copyCount, spellEffect, spellTargetRequirements, spellName` | Create Storm copies of a spell |
 | `CopyTargetSpellEffect`          | `target: EffectTarget` | Copy target instant or sorcery spell on stack |
+| `CopyNextSpellCastEffect`        | `copies: Int` | Copy next instant/sorcery cast this turn |
 
 ### Group
 

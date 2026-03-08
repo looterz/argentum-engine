@@ -84,7 +84,10 @@ data class GameState(
     val continuationStack: List<ContinuationFrame> = emptyList(),
 
     /** Number of spells cast this turn (by all players), used for Storm count */
-    val spellsCastThisTurn: Int = 0
+    val spellsCastThisTurn: Int = 0,
+
+    /** Pending spell copies — copy the next instant/sorcery spell cast by a player (e.g., Howl of the Horde) */
+    val pendingSpellCopies: List<PendingSpellCopy> = emptyList()
 ) {
     /**
      * Cached projection of the game state with all continuous effects (Rule 613) applied.

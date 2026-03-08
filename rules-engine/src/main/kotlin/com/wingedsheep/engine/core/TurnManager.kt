@@ -77,7 +77,8 @@ class TurnManager(
             step = Step.UNTAP,
             priorityPlayerId = null, // No priority during untap
             priorityPassedBy = emptySet(),
-            spellsCastThisTurn = 0
+            spellsCastThisTurn = 0,
+            pendingSpellCopies = emptyList()
         )
 
         // Reset cards-drawn-this-turn count for ALL players (not just active player)

@@ -225,3 +225,27 @@ data class CopyTargetSpellEffect(
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
 }
+
+/**
+ * When you next cast an instant or sorcery spell this turn, copy that spell.
+ * You may choose new targets for the copies.
+ *
+ * Creates a pending spell copy entry on the game state. When the controller next casts
+ * an instant or sorcery spell this turn, the engine creates [copies] copies of it.
+ * Used by Howl of the Horde and similar effects.
+ *
+ * @property copies Number of copies to create when the next spell is cast
+ */
+@SerialName("CopyNextSpellCast")
+@Serializable
+data class CopyNextSpellCastEffect(
+    val copies: Int = 1
+) : Effect {
+    override val description: String = if (copies == 1) {
+        "When you next cast an instant or sorcery spell this turn, copy that spell"
+    } else {
+        "When you next cast an instant or sorcery spell this turn, copy that spell $copies times"
+    }
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
+}

@@ -597,6 +597,39 @@ class CastSpellHandler(
             }
         }
 
+        // Handle pending spell copies (e.g., Howl of the Horde) — copy next instant/sorcery
+        if (!action.castFaceDown && cardComponent.typeLine.let { it.isInstant || it.isSorcery }) {
+            val matchingCopies = currentCastState.pendingSpellCopies.filter { it.controllerId == action.playerId }
+            if (matchingCopies.isNotEmpty()) {
+                val totalCopies = matchingCopies.sumOf { it.copies }
+                // Remove consumed pending copies
+                val remainingPending = currentCastState.pendingSpellCopies.filter { it.controllerId != action.playerId }
+                currentCastState = currentCastState.copy(pendingSpellCopies = remainingPending)
+
+                // Create copies using Storm copy infrastructure
+                val spellEffect = cardDef?.script?.spellEffect
+                if (spellEffect != null && totalCopies > 0) {
+                    val copyEffect = StormCopyEffect(
+                        copyCount = totalCopies,
+                        spellEffect = spellEffect,
+                        spellTargetRequirements = spellTargetRequirements,
+                        spellName = cardComponent.name
+                    )
+                    val copyAbility = TriggeredAbilityOnStackComponent(
+                        sourceId = matchingCopies.first().sourceId,
+                        sourceName = matchingCopies.first().sourceName,
+                        controllerId = action.playerId,
+                        effect = copyEffect,
+                        description = "Copy ${cardComponent.name} $totalCopies time(s)"
+                    )
+                    val copyResult = stackResolver.putTriggeredAbility(currentCastState, copyAbility)
+                    if (!copyResult.isSuccess) return copyResult
+                    currentCastState = copyResult.newState
+                    allEvents = allEvents + copyResult.events
+                }
+            }
+        }
+
         // Detect and process triggers from casting (including additional cost events like sacrifice)
         val triggers = triggerDetector.detectTriggers(currentCastState, allEvents)
         if (triggers.isNotEmpty()) {

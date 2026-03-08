@@ -23,6 +23,7 @@ class StackExecutors(
         ChangeTargetExecutor(),
         StormCopyEffectExecutor(),
         CopyTargetSpellExecutor(),
+        CopyNextSpellCastExecutor(),
         ReselectTargetRandomlyExecutor()
     )
 }

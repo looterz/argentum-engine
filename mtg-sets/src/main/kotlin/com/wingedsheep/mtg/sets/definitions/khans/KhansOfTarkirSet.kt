@@ -201,6 +201,7 @@ object KhansOfTarkirSet {
         BurnAway,
         CratersClaws,
         HordelingOutburst,
+        HowlOfTheHorde,
         Shatter,
         SwiftKick,
         TormentingVoice,
