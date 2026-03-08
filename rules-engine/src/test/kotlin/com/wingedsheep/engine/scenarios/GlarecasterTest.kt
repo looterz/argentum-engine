@@ -261,4 +261,58 @@ class GlarecasterTest : FunSpec({
             it.effect.modification is SerializableModification.RedirectNextDamage
         } shouldBe false
     }
+
+    test("redirect combat damage dealt to player") {
+        val driver = createDriver()
+        driver.initMirrorMatch(
+            deck = Deck.of("Plains" to 40),
+            startingLife = 20
+        )
+
+        val p1 = driver.activePlayer!!
+        val p2 = driver.getOpponent(p1)
+
+        // Advance to P2's precombat main (pass through P1's full turn)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+        driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+        driver.activePlayer shouldBe p2
+
+        val glarecaster = driver.putCreatureOnBattlefield(p1, "Glarecaster")
+        driver.removeSummoningSickness(glarecaster)
+        val bigCreature = driver.putCreatureOnBattlefield(p2, "Big Creature")
+        driver.removeSummoningSickness(bigCreature)
+
+        // P2 passes priority so P1 can act
+        driver.passPriority(p2)
+
+        // P1 activates Glarecaster targeting P2 (the opponent player)
+        driver.giveMana(p1, Color.WHITE, 6)
+        driver.submit(
+            ActivateAbility(
+                playerId = p1,
+                sourceId = glarecaster,
+                abilityId = abilityId,
+                targets = listOf(ChosenTarget.Player(p2))
+            )
+        ).isSuccess shouldBe true
+        driver.bothPass()
+
+        // Shield should be active
+        driver.state.floatingEffects.any {
+            it.effect.modification is SerializableModification.RedirectNextDamage
+        } shouldBe true
+
+        // Go to combat — P2 attacks P1 with Big Creature
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.declareAttackers(p2, listOf(bigCreature), p1)
+        driver.passPriorityUntil(Step.COMBAT_DAMAGE)
+
+        // Combat damage to P1 should be redirected to P2
+        val p1Life = driver.state.getEntity(p1)?.get<LifeTotalComponent>()?.life ?: 0
+        p1Life shouldBe 20 // No damage to P1
+
+        val p2Life = driver.state.getEntity(p2)?.get<LifeTotalComponent>()?.life ?: 0
+        p2Life shouldBe 15 // 20 - 5 redirected combat damage
+    }
 })

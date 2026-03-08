@@ -402,6 +402,20 @@ internal class CombatDamageManager(
         newState = shieldState
         if (effectiveAmount <= 0) return newState
 
+        // Damage redirection (Glarecaster, Zealous Inquisitor)
+        val (redirectState, redirectTargetId, redirectAmount) = EffectExecutorUtils.checkDamageRedirection(
+            newState, targetId, effectiveAmount
+        )
+        newState = redirectState
+        if (redirectTargetId != null && redirectAmount > 0) {
+            newState = dealFinalDamage(newState, sourceId, redirectTargetId, redirectAmount, events)
+            val remaining = effectiveAmount - redirectAmount
+            if (remaining > 0) {
+                newState = dealFinalDamage(newState, sourceId, targetId, remaining, events)
+            }
+            return newState
+        }
+
         // Reduce life
         val currentLife = newState.getEntity(targetId)?.get<LifeTotalComponent>()?.life ?: return newState
         val newLife = currentLife - effectiveAmount
