@@ -1049,7 +1049,138 @@ class ClientStateTransformer(
                         )
                     )
                 }
-                // Other modifications don't need badges (stats/keywords are shown elsewhere)
+                is SerializableModification.SetCantAttack -> {
+                    effects.add(
+                        ClientCardEffect(
+                            effectId = "cant_attack",
+                            name = "Can't Attack",
+                            description = "This creature can't attack",
+                            icon = "cant-attack"
+                        )
+                    )
+                }
+                is SerializableModification.CantBeRegenerated -> {
+                    effects.add(
+                        ClientCardEffect(
+                            effectId = "cant_be_regenerated",
+                            name = "No Regen",
+                            description = "This creature can't be regenerated",
+                            icon = "cant-attack"
+                        )
+                    )
+                }
+                is SerializableModification.ExileOnDeath -> {
+                    effects.add(
+                        ClientCardEffect(
+                            effectId = "exile_on_death",
+                            name = "Exile on Death",
+                            description = "If this creature would die, exile it instead",
+                            icon = "exile-on-death"
+                        )
+                    )
+                }
+                is SerializableModification.ExileControllerGraveyardOnDeath -> {
+                    effects.add(
+                        ClientCardEffect(
+                            effectId = "exile_gy_on_death",
+                            name = "Exile GY on Death",
+                            description = "When this creature dies, its controller's graveyard is exiled",
+                            icon = "exile-on-death"
+                        )
+                    )
+                }
+                is SerializableModification.MustBlockSpecificAttacker -> {
+                    effects.add(
+                        ClientCardEffect(
+                            effectId = "must_block_${modification.attackerId}",
+                            name = "Must Block",
+                            description = "This creature must block a specific attacker if able",
+                            icon = "must-attack"
+                        )
+                    )
+                }
+                is SerializableModification.PreventAllCombatDamage -> {
+                    effects.add(
+                        ClientCardEffect(
+                            effectId = "prevent_all_combat_damage",
+                            name = "No Combat Dmg",
+                            description = "All combat damage is prevented",
+                            icon = "prevent-damage"
+                        )
+                    )
+                }
+                is SerializableModification.PreventCombatDamageToAndBy -> {
+                    effects.add(
+                        ClientCardEffect(
+                            effectId = "prevent_combat_damage_to_and_by",
+                            name = "No Combat Dmg",
+                            description = "All combat damage dealt to and dealt by this creature is prevented",
+                            icon = "prevent-damage"
+                        )
+                    )
+                }
+                is SerializableModification.PreventCombatDamageFromGroup -> {
+                    effects.add(
+                        ClientCardEffect(
+                            effectId = "prevent_combat_damage_from_group",
+                            name = "No Combat Dmg",
+                            description = "Combat damage from this creature is prevented",
+                            icon = "prevent-damage"
+                        )
+                    )
+                }
+                is SerializableModification.PreventDamageFromAttackingCreatures -> {
+                    effects.add(
+                        ClientCardEffect(
+                            effectId = "prevent_damage_from_attackers",
+                            name = "Fog",
+                            description = "Damage from attacking creatures is prevented",
+                            icon = "prevent-damage"
+                        )
+                    )
+                }
+                is SerializableModification.RedirectNextDamage -> {
+                    val amountText = modification.amount?.let { "$it" } ?: "all"
+                    effects.add(
+                        ClientCardEffect(
+                            effectId = "redirect_next_damage",
+                            name = "Redirect $amountText",
+                            description = "The next $amountText damage that would be dealt to this is redirected",
+                            icon = "redirect"
+                        )
+                    )
+                }
+                is SerializableModification.DeflectNextDamageFromSource -> {
+                    effects.add(
+                        ClientCardEffect(
+                            effectId = "deflect_damage_${modification.damageSourceId}",
+                            name = "Deflect",
+                            description = "The next damage from the chosen source is prevented and dealt to that source's controller",
+                            icon = "redirect"
+                        )
+                    )
+                }
+                is SerializableModification.ReflectCombatDamage -> {
+                    effects.add(
+                        ClientCardEffect(
+                            effectId = "reflect_combat_damage",
+                            name = "Reflect",
+                            description = "Combat damage dealt to you is also dealt to the attacking player",
+                            icon = "redirect"
+                        )
+                    )
+                }
+                is SerializableModification.RedirectCombatDamageToController -> {
+                    effects.add(
+                        ClientCardEffect(
+                            effectId = "redirect_combat_damage_to_controller",
+                            name = "Redirected",
+                            description = "Combat damage this creature would deal is dealt to its controller instead",
+                            icon = "redirect"
+                        )
+                    )
+                }
+                // Other modifications don't need badges (stats/keywords/types are shown elsewhere)
                 else -> { /* No badge needed */ }
             }
         }

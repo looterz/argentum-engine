@@ -102,6 +102,21 @@ function getBadgeStyle(icon?: string): React.CSSProperties {
         backgroundColor: 'rgba(100, 100, 100, 0.9)',
         border: '1px solid rgba(160, 160, 160, 0.5)',
       }
+    case 'cant-attack':
+      return {
+        backgroundColor: 'rgba(180, 60, 60, 0.9)',
+        border: '1px solid rgba(255, 140, 140, 0.5)',
+      }
+    case 'exile-on-death':
+      return {
+        backgroundColor: 'rgba(120, 60, 140, 0.9)',
+        border: '1px solid rgba(200, 140, 255, 0.5)',
+      }
+    case 'redirect':
+      return {
+        backgroundColor: 'rgba(180, 130, 40, 0.9)',
+        border: '1px solid rgba(255, 210, 100, 0.5)',
+      }
     default:
       return {}
   }
@@ -115,6 +130,7 @@ function getTooltipBorderColor(icon?: string): string {
     case 'regeneration':
       return 'rgba(40, 120, 60, 0.5)'
     case 'cant-block':
+    case 'cant-attack':
       return 'rgba(180, 60, 60, 0.5)'
     case 'must-attack':
       return 'rgba(200, 120, 20, 0.5)'
@@ -122,6 +138,10 @@ function getTooltipBorderColor(icon?: string): string {
       return 'rgba(40, 120, 60, 0.5)'
     case 'condition-unmet':
       return 'rgba(100, 100, 100, 0.5)'
+    case 'exile-on-death':
+      return 'rgba(120, 60, 140, 0.5)'
+    case 'redirect':
+      return 'rgba(180, 130, 40, 0.5)'
     default:
       return 'rgba(150, 50, 200, 0.5)'
   }
