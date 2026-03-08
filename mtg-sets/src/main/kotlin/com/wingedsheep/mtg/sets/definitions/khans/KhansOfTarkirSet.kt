@@ -217,6 +217,7 @@ object KhansOfTarkirSet {
         CracklingDoom,
         DeflectingPalm,
         EfreetWeaponmaster,
+        FlyingCraneTechnique,
         BearsCompanion,
         ButcherOfTheHorde,
         ChiefOfTheEdge,

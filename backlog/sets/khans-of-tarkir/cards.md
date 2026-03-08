@@ -2,7 +2,7 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 212 / 249
+**Implemented:** 213 / 249
 
 | Color      | Count |
 |------------|-------|
@@ -11,7 +11,7 @@
 | Black      | 31    |
 | Red        | 31    |
 | Green      | 31    |
-| Multicolor | 44    |
+| Multicolor | 45    |
 | Colorless  | 9     |
 | Land       | 5     |
 
@@ -92,7 +92,7 @@
 - [x] Feed the Clan
 - [x] Firehoof Cavalry
 - [ ] Flooded Strand
-- [ ] Flying Crane Technique
+- [x] Flying Crane Technique
 - [x] Force Away
 - [ ] Frontier Bivouac
 - [x] Ghostfire Blade
