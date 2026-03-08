@@ -2,7 +2,7 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 211 / 249
+**Implemented:** 212 / 249
 
 | Color      | Count |
 |------------|-------|
@@ -11,7 +11,7 @@
 | Black      | 31    |
 | Red        | 31    |
 | Green      | 31    |
-| Multicolor | 43    |
+| Multicolor | 44    |
 | Colorless  | 9     |
 | Land       | 5     |
 
@@ -169,7 +169,7 @@
 - [x] Ponyback Brigade
 - [x] Quiet Contemplation
 - [x] Raiders' Spoils
-- [ ] Rakshasa Deathdealer
+- [x] Rakshasa Deathdealer
 - [x] Rakshasa's Secret
 - [x] Rakshasa Vizier
 - [x] Rattleclaw Mystic
