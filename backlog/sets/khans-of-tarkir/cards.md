@@ -2,7 +2,7 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 205 / 249
+**Implemented:** 206 / 249
 
 | Color      | Count |
 |------------|-------|
@@ -11,7 +11,7 @@
 | Black      | 31    |
 | Red        | 30    |
 | Green      | 30    |
-| Multicolor | 40    |
+| Multicolor | 41    |
 | Colorless  | 8     |
 | Land       | 5     |
 
@@ -238,7 +238,7 @@
 - [x] Tormenting Voice
 - [x] Trail of Mystery
 - [ ] Tranquil Cove
-- [ ] Trap Essence
+- [x] Trap Essence
 - [x] Treasure Cruise
 - [x] Trumpet Blast
 - [x] Tusked Colossodon

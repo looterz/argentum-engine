@@ -241,6 +241,7 @@ object KhansOfTarkirSet {
         SultaiSoothsayer,
         TemurAscendancy,
         TemurCharm,
+        TrapEssence,
         UtterEnd,
         WardenOfTheEye,
         Winterflame,
