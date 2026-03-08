@@ -338,7 +338,7 @@ constructors.
 | `PayOrSufferEffect`          | `cost: PayCost, suffer, player`                       | "Unless [cost], [suffer]"      |
 | `StoreResultEffect`          | `effect, storeAs: EffectVariable`                     | Store result for later         |
 | `StoreCountEffect`           | `effect, storeAs`                                     | Store count for later          |
-| `CreateDelayedTriggerEffect` | `step: Step, effect`                                  | Create delayed trigger at step |
+| `CreateDelayedTriggerEffect` | `step: Step, effect, fireOnlyOnControllersTurn = false` | Create delayed trigger at step |
 | `BlightEffect`               | `blightAmount: DynamicAmount, innerEffect, targetId?` | Blight effect                  |
 | `TapCreatureForEffectEffect` | `innerEffect, targetId?`                              | Tap creature for effect        |
 | `MayPayManaEffect`           | `cost: ManaCost, effect`                              | May pay mana for effect        |

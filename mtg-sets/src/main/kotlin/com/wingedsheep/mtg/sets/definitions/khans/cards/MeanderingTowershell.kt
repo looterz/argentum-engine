@@ -40,7 +40,7 @@ val MeanderingTowershell = card("Meandering Towershell") {
             listOf(
                 MoveToZoneEffect(EffectTarget.Self, Zone.EXILE),
                 CreateDelayedTriggerEffect(
-                    step = Step.DECLARE_ATTACKERS,
+                    step = Step.BEGIN_COMBAT,
                     effect = MoveToZoneEffect(
                         target = EffectTarget.Self,
                         destination = Zone.BATTLEFIELD,

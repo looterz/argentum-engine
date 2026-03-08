@@ -2,7 +2,7 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 207 / 249
+**Implemented:** 208 / 249
 
 | Color      | Count |
 |------------|-------|
@@ -10,7 +10,7 @@
 | Blue       | 30    |
 | Black      | 31    |
 | Red        | 30    |
-| Green      | 30    |
+| Green      | 31    |
 | Multicolor | 42    |
 | Colorless  | 8     |
 | Land       | 5     |
@@ -148,7 +148,7 @@
 - [x] Mardu Warshrieker
 - [x] Master of Pearls
 - [x] Master the Way
-- [ ] Meandering Towershell
+- [x] Meandering Towershell
 - [x] Mer-Ek Nightblade
 - [x] Mindswipe
 - [x] Mistfire Weaver

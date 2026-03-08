@@ -24,6 +24,11 @@ import io.kotest.matchers.shouldNotBe
  * Whenever Meandering Towershell attacks, exile it. Return it to the battlefield
  * under your control tapped and attacking at the beginning of the declare attackers
  * step on your next turn.
+ *
+ * Implementation note: The delayed trigger fires at BEGINNING_OF_COMBAT rather than
+ * DECLARE_ATTACKERS because the engine skips DECLARE_ATTACKERS when there are no
+ * valid attackers. BEGINNING_OF_COMBAT always fires, and the creature enters
+ * tapped and attacking before normal attacker declaration.
  */
 class MeanderingTowershellTest : FunSpec({
 
@@ -36,20 +41,16 @@ class MeanderingTowershellTest : FunSpec({
     /**
      * Pass priority until we reach the given step on the given player's turn.
      */
-    fun GameTestDriver.passPriorityUntilPlayerStep(playerId: EntityId, targetStep: Step, maxPasses: Int = 200) {
-        var passes = 0
-        while (passes < maxPasses) {
-            if (state.gameOver) throw AssertionError("Game ended while advancing")
-            if (state.step == targetStep && state.activePlayerId == playerId) return
-            if (state.pendingDecision != null) {
-                autoResolveDecision()
-            } else if (state.priorityPlayerId != null) {
-                autoSubmitCombatDeclarationIfNeeded()
-                passPriority(state.priorityPlayerId!!)
-            }
-            passes++
+    fun GameTestDriver.passPriorityUntilPlayerStep(playerId: EntityId, targetStep: Step, maxPasses: Int = 10) {
+        var loops = 0
+        while (loops < maxPasses) {
+            passPriorityUntil(targetStep)
+            if (state.activePlayerId == playerId) return
+            // Not the right player's turn — advance past this step
+            bothPass()
+            loops++
         }
-        throw AssertionError("Failed to reach step $targetStep for player $playerId after $maxPasses passes (current: step=${state.step}, active=${state.activePlayerId})")
+        throw AssertionError("Failed to reach step $targetStep for player $playerId after $maxPasses loops (current: step=${state.step}, active=${state.activePlayerId})")
     }
 
     test("Meandering Towershell is exiled when it attacks and creates delayed trigger") {
@@ -76,7 +77,7 @@ class MeanderingTowershellTest : FunSpec({
 
         // A delayed trigger should have been created
         driver.state.delayedTriggers.size shouldBe 1
-        driver.state.delayedTriggers.first().fireAtStep shouldBe Step.DECLARE_ATTACKERS
+        driver.state.delayedTriggers.first().fireAtStep shouldBe Step.BEGIN_COMBAT
         driver.state.delayedTriggers.first().fireOnlyOnControllersTurn shouldBe true
     }
 
@@ -98,8 +99,8 @@ class MeanderingTowershellTest : FunSpec({
         driver.declareAttackers(attacker, listOf(towershell), defender)
         driver.bothPass()
 
-        // Advance to the opponent's declare attackers step
-        driver.passPriorityUntilPlayerStep(defender, Step.DECLARE_ATTACKERS)
+        // Advance to the opponent's beginning of combat step
+        driver.passPriorityUntilPlayerStep(defender, Step.BEGIN_COMBAT)
 
         // Creature should still be in exile — delayed trigger should NOT have fired
         driver.getExileCardNames(attacker) shouldContain "Meandering Towershell"
@@ -124,8 +125,8 @@ class MeanderingTowershellTest : FunSpec({
         driver.declareAttackers(attacker, listOf(towershell), defender)
         driver.bothPass()
 
-        // Advance to the controller's next declare attackers step
-        driver.passPriorityUntilPlayerStep(attacker, Step.DECLARE_ATTACKERS)
+        // Advance to the controller's next beginning of combat step
+        driver.passPriorityUntilPlayerStep(attacker, Step.BEGIN_COMBAT)
 
         // The delayed trigger fires and goes on the stack. Resolve it.
         driver.bothPass()
@@ -166,9 +167,9 @@ class MeanderingTowershellTest : FunSpec({
         driver.declareAttackers(attacker, listOf(towershell), defender)
         driver.bothPass()
 
-        // Advance to controller's next declare attackers
-        driver.passPriorityUntilPlayerStep(attacker, Step.DECLARE_ATTACKERS)
-        driver.bothPass() // resolve delayed trigger
+        // Advance to controller's next beginning of combat
+        driver.passPriorityUntilPlayerStep(attacker, Step.BEGIN_COMBAT)
+        driver.bothPass() // resolve delayed trigger — Towershell returns tapped and attacking
 
         // Now Towershell is attacking. Advance through combat.
         driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
