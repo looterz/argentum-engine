@@ -2,7 +2,7 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 197 / 249
+**Implemented:** 198 / 249
 
 | Color      | Count |
 |------------|-------|
@@ -11,7 +11,7 @@
 | Black      | 30    |
 | Red        | 30    |
 | Green      | 30    |
-| Multicolor | 34    |
+| Multicolor | 35    |
 | Colorless  | 8     |
 | Land       | 5     |
 
@@ -229,7 +229,7 @@
 - [x] Temur Ascendancy
 - [x] Temur Banner
 - [x] Temur Charger
-- [ ] Temur Charm
+- [x] Temur Charm
 - [x] Thornwood Falls
 - [x] Thousand Winds
 - [x] Throttle

@@ -233,6 +233,7 @@ object KhansOfTarkirSet {
         SultaiCharm,
         SultaiSoothsayer,
         TemurAscendancy,
+        TemurCharm,
         UtterEnd,
         WardenOfTheEye,
         Winterflame,
