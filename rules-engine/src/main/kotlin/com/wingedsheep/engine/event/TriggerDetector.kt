@@ -1491,7 +1491,12 @@ class TriggerDetector(
             is GameEvent.DamageEvent -> false
             is GameEvent.CounterPlacementEvent -> false
             is GameEvent.TokenCreationEvent -> false
-            is GameEvent.LifeLossEvent -> false
+            is GameEvent.LifeLossEvent -> {
+                event is LifeChangedEvent &&
+                    event.reason != com.wingedsheep.engine.core.LifeChangeReason.LIFE_GAIN &&
+                    event.oldLife > event.newLife &&
+                    matchesPlayer(trigger.player, event.playerId, controllerId)
+            }
             is GameEvent.DiscardEvent -> false
             is GameEvent.SearchLibraryEvent -> false
         }
@@ -1890,8 +1895,13 @@ data class TriggerContext(
                 is LifeChangedEvent -> TriggerContext(
                     triggeringEntityId = event.playerId,
                     triggeringPlayerId = event.playerId,
-                    damageAmount = if (event.reason == com.wingedsheep.engine.core.LifeChangeReason.LIFE_GAIN)
-                        (event.newLife - event.oldLife) else null
+                    damageAmount = when {
+                        event.reason == com.wingedsheep.engine.core.LifeChangeReason.LIFE_GAIN ->
+                            event.newLife - event.oldLife
+                        event.oldLife > event.newLife ->
+                            event.oldLife - event.newLife
+                        else -> null
+                    }
                 )
                 is TurnFaceUpEvent -> TriggerContext(
                     triggeringEntityId = event.entityId,

@@ -656,4 +656,24 @@ object Triggers {
         event = LifeGainEvent(Player.Each),
         binding = TriggerBinding.ANY
     )
+
+    // =========================================================================
+    // Life Loss Triggers
+    // =========================================================================
+
+    /**
+     * Whenever you lose life.
+     */
+    val YouLoseLife: TriggerSpec = TriggerSpec(
+        event = LifeLossEvent(Player.You),
+        binding = TriggerBinding.ANY
+    )
+
+    /**
+     * Whenever a player loses life.
+     */
+    val AnyPlayerLosesLife: TriggerSpec = TriggerSpec(
+        event = LifeLossEvent(Player.Each),
+        binding = TriggerBinding.ANY
+    )
 }

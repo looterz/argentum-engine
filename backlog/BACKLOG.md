@@ -25,7 +25,7 @@ Prioritized checklist across all improvement areas. Each item references its sou
 ### SDK Composability
 - [ ] `PayCost.PayLife` ([sdk-gaps #1a](sdk-composability-gaps.md#1a-paycostpaylifeamount-dynamicamount))
 - [ ] `PayCost.Exile` ([sdk-gaps #1c](sdk-composability-gaps.md#1c-paycostexilefilter-gameobjectfilter-zone-zone-count-int))
-- [ ] `LifeLostEvent` ([sdk-gaps #2c](sdk-composability-gaps.md#2c-lifechangedevent-unified-life-tracking))
+- [x] `LifeLostEvent` ([sdk-gaps #2c](sdk-composability-gaps.md#2c-lifechangedevent-unified-life-tracking))
 - [x] `HasKeyword` condition ([sdk-gaps #3b](sdk-composability-gaps.md#3b-haskeywordkeyword-keyword-condition-for-source-entity))
 - [x] `AddCreatureTypeEffect` ([sdk-gaps #6a](sdk-composability-gaps.md#6a-addcreaturetypeeffectsubtype-creaturetype-target-effecttarget-duration-duration))
 

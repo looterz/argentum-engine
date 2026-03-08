@@ -49,6 +49,7 @@ enum class TriggerCategory {
     TAPPED,
     UNTAPPED,
     LIFE_GAIN,
+    LIFE_LOSS,
     BECOMES_TARGET,
     TURN_FACE_UP,
     STEP,
@@ -133,6 +134,7 @@ class TriggerIndex(
             is SdkGameEvent.TapEvent -> listOf(TriggerCategory.TAPPED)
             is SdkGameEvent.UntapEvent -> listOf(TriggerCategory.UNTAPPED)
             is SdkGameEvent.LifeGainEvent -> listOf(TriggerCategory.LIFE_GAIN)
+            is SdkGameEvent.LifeLossEvent -> listOf(TriggerCategory.LIFE_LOSS)
             is SdkGameEvent.BecomesTargetEvent -> listOf(TriggerCategory.BECOMES_TARGET)
             is SdkGameEvent.TurnFaceUpEvent -> listOf(TriggerCategory.TURN_FACE_UP)
             is SdkGameEvent.CreatureTurnedFaceUpEvent -> listOf(TriggerCategory.TURN_FACE_UP)
@@ -158,8 +160,10 @@ class TriggerIndex(
             is CardCycledEvent -> CARD_CYCLED_LIST
             is TappedEvent -> TAPPED_LIST
             is UntappedEvent -> UNTAPPED_LIST
-            is LifeChangedEvent ->
-                if (event.reason == LifeChangeReason.LIFE_GAIN) LIFE_GAIN_LIST else emptyList()
+            is LifeChangedEvent -> when (event.reason) {
+                LifeChangeReason.LIFE_GAIN -> LIFE_GAIN_LIST
+                LifeChangeReason.DAMAGE, LifeChangeReason.LIFE_LOSS, LifeChangeReason.PAYMENT -> LIFE_LOSS_LIST
+            }
             is BecomesTargetEvent -> BECOMES_TARGET_LIST
             is TurnFaceUpEvent -> TURN_FACE_UP_LIST
             else -> emptyList()
@@ -178,6 +182,7 @@ class TriggerIndex(
         private val TAPPED_LIST = listOf(TriggerCategory.TAPPED)
         private val UNTAPPED_LIST = listOf(TriggerCategory.UNTAPPED)
         private val LIFE_GAIN_LIST = listOf(TriggerCategory.LIFE_GAIN)
+        private val LIFE_LOSS_LIST = listOf(TriggerCategory.LIFE_LOSS)
         private val BECOMES_TARGET_LIST = listOf(TriggerCategory.BECOMES_TARGET)
         private val TURN_FACE_UP_LIST = listOf(TriggerCategory.TURN_FACE_UP)
     }

@@ -305,6 +305,18 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
     }
 
     /**
+     * The amount of life lost, from a trigger context.
+     * Used for abilities like Vilis, Broker of Blood: "Whenever you lose life, draw that many cards."
+     * Resolves from the triggerDamageAmount field in EffectContext (absolute value of life lost).
+     */
+    @SerialName("TriggerLifeLossAmount")
+    @Serializable
+    data object TriggerLifeLossAmount : DynamicAmount {
+        override val description: String = "the life lost"
+        override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
+    }
+
+    /**
      * Number of cards exiled as an additional cost to cast a spell.
      * Used for effects like Chill Haunting: "Target creature gets -X/-X where X is
      * the number of creature cards exiled as an additional cost."
