@@ -224,6 +224,7 @@ object KhansOfTarkirSet {
         JeskaiCharm,
         MantisRider,
         MasterTheWay,
+        Mindswipe,
         MarduCharm,
         MarduRoughrider,
         PonybackBrigade,
