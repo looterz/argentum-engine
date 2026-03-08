@@ -266,6 +266,7 @@ object KhansOfTarkirSet {
         WitnessOfTheAges,
 
         // Lands
+        FrontierBivouac,
         JungleHollow,
         RuggedHighlands,
         SwiftwaterCliffs,
