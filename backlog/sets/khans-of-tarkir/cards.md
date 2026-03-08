@@ -2,7 +2,7 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 215 / 249
+**Implemented:** 216 / 249
 
 | Color      | Count |
 |------------|-------|
@@ -13,7 +13,7 @@
 | Green      | 31    |
 | Multicolor | 45    |
 | Colorless  | 10    |
-| Land       | 6     |
+| Land       | 7     |
 
 ---
 
@@ -162,7 +162,7 @@
 - [x] Naturalize
 - [x] Necropolis Fiend
 - [ ] Nomad Outpost
-- [ ] Opulent Palace
+- [x] Opulent Palace
 - [x] Pearl Lake Ancient
 - [x] Pine Walker
 - [ ] Polluted Delta
