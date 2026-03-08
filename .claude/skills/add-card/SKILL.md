@@ -124,7 +124,58 @@ just test    # Cards with new effects
 
 Fix only failures caused by your changes. If a pre-existing test fails, report it and stop.
 
-## Step 9: Verify Implementation Against Scryfall
+## Step 9: Walkthrough New Engine Mechanics
+
+**Only if Step 4 introduced new effects, keywords, triggers, conditions, static abilities, or replacement effects.**
+
+When new engine mechanics are introduced, mentally trace through the full execution path to verify nothing is missing.
+Walk through **at least 2 scenarios** (the happy path + one alternative flow). For each scenario, trace every layer:
+
+### 9.1 Pick Scenarios
+
+Choose scenarios that exercise the new mechanic in distinct ways:
+
+- **Happy path**: The most common use case (e.g., "Player casts the spell, targets a creature, effect resolves")
+- **Alternative flow(s)**: At least one of:
+  - Target becomes illegal before resolution (fizzle)
+  - "May" ability — player declines
+  - Triggered ability fires during another spell's resolution
+  - Effect interacts with replacement effects (e.g., "if a creature would die" + indestructible)
+  - Multiple instances of the same trigger firing simultaneously
+  - The card or source leaves the battlefield before the effect/trigger resolves
+  - Edge case specific to the mechanic (e.g., X=0, empty library, no valid targets)
+
+### 9.2 Trace Each Layer
+
+For each scenario, walk through these layers and verify the implementation handles it:
+
+| Layer | What to Check |
+|-------|---------------|
+| **SDK (data model)** | Is the effect/trigger/condition correctly modeled as pure data? Are all parameters present (target, duration, filter, amount)? Can it be serialized? |
+| **Engine (ActionProcessor / Handlers)** | When this action is processed, does the correct handler pick it up? Does it produce the right `GameEvent`s? Does it return the correct new `GameState`? |
+| **Engine (TriggerDetector)** | If a new trigger type was added: does `TriggerDetector` detect it from the emitted events? Is the trigger registered in `TriggerIndex`? Does it match the correct `GameEvent` type? |
+| **Engine (StateProjector)** | If a new continuous effect or static ability: is it applied in the correct Rule 613 layer? Does the projected state reflect it? |
+| **Engine (Continuations)** | If the effect requires player input (targeting, selection, yes/no): does it pause correctly with a `PendingDecision`? Does the continuation resume with the player's choice? |
+| **Engine (Cleanup)** | If the effect has a duration (end of turn, end of combat): is it cleaned up at the right time? |
+| **Game Server (DTO/Masking)** | If a new event type was added: is it handled in `ClientEvent.kt`? Is any private information masked correctly by `StateMasker`? |
+| **Frontend (Decisions)** | If a new decision type or UX flow is needed: is there a component in `web-client/src/components/decisions/` that handles it? |
+| **Frontend (Display)** | If a new keyword/icon/visual indicator: is it in `enums.ts`, `KeywordDisplayNames`, and icon index? |
+
+### 9.3 Report Findings
+
+For each scenario, write a brief trace like:
+
+> **Scenario: Player casts X, targeting Y**
+> 1. SDK: `MyEffect(target, duration)` — ✅ all params present
+> 2. Engine: `MyEffectExecutor.execute()` → emits `MyEvent` → ✅
+> 3. Triggers: No new triggers needed — ✅
+> 4. Continuations: No player input needed — ✅
+> 5. Server DTO: `MyEvent` added to `ClientEvent.kt` `when` branch — ✅
+> 6. Frontend: No new decision UI needed — ✅
+
+If any layer has a gap (missing event mapping, missing continuation handling, missing frontend component), **fix it before proceeding**.
+
+## Step 10: Verify Implementation Against Scryfall
 
 Re-fetch the Scryfall card data and systematically compare it against your implementation to catch mistakes.
 
@@ -162,13 +213,13 @@ Re-fetch the Scryfall card data and systematically compare it against your imple
    - Missing ability entirely (multi-ability cards)
    - Wrong duration (e.g., "until end of turn" mapped to permanent effect)
 
-## Step 10: Update Set Backlog
+## Step 11: Update Set Backlog
 
 If `backlog/sets/{set-name}/cards.md` exists:
 - Mark card as implemented: `- [ ] Card Name` → `- [x] Card Name`
 - Update implementation count in header if present
 
-## Step 11: Commit Changes
+## Step 12: Commit Changes
 
 1. Stage all relevant files (card definition, set registration, new effects, tests, backlog)
 2. Commit message: `Add {Card Name} to {Set Name}` (or `Add {Card Name} with {new mechanic} support`)
@@ -186,5 +237,6 @@ If `backlog/sets/{set-name}/cards.md` exists:
 8. **Test new mechanics** — All new effects/keywords/triggers/conditions need scenario tests
 9. **Follow naming conventions** — CardName matches file name
 10. **Keep effects data-only** — Logic goes in executors, not effect data classes
-11. **Verify against Scryfall before committing** — Re-check every field against the API data (Step 9)
-12. **Build/test before committing** — `just build` (simple) or `just test` (new effects)
+11. **Verify against Scryfall before committing** — Re-check every field against the API data (Step 10)
+12. **Walkthrough new mechanics** — If new effects/engine changes, trace through all layers (Step 9)
+13. **Build/test before committing** — `just build` (simple) or `just test` (new effects)
