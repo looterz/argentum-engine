@@ -2,7 +2,7 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 192 / 249
+**Implemented:** 193 / 249
 
 | Color      | Count |
 |------------|-------|
@@ -11,7 +11,7 @@
 | Black      | 30    |
 | Red        | 30    |
 | Green      | 30    |
-| Multicolor | 30    |
+| Multicolor | 31    |
 | Colorless  | 8     |
 | Land       | 4     |
 
@@ -265,4 +265,4 @@
 - [x] Witness of the Ages
 - [ ] Wooded Foothills
 - [x] Woolly Loxodon
-- [ ] Zurgo Helmsmasher
+- [x] Zurgo Helmsmasher

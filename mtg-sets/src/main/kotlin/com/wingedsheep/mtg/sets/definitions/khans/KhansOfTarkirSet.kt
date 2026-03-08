@@ -233,6 +233,7 @@ object KhansOfTarkirSet {
         UtterEnd,
         WardenOfTheEye,
         Winterflame,
+        ZurgoHelmsmasher,
 
         // Colorless
         AbzanBanner,
