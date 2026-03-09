@@ -267,6 +267,7 @@ object KhansOfTarkirSet {
 
         // Lands
         FrontierBivouac,
+        NomadOutpost,
         OpulentPalace,
         JungleHollow,
         RuggedHighlands,

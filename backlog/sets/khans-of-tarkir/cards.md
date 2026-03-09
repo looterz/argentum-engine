@@ -2,7 +2,7 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 216 / 249
+**Implemented:** 217 / 249
 
 | Color      | Count |
 |------------|-------|
@@ -13,7 +13,7 @@
 | Green      | 31    |
 | Multicolor | 45    |
 | Colorless  | 10    |
-| Land       | 7     |
+| Land       | 8     |
 
 ---
 
@@ -161,7 +161,7 @@
 - [ ] Narset, Enlightened Master
 - [x] Naturalize
 - [x] Necropolis Fiend
-- [ ] Nomad Outpost
+- [x] Nomad Outpost
 - [x] Opulent Palace
 - [x] Pearl Lake Ancient
 - [x] Pine Walker
