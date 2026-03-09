@@ -2,7 +2,7 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 222 / 249
+**Implemented:** 223 / 249
 
 | Color      | Count |
 |------------|-------|
@@ -13,7 +13,7 @@
 | Green      | 31    |
 | Multicolor | 45    |
 | Colorless  | 11    |
-| Land       | 12    |
+| Land       | 13    |
 
 ---
 
@@ -237,7 +237,7 @@
 - [ ] Tomb of the Spirit Dragon
 - [x] Tormenting Voice
 - [x] Trail of Mystery
-- [ ] Tranquil Cove
+- [x] Tranquil Cove
 - [x] Trap Essence
 - [x] Treasure Cruise
 - [x] Trumpet Blast
