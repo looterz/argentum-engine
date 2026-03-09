@@ -15,7 +15,7 @@ import com.wingedsheep.sdk.scripting.GameEvent
 import com.wingedsheep.sdk.scripting.TriggerBinding
 import com.wingedsheep.sdk.scripting.TriggeredAbility
 import com.wingedsheep.sdk.scripting.effects.GainLifeEffect
-import com.wingedsheep.sdk.scripting.filters.unified.GameObjectFilter
+import com.wingedsheep.sdk.scripting.GameObjectFilter
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -62,7 +62,7 @@ class DeathTriggerTest : FunSpec({
     fun createDriver(): GameTestDriver {
         val driver = GameTestDriver()
         driver.registerCards(TestCards.all)
-        driver.cardRegistry.register(filteredDeathTriggerCreature)
+        driver.registerCard(filteredDeathTriggerCreature)
         return driver
     }
 

@@ -11,7 +11,7 @@ import com.wingedsheep.sdk.scripting.GameEvent
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.TriggerBinding
 import com.wingedsheep.sdk.scripting.TriggeredAbility
-import com.wingedsheep.sdk.scripting.effects.DestroyAllEffect
+import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.scripting.effects.GainLifeEffect
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
@@ -65,9 +65,9 @@ class LookBackTriggerTest : FunSpec({
         manaCost = ManaCost.parse("{3}{W}{W}"),
         oracleText = "Destroy all nonland permanents.",
         script = CardScript.spell(
-            effect = DestroyAllEffect(
+            effect = Effects.DestroyAll(
                 filter = GameObjectFilter.NonlandPermanent,
-                canRegenerate = false
+                noRegenerate = true
             )
         )
     )

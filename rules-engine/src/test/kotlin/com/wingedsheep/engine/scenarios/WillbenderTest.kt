@@ -46,7 +46,7 @@ class WillbenderTest : FunSpec({
         typeLine = TypeLine.parse("Sorcery"),
         oracleText = "Destroy all creatures.",
         script = CardScript.spell(
-            effect = com.wingedsheep.sdk.scripting.effects.DestroyAllEffect(
+            effect = com.wingedsheep.sdk.dsl.Effects.DestroyAll(
                 filter = com.wingedsheep.sdk.scripting.GameObjectFilter.Companion.Creature
             )
         )
