@@ -558,6 +558,9 @@ class StateBasedActionChecker {
         reason: String
     ): ExecutionResult {
         val container = state.getEntity(entityId) ?: return ExecutionResult.success(state)
+        // Capture counter count before stripping (for last-known-information in death triggers)
+        val lastKnownCounterCount = container.get<CountersComponent>()
+            ?.getCount(com.wingedsheep.sdk.core.CounterType.PLUS_ONE_PLUS_ONE) ?: 0
         val controllerId = container.get<ControllerComponent>()?.playerId
             ?: cardComponent.ownerId
             ?: return ExecutionResult.success(state)
@@ -625,7 +628,8 @@ class StateBasedActionChecker {
                 cardComponent.name,
                 Zone.BATTLEFIELD,
                 destinationZone,
-                ownerId
+                ownerId,
+                lastKnownCounterCount = lastKnownCounterCount
             )
         )
 

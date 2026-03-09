@@ -541,6 +541,10 @@ object EffectExecutorUtils {
         val battlefieldZone = ZoneKey(controllerId, Zone.BATTLEFIELD)
         val destinationZoneKey = ZoneKey(ownerId, destinationZone)
 
+        // Capture last-known counter count before stripping components (for death triggers)
+        val lastKnownCounterCount = container.get<CountersComponent>()
+            ?.getCount(CounterType.PLUS_ONE_PLUS_ONE) ?: 0
+
         var newState = state.removeFromZone(battlefieldZone, entityId)
         newState = newState.addToZone(destinationZoneKey, entityId)
 
@@ -561,7 +565,8 @@ object EffectExecutorUtils {
                     cardComponent.name,
                     Zone.BATTLEFIELD,
                     destinationZone,
-                    ownerId
+                    ownerId,
+                    lastKnownCounterCount = lastKnownCounterCount
                 )
             )
         )
@@ -1301,6 +1306,10 @@ object EffectExecutorUtils {
 
         val ownerId = cardComponent.ownerId ?: controllerId
 
+        // Capture counter count before stripping (for last-known-information in death triggers)
+        val lastKnownCounterCount = container.get<CountersComponent>()
+            ?.getCount(com.wingedsheep.sdk.core.CounterType.PLUS_ONE_PLUS_ONE) ?: 0
+
         // Move to target zone
         val battlefieldZone = ZoneKey(controllerId, Zone.BATTLEFIELD)
         val targetZoneKey = ZoneKey(ownerId, targetZone)
@@ -1322,7 +1331,8 @@ object EffectExecutorUtils {
                     cardComponent.name,
                     Zone.BATTLEFIELD,
                     targetZone,
-                    ownerId
+                    ownerId,
+                    lastKnownCounterCount = lastKnownCounterCount
                 )
             )
         )

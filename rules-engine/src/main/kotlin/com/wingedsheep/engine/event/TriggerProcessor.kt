@@ -380,7 +380,8 @@ class TriggerProcessor(
             triggerDamageAmount = trigger.triggerContext.damageAmount,
             triggeringEntityId = trigger.triggerContext.triggeringEntityId,
             elseEffect = ability.elseEffect,
-            targetRequirements = allRequirements
+            targetRequirements = allRequirements,
+            triggerCounterCount = trigger.triggerContext.counterCount
         )
 
         // Push the continuation onto the stack
@@ -416,7 +417,8 @@ class TriggerProcessor(
             description = ability.description,
             triggerDamageAmount = trigger.triggerContext.damageAmount,
             triggeringEntityId = trigger.triggerContext.triggeringEntityId,
-            xValue = trigger.triggerContext.xValue
+            xValue = trigger.triggerContext.xValue,
+            triggerCounterCount = trigger.triggerContext.counterCount
         )
 
         return stackResolver.putTriggeredAbility(

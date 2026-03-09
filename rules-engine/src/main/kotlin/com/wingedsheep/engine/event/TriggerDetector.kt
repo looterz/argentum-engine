@@ -1918,12 +1918,17 @@ data class TriggerContext(
     val triggeringPlayerId: EntityId? = null,
     val damageAmount: Int? = null,
     val step: Step? = null,
-    val xValue: Int? = null
+    val xValue: Int? = null,
+    /** Last known +1/+1 counter count when the source left the battlefield */
+    val counterCount: Int? = null
 ) {
     companion object {
         fun fromEvent(event: com.wingedsheep.engine.core.GameEvent): TriggerContext {
             return when (event) {
-                is ZoneChangeEvent -> TriggerContext(triggeringEntityId = event.entityId)
+                is ZoneChangeEvent -> TriggerContext(
+                    triggeringEntityId = event.entityId,
+                    counterCount = if (event.lastKnownCounterCount > 0) event.lastKnownCounterCount else null
+                )
                 is DamageDealtEvent -> TriggerContext(
                     triggeringEntityId = event.targetId,
                     damageAmount = event.amount

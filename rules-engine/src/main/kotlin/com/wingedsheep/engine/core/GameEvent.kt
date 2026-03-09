@@ -28,7 +28,9 @@ data class ZoneChangeEvent(
     val entityName: String,
     val fromZone: Zone?,
     val toZone: Zone,
-    val ownerId: EntityId
+    val ownerId: EntityId,
+    /** Last known +1/+1 counter count when leaving battlefield (for death triggers needing last known info) */
+    val lastKnownCounterCount: Int = 0
 ) : GameEvent
 
 // =============================================================================

@@ -372,7 +372,11 @@ sealed interface KeywordAbility {
      */
     @SerialName("Morph")
     @Serializable
-    data class Morph(val morphCost: PayCost) : KeywordAbility {
+    data class Morph(
+        val morphCost: PayCost,
+        /** Effect to execute as a replacement effect when turned face up (e.g., put 5 +1/+1 counters on it) */
+        val faceUpEffect: com.wingedsheep.sdk.scripting.effects.Effect? = null
+    ) : KeywordAbility {
         /** Convenience constructor for mana-based morph costs. */
         constructor(cost: ManaCost) : this(PayCost.Mana(cost))
 

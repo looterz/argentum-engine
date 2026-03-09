@@ -327,7 +327,7 @@ class MoveToZoneEffectExecutor(
             val cardDef = cardRegistry?.getCard(cardComponent.cardDefinitionId)
             val morphAbility = cardDef?.keywordAbilities?.filterIsInstance<KeywordAbility.Morph>()?.firstOrNull()
             if (morphAbility != null) {
-                updated = updated.with(MorphDataComponent(morphAbility.morphCost, cardComponent.cardDefinitionId))
+                updated = updated.with(MorphDataComponent(morphAbility.morphCost, cardComponent.cardDefinitionId, morphAbility.faceUpEffect))
             }
 
             updated

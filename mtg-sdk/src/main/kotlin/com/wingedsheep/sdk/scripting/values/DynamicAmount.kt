@@ -409,6 +409,20 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
     }
 
     /**
+     * The number of +1/+1 counters on the source when it last existed on the battlefield.
+     * Used for death triggers that reference the creature's counters (e.g., Hooded Hydra:
+     * "create a 1/1 Snake token for each +1/+1 counter on it").
+     * Reads from the triggerCounterCount field in EffectContext, which is populated from
+     * last-known information captured in the ZoneChangeEvent.
+     */
+    @SerialName("LastKnownCounterCount")
+    @Serializable
+    data object LastKnownCounterCount : DynamicAmount {
+        override val description: String = "the number of +1/+1 counters on it"
+        override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
+    }
+
+    /**
      * Generic battlefield aggregation primitive.
      * Queries permanents on the battlefield, filters them, optionally maps to a numeric
      * property, and applies an aggregation function.

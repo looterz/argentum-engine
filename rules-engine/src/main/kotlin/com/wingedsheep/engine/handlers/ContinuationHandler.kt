@@ -211,7 +211,8 @@ class ContinuationHandler(
                     effect = continuation.elseEffect,
                     description = continuation.description,
                     triggerDamageAmount = continuation.triggerDamageAmount,
-                    triggeringEntityId = continuation.triggeringEntityId
+                    triggeringEntityId = continuation.triggeringEntityId,
+                    triggerCounterCount = continuation.triggerCounterCount
                 )
                 val stackResult = stackResolver.putTriggeredAbility(state, elseComponent, emptyList())
                 if (!stackResult.isSuccess) return stackResult
@@ -227,7 +228,8 @@ class ContinuationHandler(
             effect = continuation.effect,
             description = continuation.description,
             triggerDamageAmount = continuation.triggerDamageAmount,
-            triggeringEntityId = continuation.triggeringEntityId
+            triggeringEntityId = continuation.triggeringEntityId,
+            triggerCounterCount = continuation.triggerCounterCount
         )
 
         val stackResult = stackResolver.putTriggeredAbility(

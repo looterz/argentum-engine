@@ -204,6 +204,12 @@ class CardBuilder(private val name: String) {
     var morphCost: PayCost? = null
 
     /**
+     * Effect to execute as a replacement effect when this morph creature is turned face up.
+     * Used for morph creatures with "as this is turned face up, put N counters on it" or similar.
+     */
+    var morphFaceUpEffect: Effect? = null
+
+    /**
      * If set, the caster must choose a creature type during casting.
      * The source determines where to look for available creature types.
      */
@@ -451,8 +457,8 @@ class CardBuilder(private val name: String) {
 
         // Add morph keyword ability if morph cost is specified
         val finalKeywordAbilities = when {
-            morph != null -> keywordAbilityList + KeywordAbility.Morph(ManaCost.parse(morph!!))
-            morphCost != null -> keywordAbilityList + KeywordAbility.Morph(morphCost!!)
+            morph != null -> keywordAbilityList + KeywordAbility.Morph(PayCost.Mana(ManaCost.parse(morph!!)), morphFaceUpEffect)
+            morphCost != null -> keywordAbilityList + KeywordAbility.Morph(morphCost!!, morphFaceUpEffect)
             else -> keywordAbilityList.toList()
         }
 

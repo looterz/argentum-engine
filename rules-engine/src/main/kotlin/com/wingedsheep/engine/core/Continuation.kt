@@ -105,7 +105,8 @@ data class TriggeredAbilityContinuation(
     val triggerDamageAmount: Int? = null,
     val triggeringEntityId: EntityId? = null,
     val elseEffect: Effect? = null,
-    val targetRequirements: List<TargetRequirement> = emptyList()
+    val targetRequirements: List<TargetRequirement> = emptyList(),
+    val triggerCounterCount: Int? = null
 ) : ContinuationFrame
 
 /**
@@ -248,7 +249,8 @@ data class MayAbilityContinuation(
     val targets: List<ChosenTarget> = emptyList(),
     val triggeringEntityId: EntityId? = null,
     val triggerDamageAmount: Int? = null,
-    val namedTargets: Map<String, ChosenTarget> = emptyMap()
+    val namedTargets: Map<String, ChosenTarget> = emptyMap(),
+    val triggerCounterCount: Int? = null
 ) : ContinuationFrame {
     fun toEffectContext(): EffectContext = EffectContext(
         sourceId = sourceId,
@@ -258,6 +260,7 @@ data class MayAbilityContinuation(
         targets = targets,
         triggeringEntityId = triggeringEntityId,
         triggerDamageAmount = triggerDamageAmount,
+        triggerCounterCount = triggerCounterCount,
         namedTargets = namedTargets
     )
 }

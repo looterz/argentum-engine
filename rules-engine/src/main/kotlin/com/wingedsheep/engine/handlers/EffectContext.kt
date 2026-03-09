@@ -22,6 +22,8 @@ data class EffectContext(
     val damageDistribution: Map<EntityId, Int>? = null,
     /** Amount of damage from a trigger context (e.g., "Whenever ~ is dealt damage") */
     val triggerDamageAmount: Int? = null,
+    /** Last known +1/+1 counter count from a death trigger context (e.g., Hooded Hydra) */
+    val triggerCounterCount: Int? = null,
     /** The entity that caused the trigger to fire (e.g., creature that dealt damage for Aurification) */
     val triggeringEntityId: EntityId? = null,
     /** Color chosen for "add one mana of any color" abilities */

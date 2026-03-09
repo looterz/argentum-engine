@@ -54,6 +54,7 @@ class TurnFaceUpHandler(
     private val costCalculator: CostCalculator,
     private val triggerDetector: TriggerDetector,
     private val triggerProcessor: TriggerProcessor,
+    private val effectExecutorRegistry: com.wingedsheep.engine.handlers.effects.EffectExecutorRegistry,
     private val staticAbilityHandler: StaticAbilityHandler = StaticAbilityHandler(cardRegistry)
 ) : ActionHandler<TurnFaceUp> {
     override val actionType: KClass<TurnFaceUp> = TurnFaceUp::class
@@ -468,6 +469,21 @@ class TurnFaceUpHandler(
             updated
         }
 
+        // Execute face-up replacement effect (e.g., "put five +1/+1 counters on it")
+        if (morphData.faceUpEffect != null) {
+            val opponentId = currentState.turnOrder.firstOrNull { it != action.playerId }
+            val effectContext = com.wingedsheep.engine.handlers.EffectContext(
+                sourceId = action.sourceId,
+                controllerId = action.playerId,
+                opponentId = opponentId
+            )
+            val effectResult = effectExecutorRegistry.execute(currentState, morphData.faceUpEffect, effectContext)
+            if (effectResult.error == null) {
+                currentState = effectResult.state
+                events.addAll(effectResult.events)
+            }
+        }
+
         val turnFaceUpEvent = TurnFaceUpEvent(
             entityId = action.sourceId,
             cardName = cardName,
@@ -618,7 +634,8 @@ class TurnFaceUpHandler(
                 context.costHandler,
                 context.costCalculator,
                 context.triggerDetector,
-                context.triggerProcessor
+                context.triggerProcessor,
+                context.effectExecutorRegistry
             )
         }
     }

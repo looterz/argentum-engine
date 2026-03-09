@@ -139,6 +139,7 @@ object KhansOfTarkirSet {
         ArchersParapet,
         HeirOfTheWilds,
         HighlandGame,
+        HoodedHydra,
         KinTreeWarden,
         HootingMandrills,
         LongshotSquad,

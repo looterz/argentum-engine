@@ -678,7 +678,7 @@ constructors.
 
 - `DynamicAmount.XValue` / `DynamicAmount.Fixed(n)` / `DynamicAmount.YourLifeTotal`
 - `DynamicAmount.SacrificedPermanentPower` / `.SacrificedPermanentToughness`
-- `DynamicAmount.SourcePower` / `.TriggerDamageAmount` / `.TriggerLifeGainAmount`
+- `DynamicAmount.SourcePower` / `.TriggerDamageAmount` / `.TriggerLifeGainAmount` / `.LastKnownCounterCount`
 - `DynamicAmount.ColorsAmongPermanentsYouControl` / `.CardTypesInAllGraveyards`
 - `DynamicAmount.CountersOnSelf(counterType)` / `.CountersOnTarget(counterType, targetIndex)` / `.CreaturesSharingTypeWithTriggeringEntity`
 - `DynamicAmount.VariableReference(variableName)` / `.StoredCardManaValue(collectionName)` / `.AdditionalCostExiledCount`
@@ -854,7 +854,7 @@ Used via `keywordAbility(...)` or `keywordAbilities(...)` in card DSL:
 - **Time**: `Fading(count)`, `Vanishing(count)`
 - **Vehicles**: `Crew(power)`
 - **Cost**: `Affinity(forType)`, `Cycling(cost)`, `Typecycling(type, cost)`, `Kicker(cost)`, `Multikicker(cost)`
-- **Transform**: `Morph(cost)`, `Absorb(count)`
+- **Transform**: `Morph(cost, faceUpEffect?)`, `Absorb(count)` — `faceUpEffect` is an `Effect` executed as a replacement effect when turned face up (e.g., `AddCountersEffect` for Hooded Hydra)
 
 Companion helpers: `KeywordAbility.of(keyword)`, `.ward(cost)`, `.wardLife(amount)`, `.wardDiscard(count, random)`,
 `.protectionFrom(color)`, `.protectionFrom(vararg colors)`, `.protectionFromSubtype(subtype)`, `.cycling(cost)`,

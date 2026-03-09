@@ -74,7 +74,8 @@ class MayEffectExecutor(
             xValue = context.xValue,
             targets = context.targets,
             triggeringEntityId = context.triggeringEntityId,
-            triggerDamageAmount = context.triggerDamageAmount
+            triggerDamageAmount = context.triggerDamageAmount,
+            triggerCounterCount = context.triggerCounterCount
         )
 
         // Push continuation and return paused state

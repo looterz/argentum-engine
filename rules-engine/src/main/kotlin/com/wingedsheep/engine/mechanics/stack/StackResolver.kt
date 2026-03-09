@@ -120,7 +120,8 @@ class StackResolver(
             if (morphAbility != null) {
                 updated = updated.with(MorphDataComponent(
                     morphCost = morphAbility.morphCost,
-                    originalCardDefinitionId = cardComponent.cardDefinitionId
+                    originalCardDefinitionId = cardComponent.cardDefinitionId,
+                    faceUpEffect = morphAbility.faceUpEffect
                 ))
             }
             updated
@@ -789,6 +790,7 @@ class StackResolver(
             opponentId = state.getOpponent(abilityComponent.controllerId),
             targets = resolvedTargets2,
             triggerDamageAmount = abilityComponent.triggerDamageAmount,
+            triggerCounterCount = abilityComponent.triggerCounterCount,
             triggeringEntityId = abilityComponent.triggeringEntityId,
             xValue = abilityComponent.xValue,
             namedTargets = EffectContext.buildNamedTargets(targetReqs, resolvedTargets2)

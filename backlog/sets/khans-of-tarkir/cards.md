@@ -2,7 +2,7 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 233 / 249
+**Implemented:** 234 / 249
 
 | Color      | Count |
 |------------|-------|
@@ -10,7 +10,7 @@
 | Blue       | 31    |
 | Black      | 31    |
 | Red        | 31    |
-| Green      | 31    |
+| Green      | 32    |
 | Multicolor | 50    |
 | Colorless  | 12    |
 | Land       | 16    |
@@ -107,7 +107,7 @@
 - [x] Highland Game
 - [x] High Sentinels of Arashin
 - [x] Highspire Mantis
-- [ ] Hooded Hydra
+- [x] Hooded Hydra
 - [x] Hooting Mandrills
 - [x] Horde Ambusher
 - [x] Hordeling Outburst

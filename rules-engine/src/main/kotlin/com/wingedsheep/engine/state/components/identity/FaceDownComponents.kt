@@ -2,6 +2,7 @@ package com.wingedsheep.engine.state.components.identity
 
 import com.wingedsheep.engine.state.Component
 import com.wingedsheep.sdk.scripting.costs.PayCost
+import com.wingedsheep.sdk.scripting.effects.Effect
 import kotlinx.serialization.Serializable
 
 /**
@@ -17,7 +18,9 @@ data object FaceDownComponent : Component
 @Serializable
 data class MorphDataComponent(
     val morphCost: PayCost,
-    val originalCardDefinitionId: String
+    val originalCardDefinitionId: String,
+    /** Effect to execute as a replacement effect when turned face up (e.g., put 5 +1/+1 counters on it) */
+    val faceUpEffect: Effect? = null
 ) : Component
 
 /**
