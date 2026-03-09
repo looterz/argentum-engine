@@ -490,7 +490,7 @@ class StaticAbilityHandler(
         container: ComponentContainer,
         cardDefinition: CardDefinition
     ): ComponentContainer {
-        val runtimeEffects = cardDefinition.script.replacementEffects.filter { it is PreventDamage || it is DoubleDamage || it is PreventLifeGain || it is ReplaceDamageWithCounters || it is com.wingedsheep.sdk.scripting.ReplaceDrawWithEffect || it is com.wingedsheep.sdk.scripting.ModifyCounterPlacement }
+        val runtimeEffects = cardDefinition.script.replacementEffects.filter { it is PreventDamage || it is DoubleDamage || it is PreventLifeGain || it is ReplaceDamageWithCounters || it is com.wingedsheep.sdk.scripting.ReplaceDrawWithEffect || it is com.wingedsheep.sdk.scripting.ModifyCounterPlacement || it is com.wingedsheep.sdk.scripting.RedirectZoneChange }
         if (runtimeEffects.isEmpty()) return container
         return container.with(ReplacementEffectSourceComponent(runtimeEffects))
     }
@@ -512,7 +512,9 @@ class StaticAbilityHandler(
         }
 
         // Handle "other [subtype] creatures" pattern (e.g., "Other Bird creatures get +1/+1")
-        if (hasExcludeSelf && subtypePredicate != null) {
+        // Only use the simple filter when there's no controller restriction;
+        // with a controller predicate (e.g., "you control"), fall through to Generic.
+        if (hasExcludeSelf && subtypePredicate != null && controllerPredicate == null) {
             return AffectsFilter.OtherCreaturesWithSubtype(subtypePredicate.subtype.value)
         }
 
