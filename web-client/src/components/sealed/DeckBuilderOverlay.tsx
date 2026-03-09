@@ -259,9 +259,10 @@ function DeckBuilder({ state }: { state: DeckBuildingState }) {
           if (cardColors.size === 0) {
             matches = true // colorless cards match any archetype
           } else {
+            matches = true
             for (const c of cardColors) {
-              if (archetypeColors.has(c)) {
-                matches = true
+              if (!archetypeColors.has(c)) {
+                matches = false
                 break
               }
             }
