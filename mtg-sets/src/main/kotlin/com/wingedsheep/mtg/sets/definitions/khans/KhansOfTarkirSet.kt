@@ -242,6 +242,7 @@ object KhansOfTarkirSet {
         SnowhornRider,
         SurrakDragonclaw,
         SecretPlans,
+        AbzanAscendancy,
         SultaiAscendancy,
         SultaiCharm,
         SultaiSoothsayer,
