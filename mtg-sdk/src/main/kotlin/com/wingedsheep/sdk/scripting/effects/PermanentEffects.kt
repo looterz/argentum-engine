@@ -879,3 +879,20 @@ data class AnimateLandEffect(
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
 }
+
+/**
+ * Mark a permanent so that if it would leave the battlefield, it is exiled instead.
+ * Used by Kheru Lich Lord, Whip of Erebos, Sneak Attack, and similar reanimation effects.
+ *
+ * @property target The permanent to mark
+ */
+@SerialName("GrantExileOnLeave")
+@Serializable
+data class GrantExileOnLeaveEffect(
+    val target: EffectTarget = EffectTarget.ContextTarget(0)
+) : Effect {
+    override val description: String =
+        "If ${target.description} would leave the battlefield, exile it instead of putting it anywhere else"
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
+}

@@ -34,6 +34,7 @@ import com.wingedsheep.sdk.scripting.effects.ExchangeControlEffect
 import com.wingedsheep.sdk.scripting.effects.GainControlByMostOfSubtypeEffect
 import com.wingedsheep.sdk.scripting.effects.GainControlEffect
 import com.wingedsheep.sdk.scripting.effects.GainLifeEffect
+import com.wingedsheep.sdk.scripting.effects.GrantExileOnLeaveEffect
 import com.wingedsheep.sdk.scripting.effects.GrantKeywordEffect
 import com.wingedsheep.sdk.scripting.effects.GrantKeywordToAttackersBlockedByEffect
 import com.wingedsheep.sdk.scripting.effects.RemoveKeywordEffect
@@ -432,6 +433,13 @@ object Effects {
      */
     fun GrantKeyword(flag: AbilityFlag, target: EffectTarget = EffectTarget.ContextTarget(0)): Effect =
         GrantKeywordEffect(flag.name, target)
+
+    /**
+     * Mark a permanent so that if it would leave the battlefield, it is exiled instead.
+     * Used by Kheru Lich Lord, Whip of Erebos, Sneak Attack, etc.
+     */
+    fun GrantExileOnLeave(target: EffectTarget = EffectTarget.ContextTarget(0)): Effect =
+        GrantExileOnLeaveEffect(target)
 
     /**
      * Grant a keyword to all attacking creatures that were blocked by the target creature.

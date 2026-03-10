@@ -215,6 +215,7 @@ object KhansOfTarkirSet {
         AnkleShanker,
         AvalancheTusker,
         ArmamentCorps,
+        KheruLichLord,
         KinTreeInvocation,
         AbzanGuide,
         CracklingDoom,

@@ -45,6 +45,7 @@ class PermanentExecutors(
         SetBasePowerExecutor(amountEvaluator),
         DistributeCountersFromSelfExecutor(),
         DistributeCountersAmongTargetsExecutor(),
-        AttachEquipmentExecutor()
+        AttachEquipmentExecutor(),
+        GrantExileOnLeaveExecutor()
     )
 }

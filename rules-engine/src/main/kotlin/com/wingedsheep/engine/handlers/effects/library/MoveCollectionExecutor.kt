@@ -476,6 +476,7 @@ class MoveCollectionExecutor(
         var newState = state
 
         val destroyedIds = mutableListOf<EntityId>()
+        val movedIds = mutableListOf<EntityId>()
 
         // Determine where each card currently lives (for removal)
         for (cardId in cards) {
@@ -613,6 +614,8 @@ class MoveCollectionExecutor(
                 newState = newState.updateEntity(cardId) { c -> c.with(FaceDownComponent) }
             }
 
+            movedIds.add(cardId)
+
             if (fromZone != null) {
                 events.add(
                     ZoneChangeEvent(
@@ -670,10 +673,8 @@ class MoveCollectionExecutor(
             )
         }
 
-        val updatedCollections = if (storeMovedAs != null && destroyedIds.isNotEmpty()) {
-            mapOf(storeMovedAs to destroyedIds.toList())
-        } else if (storeMovedAs != null) {
-            mapOf(storeMovedAs to emptyList())
+        val updatedCollections = if (storeMovedAs != null) {
+            mapOf(storeMovedAs to movedIds.toList())
         } else {
             emptyMap()
         }

@@ -2,7 +2,7 @@
 
 **Set Size:** 269 cards (249 unique card names + basic land variants)
 **Release Date:** September 26, 2014
-**Implemented:** 241 / 249
+**Implemented:** 242 / 249
 
 | Color      | Count |
 |------------|-------|
@@ -11,7 +11,7 @@
 | Black      | 31    |
 | Red        | 31    |
 | Green      | 32    |
-| Multicolor | 51    |
+| Multicolor | 52    |
 | Colorless  | 13    |
 | Land       | 21    |
 
@@ -126,7 +126,7 @@
 - [x] Jungle Hollow
 - [x] Kheru Bloodsucker
 - [x] Kheru Dreadmaw
-- [ ] Kheru Lich Lord
+- [x] Kheru Lich Lord
 - [x] Kheru Spellsnatcher
 - [x] Kill Shot
 - [x] Kin-Tree Invocation

@@ -19,6 +19,7 @@ import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageDealtToCreaturesThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.EnteredThisTurnComponent
+import com.wingedsheep.engine.state.components.battlefield.ExileOnLeaveBattlefieldComponent
 import com.wingedsheep.engine.state.components.battlefield.ReplacementEffectSourceComponent
 import com.wingedsheep.engine.state.components.battlefield.CastFromHandComponent
 import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
@@ -151,6 +152,7 @@ object EffectExecutorUtils {
             .without<AttachedToComponent>()
             .without<AttachmentsComponent>()
             .without<EnteredThisTurnComponent>()
+            .without<ExileOnLeaveBattlefieldComponent>()
             .without<ReplacementEffectSourceComponent>()
             .without<TimestampComponent>()
             // Combat
@@ -653,6 +655,14 @@ object EffectExecutorUtils {
         toZone: Zone
     ): Zone {
         val container = state.getEntity(entityId) ?: return toZone
+
+        // Check if the entity itself has ExileOnLeaveBattlefieldComponent
+        // (e.g., creature returned by Kheru Lich Lord, Whip of Erebos)
+        if (fromZone == Zone.BATTLEFIELD && toZone != Zone.EXILE &&
+            container.has<ExileOnLeaveBattlefieldComponent>()
+        ) {
+            return Zone.EXILE
+        }
 
         for (permanentId in state.getBattlefield()) {
             val permContainer = state.getEntity(permanentId) ?: continue

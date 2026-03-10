@@ -29,6 +29,13 @@ data object SummoningSicknessComponent : Component
 data object CastFromHandComponent : Component
 
 /**
+ * Marks a permanent so that if it would leave the battlefield, it is exiled instead.
+ * Used by Kheru Lich Lord, Whip of Erebos, Sneak Attack, and similar reanimation effects.
+ */
+@Serializable
+data object ExileOnLeaveBattlefieldComponent : Component
+
+/**
  * Counters on a permanent.
  */
 @Serializable

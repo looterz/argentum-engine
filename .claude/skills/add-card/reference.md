@@ -75,6 +75,7 @@ constructors.
 - `Effects.ModifyStats(power: DynamicAmount, toughness: DynamicAmount, target)` — dynamic P/T
 - `Effects.GrantKeyword(keyword, target = ContextTarget(0))` — until end of turn
 - `Effects.GrantKeywordToAttackersBlockedBy(keyword, target, duration)` — grant keyword to attackers blocked by target
+- `Effects.GrantExileOnLeave(target)` — exile instead of leaving battlefield (Kheru Lich Lord, Whip of Erebos)
 - `Effects.AddCounters(counterType, count, target)`
 - `Effects.SetBasePower(target = Self, power: DynamicAmount, duration = Permanent)` — set creature's base power
 - `Effects.AnimateLand(target, power, toughness, duration)` — turn land into creature
@@ -261,6 +262,7 @@ constructors.
 | `TapTargetCreaturesEffect`                  | `maxTargets`                                                                | Tap up to X targets                      |
 | `ModifyStatsEffect`                         | `power: DynamicAmount, toughness: DynamicAmount, target, duration`          | P/T for single target                    |
 | `GrantKeywordEffect`          | `keyword, target, duration`                                                 | Keyword for single target                |
+| `GrantExileOnLeaveEffect`     | `target`                                                                    | Exile instead of leaving battlefield     |
 | `RemoveKeywordEffect`         | `keyword, target, duration`                                                 | Remove keyword from single target        |
 | `GrantTriggeredAbilityEffect` | `ability, target, duration`                                                 | Grant triggered ability                  |
 | `GrantActivatedAbilityEffect` | `ability, target, duration`                                                 | Grant activated ability                  |
