@@ -31,6 +31,11 @@ export function LifeDisplay({
   const decrementDistribute = useGameStore((state) => state.decrementDistribute)
   const decisionSelectionState = useGameStore((state) => state.decisionSelectionState)
   const toggleDecisionSelection = useGameStore((state) => state.toggleDecisionSelection)
+  const draggingAttackerId = useGameStore((state) => state.draggingAttackerId)
+
+  // Check if an attacker is being dragged and this is the opponent's life display
+  const isDraggingAttacker = draggingAttackerId !== null
+  const isAttackDropTarget = isDraggingAttacker && !isPlayer
 
   // Check if this player is a valid target in current targeting mode
   const isValidTargetingTarget = targetingState?.validTargets.includes(playerId) ?? false
@@ -105,7 +110,9 @@ export function LifeDisplay({
         ? '#ffff00' // Yellow if selected as target
         : isValidTarget
           ? '#ff4444' // Red glow if valid target
-          : isPlayer ? '#3a7aba' : '#7a3a9a'
+          : isAttackDropTarget
+            ? '#ff4444' // Red highlight when attacker being dragged
+            : isPlayer ? '#3a7aba' : '#7a3a9a'
 
   const cursor = isValidTarget || isDistributeTarget ? 'pointer' : 'default'
   const boxShadow = isDistributeTarget && distributeAllocated > 0
@@ -116,7 +123,9 @@ export function LifeDisplay({
         ? '0 0 20px rgba(255, 255, 0, 0.8)'
         : isValidTarget
           ? '0 0 15px rgba(255, 68, 68, 0.6)'
-          : 'none'
+          : isAttackDropTarget
+            ? '0 0 16px rgba(255, 68, 68, 0.7), 0 0 32px rgba(255, 68, 68, 0.4)'
+            : 'none'
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: isDistributeTarget ? 4 : 0 }}>
