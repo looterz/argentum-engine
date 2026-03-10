@@ -486,7 +486,9 @@ class GameSession(
 
         // Manage undo checkpoint:
         // - Undo-eligible actions (land, combat declarations, morph): save checkpoint
-        // - Checkpoint-neutral actions (pass priority, mana abilities): preserve existing checkpoint
+        // - Mana abilities: create checkpoint on first activation (so tapping can be undone),
+        //   preserve existing checkpoint on subsequent activations
+        // - Other checkpoint-neutral actions (pass priority, choose mana color): preserve existing checkpoint
         // - Everything else (cast spell, non-mana abilities, decisions): clear checkpoint
         if (isUndoEligibleAction(action)) {
             // For DeclareAttackers, use the pre-combat state if available so undo goes back to main phase
@@ -494,6 +496,11 @@ class GameSession(
                 preCombatState
             } else {
                 state
+            }
+        } else if (action is ActivateAbility && isManaAbilityActivation(action)) {
+            // First mana ability in a sequence creates a checkpoint; subsequent ones preserve it
+            if (undoCheckpoint == null) {
+                undoCheckpoint = state
             }
         } else if (!isCheckpointNeutralAction(action)) {
             undoCheckpoint = null
