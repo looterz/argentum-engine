@@ -4,6 +4,7 @@ import com.wingedsheep.engine.core.DamageDealtEvent
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.core.LifeChangedEvent
 import com.wingedsheep.engine.core.LifeChangeReason
+import com.wingedsheep.engine.core.LoyaltyChangedEvent
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.core.GameEvent as EngineGameEvent
 import com.wingedsheep.engine.handlers.EffectContext
@@ -384,8 +385,9 @@ object EffectExecutorUtils {
 
         val events = mutableListOf<EngineGameEvent>()
 
-        // Check if target is a player or creature
+        // Check if target is a player, planeswalker, or creature
         val lifeComponent = newState.getEntity(targetId)?.get<LifeTotalComponent>()
+        val projected = newState.projectedState
         if (lifeComponent != null) {
             // It's a player - reduce life
             val newLife = lifeComponent.life - effectiveAmount
@@ -394,11 +396,19 @@ object EffectExecutorUtils {
             }
             newState = trackDamageReceivedByPlayer(newState, targetId, effectiveAmount)
             events.add(LifeChangedEvent(targetId, lifeComponent.life, newLife, LifeChangeReason.DAMAGE))
+        } else if (projected.isPlaneswalker(targetId)) {
+            // It's a planeswalker - remove loyalty counters equal to damage dealt
+            val counters = newState.getEntity(targetId)?.get<CountersComponent>() ?: CountersComponent()
+            val currentLoyalty = counters.getCount(CounterType.LOYALTY)
+            newState = newState.updateEntity(targetId) { container ->
+                container.with(counters.withRemoved(CounterType.LOYALTY, effectiveAmount))
+            }
+            val targetName = newState.getEntity(targetId)?.get<CardComponent>()?.name ?: "Planeswalker"
+            events.add(LoyaltyChangedEvent(targetId, targetName, -(effectiveAmount.coerceAtMost(currentLoyalty))))
         } else {
             // It's a creature - mark damage
             val existingDamage = newState.getEntity(targetId)?.get<DamageComponent>()
             val currentDamage = existingDamage?.amount ?: 0
-            val projected = newState.projectedState
             val hasDeathtouch = sourceId != null && projected.hasKeyword(sourceId, Keyword.DEATHTOUCH)
             newState = newState.updateEntity(targetId) { container ->
                 container.with(DamageComponent(

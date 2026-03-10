@@ -1,5 +1,6 @@
 package com.wingedsheep.gameserver.scenarios
 
+import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.gameserver.ScenarioTestBase
 import com.wingedsheep.sdk.core.CounterType
@@ -145,6 +146,58 @@ class PlaneswalkerCombatScenarioTest : ScenarioTestBase() {
                 // Opponent should have taken 4 damage from Alpine Grizzly
                 withClue("Opponent should be at 16 life") {
                     game.getLifeTotal(2) shouldBe 16
+                }
+            }
+
+            test("Sarkhan as creature does not lose loyalty from combat damage") {
+                val game = scenario()
+                    .withPlayers("Player", "Opponent")
+                    .withCardOnBattlefield(2, "Sarkhan, the Dragonspeaker")
+                    .withCardOnBattlefield(1, "Glory Seeker") // 2/2
+                    .withCardInLibrary(1, "Mountain")
+                    .withCardInLibrary(2, "Mountain")
+                    .withActivePlayer(2)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                val sarkhanId = game.findPermanent("Sarkhan, the Dragonspeaker")!!
+
+                // Set Sarkhan's loyalty to 4
+                game.state = game.state.updateEntity(sarkhanId) { c ->
+                    val counters = c.get<CountersComponent>() ?: CountersComponent()
+                    c.with(counters.withAdded(CounterType.LOYALTY, 4))
+                }
+
+                // Activate Sarkhan's +1 to become a 4/4 Dragon creature
+                val cardDef = cardRegistry.getCard("Sarkhan, the Dragonspeaker")!!
+                val plusOneAbility = cardDef.script.activatedAbilities[0]
+                game.execute(
+                    ActivateAbility(
+                        playerId = game.player2Id,
+                        sourceId = sarkhanId,
+                        abilityId = plusOneAbility.id
+                    )
+                )
+                game.resolveStack()
+
+                // Now Sarkhan is a 4/4 creature, not a planeswalker
+                // Attack with Sarkhan
+                game.passUntilPhase(Phase.COMBAT, Step.DECLARE_ATTACKERS)
+                game.declareAttackers(mapOf("Sarkhan, the Dragonspeaker" to 1))
+
+                game.passUntilPhase(Phase.COMBAT, Step.DECLARE_BLOCKERS)
+                // Block with Glory Seeker (2/2 vs 4/4 indestructible)
+                game.declareBlockers(mapOf("Glory Seeker" to listOf("Sarkhan, the Dragonspeaker")))
+                game.passUntilPhase(Phase.POSTCOMBAT_MAIN, Step.POSTCOMBAT_MAIN)
+
+                // Sarkhan should still have 5 loyalty (4 + 1 from activation)
+                // Combat damage should NOT have removed loyalty counters since he's a creature
+                val counters = game.state.getEntity(sarkhanId)?.get<CountersComponent>()
+                withClue("Sarkhan should still have 5 loyalty counters (not reduced by combat damage)") {
+                    counters?.getCount(CounterType.LOYALTY) shouldBe 5
+                }
+                withClue("Sarkhan should still be on the battlefield (indestructible)") {
+                    game.isOnBattlefield("Sarkhan, the Dragonspeaker") shouldBe true
                 }
             }
 
