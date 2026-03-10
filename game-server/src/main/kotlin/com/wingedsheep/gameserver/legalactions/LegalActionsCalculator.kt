@@ -78,11 +78,19 @@ class LegalActionsCalculator(
                 ?.get<AttackersDeclaredThisCombatComponent>() != null
             if (!attackersAlreadyDeclared) {
                 val validAttackers = turnManager.getValidAttackers(state, playerId)
+                // Find opponent planeswalkers that can be attacked
+                val projected = state.projectedState
+                val opponents = state.turnOrder.filter { it != playerId }
+                val validAttackTargets = state.getBattlefield().filter { entityId ->
+                    projected.isPlaneswalker(entityId) &&
+                        projected.getController(entityId) in opponents
+                }
                 return listOf(LegalActionInfo(
                     actionType = "DeclareAttackers",
                     description = "Declare attackers",
                     action = DeclareAttackers(playerId, emptyMap()),
-                    validAttackers = validAttackers
+                    validAttackers = validAttackers,
+                    validAttackTargets = validAttackTargets.ifEmpty { null }
                 ))
             }
         }

@@ -42,6 +42,7 @@ export interface UISliceState {
   hoveredCardId: EntityId | null
   autoTapPreview: readonly EntityId[] | null
   draggingBlockerId: EntityId | null
+  draggingAttackerId: EntityId | null
   draggingCardId: EntityId | null
   revealedHandCardIds: readonly EntityId[] | null
   revealedCardsInfo: {
@@ -70,11 +71,14 @@ export interface UISliceActions {
   confirmTargeting: () => void
   startCombat: (state: CombatState) => void
   toggleAttacker: (creatureId: EntityId) => void
+  setAttackTarget: (attackerId: EntityId, targetId: EntityId) => void
   assignBlocker: (blockerId: EntityId, attackerId: EntityId) => void
   removeBlockerAssignment: (blockerId: EntityId) => void
   clearBlockerAssignments: () => void
   startDraggingBlocker: (blockerId: EntityId) => void
   stopDraggingBlocker: () => void
+  startDraggingAttacker: (attackerId: EntityId) => void
+  stopDraggingAttacker: () => void
   startDraggingCard: (cardId: EntityId) => void
   stopDraggingCard: () => void
   confirmCombat: () => void
@@ -146,6 +150,7 @@ export const createUISlice: SliceCreator<UISlice> = (set, get) => ({
   hoveredCardId: null,
   autoTapPreview: null,
   draggingBlockerId: null,
+  draggingAttackerId: null,
   draggingCardId: null,
   revealedHandCardIds: null,
   revealedCardsInfo: null,
@@ -449,10 +454,35 @@ export const createUISlice: SliceCreator<UISlice> = (set, get) => ({
         ? state.combatState.selectedAttackers.filter((id) => id !== creatureId)
         : [...state.combatState.selectedAttackers, creatureId]
 
+      // Clean up attackerTargets if deselecting
+      const newTargets = { ...state.combatState.attackerTargets }
+      if (isSelected) {
+        delete newTargets[creatureId]
+      }
+
       return {
         combatState: {
           ...state.combatState,
           selectedAttackers: newAttackers,
+          attackerTargets: newTargets,
+        },
+      }
+    })
+  },
+
+  setAttackTarget: (attackerId, targetId) => {
+    set((state) => {
+      if (!state.combatState || state.combatState.mode !== 'declareAttackers') {
+        return state
+      }
+
+      return {
+        combatState: {
+          ...state.combatState,
+          attackerTargets: {
+            ...state.combatState.attackerTargets,
+            [attackerId]: targetId,
+          },
         },
       }
     })
@@ -531,6 +561,14 @@ export const createUISlice: SliceCreator<UISlice> = (set, get) => ({
     set({ draggingBlockerId: null })
   },
 
+  startDraggingAttacker: (attackerId) => {
+    set({ draggingAttackerId: attackerId })
+  },
+
+  stopDraggingAttacker: () => {
+    set({ draggingAttackerId: null })
+  },
+
   startDraggingCard: (cardId) => {
     set({ draggingCardId: cardId })
   },
@@ -552,7 +590,8 @@ export const createUISlice: SliceCreator<UISlice> = (set, get) => ({
 
       const attackers: Record<EntityId, EntityId> = {}
       for (const attackerId of combatState.selectedAttackers) {
-        attackers[attackerId] = opponent.playerId
+        // Use per-attacker target if set, otherwise default to opponent player
+        attackers[attackerId] = combatState.attackerTargets[attackerId] ?? opponent.playerId
       }
 
       const action = {
@@ -624,6 +663,7 @@ export const createUISlice: SliceCreator<UISlice> = (set, get) => ({
         combatState: {
           ...state.combatState,
           selectedAttackers: [],
+          attackerTargets: {},
         },
       }
     })

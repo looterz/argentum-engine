@@ -51,10 +51,20 @@ internal class AttackPhaseManager(
     ): ExecutionResult {
         // Validate each attacker
         val projected = state.projectedState
+        val opponents = state.turnOrder.filter { it != attackingPlayer }
         for ((attackerId, defenderId) in attackers) {
             val validation = validateAttacker(state, attackingPlayer, attackerId)
             if (validation != null) {
                 return ExecutionResult.error(state, validation)
+            }
+            // Validate defender is either an opponent player or a planeswalker controlled by an opponent
+            if (defenderId !in opponents) {
+                if (!projected.isPlaneswalker(defenderId) || projected.getController(defenderId) in listOf(attackingPlayer)) {
+                    return ExecutionResult.error(state, "Invalid attack target: must be an opponent or their planeswalker")
+                }
+                if (defenderId !in state.getBattlefield()) {
+                    return ExecutionResult.error(state, "Planeswalker is not on the battlefield")
+                }
             }
             // Check per-defender restrictions (CantAttackUnless, CantBeAttackedWithout, etc.)
             val ctx = AttackCheckContext(state, projected, attackerId, attackingPlayer, cardRegistry)
@@ -287,11 +297,17 @@ internal class AttackPhaseManager(
     ): ExecutionResult {
         if (attackers.isEmpty()) return ExecutionResult.success(state)
 
-        // Group attackers by defending player (skip planeswalker defenders)
+        // Group attackers by defending player (resolve planeswalker defenders to their controller)
         val attackersPerDefender = mutableMapOf<EntityId, Int>()
         for ((_, defenderId) in attackers) {
-            if (state.turnOrder.contains(defenderId)) {
-                attackersPerDefender[defenderId] = (attackersPerDefender[defenderId] ?: 0) + 1
+            val defenderPlayerId = if (state.turnOrder.contains(defenderId)) {
+                defenderId
+            } else {
+                // Planeswalker — find its controller
+                projected.getController(defenderId)
+            }
+            if (defenderPlayerId != null) {
+                attackersPerDefender[defenderPlayerId] = (attackersPerDefender[defenderPlayerId] ?: 0) + 1
             }
         }
 

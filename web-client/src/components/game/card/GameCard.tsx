@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useGameStore } from '../../../store/gameStore'
 import { useHasLegalActions } from '../../../store/selectors'
-import type { ClientCard } from '../../../types'
+import type { ClientCard, EntityId } from '../../../types'
 import { getCardImageUrl, getScryfallFallbackUrl, MORPH_FACE_DOWN_IMAGE_URL } from '../../../utils/cardImages'
 import { useInteraction } from '../../../hooks/useInteraction'
 import {
@@ -75,6 +75,10 @@ export function GameCard({
   const startDraggingBlocker = useGameStore((state) => state.startDraggingBlocker)
   const stopDraggingBlocker = useGameStore((state) => state.stopDraggingBlocker)
   const draggingBlockerId = useGameStore((state) => state.draggingBlockerId)
+  const startDraggingAttacker = useGameStore((state) => state.startDraggingAttacker)
+  const stopDraggingAttacker = useGameStore((state) => state.stopDraggingAttacker)
+  const draggingAttackerId = useGameStore((state) => state.draggingAttackerId)
+  const setAttackTarget = useGameStore((state) => state.setAttackTarget)
   const startDraggingCard = useGameStore((state) => state.startDraggingCard)
   const stopDraggingCard = useGameStore((state) => state.stopDraggingCard)
   const draggingCardId = useGameStore((state) => state.draggingCardId)
@@ -190,6 +194,9 @@ export function GameCard({
   const isAttackingInBlockerMode = isInBlockerMode && isOpponentCard && combatState.attackingCreatures.includes(card.id)
   const isMustBeBlocked = isInBlockerMode && isOpponentCard && combatState.mustBeBlockedAttackers.includes(card.id)
 
+  // For attacker mode: check if this is an opponent's planeswalker that can be attacked
+  const isValidPlaneswalkerTarget = isInAttackerMode && isOpponentCard && combatState.validAttackTargets.includes(card.id)
+
   // Show playable highlight for cards that aren't purely combat-role cards.
   // Valid blockers with legal actions (e.g., activated abilities) are still playable since blocking uses drag.
   // Face-down cards can be playable too (for TurnFaceUp action)
@@ -229,10 +236,17 @@ export function GameCard({
   const shouldShowCastModal = playableActions.length > 1 || (hasMultiplePotentialOptions && playableActions.length > 0) || isCyclingLandWithoutPlayLand
   const canDragToPlay = inHand && playableAction && !isInCombatMode && !isInTargetingMode
 
-  // Handle mouse/touch down - start dragging for blockers or hand cards
+  // Handle mouse/touch down - start dragging for attackers, blockers, or hand cards
   const handlePointerDown = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     const clientX = 'touches' in e ? e.touches[0]!.clientX : e.clientX
     const clientY = 'touches' in e ? e.touches[0]!.clientY : e.clientY
+
+    // Start dragging attacker to assign planeswalker target
+    if (isInAttackerMode && isSelectedAsAttacker && combatState && combatState.validAttackTargets.length > 0) {
+      e.preventDefault()
+      startDraggingAttacker(card.id)
+      return
+    }
 
     if (isInBlockerMode && isValidBlocker) {
       e.preventDefault()
@@ -245,16 +259,21 @@ export function GameCard({
       dragStartPos.current = { x: clientX, y: clientY }
       startDraggingCard(card.id)
     }
-  }, [isInBlockerMode, isValidBlocker, startDraggingBlocker, canDragToPlay, startDraggingCard, card.id])
+  }, [isInAttackerMode, isSelectedAsAttacker, combatState, startDraggingAttacker, isInBlockerMode, isValidBlocker, startDraggingBlocker, canDragToPlay, startDraggingCard, card.id])
 
-  // Handle mouse/touch up - drop blocker on attacker or cancel drag
+  // Handle mouse/touch up - drop blocker on attacker, or drop attacker on planeswalker
   const handlePointerUp = useCallback(() => {
     if (isInBlockerMode && draggingBlockerId && isAttackingInBlockerMode) {
       // Dropping on an attacker - assign the blocker
       assignBlocker(draggingBlockerId, card.id)
       stopDraggingBlocker()
     }
-  }, [isInBlockerMode, draggingBlockerId, isAttackingInBlockerMode, assignBlocker, stopDraggingBlocker, card.id])
+    if (isInAttackerMode && draggingAttackerId && isValidPlaneswalkerTarget) {
+      // Dropping on a planeswalker - set as attack target
+      setAttackTarget(draggingAttackerId, card.id)
+      stopDraggingAttacker()
+    }
+  }, [isInBlockerMode, draggingBlockerId, isAttackingInBlockerMode, assignBlocker, stopDraggingBlocker, isInAttackerMode, draggingAttackerId, isValidPlaneswalkerTarget, setAttackTarget, stopDraggingAttacker, card.id])
 
   // Global mouse/touch up handler for card dragging (to detect drop outside hand)
   useEffect(() => {
@@ -370,6 +389,40 @@ export function GameCard({
     }
   }, [draggingBlockerId, stopDraggingBlocker, isInBlockerMode, combatState, assignBlocker])
 
+  // Global mouse/touch up handler to cancel attacker drag (planeswalker targeting)
+  // For touch, detect drop target since touchend fires on the originating element
+  useEffect(() => {
+    if (!draggingAttackerId) return
+
+    const handleGlobalMouseUp = () => {
+      stopDraggingAttacker()
+    }
+
+    const handleGlobalTouchEnd = (e: TouchEvent) => {
+      const touch = e.changedTouches[0]
+      if (touch && isInAttackerMode) {
+        const elementAtPoint = document.elementFromPoint(touch.clientX, touch.clientY)
+        if (elementAtPoint) {
+          const cardEl = elementAtPoint.closest('[data-card-id]')
+          if (cardEl) {
+            const targetCardId = cardEl.getAttribute('data-card-id')
+            if (targetCardId && combatState?.validAttackTargets.includes(targetCardId as EntityId)) {
+              setAttackTarget(draggingAttackerId, targetCardId as EntityId)
+            }
+          }
+        }
+      }
+      stopDraggingAttacker()
+    }
+
+    window.addEventListener('mouseup', handleGlobalMouseUp)
+    window.addEventListener('touchend', handleGlobalTouchEnd)
+    return () => {
+      window.removeEventListener('mouseup', handleGlobalMouseUp)
+      window.removeEventListener('touchend', handleGlobalTouchEnd)
+    }
+  }, [draggingAttackerId, stopDraggingAttacker, isInAttackerMode, combatState, setAttackTarget])
+
   const handleClick = () => {
     // If the drag handler already processed this interaction, skip
     if (handledByDrag.current) {
@@ -411,6 +464,12 @@ export function GameCard({
     if (isInAttackerMode) {
       if (isValidAttacker) {
         toggleAttacker(card.id)
+        return
+      }
+      // Clicking an opponent's planeswalker assigns the last selected attacker to it
+      if (isValidPlaneswalkerTarget && combatState && combatState.selectedAttackers.length > 0) {
+        const lastAttacker = combatState.selectedAttackers[combatState.selectedAttackers.length - 1]!
+        setAttackTarget(lastAttacker, card.id)
         return
       }
       // Non-attacker cards fall through to normal selection
@@ -476,6 +535,10 @@ export function GameCard({
     // Red pulsing glow for must-be-blocked attackers (Alluring Scent)
     borderStyle = '3px solid #ff3333'
     boxShadow = '0 0 16px rgba(255, 51, 51, 0.8), 0 0 32px rgba(255, 51, 51, 0.5), 0 0 48px rgba(255, 51, 51, 0.3)'
+  } else if (isValidPlaneswalkerTarget && combatState && Object.values(combatState.attackerTargets).includes(card.id)) {
+    // Red highlight for planeswalkers currently targeted by an attacker
+    borderStyle = '3px solid #ff4444'
+    boxShadow = '0 0 16px rgba(255, 68, 68, 0.7), 0 0 32px rgba(255, 68, 68, 0.4)'
   } else if (isAttackingInBlockerMode) {
     // Orange glow for attackers that can be blocked
     borderStyle = '3px solid #ff8800'
@@ -519,6 +582,14 @@ export function GameCard({
     // Light-blue highlight for valid attackers/blockers
     borderStyle = `2px solid ${TARGET_COLOR}`
     boxShadow = `0 0 12px ${TARGET_GLOW}, 0 0 24px ${TARGET_SHADOW}`
+  } else if (isValidPlaneswalkerTarget && combatState && combatState.selectedAttackers.length > 0 && isHovered) {
+    // Bright orange highlight when hovering over a valid planeswalker attack target
+    borderStyle = '3px solid #ff8800'
+    boxShadow = '0 0 16px rgba(255, 136, 0, 0.7), 0 0 32px rgba(255, 136, 0, 0.4)'
+  } else if (isValidPlaneswalkerTarget && combatState && combatState.selectedAttackers.length > 0) {
+    // Orange highlight for valid planeswalker attack targets
+    borderStyle = '2px solid #ff8800'
+    boxShadow = '0 0 12px rgba(255, 136, 0, 0.5), 0 0 24px rgba(255, 136, 0, 0.3)'
   } else if (isPlayable && isGhost && isHovered) {
     // Bright purple highlight when hovering over a playable ghost card
     borderStyle = '3px solid #aa77ee'
@@ -546,12 +617,12 @@ export function GameCard({
   }
 
   // Determine cursor
-  const canInteract = interactive || isValidTarget || isValidDecisionTarget || isValidDecisionSelection || isValidAttacker || isValidBlocker || isAttackingInBlockerMode || canDragToPlay || isDistributeTarget
+  const canInteract = interactive || isValidTarget || isValidDecisionTarget || isValidDecisionSelection || isValidAttacker || isValidBlocker || isAttackingInBlockerMode || isValidPlaneswalkerTarget || canDragToPlay || isDistributeTarget
   const baseCursor = canInteract ? 'pointer' : 'default'
-  const cursor = isValidBlocker || canDragToPlay ? 'grab' : baseCursor
+  const cursor = isValidBlocker || isSelectedAsAttacker || canDragToPlay ? 'grab' : baseCursor
 
-  // Check if currently being dragged (blocker or hand card)
-  const isBeingDragged = draggingBlockerId === card.id || draggingCardId === card.id
+  // Check if currently being dragged (attacker, blocker, or hand card)
+  const isBeingDragged = draggingBlockerId === card.id || draggingAttackerId === card.id || draggingCardId === card.id
 
   // Container dimensions - expand width when tapped to prevent overlap
   // Tapped cards rotate 90deg, so they need width = height to not overlap

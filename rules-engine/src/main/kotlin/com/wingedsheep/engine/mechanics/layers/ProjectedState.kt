@@ -61,6 +61,8 @@ class ProjectedState(
 
     fun isCreature(entityId: EntityId): Boolean = hasType(entityId, "CREATURE")
 
+    fun isPlaneswalker(entityId: EntityId): Boolean = hasType(entityId, "PLANESWALKER")
+
     fun getSubtypes(entityId: EntityId): Set<String> = projectedValues[entityId]?.subtypes ?: emptySet()
 
     fun hasSubtype(entityId: EntityId, subtype: String): Boolean =

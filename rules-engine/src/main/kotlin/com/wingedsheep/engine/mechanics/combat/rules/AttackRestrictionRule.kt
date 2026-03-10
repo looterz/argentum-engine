@@ -36,12 +36,22 @@ interface AttackDefenderRule {
     fun check(ctx: AttackCheckContext, defenderId: EntityId): String?
 
     /**
-     * Returns true if the creature is restricted from attacking ALL opponents.
-     * Default implementation checks [check] against every opponent.
+     * Returns true if the creature is restricted from attacking ALL opponents and their planeswalkers.
+     * Default implementation checks [check] against every opponent and their planeswalkers.
      * Used by [getValidAttackers] for must-attack requirement validation.
      */
     fun restrictsAllDefenders(ctx: AttackCheckContext): Boolean {
         val opponents = ctx.state.turnOrder.filter { it != ctx.attackingPlayer }
-        return opponents.all { opponentId -> check(ctx, opponentId) != null }
+        val projected = ctx.projected
+        // Collect all valid defenders: opponent players + their planeswalkers
+        val allDefenders = opponents.toMutableList()
+        for (opponentId in opponents) {
+            allDefenders.addAll(
+                ctx.state.getBattlefield().filter { entityId ->
+                    projected.isPlaneswalker(entityId) && projected.getController(entityId) == opponentId
+                }
+            )
+        }
+        return allDefenders.all { defenderId -> check(ctx, defenderId) != null }
     }
 }

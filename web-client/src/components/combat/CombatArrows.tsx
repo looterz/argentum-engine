@@ -222,6 +222,7 @@ export function CombatArrows() {
   const cards = gameState?.cards
   const opponentBlockerAssignments = useGameStore((state) => state.opponentBlockerAssignments)
   const draggingBlockerId = useGameStore((state) => state.draggingBlockerId)
+  const draggingAttackerId = useGameStore((state) => state.draggingAttackerId)
   const isSpectating = useGameStore((state) => state.spectatingState !== null)
   const pendingDecision = useGameStore((state) => state.pendingDecision)
   const [mousePos, setMousePos] = useState<Point | null>(null)
@@ -243,9 +244,9 @@ export function CombatArrows() {
     !(pendingDecision.type === 'SelectCardsDecision' && pendingDecision.useTargetingUI) &&
     !(pendingDecision.type === 'YesNoDecision' && pendingDecision.context.triggeringEntityId)
 
-  // Track mouse/touch position during drag
+  // Track mouse/touch position during drag (blocker or attacker)
   useEffect(() => {
-    if (!draggingBlockerId) {
+    if (!draggingBlockerId && !draggingAttackerId) {
       setMousePos(null)
       return
     }
@@ -267,7 +268,7 @@ export function CombatArrows() {
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('touchmove', handleTouchMove)
     }
-  }, [draggingBlockerId])
+  }, [draggingBlockerId, draggingAttackerId])
 
   // Check if we're in active declare blockers mode (local state)
   const isDeclaringBlockers = combatState?.mode === 'declareBlockers'
@@ -406,14 +407,33 @@ export function CombatArrows() {
           let targetPos: Point | null = null
           if (attacker.attackingTarget.type === 'Player') {
             targetPos = getPlayerLifeCenter(attacker.attackingTarget.playerId)
+          } else if (attacker.attackingTarget.type === 'Planeswalker') {
+            targetPos = getCardCenter(attacker.attackingTarget.permanentId)
           }
-          // TODO: Add support for planeswalker targets
 
           if (attackerPos && targetPos) {
             newAttackerArrows.push({
               start: attackerPos,
               end: targetPos,
               attackerId: attacker.creatureId,
+            })
+          }
+        }
+      }
+
+      // Compute local attacker→planeswalker arrows during declare attackers phase
+      if (combatState?.mode === 'declareAttackers' && combatState.attackerTargets) {
+        for (const [attackerIdStr, targetId] of Object.entries(combatState.attackerTargets)) {
+          const attackerId = attackerIdStr as EntityId
+          // Only show if this attacker is still selected
+          if (!combatState.selectedAttackers.includes(attackerId)) continue
+          const attackerPos = getCardCenter(attackerId)
+          const targetPos = getCardCenter(targetId)
+          if (attackerPos && targetPos) {
+            newAttackerArrows.push({
+              start: attackerPos,
+              end: targetPos,
+              attackerId,
             })
           }
         }
@@ -425,8 +445,9 @@ export function CombatArrows() {
       const viewportCenterY = window.innerHeight / 2
 
       if (combatState?.mode === 'declareAttackers' && combatState.selectedAttackers.length > 0) {
-        // During declare attackers: show for locally selected attackers
+        // During declare attackers: show for locally selected attackers (skip those with planeswalker targets — they have arrows)
         for (const attackerId of combatState.selectedAttackers) {
+          if (combatState.attackerTargets[attackerId]) continue
           const edge = getCardEdgeCenter(attackerId)
           if (edge) {
             const direction = edge.centerY > viewportCenterY ? 'up' : 'down'
@@ -468,16 +489,21 @@ export function CombatArrows() {
     (gameStateCombat && gameStateCombat.blockers.length > 0 && isInCombatPhase)
   const hasAttackers = gameStateCombat && gameStateCombat.attackers.length > 0 && isInCombatPhase
   const hasSelectedAttackers = combatState?.mode === 'declareAttackers' && combatState.selectedAttackers.length > 0
-  if (!hasBlockers && !hasAttackers && !hasSelectedAttackers && !draggingBlockerId) {
+  if (!hasBlockers && !hasAttackers && !hasSelectedAttackers && !draggingBlockerId && !draggingAttackerId) {
     return null
   }
 
-  // Get dragging arrow if applicable
+  // Get dragging arrow if applicable (blocker or attacker)
   const draggingArrow = (() => {
-    if (!draggingBlockerId || !mousePos) return null
-    const blockerPos = getCardCenter(draggingBlockerId)
-    if (!blockerPos) return null
-    return { start: blockerPos, end: mousePos }
+    if (draggingBlockerId && mousePos) {
+      const blockerPos = getCardCenter(draggingBlockerId)
+      if (blockerPos) return { start: blockerPos, end: mousePos, color: '#88ccff' }
+    }
+    if (draggingAttackerId && mousePos) {
+      const attackerPos = getCardCenter(draggingAttackerId)
+      if (attackerPos) return { start: attackerPos, end: mousePos, color: '#ff8888' }
+    }
+    return null
   })()
 
   return (
@@ -600,12 +626,12 @@ export function CombatArrows() {
         </g>
       ))}
 
-      {/* Dragging arrow */}
+      {/* Dragging arrow (blocker or attacker) */}
       {draggingArrow && (
         <Arrow
           start={draggingArrow.start}
           end={draggingArrow.end}
-          color="#88ccff"
+          color={draggingArrow.color}
           dashed
         />
       )}

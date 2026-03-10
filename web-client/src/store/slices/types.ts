@@ -96,6 +96,10 @@ export interface CombatState {
   mode: 'declareAttackers' | 'declareBlockers'
   /** Selected attackers (creature IDs) */
   selectedAttackers: readonly EntityId[]
+  /** Attack target per attacker: attacker ID -> defender ID (player or planeswalker). If absent, defaults to opponent player. */
+  attackerTargets: Readonly<Record<EntityId, EntityId>>
+  /** Planeswalker IDs that can be attacked */
+  validAttackTargets: readonly EntityId[]
   /** Blocker assignments: blocker ID -> attacker IDs (supports blocking multiple attackers) */
   blockerAssignments: Record<EntityId, EntityId[]>
   /** Valid creatures that can participate (attackers or blockers depending on mode) */
@@ -573,6 +577,7 @@ export type GameStore = {
   hoveredCardId: EntityId | null
   autoTapPreview: readonly EntityId[] | null
   draggingBlockerId: EntityId | null
+  draggingAttackerId: EntityId | null
   draggingCardId: EntityId | null
   revealedHandCardIds: readonly EntityId[] | null
   revealedCardsInfo: {
@@ -602,6 +607,9 @@ export type GameStore = {
   clearBlockerAssignments: () => void
   startDraggingBlocker: (blockerId: EntityId) => void
   stopDraggingBlocker: () => void
+  startDraggingAttacker: (attackerId: EntityId) => void
+  stopDraggingAttacker: () => void
+  setAttackTarget: (attackerId: EntityId, targetId: EntityId) => void
   startDraggingCard: (cardId: EntityId) => void
   stopDraggingCard: () => void
   confirmCombat: () => void

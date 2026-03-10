@@ -484,6 +484,8 @@ export interface LegalActionInfo {
   readonly targetRequirements?: readonly LegalActionTargetInfo[]
   /** Valid attacker IDs for DeclareAttackers action */
   readonly validAttackers?: readonly EntityId[]
+  /** Valid attack targets: opponent planeswalker IDs that can be attacked */
+  readonly validAttackTargets?: readonly EntityId[]
   /** Valid blocker IDs for DeclareBlockers action */
   readonly validBlockers?: readonly EntityId[]
   /** Whether this spell has X in its mana cost */

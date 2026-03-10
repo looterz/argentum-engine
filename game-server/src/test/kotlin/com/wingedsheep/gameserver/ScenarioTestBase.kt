@@ -750,6 +750,32 @@ abstract class ScenarioTestBase : FunSpec() {
         }
 
         /**
+         * Declare attackers with some attacking a planeswalker by name.
+         * @param playerAttackers Map of creature names to player number being attacked
+         * @param planeswalkerAttackers Map of creature names to planeswalker names being attacked
+         */
+        fun declareAttackersWithPlaneswalkerTargets(
+            playerAttackers: Map<String, Int> = emptyMap(),
+            planeswalkerAttackers: Map<String, String> = emptyMap()
+        ): ExecutionResult {
+            val attackingPlayer = state.activePlayerId!!
+            val attackerMap = mutableMapOf<EntityId, EntityId>()
+
+            for ((name, targetPlayerNum) in playerAttackers) {
+                val attackerId = findPermanent(name) ?: continue
+                val targetPlayerId = if (targetPlayerNum == 1) player1Id else player2Id
+                attackerMap[attackerId] = targetPlayerId
+            }
+            for ((name, planeswalkerName) in planeswalkerAttackers) {
+                val attackerId = findPermanent(name) ?: continue
+                val targetId = findPermanent(planeswalkerName) ?: continue
+                attackerMap[attackerId] = targetId
+            }
+
+            return execute(DeclareAttackers(attackingPlayer, attackerMap))
+        }
+
+        /**
          * Declare blockers.
          * @param blockers Map of blocker permanent names to list of attacker permanent names being blocked
          */

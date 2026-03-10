@@ -888,6 +888,8 @@ data class LegalActionInfo(
     val targetRequirements: List<LegalActionTargetInfo>? = null,
     /** Valid attacker IDs for DeclareAttackers action */
     val validAttackers: List<EntityId>? = null,
+    /** Valid attack targets: opponent planeswalker IDs that can be attacked */
+    val validAttackTargets: List<EntityId>? = null,
     /** Valid blocker IDs for DeclareBlockers action */
     val validBlockers: List<EntityId>? = null,
     /** Whether this spell has X in its mana cost */

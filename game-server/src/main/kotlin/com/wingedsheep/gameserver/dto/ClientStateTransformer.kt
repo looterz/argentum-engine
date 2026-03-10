@@ -1428,7 +1428,11 @@ class ClientStateTransformer(
                     ClientAttacker(
                         creatureId = entityId,
                         creatureName = cardComponent.name,
-                        attackingTarget = ClientCombatTarget.Player(attackingComponent.defenderId),
+                        attackingTarget = if (state.turnOrder.contains(attackingComponent.defenderId)) {
+                            ClientCombatTarget.Player(attackingComponent.defenderId)
+                        } else {
+                            ClientCombatTarget.Planeswalker(attackingComponent.defenderId)
+                        },
                         blockedBy = blockedComponent?.blockerIds ?: emptyList(),
                         mustBeBlockedByAll = entityId in mustBeBlockedCreatures,
                         damageAssignmentOrder = damageOrderComponent?.orderedBlockers,

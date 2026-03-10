@@ -132,10 +132,17 @@ export default function App() {
         ? [...attackersAction.validAttackers]
         : []
 
+      // Get planeswalker attack targets from server
+      const validAttackTargets: EntityId[] = attackersAction?.validAttackTargets
+        ? [...attackersAction.validAttackTargets]
+        : []
+
       // Enter combat mode
       startCombat({
         mode: 'declareAttackers',
         selectedAttackers: [],
+        attackerTargets: {},
+        validAttackTargets,
         blockerAssignments: {},
         validCreatures,
         attackingCreatures: [],
@@ -183,6 +190,8 @@ export default function App() {
       startCombat({
         mode: 'declareBlockers',
         selectedAttackers: [],
+        attackerTargets: {},
+        validAttackTargets: [],
         blockerAssignments,
         validCreatures,
         attackingCreatures,

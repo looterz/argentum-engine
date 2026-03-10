@@ -8,6 +8,7 @@ import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.DamageComponent
 import com.wingedsheep.engine.state.components.combat.AttackingComponent
 import com.wingedsheep.engine.state.components.combat.BlockedComponent
@@ -357,15 +358,17 @@ internal class CombatDamageManager(
         val targetContainer = state.getEntity(assignment.targetId) ?: return state
         val isPlayer = targetContainer.get<LifeTotalComponent>() != null &&
                        targetContainer.get<CardComponent>() == null
+        val projected = state.projectedState
+        val isPlaneswalker = !isPlayer && projected.isPlaneswalker(assignment.targetId)
 
         val amplifiedAmount = EffectExecutorUtils.applyStaticDamageAmplification(
             state, assignment.targetId, assignment.amount, assignment.sourceId
         )
 
-        return if (isPlayer) {
-            applyDamageToPlayer(state, assignment.sourceId, assignment.targetId, amplifiedAmount, assignment.amount, events)
-        } else {
-            applyDamageToCreature(state, assignment.sourceId, assignment.targetId, amplifiedAmount, events)
+        return when {
+            isPlayer -> applyDamageToPlayer(state, assignment.sourceId, assignment.targetId, amplifiedAmount, assignment.amount, events)
+            isPlaneswalker -> applyDamageToPlaneswalker(state, assignment.sourceId, assignment.targetId, amplifiedAmount, events)
+            else -> applyDamageToCreature(state, assignment.sourceId, assignment.targetId, amplifiedAmount, events)
         }
     }
 
@@ -435,6 +438,45 @@ internal class CombatDamageManager(
         return newState
     }
 
+    /**
+     * Apply combat damage to a planeswalker by removing loyalty counters (Rule 119.3a).
+     * SBA will handle putting it into graveyard if loyalty reaches 0.
+     */
+    private fun applyDamageToPlaneswalker(
+        state: GameState,
+        sourceId: EntityId,
+        targetId: EntityId,
+        amplifiedAmount: Int,
+        events: MutableList<GameEvent>
+    ): GameState {
+        if (targetId !in state.getBattlefield()) return state
+        if (amplifiedAmount <= 0) return state
+        var newState = state
+
+        // Prevention shields
+        val (shieldState, effectiveAmount) = EffectExecutorUtils.applyDamagePreventionShields(
+            newState, targetId, amplifiedAmount, isCombatDamage = true, sourceId = sourceId
+        )
+        newState = shieldState
+        if (effectiveAmount <= 0) return newState
+
+        // Remove loyalty counters equal to damage dealt
+        val counters = newState.getEntity(targetId)?.get<CountersComponent>() ?: CountersComponent()
+        val currentLoyalty = counters.getCount(com.wingedsheep.sdk.core.CounterType.LOYALTY)
+        newState = newState.updateEntity(targetId) { container ->
+            container.with(counters.withRemoved(com.wingedsheep.sdk.core.CounterType.LOYALTY, effectiveAmount))
+        }
+
+        val sourceName = newState.getEntity(sourceId)?.get<CardComponent>()?.name ?: "Creature"
+        val targetName = newState.getEntity(targetId)?.get<CardComponent>()?.name ?: "Planeswalker"
+        events.add(DamageDealtEvent(sourceId, targetId, effectiveAmount, true,
+            sourceName = sourceName, targetName = targetName, targetIsPlayer = false))
+        val newLoyalty = (currentLoyalty - effectiveAmount).coerceAtLeast(0)
+        events.add(LoyaltyChangedEvent(targetId, targetName, -(effectiveAmount.coerceAtMost(currentLoyalty))))
+
+        return newState
+    }
+
     private fun applyDamageToCreature(
         state: GameState,
         sourceId: EntityId,
@@ -486,6 +528,8 @@ internal class CombatDamageManager(
         val targetContainer = newState.getEntity(targetId) ?: return newState
         val isPlayer = targetContainer.get<LifeTotalComponent>() != null &&
                        targetContainer.get<CardComponent>() == null
+        val projected = newState.projectedState
+        val isPlaneswalker = !isPlayer && projected.isPlaneswalker(targetId)
 
         if (isPlayer) {
             val currentLife = targetContainer.get<LifeTotalComponent>()?.life ?: return newState
@@ -498,6 +542,18 @@ internal class CombatDamageManager(
             events.add(DamageDealtEvent(sourceId, targetId, amount, true,
                 sourceName = sourceName, targetName = "Player", targetIsPlayer = true))
             events.add(LifeChangedEvent(targetId, currentLife, newLife, LifeChangeReason.DAMAGE))
+        } else if (isPlaneswalker) {
+            if (targetId !in newState.getBattlefield()) return newState
+            val counters = newState.getEntity(targetId)?.get<CountersComponent>() ?: CountersComponent()
+            val currentLoyalty = counters.getCount(com.wingedsheep.sdk.core.CounterType.LOYALTY)
+            newState = newState.updateEntity(targetId) { container ->
+                container.with(counters.withRemoved(com.wingedsheep.sdk.core.CounterType.LOYALTY, amount))
+            }
+            val sourceName = newState.getEntity(sourceId)?.get<CardComponent>()?.name ?: "Creature"
+            val targetName = newState.getEntity(targetId)?.get<CardComponent>()?.name ?: "Planeswalker"
+            events.add(DamageDealtEvent(sourceId, targetId, amount, true,
+                sourceName = sourceName, targetName = targetName, targetIsPlayer = false))
+            events.add(LoyaltyChangedEvent(targetId, targetName, -(amount.coerceAtMost(currentLoyalty))))
         } else {
             if (targetId !in newState.getBattlefield()) return newState
             val existingDamage = newState.getEntity(targetId)?.get<DamageComponent>()

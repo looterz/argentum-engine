@@ -264,13 +264,14 @@ class StateBasedActionChecker {
     private fun checkPlaneswalkerLoyalty(state: GameState): ExecutionResult {
         var newState = state
         val events = mutableListOf<GameEvent>()
+        val projected = state.projectedState
 
         for (entityId in state.getBattlefield().toList()) {
             val container = state.getEntity(entityId) ?: continue
             val cardComponent = container.get<CardComponent>() ?: continue
 
-            // Check if it's a planeswalker
-            if (!cardComponent.typeLine.cardTypes.any { it.name == "PLANESWALKER" }) continue
+            // Check if it's a planeswalker (use projected state for type-changing effects)
+            if (!projected.isPlaneswalker(entityId)) continue
 
             val counters = container.get<CountersComponent>()
             val loyalty = counters?.getCount(CounterType.LOYALTY) ?: 0
