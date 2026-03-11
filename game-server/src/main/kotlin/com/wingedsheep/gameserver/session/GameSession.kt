@@ -487,6 +487,13 @@ class GameSession(
             undoCheckpoint = state
         }
 
+        // Track declare attackers state: when the defending player passes priority during declare attackers
+        // with an empty stack, the step will advance to declare blockers. Save a checkpoint so the
+        // defending player can undo back to declare attackers.
+        if (action is PassPriority && state.step == Step.DECLARE_ATTACKERS && playerId != state.activePlayerId && state.stack.isEmpty()) {
+            undoCheckpoint = state
+        }
+
         // Manage undo checkpoint:
         // - Undo-eligible actions (land, combat declarations, morph): save checkpoint
         // - Mana abilities: create checkpoint on first activation (so tapping can be undone),

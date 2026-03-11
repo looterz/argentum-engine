@@ -468,15 +468,28 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
       {isInCombatMode && combatState?.mode === 'declareBlockers' && (
         <div style={styles.combatButtonContainer}>
           {Object.keys(combatState.blockerAssignments).length === 0 ? (
-            <button
-              onClick={confirmCombat}
-              style={{
-                ...styles.combatButton,
-                ...styles.combatButtonSecondary,
-              }}
-            >
-              No Blocks
-            </button>
+            <>
+              <button
+                onClick={confirmCombat}
+                style={{
+                  ...styles.combatButton,
+                  ...styles.combatButtonSecondary,
+                }}
+              >
+                No Blocks
+              </button>
+              {undoAvailable && (
+                <button
+                  onClick={requestUndo}
+                  style={{
+                    ...styles.combatButton,
+                    ...styles.combatButtonUndo,
+                  }}
+                >
+                  Undo
+                </button>
+              )}
+            </>
           ) : (
             <>
               <button
@@ -497,6 +510,17 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
               >
                 Clear Blockers
               </button>
+              {undoAvailable && (
+                <button
+                  onClick={requestUndo}
+                  style={{
+                    ...styles.combatButton,
+                    ...styles.combatButtonUndo,
+                  }}
+                >
+                  Undo
+                </button>
+              )}
             </>
           )}
         </div>

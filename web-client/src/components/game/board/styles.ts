@@ -68,7 +68,7 @@ export const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
     zIndex: 100,
-    minWidth: 140,
+    minWidth: 180,
     textAlign: 'center' as const,
   },
   floatingUndoButton: {
@@ -112,6 +112,11 @@ export const styles: Record<string, React.CSSProperties> = {
   combatButtonSecondary: {
     backgroundColor: '#424242',
     border: '2px solid #757575',
+  },
+  combatButtonUndo: {
+    backgroundColor: 'rgba(40, 40, 40, 0.9)',
+    color: '#d4a017',
+    border: '2px solid #8b7000',
   },
   playerArea: {
     display: 'flex',
