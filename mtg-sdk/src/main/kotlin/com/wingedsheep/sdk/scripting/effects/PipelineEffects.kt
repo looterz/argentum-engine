@@ -297,7 +297,9 @@ data class SelectFromCollectionEffect(
     /** Label describing where selected cards go (e.g., "Put on bottom"). Shown in the UI. */
     val selectedLabel: String? = null,
     /** Label describing where non-selected cards go (e.g., "Put on top"). Shown in the UI. */
-    val remainderLabel: String? = null
+    val remainderLabel: String? = null,
+    /** If true, use the targeting UI (click on battlefield) instead of modal overlay. */
+    val useTargetingUI: Boolean = false
 ) : Effect {
     override val description: String = buildString {
         if (chooser == Chooser.Opponent) append("An opponent ")

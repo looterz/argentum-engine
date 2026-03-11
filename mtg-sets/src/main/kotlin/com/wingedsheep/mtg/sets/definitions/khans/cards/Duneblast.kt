@@ -40,7 +40,8 @@ val Duneblast = card("Duneblast") {
                 storeRemainder = "to_destroy",
                 prompt = "Choose up to one creature to save",
                 selectedLabel = "Save",
-                remainderLabel = "Destroy"
+                remainderLabel = "Destroy",
+                useTargetingUI = true
             ),
             MoveCollectionEffect(
                 from = "to_destroy",

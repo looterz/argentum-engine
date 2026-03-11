@@ -210,7 +210,8 @@ class SelectFromCollectionExecutor : EffectExecutor<SelectFromCollectionEffect> 
             ordered = false,
             cardInfo = cardInfoMap,
             selectedLabel = effect.selectedLabel,
-            remainderLabel = effect.remainderLabel
+            remainderLabel = effect.remainderLabel,
+            useTargetingUI = effect.useTargetingUI
         )
 
         val continuation = SelectFromCollectionContinuation(
