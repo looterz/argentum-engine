@@ -319,7 +319,10 @@ internal class CombatDamageManager(
             }
         }
 
-        // Blocker counterattack damage — each blocker divides its damage among attackers it blocks
+        // Blocker counterattack damage — each blocker divides its damage among attackers it blocks.
+        // Per CR 510.1c, lethal damage checks must account for damage being assigned by other
+        // creatures in the same combat damage step, so we track pending damage across all blockers.
+        val pendingDamage = mutableMapOf<EntityId, Int>()
         val processedBlockers = mutableSetOf<EntityId>()
         for ((attackerId, _) in attackers) {
             if (attackerId !in state.getBattlefield()) continue
@@ -348,15 +351,17 @@ internal class CombatDamageManager(
                     val targetId = blockedAttackerIds.firstOrNull() ?: attackerId
                     if (targetId in state.getBattlefield()) {
                         assignments.add(CombatDamageAssignment(blockerId, targetId, blockerPower))
+                        pendingDamage[targetId] = (pendingDamage[targetId] ?: 0) + blockerPower
                     }
                 } else {
                     // Blocking multiple attackers — divide damage among them in order
                     val autoDist = damageCalculator.calculateBlockerDamageDistribution(
-                        state, blockerId
+                        state, blockerId, pendingDamage
                     )
                     for ((targetId, damage) in autoDist.assignments) {
                         if (damage > 0) {
                             assignments.add(CombatDamageAssignment(blockerId, targetId, damage))
+                            pendingDamage[targetId] = (pendingDamage[targetId] ?: 0) + damage
                         }
                     }
                 }

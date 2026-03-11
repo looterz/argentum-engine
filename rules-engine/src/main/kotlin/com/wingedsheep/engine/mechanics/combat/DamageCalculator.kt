@@ -325,13 +325,21 @@ class DamageCalculator {
      * Uses [AttackerOrderComponent] for the damage assignment order. Assigns lethal
      * damage to each attacker in order, with the last attacker receiving all remaining damage.
      *
+     * Per CR 510.1c, "in checking for assigned lethal damage, take into account damage
+     * already marked on the creature and damage from other creatures that's being assigned
+     * during the same combat damage step." The [pendingDamage] parameter tracks damage
+     * being assigned by other blockers in this same step.
+     *
      * @param state Current game state
      * @param blockerId The blocking creature
+     * @param pendingDamage Damage already being assigned to each creature by other sources
+     *        in this same combat damage step (per CR 510.1c)
      * @return DamageDistribution with assignments to attackers
      */
     fun calculateBlockerDamageDistribution(
         state: GameState,
-        blockerId: EntityId
+        blockerId: EntityId,
+        pendingDamage: Map<EntityId, Int> = emptyMap()
     ): DamageDistribution {
         val blockerContainer = state.getEntity(blockerId)
             ?: return DamageDistribution(emptyMap(), 0, 0)
@@ -365,7 +373,9 @@ class DamageCalculator {
             val isLastAttacker = index == orderedAttackers.size - 1
             val lethalInfo = calculateLethalDamage(state, attackerId, blockerId)
             val preventionAmount = estimateDamagePrevention(state, projected, attackerId)
-            val effectiveLethal = lethalInfo.lethalAmount + preventionAmount
+            // Account for damage already being assigned by other sources this step (CR 510.1c)
+            val alreadyPending = pendingDamage[attackerId] ?: 0
+            val effectiveLethal = (lethalInfo.lethalAmount + preventionAmount - alreadyPending).coerceAtLeast(0)
             val damageToAssign = if (isLastAttacker) {
                 // Last attacker gets all remaining damage
                 remainingPower
