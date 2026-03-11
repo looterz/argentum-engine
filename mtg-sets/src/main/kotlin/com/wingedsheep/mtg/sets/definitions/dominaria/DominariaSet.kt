@@ -38,6 +38,7 @@ object DominariaSet {
         RunAmok,
         SerraAngel,
         SparringConstruct,
+        TolarianScholar,
         YargleGluttonOfUrborg,
     )
 }

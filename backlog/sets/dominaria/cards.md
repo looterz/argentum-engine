@@ -2,12 +2,12 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 18 / 249
+**Implemented:** 19 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 38    | 3    |
-| Blue       | 37    | 3    |
+| Blue       | 37    | 4    |
 | Black      | 38    | 3    |
 | Red        | 38    | 3    |
 | Green      | 37    | 3    |
@@ -234,7 +234,7 @@
 - [ ] Thran Temporal Gateway
 - [ ] Tiana, Ship's Caretaker
 - [ ] Time of Ice
-- [ ] Tolarian Scholar
+- [x] Tolarian Scholar
 - [ ] Torgaar, Famine Incarnate
 - [ ] Tragic Poet
 - [ ] Traxos, Scourge of Kroog
