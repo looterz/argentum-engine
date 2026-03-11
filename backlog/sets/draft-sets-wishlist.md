@@ -12,7 +12,7 @@ Community consensus top 10 draft formats, ranked by how frequently they appear i
 
 3. **Ravnica: City of Guilds block (RAV/GPT/DIS)** — Ten guild archetypes with excellent color balance. Gold cards pulled you into lanes without feeling forced, rewarded reading signals.
 
-4. **Khans of Tarkir (KTK)** — *Already in progress.* Five wedge-color clans, morph as universal bluffing mechanic, good three-color fixing.
+4. **Khans of Tarkir (KTK)** — ✅ *Complete.* Five wedge-color clans, morph as universal bluffing mechanic, good three-color fixing.
 
 5. **Dominaria (DOM)** — Legendaries-matter, slow interactive games, common removal answered bomb rares. Kicker for late-game flexibility, historic mechanic tied the set together.
 
@@ -30,6 +30,6 @@ Community consensus top 10 draft formats, ranked by how frequently they appear i
 
 ## Implementation Notes
 
-- Khans of Tarkir is already partially implemented (see `backlog/sets/khans-of-tarkir/`)
+- Khans of Tarkir is complete (249/249 cards implemented)
 - Onslaught block (Onslaught, Legions, Scourge) is also in progress
 - Sets requiring new mechanics (transform/DFCs for Innistrad, level up for ROE, etc.) will need engine work before card implementation

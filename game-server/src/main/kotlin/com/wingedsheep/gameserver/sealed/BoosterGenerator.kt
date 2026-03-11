@@ -88,7 +88,7 @@ class BoosterGenerator(
             setName = KhansOfTarkirSet.SET_NAME,
             cards = KhansOfTarkirSet.allCards,
             basicLands = KhansOfTarkirSet.basicLands,
-            incomplete = true,
+            incomplete = false,
             totalSetSize = 249
         )
     }

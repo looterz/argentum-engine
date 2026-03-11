@@ -42,6 +42,10 @@ interface ZoneSelectionUIProps {
   sortByType?: boolean
   /** Use global hover preview (for cards that exist in gameState) */
   useGlobalHover?: boolean
+  /** Called when cancel is clicked (if supported) */
+  onCancel?: (() => void) | undefined
+  /** Text for the cancel button */
+  cancelText?: string | undefined
 }
 
 /**
@@ -70,6 +74,8 @@ export function ZoneSelectionUI({
   failToFindText = 'Fail to Find',
   sortByType = true,
   useGlobalHover = false,
+  onCancel,
+  cancelText = 'Cancel',
 }: ZoneSelectionUIProps) {
   const [selectedCards, setSelectedCards] = useState<EntityId[]>([])
   const [hoveredCardId, setHoveredCardId] = useState<EntityId | null>(null)
@@ -363,6 +369,33 @@ export function ZoneSelectionUI({
         >
           {selectedCards.length === 0 && minSelections === 0 ? 'Decline' : confirmText}
         </button>
+
+        {onCancel && (
+          <button
+            onClick={onCancel}
+            style={{
+              padding: responsive.isMobile ? '10px 24px' : '12px 36px',
+              fontSize: responsive.fontSize.large,
+              backgroundColor: '#333',
+              color: '#aaa',
+              border: 'none',
+              borderRadius: 8,
+              cursor: 'pointer',
+              fontWeight: 600,
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#444'
+              e.currentTarget.style.color = '#fff'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#333'
+              e.currentTarget.style.color = '#aaa'
+            }}
+          >
+            {cancelText}
+          </button>
+        )}
       </div>
 
       {/* Card preview on hover (only when not using global hover) */}

@@ -89,7 +89,8 @@ data class ChooseTargetsDecision(
     override val prompt: String,
     override val context: DecisionContext,
     val targetRequirements: List<TargetRequirementInfo>,
-    val legalTargets: Map<Int, List<EntityId>>
+    val legalTargets: Map<Int, List<EntityId>>,
+    val canCancel: Boolean = false
 ) : PendingDecision
 
 /**
@@ -533,4 +534,15 @@ data class ManaSourcesSelectedResponse(
     override val decisionId: String,
     val selectedSources: List<EntityId> = emptyList(),
     val autoPay: Boolean = false
+) : DecisionResponse
+
+/**
+ * Response to cancel a decision and go back to the previous choice.
+ * Used when a decision supports cancellation (e.g., modal target selection
+ * can cancel back to mode selection).
+ */
+@Serializable
+@SerialName("CancelDecisionResponse")
+data class CancelDecisionResponse(
+    override val decisionId: String
 ) : DecisionResponse

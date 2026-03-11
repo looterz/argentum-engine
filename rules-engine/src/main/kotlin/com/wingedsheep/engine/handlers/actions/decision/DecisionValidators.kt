@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.handlers.actions.decision
 
 import com.wingedsheep.engine.core.AssignDamageDecision
+import com.wingedsheep.engine.core.CancelDecisionResponse
 import com.wingedsheep.engine.core.CardsSelectedResponse
 import com.wingedsheep.engine.core.ChooseColorDecision
 import com.wingedsheep.engine.core.ChooseModeDecision
@@ -64,6 +65,9 @@ object DecisionValidators {
     }
 
     private fun validateTargets(decision: ChooseTargetsDecision, response: DecisionResponse): String? {
+        if (response is CancelDecisionResponse) {
+            return if (decision.canCancel) null else "This decision cannot be cancelled"
+        }
         if (response !is TargetsResponse) {
             return "Expected target selection response"
         }

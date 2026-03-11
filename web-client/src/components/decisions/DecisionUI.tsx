@@ -166,17 +166,7 @@ export function DecisionUI() {
     // Player-only targeting: simple banner (auto-submit via LifeDisplay click)
     if (isPlayerOnly) {
       return (
-        <div className={styles.sideBannerTarget}>
-          <div className={styles.bannerTitle}>
-            Choose Target
-          </div>
-          <div className={styles.prompt}>
-            {pendingDecision.prompt}
-          </div>
-          <div className={styles.hint}>
-            Click a player's life total
-          </div>
-        </div>
+        <PlayerTargetingUI decision={pendingDecision} />
       )
     }
 
@@ -284,6 +274,43 @@ function BattlefieldSelectionUI({
 }
 
 /**
+ * Player-only targeting UI for ChooseTargetsDecision.
+ * Shows a side banner with Cancel button when the decision supports cancellation.
+ */
+function PlayerTargetingUI({
+  decision,
+}: {
+  decision: ChooseTargetsDecision
+}) {
+  const submitCancelDecision = useGameStore((s) => s.submitCancelDecision)
+
+  const handleCancel = () => {
+    submitCancelDecision()
+  }
+
+  return (
+    <div className={styles.sideBannerTarget}>
+      <div className={styles.bannerTitle}>
+        Choose Target
+      </div>
+      <div className={styles.prompt}>
+        {decision.prompt}
+      </div>
+      <div className={styles.hint}>
+        Click a player's life total
+      </div>
+      {decision.canCancel && (
+        <div className={styles.buttonContainerSmall}>
+          <button onClick={handleCancel} className={`${styles.confirmButton} ${styles.confirmButtonSmall}`}>
+            Cancel
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/**
  * Battlefield targeting UI for ChooseTargetsDecision (non-player, non-graveyard targets).
  * Shows a side banner with Confirm/Decline buttons, uses decisionSelectionState for toggle-to-select.
  */
@@ -296,6 +323,7 @@ function BattlefieldTargetingUI({
   const decisionSelectionState = useGameStore((s) => s.decisionSelectionState)
   const cancelDecisionSelection = useGameStore((s) => s.cancelDecisionSelection)
   const submitTargetsDecision = useGameStore((s) => s.submitTargetsDecision)
+  const submitCancelDecision = useGameStore((s) => s.submitCancelDecision)
   const gameState = useGameStore((s) => s.gameState)
   const [isHoveringSource, setIsHoveringSource] = useState(false)
   const responsive = useResponsive()
@@ -369,6 +397,11 @@ function BattlefieldTargetingUI({
     }
   }
 
+  const handleCancel = () => {
+    cancelDecisionSelection()
+    submitCancelDecision()
+  }
+
   const requirementLabel = totalRequirements > 1
     ? `Choose Target (${currentReqIndex + 1}/${totalRequirements})`
     : 'Choose Target'
@@ -414,6 +447,11 @@ function BattlefieldTargetingUI({
             className={`${styles.confirmButton} ${styles.confirmButtonSmall}`}
           >
             Confirm ({selectedCount})
+          </button>
+        )}
+        {decision.canCancel && (
+          <button onClick={handleCancel} className={`${styles.confirmButton} ${styles.confirmButtonSmall}`}>
+            Cancel
           </button>
         )}
       </div>
@@ -1033,6 +1071,7 @@ function GraveyardTargetingUI({
   responsive: ResponsiveSizes
 }) {
   const submitTargetsDecision = useGameStore((s) => s.submitTargetsDecision)
+  const submitCancelDecision = useGameStore((s) => s.submitCancelDecision)
   const gameState = useGameStore((s) => s.gameState)
   const viewingPlayerId = gameState?.viewingPlayerId
 
@@ -1115,6 +1154,7 @@ function GraveyardTargetingUI({
         confirmText="Confirm Target"
         sortByType={true}
         useGlobalHover={true}
+        onCancel={decision.canCancel ? () => submitCancelDecision() : undefined}
       />
     )
   }

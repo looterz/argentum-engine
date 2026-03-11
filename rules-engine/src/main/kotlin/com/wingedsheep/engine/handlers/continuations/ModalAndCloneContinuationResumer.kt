@@ -99,7 +99,7 @@ class ModalAndCloneContinuationResumer(
                 }
             }
 
-            // Create target selection decision
+            // Create target selection decision (with cancel support to go back to mode selection)
             val decisionId = java.util.UUID.randomUUID().toString()
             val decision = ChooseTargetsDecision(
                 id = decisionId,
@@ -111,7 +111,8 @@ class ModalAndCloneContinuationResumer(
                     phase = DecisionPhase.RESOLUTION
                 ),
                 targetRequirements = requirementInfos,
-                legalTargets = legalTargetsMap
+                legalTargets = legalTargetsMap,
+                canCancel = true
             )
 
             val modalTargetContinuation = ModalTargetContinuation(
@@ -122,7 +123,9 @@ class ModalAndCloneContinuationResumer(
                 effect = chosenMode.effect,
                 xValue = continuation.xValue,
                 opponentId = continuation.opponentId,
-                targetRequirements = chosenMode.targetRequirements
+                targetRequirements = chosenMode.targetRequirements,
+                modes = continuation.modes,
+                triggeringEntityId = continuation.triggeringEntityId
             )
 
             val stateWithDecision = state.withPendingDecision(decision)
@@ -166,6 +169,11 @@ class ModalAndCloneContinuationResumer(
         response: DecisionResponse,
         checkForMore: CheckForMore
     ): ExecutionResult {
+        // Handle cancel: go back to mode selection
+        if (response is CancelDecisionResponse && continuation.modes != null) {
+            return revertToModeSelection(state, continuation)
+        }
+
         if (response !is TargetsResponse) {
             return ExecutionResult.error(state, "Expected targets response for modal spell")
         }
@@ -584,6 +592,59 @@ class ModalAndCloneContinuationResumer(
         )
 
         return checkForMore(newState, events)
+    }
+
+    /**
+     * Revert from target selection back to mode selection for a modal spell.
+     */
+    private fun revertToModeSelection(
+        state: GameState,
+        continuation: ModalTargetContinuation
+    ): ExecutionResult {
+        val modes = continuation.modes!!
+        val sourceName = continuation.sourceName ?: "modal spell"
+
+        val modeDescriptions = modes.map { it.description }
+        val decisionId = java.util.UUID.randomUUID().toString()
+
+        val decision = ChooseOptionDecision(
+            id = decisionId,
+            playerId = continuation.controllerId,
+            prompt = "Choose a mode for $sourceName",
+            context = DecisionContext(
+                sourceId = continuation.sourceId,
+                sourceName = sourceName,
+                phase = DecisionPhase.RESOLUTION
+            ),
+            options = modeDescriptions
+        )
+
+        val modalContinuation = ModalContinuation(
+            decisionId = decisionId,
+            controllerId = continuation.controllerId,
+            sourceId = continuation.sourceId,
+            sourceName = continuation.sourceName,
+            modes = modes,
+            xValue = continuation.xValue,
+            opponentId = continuation.opponentId,
+            triggeringEntityId = continuation.triggeringEntityId
+        )
+
+        val stateWithDecision = state.withPendingDecision(decision)
+        val stateWithContinuation = stateWithDecision.pushContinuation(modalContinuation)
+
+        return ExecutionResult.paused(
+            stateWithContinuation,
+            decision,
+            listOf(
+                DecisionRequestedEvent(
+                    decisionId = decisionId,
+                    playerId = continuation.controllerId,
+                    decisionType = "CHOOSE_OPTION",
+                    prompt = decision.prompt
+                )
+            )
+        )
     }
 
     private fun entityIdToChosenTarget(state: GameState, entityId: EntityId): ChosenTarget {
