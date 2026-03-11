@@ -2,14 +2,14 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 8 / 249
+**Implemented:** 9 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 38    | 1    |
 | Blue       | 37    | 1    |
 | Black      | 38    | 2    |
-| Red        | 38    | 1    |
+| Red        | 38    | 2    |
 | Green      | 37    | 1    |
 | Multicolor | 19    | 1    |
 | Colorless  | 30    | 1    |
@@ -132,7 +132,7 @@
 - [ ] Karn, Scion of Urza
 - [ ] Kazarov, Sengir Pureblood
 - [ ] Keldon Overseer
-- [ ] Keldon Raider
+- [x] Keldon Raider
 - [ ] Keldon Warcaller
 - [ ] Knight of Grace
 - [ ] Knight of Malice
