@@ -818,6 +818,8 @@ object EffectExecutorUtils {
                 CardPredicate.IsNonland -> !cardComponent.typeLine.isLand
                 CardPredicate.IsNoncreature -> !cardComponent.typeLine.isCreature
                 CardPredicate.IsPermanent -> cardComponent.typeLine.isPermanent
+                CardPredicate.IsLegendary -> cardComponent.typeLine.isLegendary
+                CardPredicate.IsNonlegendary -> !cardComponent.typeLine.isLegendary
                 else -> true // For unhandled predicates, don't filter out
             }
             if (!matches) return false

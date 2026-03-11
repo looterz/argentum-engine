@@ -346,6 +346,8 @@ class CostCalculator(
             CardPredicate.IsNoncreature -> !typeLine.isCreature
             CardPredicate.IsToken -> false
             CardPredicate.IsNontoken -> true
+            CardPredicate.IsLegendary -> typeLine.isLegendary
+            CardPredicate.IsNonlegendary -> !typeLine.isLegendary
 
             is CardPredicate.HasColor -> predicate.color in cardDef.colors
             is CardPredicate.NotColor -> predicate.color !in cardDef.colors

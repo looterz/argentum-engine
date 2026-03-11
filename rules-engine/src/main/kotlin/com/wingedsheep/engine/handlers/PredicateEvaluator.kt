@@ -164,6 +164,8 @@ class PredicateEvaluator {
             CardPredicate.IsNoncreature -> "CREATURE" !in types
             CardPredicate.IsToken -> container.has<TokenComponent>()
             CardPredicate.IsNontoken -> !container.has<TokenComponent>()
+            CardPredicate.IsLegendary -> "LEGENDARY" in types
+            CardPredicate.IsNonlegendary -> "LEGENDARY" !in types
 
             // Color predicates - use projected colors
             is CardPredicate.HasColor -> predicate.color.name in colors
@@ -391,6 +393,8 @@ class PredicateEvaluator {
             CardPredicate.IsNoncreature -> !typeLine.isCreature
             CardPredicate.IsToken -> container.has<TokenComponent>()
             CardPredicate.IsNontoken -> !container.has<TokenComponent>()
+            CardPredicate.IsLegendary -> typeLine.isLegendary
+            CardPredicate.IsNonlegendary -> !typeLine.isLegendary
 
             // Color predicates
             is CardPredicate.HasColor -> predicate.color in card.colors

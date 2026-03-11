@@ -88,6 +88,9 @@ data class TargetFilter(
         /** Target attacking or blocking creature */
         val AttackingOrBlockingCreature = TargetFilter(GameObjectFilter.Companion.Creature.attackingOrBlocking())
 
+        /** Target nonlegendary creature */
+        val NonlegendaryCreature = TargetFilter(GameObjectFilter.Companion.Creature.nonlegendary())
+
         // =============================================================================
         // Pre-built Permanent Targets (Battlefield)
         // =============================================================================
@@ -235,6 +238,12 @@ data class TargetFilter(
 
     /** Must be controlled by you */
     fun youControl() = copy(baseFilter = baseFilter.youControl())
+
+    /** Must not be legendary */
+    fun nonlegendary() = copy(baseFilter = baseFilter.nonlegendary())
+
+    /** Must be legendary */
+    fun legendary() = copy(baseFilter = baseFilter.legendary())
 
     /** Must be controlled by opponent */
     fun opponentControls() = copy(baseFilter = baseFilter.opponentControls())

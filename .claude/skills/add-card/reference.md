@@ -446,6 +446,8 @@ constructors.
 - `Targets.AttackingCreature` / `Targets.BlockingCreature` / `Targets.TappedCreature` / `Targets.FaceDownCreatureYouControl`
 - `Targets.CreatureWithKeyword(keyword)` / `Targets.CreatureWithColor(color)`
 - `Targets.CreatureWithPowerAtMost(maxPower)` / `Targets.UpToCreatures(count)`
+- `TargetFilter.NonlegendaryCreature` — nonlegendary creature (use with `TargetCreature(filter = ...)`)
+- Fluent builders: `.nonlegendary()`, `.legendary()` on `TargetFilter` and `GameObjectFilter`
 
 ### Permanent
 

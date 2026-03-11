@@ -1,0 +1,268 @@
+# Dominaria (DOM) - Card Checklist
+
+**Set Size:** 280 cards (249 unique card names + basic land variants)
+**Release Date:** April 27, 2018
+**Implemented:** 1 / 249
+
+| Color      | Total | Done |
+|------------|-------|------|
+| White      | 38    | 0    |
+| Blue       | 37    | 0    |
+| Black      | 38    | 1    |
+| Red        | 38    | 0    |
+| Green      | 37    | 0    |
+| Multicolor | 19    | 0    |
+| Colorless  | 30    | 0    |
+| Land       | 12    | 0    |
+
+---
+
+- [ ] Academy Drake
+- [ ] Academy Journeymage
+- [ ] Adamant Will
+- [ ] Adeliz, the Cinder Wind
+- [ ] Adventurous Impulse
+- [ ] Aesthir Glider
+- [ ] Amaranthine Wall
+- [ ] Ancient Animus
+- [ ] Arbor Armament
+- [ ] Arcane Flight
+- [ ] Artificer's Assistant
+- [ ] Arvad the Cursed
+- [ ] Aryel, Knight of Windgrace
+- [ ] Aven Sentry
+- [ ] Baird, Steward of Argive
+- [ ] Baloth Gorger
+- [ ] Befuddle
+- [ ] Benalish Honor Guard
+- [ ] Benalish Marshal
+- [ ] Blackblade Reforged
+- [ ] Blessed Light
+- [ ] Blessing of Belzenlok
+- [ ] Blink of an Eye
+- [ ] Bloodstone Goblin
+- [ ] Bloodtallow Candle
+- [ ] Board the Weatherlight
+- [ ] Broken Bond
+- [ ] Cabal Evangel
+- [ ] Cabal Paladin
+- [ ] Cabal Stronghold
+- [ ] Caligo Skin-Witch
+- [ ] Call the Cavalry
+- [x] Cast Down
+- [ ] Chainer's Torment
+- [ ] Champion of the Flame
+- [ ] Charge
+- [ ] Clifftop Retreat
+- [ ] Cloudreader Sphinx
+- [ ] Cold-Water Snapper
+- [ ] Corrosive Ooze
+- [ ] Curator's Ward
+- [ ] D'Avenant Trapper
+- [ ] Damping Sphere
+- [ ] Danitha Capashen, Paragon
+- [ ] Darigaaz Reincarnated
+- [ ] Daring Archaeologist
+- [ ] Dark Bargain
+- [ ] Dauntless Bodyguard
+- [ ] Deathbloom Thallid
+- [ ] Deep Freeze
+- [ ] Demonic Vigor
+- [ ] Demonlord Belzenlok
+- [ ] Diligent Excavator
+- [ ] Divest
+- [ ] Divination
+- [ ] Dread Shade
+- [ ] Drudge Sentinel
+- [ ] Dub
+- [ ] Elfhame Druid
+- [ ] Eviscerate
+- [ ] Evra, Halcyon Witness
+- [ ] Excavation Elephant
+- [ ] Fall of the Thran
+- [ ] Feral Abomination
+- [ ] Fervent Strike
+- [ ] Fiery Intervention
+- [ ] Fight with Fire
+- [ ] Final Parting
+- [ ] Fire Elemental
+- [ ] Firefist Adept
+- [ ] Forebear's Blade
+- [ ] Frenzied Rage
+- [ ] Fungal Infection
+- [ ] Fungal Plots
+- [ ] Gaea's Blessing
+- [ ] Gaea's Protector
+- [ ] Garna, the Bloodflame
+- [ ] Ghitu Chronicler
+- [ ] Ghitu Journeymage
+- [ ] Ghitu Lavarunner
+- [ ] Gideon's Reproach
+- [ ] Gift of Growth
+- [ ] Gilded Lotus
+- [ ] Goblin Barrage
+- [ ] Goblin Chainwhirler
+- [ ] Goblin Warchief
+- [ ] Grand Warlord Radha
+- [ ] Grow from the Ashes
+- [ ] Grunn, the Lonely King
+- [ ] Guardians of Koilos
+- [ ] Hallar, the Firefletcher
+- [ ] Haphazard Bombardment
+- [ ] Healing Grace
+- [ ] Helm of the Host
+- [ ] Hinterland Harbor
+- [ ] History of Benalia
+- [ ] Homarid Explorer
+- [ ] Howling Golem
+- [ ] Icy Manipulator
+- [ ] In Bolas's Clutches
+- [ ] Invoke the Divine
+- [ ] Isolated Chapel
+- [ ] Jaya Ballard
+- [ ] Jaya's Immolating Inferno
+- [ ] Jhoira's Familiar
+- [ ] Jhoira, Weatherlight Captain
+- [ ] Jodah, Archmage Eternal
+- [ ] Josu Vess, Lich Knight
+- [ ] Jousting Lance
+- [ ] Juggernaut
+- [ ] Kamahl's Druidic Vow
+- [ ] Karn's Temporal Sundering
+- [ ] Karn, Scion of Urza
+- [ ] Kazarov, Sengir Pureblood
+- [ ] Keldon Overseer
+- [ ] Keldon Raider
+- [ ] Keldon Warcaller
+- [ ] Knight of Grace
+- [ ] Knight of Malice
+- [ ] Knight of New Benalia
+- [ ] Krosan Druid
+- [ ] Kwende, Pride of Femeref
+- [ ] Lich's Mastery
+- [ ] Lingering Phantom
+- [ ] Llanowar Elves
+- [ ] Llanowar Envoy
+- [ ] Llanowar Scout
+- [ ] Lyra Dawnbringer
+- [ ] Mammoth Spider
+- [ ] Marwyn, the Nurturer
+- [ ] Memorial to Folly
+- [ ] Memorial to Genius
+- [ ] Memorial to Glory
+- [ ] Memorial to Unity
+- [ ] Memorial to War
+- [ ] Merfolk Trickster
+- [ ] Mesa Unicorn
+- [ ] Mishra's Self-Replicator
+- [ ] Mox Amber
+- [ ] Muldrotha, the Gravetide
+- [ ] Multani, Yavimaya's Avatar
+- [ ] Naban, Dean of Iteration
+- [ ] Naru Meha, Master Wizard
+- [ ] Nature's Spiral
+- [ ] Navigator's Compass
+- [ ] Oath of Teferi
+- [ ] On Serra's Wings
+- [ ] Opt
+- [ ] Orcish Vandal
+- [ ] Pardic Wanderer
+- [ ] Pegasus Courser
+- [ ] Phyrexian Scriptures
+- [ ] Pierce the Sky
+- [ ] Powerstone Shard
+- [ ] Precognition Field
+- [ ] Primevals' Glorious Rebirth
+- [ ] Primordial Wurm
+- [ ] Radiating Lightning
+- [ ] Raff Capashen, Ship's Mage
+- [ ] Rampaging Cyclops
+- [ ] Rat Colony
+- [ ] Relic Runner
+- [ ] Rescue
+- [ ] Rite of Belzenlok
+- [ ] Rona, Disciple of Gix
+- [ ] Run Amok
+- [ ] Sage of Lat-Nam
+- [ ] Sanctum Spirit
+- [ ] Saproling Migration
+- [ ] Seal Away
+- [ ] Seismic Shift
+- [ ] Sentinel of the Pearl Trident
+- [ ] Sergeant-at-Arms
+- [ ] Serra Angel
+- [ ] Serra Disciple
+- [ ] Settle the Score
+- [ ] Shalai, Voice of Plenty
+- [ ] Shanna, Sisay's Legacy
+- [ ] Shield of the Realm
+- [ ] Shivan Fire
+- [ ] Short Sword
+- [ ] Siege-Gang Commander
+- [ ] Skirk Prospector
+- [ ] Skittering Surveyor
+- [ ] Skizzik
+- [ ] Slimefoot, the Stowaway
+- [ ] Slinn Voda, the Rising Deep
+- [ ] Song of Freyalise
+- [ ] Sorcerer's Wand
+- [ ] Soul Salvage
+- [ ] Sparring Construct
+- [ ] Spore Swarm
+- [ ] Sporecrown Thallid
+- [ ] Squee, the Immortal
+- [ ] Steel Leaf Champion
+- [ ] Stronghold Confessor
+- [ ] Sulfur Falls
+- [ ] Sylvan Awakening
+- [ ] Syncopate
+- [ ] Tatyova, Benthic Druid
+- [ ] Teferi, Hero of Dominaria
+- [ ] Tempest Djinn
+- [ ] Territorial Allosaurus
+- [ ] Teshar, Ancestor's Apostle
+- [ ] Tetsuko Umezawa, Fugitive
+- [ ] Thallid Omnivore
+- [ ] Thallid Soothsayer
+- [ ] The Antiquities War
+- [ ] The Eldest Reborn
+- [ ] The First Eruption
+- [ ] The Flame of Keld
+- [ ] The Mending of Dominaria
+- [ ] The Mirari Conjecture
+- [ ] Thorn Elemental
+- [ ] Thran Temporal Gateway
+- [ ] Tiana, Ship's Caretaker
+- [ ] Time of Ice
+- [ ] Tolarian Scholar
+- [ ] Torgaar, Famine Incarnate
+- [ ] Tragic Poet
+- [ ] Traxos, Scourge of Kroog
+- [ ] Triumph of Gerrard
+- [ ] Two-Headed Giant
+- [ ] Untamed Kavu
+- [ ] Unwind
+- [ ] Urgoros, the Empty One
+- [ ] Urza's Ruinous Blast
+- [ ] Urza's Tome
+- [ ] Valduk, Keeper of the Flame
+- [ ] Verdant Force
+- [ ] Verix Bladewing
+- [ ] Vicious Offering
+- [ ] Vodalian Arcanist
+- [ ] Voltaic Servant
+- [ ] Warcry Phoenix
+- [ ] Warlord's Fury
+- [ ] Weatherlight
+- [ ] Weight of Memory
+- [ ] Whisper, Blood Liturgist
+- [ ] Wild Onslaught
+- [ ] Windgrace Acolyte
+- [ ] Wizard's Lightning
+- [ ] Wizard's Retort
+- [ ] Woodland Cemetery
+- [ ] Yargle, Glutton of Urborg
+- [ ] Yavimaya Sapherd
+- [ ] Yawgmoth's Vile Offering
+- [ ] Zahid, Djinn of the Lamp
+- [ ] Zhalfirin Void

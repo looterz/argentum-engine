@@ -3,6 +3,7 @@ package com.wingedsheep.gameserver.config
 import com.wingedsheep.gameserver.deck.RandomDeckGenerator
 import com.wingedsheep.gameserver.sealed.BoosterGenerator
 import com.wingedsheep.engine.registry.CardRegistry
+import com.wingedsheep.mtg.sets.definitions.dominaria.DominariaSet
 import com.wingedsheep.mtg.sets.definitions.khans.KhansOfTarkirSet
 import com.wingedsheep.mtg.sets.definitions.legions.LegionsSet
 import com.wingedsheep.mtg.sets.definitions.onslaught.OnslaughtSet
@@ -31,6 +32,9 @@ class GameBeansConfig(
         }
         if (gameProperties.sets.khansEnabled) {
             register(KhansOfTarkirSet.allCards)
+        }
+        if (gameProperties.sets.dominariaEnabled) {
+            register(DominariaSet.allCards)
         }
     }
 
@@ -61,6 +65,7 @@ class GameBeansConfig(
             if (gameProperties.sets.scourgeEnabled) addAll(ScourgeSet.allCards)
             if (gameProperties.sets.legionsEnabled) addAll(LegionsSet.allCards)
             if (gameProperties.sets.khansEnabled) addAll(KhansOfTarkirSet.allCards)
+            if (gameProperties.sets.dominariaEnabled) addAll(DominariaSet.allCards)
         },
         basicLandVariants = PortalSet.basicLands
     )

@@ -198,6 +198,16 @@ data class GameObjectFilter(
         cardPredicates = cardPredicates + CardPredicate.ToughnessAtLeast(min)
     )
 
+    /** Must be legendary */
+    fun legendary() = copy(
+        cardPredicates = cardPredicates + CardPredicate.IsLegendary
+    )
+
+    /** Must not be legendary */
+    fun nonlegendary() = copy(
+        cardPredicates = cardPredicates + CardPredicate.IsNonlegendary
+    )
+
     /** Must not be of the creature type chosen on the source permanent */
     fun notOfSourceChosenType() = copy(
         cardPredicates = cardPredicates + CardPredicate.NotOfSourceChosenType

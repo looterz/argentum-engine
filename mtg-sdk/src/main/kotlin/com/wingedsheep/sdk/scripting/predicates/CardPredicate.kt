@@ -115,6 +115,24 @@ sealed interface CardPredicate : TextReplaceable<CardPredicate> {
     }
 
     // =============================================================================
+    // Supertype Predicates
+    // =============================================================================
+
+    @SerialName("IsLegendary")
+    @Serializable
+    data object IsLegendary : CardPredicate {
+        override val description: String = "legendary"
+        override fun applyTextReplacement(replacer: TextReplacer): CardPredicate = this
+    }
+
+    @SerialName("IsNonlegendary")
+    @Serializable
+    data object IsNonlegendary : CardPredicate {
+        override val description: String = "nonlegendary"
+        override fun applyTextReplacement(replacer: TextReplacer): CardPredicate = this
+    }
+
+    // =============================================================================
     // Color Predicates
     // =============================================================================
 
