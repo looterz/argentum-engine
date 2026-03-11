@@ -416,8 +416,8 @@ export function CombatArrows() {
         }
       }
 
-      // Compute local attacker→target arrows during declare attackers phase
-      if (hasPlaneswalkerOnBattlefield && combatState?.mode === 'declareAttackers' && combatState.attackerTargets) {
+      // Compute local attacker→target arrows during declare attackers phase (always show — explicit user intent)
+      if (combatState?.mode === 'declareAttackers' && combatState.attackerTargets) {
         for (const [attackerIdStr, targetId] of Object.entries(combatState.attackerTargets)) {
           const attackerId = attackerIdStr as EntityId
           // Only show if this attacker is still selected
@@ -435,8 +435,8 @@ export function CombatArrows() {
         }
       }
 
-      // Compute opponent's real-time attacker target arrows (for defending player and spectators)
-      if (hasPlaneswalkerOnBattlefield && opponentAttackerTargets && opponentAttackerTargets.selectedAttackers.length > 0 && !gameStateCombat) {
+      // Compute opponent's real-time attacker target arrows (for defending player and spectators, always show)
+      if (opponentAttackerTargets && opponentAttackerTargets.selectedAttackers.length > 0 && !gameStateCombat) {
         for (const [attackerIdStr, targetId] of Object.entries(opponentAttackerTargets.attackerTargets)) {
           const attackerId = attackerIdStr as EntityId
           if (!opponentAttackerTargets.selectedAttackers.includes(attackerId)) continue
