@@ -387,7 +387,7 @@ export function CombatArrows() {
       // Only show attacker arrows when planeswalkers exist — otherwise red triangle indicators suffice
       const newAttackerArrows: AttackerArrowData[] = []
       const hasPlaneswalkerOnBattlefield = cards && Object.values(cards).some(
-        (card) => card.zone?.zoneType === ZoneType.BATTLEFIELD && card.cardTypes.includes('Planeswalker'),
+        (card) => card.zone?.zoneType === ZoneType.BATTLEFIELD && card.cardTypes.includes('PLANESWALKER'),
       )
       if (hasPlaneswalkerOnBattlefield && gameStateCombat && gameStateCombat.attackers.length > 0) {
         for (const attacker of gameStateCombat.attackers) {
