@@ -479,9 +479,12 @@ class GameSession(
         }
 
         // Track pre-combat state: when the active player passes priority in precombat main,
-        // save this state so that declaring attackers can undo all the way back to main phase.
+        // save this state so that undo from combat goes back to main phase.
+        // Also set undoCheckpoint so undo is available immediately upon arriving at declare attackers
+        // (before the player has actually submitted their attacker declaration).
         if (action is PassPriority && state.step == Step.PRECOMBAT_MAIN && playerId == state.activePlayerId) {
             preCombatState = state
+            undoCheckpoint = state
         }
 
         // Manage undo checkpoint:
