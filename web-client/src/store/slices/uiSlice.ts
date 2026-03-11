@@ -38,6 +38,8 @@ export interface UISliceState {
   manaColorSelectionState: ManaColorSelectionState | null
   decisionSelectionState: DecisionSelectionState | null
   damageDistributionState: DamageDistributionState | null
+  /** Persisted damage distribution from the last confirmed DamageDistributionModal (target ID -> damage) */
+  lastDamageDistribution: Record<EntityId, number> | null
   distributeState: DistributeState | null
   hoveredCardId: EntityId | null
   autoTapPreview: readonly EntityId[] | null
@@ -146,6 +148,7 @@ export const createUISlice: SliceCreator<UISlice> = (set, get) => ({
   manaColorSelectionState: null,
   decisionSelectionState: null,
   damageDistributionState: null,
+  lastDamageDistribution: null,
   distributeState: null,
   hoveredCardId: null,
   autoTapPreview: null,
@@ -975,7 +978,7 @@ export const createUISlice: SliceCreator<UISlice> = (set, get) => ({
 
   // Damage distribution actions
   startDamageDistribution: (state) => {
-    set({ damageDistributionState: state })
+    set({ damageDistributionState: state, lastDamageDistribution: null })
   },
 
   updateDamageDistribution: (targetId, amount) => {
@@ -1001,13 +1004,17 @@ export const createUISlice: SliceCreator<UISlice> = (set, get) => ({
     const { damageDistributionState, submitAction } = get()
     if (!damageDistributionState) return
 
+    const distribution = { ...damageDistributionState.distribution }
     const actionWithDistribution = {
       ...damageDistributionState.action,
-      damageDistribution: { ...damageDistributionState.distribution },
+      damageDistribution: distribution,
     }
 
     submitAction(actionWithDistribution)
-    set({ damageDistributionState: null })
+    set({
+      damageDistributionState: null,
+      lastDamageDistribution: distribution,
+    })
   },
 
   // Inline distribute actions (server-driven DistributeDecision)

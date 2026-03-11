@@ -12,13 +12,14 @@ interface ArrowProps {
   start: Point
   end: Point
   color: string
+  damageLabel?: number | null | undefined
 }
 
 /**
  * SVG arrow component with curved path and arrowhead.
  * Reuses the same design as CombatArrows.
  */
-function Arrow({ start, end, color }: ArrowProps) {
+function Arrow({ start, end, color, damageLabel }: ArrowProps) {
   // Calculate control point for quadratic bezier (arc upward)
   const midX = (start.x + end.x) / 2
   const midY = (start.y + end.y) / 2
@@ -57,6 +58,45 @@ function Arrow({ start, end, color }: ArrowProps) {
 
   const arrowheadD = `M ${end.x} ${end.y} L ${arrow1X} ${arrow1Y} M ${end.x} ${end.y} L ${arrow2X} ${arrow2Y}`
 
+  // Damage badge position at t=0.5 on the bezier curve (midpoint)
+  let badgeElement: React.ReactNode = null
+  if (damageLabel != null) {
+    const t = 0.5
+    const mt = 1 - t
+    const badgeX = mt * mt * start.x + 2 * mt * t * controlX + t * t * end.x
+    const badgeY = mt * mt * start.y + 2 * mt * t * controlY + t * t * end.y
+    const label = `${damageLabel} dmg`
+    const textWidth = label.length * 7 + 12
+
+    badgeElement = (
+      <g>
+        <rect
+          x={badgeX - textWidth / 2}
+          y={badgeY - 11}
+          width={textWidth}
+          height={22}
+          rx={11}
+          fill="#000000"
+          fillOpacity={0.85}
+          stroke="#dc2626"
+          strokeWidth={1.5}
+        />
+        <text
+          x={badgeX}
+          y={badgeY + 4}
+          textAnchor="middle"
+          fill="#f87171"
+          fontSize={12}
+          fontWeight={700}
+          fontFamily="system-ui, sans-serif"
+          style={{ pointerEvents: 'none' }}
+        >
+          {label}
+        </text>
+      </g>
+    )
+  }
+
   return (
     <g>
       {/* Glow effect */}
@@ -87,6 +127,7 @@ function Arrow({ start, end, color }: ArrowProps) {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+      {badgeElement}
     </g>
   )
 }
@@ -120,6 +161,24 @@ function getPlayerCenter(playerId: EntityId): Point | null {
 }
 
 /**
+ * Get the entity ID from a target for damage distribution lookup.
+ */
+function getTargetEntityId(target: ClientChosenTarget): EntityId | null {
+  switch (target.type) {
+    case 'Player':
+      return target.playerId
+    case 'Permanent':
+      return target.entityId
+    case 'Spell':
+      return target.spellEntityId
+    case 'Card':
+      return target.cardId
+    default:
+      return null
+  }
+}
+
+/**
  * Get the position for a target based on its type.
  */
 function getTargetPosition(target: ClientChosenTarget): Point | null {
@@ -144,6 +203,7 @@ interface TargetArrow {
   start: Point
   end: Point
   color: string
+  damageLabel?: number | null | undefined
 }
 
 /**
@@ -152,6 +212,7 @@ interface TargetArrow {
 export function TargetingArrows() {
   const stackCards = useStackCards()
   const pendingDecision = useGameStore((state) => state.pendingDecision)
+  const lastDamageDistribution = useGameStore((state) => state.lastDamageDistribution)
   const [arrows, setArrows] = useState<TargetArrow[]>([])
 
   // Hide arrows during full-screen overlay decisions (e.g., ChooseColorDecision)
@@ -187,12 +248,19 @@ export function TargetingArrows() {
           const targetPos = getTargetPosition(target)
           if (!targetPos) continue
 
+          // Look up damage distribution for this target
+          const targetEntityId = getTargetEntityId(target)
+          const damageLabel = targetEntityId != null && lastDamageDistribution != null
+            ? lastDamageDistribution[targetEntityId] ?? null
+            : null
+
           newArrows.push({
             sourceId: card.id,
             targetKey: `${card.id}-target-${i}`,
             start: stackPos,
             end: targetPos,
             color: '#ff8800',
+            damageLabel,
           })
         }
 
@@ -218,7 +286,7 @@ export function TargetingArrows() {
     updateArrows()
     const interval = setInterval(updateArrows, 100)
     return () => clearInterval(interval)
-  }, [stackCards])
+  }, [stackCards, lastDamageDistribution])
 
   if (arrows.length === 0 || hasOverlayDecision) {
     return null
@@ -236,12 +304,13 @@ export function TargetingArrows() {
         zIndex: 999,
       }}
     >
-      {arrows.map(({ targetKey, start, end, color }) => (
+      {arrows.map(({ targetKey, start, end, color, damageLabel }) => (
         <Arrow
           key={targetKey}
           start={start}
           end={end}
           color={color}
+          damageLabel={damageLabel}
         />
       ))}
     </svg>

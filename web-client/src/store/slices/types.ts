@@ -512,6 +512,7 @@ export type GameStore = {
   submitDamageAssignmentDecision: (assignments: Record<EntityId, number>) => void
   submitColorDecision: (color: string) => void
   submitManaSourcesDecision: (selectedSources: readonly EntityId[], autoPay: boolean) => void
+  submitCancelDecision: () => void
   submitSplitPilesDecision: (piles: readonly (readonly EntityId[])[]) => void
   keepHand: () => void
   mulligan: () => void
@@ -573,6 +574,7 @@ export type GameStore = {
   manaColorSelectionState: ManaColorSelectionState | null
   decisionSelectionState: DecisionSelectionState | null
   damageDistributionState: DamageDistributionState | null
+  lastDamageDistribution: Record<EntityId, number> | null
   distributeState: DistributeState | null
   hoveredCardId: EntityId | null
   autoTapPreview: readonly EntityId[] | null
