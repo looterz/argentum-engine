@@ -219,7 +219,10 @@ data class AdditionalCostPayment(
     val tappedPermanents: List<EntityId> = emptyList(),
 
     /** Permanents that were returned to hand */
-    val bouncedPermanents: List<EntityId> = emptyList()
+    val bouncedPermanents: List<EntityId> = emptyList(),
+
+    /** Counter removals: entity ID -> number of +1/+1 counters to remove from that creature */
+    val counterRemovals: Map<EntityId, Int> = emptyMap()
 ) {
     /** Check if any costs were paid */
     val isEmpty: Boolean
@@ -228,7 +231,8 @@ data class AdditionalCostPayment(
                 lifePaid == 0 &&
                 exiledCards.isEmpty() &&
                 tappedPermanents.isEmpty() &&
-                bouncedPermanents.isEmpty()
+                bouncedPermanents.isEmpty() &&
+                counterRemovals.isEmpty()
 
     companion object {
         val NONE = AdditionalCostPayment()

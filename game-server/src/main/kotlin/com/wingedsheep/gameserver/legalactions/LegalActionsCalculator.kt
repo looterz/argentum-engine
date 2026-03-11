@@ -33,6 +33,7 @@ import com.wingedsheep.engine.state.components.identity.TextReplacementComponent
 import com.wingedsheep.engine.state.components.player.LandDropsComponent
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.gameserver.protocol.AdditionalCostInfo
+import com.wingedsheep.gameserver.protocol.CounterRemovalCreatureInfo
 import com.wingedsheep.gameserver.protocol.ConvokeCreatureInfo
 import com.wingedsheep.gameserver.protocol.DelveCardInfo
 import com.wingedsheep.gameserver.protocol.LegalActionInfo
@@ -1416,27 +1417,58 @@ class LegalActionsCalculator(
                 }
                 if (!restrictionsMet) continue
 
-                // Build additional cost info for sacrifice or tap costs
+                // Check for X-variable costs early (needed for counter removal info)
+                val hasRemoveXCountersCostEarly = when (ability.cost) {
+                    is AbilityCost.RemoveXPlusOnePlusOneCounters -> true
+                    is AbilityCost.Composite -> (ability.cost as AbilityCost.Composite).costs
+                        .any { it is AbilityCost.RemoveXPlusOnePlusOneCounters }
+                    else -> false
+                }
+
+                // Build counter removal creature info if ability has RemoveXPlusOnePlusOneCounters cost
+                val counterRemovalCreatures = if (hasRemoveXCountersCostEarly) {
+                    state.entities.mapNotNull { (eid, c) ->
+                        if (c.get<ControllerComponent>()?.playerId == playerId &&
+                            c.get<CardComponent>()?.typeLine?.isCreature == true) {
+                            val counters = c.get<CountersComponent>()
+                                ?.getCount(com.wingedsheep.sdk.core.CounterType.PLUS_ONE_PLUS_ONE) ?: 0
+                            if (counters > 0) {
+                                val card = c.get<CardComponent>()!!
+                                CounterRemovalCreatureInfo(
+                                    entityId = eid,
+                                    name = card.name,
+                                    availableCounters = counters,
+                                    imageUri = card.imageUri
+                                )
+                            } else null
+                        } else null
+                    }
+                } else emptyList()
+
+                // Build additional cost info for sacrifice, tap, bounce, or counter removal costs
                 val costInfo = if (tapTargets != null && tapCost != null) {
                     AdditionalCostInfo(
                         description = tapCost.description,
                         costType = "TapPermanents",
                         validTapTargets = tapTargets,
-                        tapCount = tapCost.count
+                        tapCount = tapCost.count,
+                        counterRemovalCreatures = counterRemovalCreatures
                     )
                 } else if (sacrificeTargets != null && sacrificeCost != null) {
                     AdditionalCostInfo(
                         description = sacrificeCost.description,
                         costType = "SacrificePermanent",
                         validSacrificeTargets = sacrificeTargets,
-                        sacrificeCount = sacrificeCost.count
+                        sacrificeCount = sacrificeCost.count,
+                        counterRemovalCreatures = counterRemovalCreatures
                     )
                 } else if (bounceTargets != null && bounceCost != null) {
                     AdditionalCostInfo(
                         description = bounceCost.description,
                         costType = "BouncePermanent",
                         validBounceTargets = bounceTargets,
-                        bounceCount = bounceCost.count
+                        bounceCount = bounceCost.count,
+                        counterRemovalCreatures = counterRemovalCreatures
                     )
                 } else if (sacrificeTargets != null) {
                     // SacrificeSelf cost — sacrifice target is the source itself
@@ -1444,7 +1476,14 @@ class LegalActionsCalculator(
                         description = "Sacrifice this permanent",
                         costType = "SacrificeSelf",
                         validSacrificeTargets = sacrificeTargets,
-                        sacrificeCount = 1
+                        sacrificeCount = 1,
+                        counterRemovalCreatures = counterRemovalCreatures
+                    )
+                } else if (counterRemovalCreatures.isNotEmpty()) {
+                    AdditionalCostInfo(
+                        description = "Remove +1/+1 counters from creatures you control",
+                        costType = "RemoveCounters",
+                        counterRemovalCreatures = counterRemovalCreatures
                     )
                 } else null
 
@@ -1458,13 +1497,8 @@ class LegalActionsCalculator(
                 }
                 val abilityHasXInManaCost = abilityManaCost?.hasX == true
 
-                // Check for X-variable costs (costs that determine X without mana)
-                val hasRemoveXCountersCost = when (ability.cost) {
-                    is AbilityCost.RemoveXPlusOnePlusOneCounters -> true
-                    is AbilityCost.Composite -> (ability.cost as AbilityCost.Composite).costs
-                        .any { it is AbilityCost.RemoveXPlusOnePlusOneCounters }
-                    else -> false
-                }
+                // Reuse the early check for X-variable costs
+                val hasRemoveXCountersCost = hasRemoveXCountersCostEarly
                 val abilityHasXCost = abilityHasXInManaCost || hasRemoveXCountersCost
 
                 val abilityMaxAffordableX: Int? = if (abilityHasXCost) {

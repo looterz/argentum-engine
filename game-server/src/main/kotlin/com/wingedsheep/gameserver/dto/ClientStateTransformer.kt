@@ -375,7 +375,8 @@ class ClientStateTransformer(
                 attachments = emptyList(),
                 isFaceDown = false,
                 targets = targets,
-                imageUri = cardDef?.metadata?.imageUri
+                imageUri = cardDef?.metadata?.imageUri,
+                chosenX = activatedAbility.xValue
             )
         }
 

@@ -996,7 +996,20 @@ data class AdditionalCostInfo(
     /** Minimum number of cards to exile (for variable exile costs) */
     val exileMinCount: Int = 0,
     /** Maximum number of cards that can be exiled */
-    val exileMaxCount: Int = 0
+    val exileMaxCount: Int = 0,
+    /** Creatures with +1/+1 counters for RemoveXPlusOnePlusOneCounters cost */
+    val counterRemovalCreatures: List<CounterRemovalCreatureInfo> = emptyList()
+)
+
+/**
+ * Information about a creature that has +1/+1 counters available for removal.
+ */
+@Serializable
+data class CounterRemovalCreatureInfo(
+    val entityId: EntityId,
+    val name: String,
+    val availableCounters: Int,
+    val imageUri: String? = null
 )
 
 /**

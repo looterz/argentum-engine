@@ -24,7 +24,7 @@ import type {
   Step,
 } from '../../types'
 import type { ConnectionStatus } from '../../network/websocket'
-import type { SpectatorCombatState, SpectatorDecisionStatus } from '../../types/messages'
+import type { CounterRemovalCreatureInfo, SpectatorCombatState, SpectatorDecisionStatus } from '../../types/messages'
 
 // Re-export for convenience
 export type { EntityId, ConnectionStatus }
@@ -195,6 +195,18 @@ export interface DistributeState {
   minPerTarget: number
   maxPerTarget?: Record<EntityId, number>
   allowPartial?: boolean
+  distribution: Record<EntityId, number>
+}
+
+/**
+ * Counter distribution state for RemoveXPlusOnePlusOneCounters cost.
+ * Shown after X selection to let the player choose which creatures to remove counters from.
+ */
+export interface CounterDistributionState {
+  actionInfo: LegalActionInfo
+  cardName: string
+  xValue: number
+  creatures: readonly CounterRemovalCreatureInfo[]
   distribution: Record<EntityId, number>
 }
 
@@ -576,6 +588,7 @@ export type GameStore = {
   damageDistributionState: DamageDistributionState | null
   lastDamageDistribution: Record<EntityId, number> | null
   distributeState: DistributeState | null
+  counterDistributionState: CounterDistributionState | null
   hoveredCardId: EntityId | null
   autoTapPreview: readonly EntityId[] | null
   draggingBlockerId: EntityId | null
@@ -648,6 +661,11 @@ export type GameStore = {
   decrementDistribute: (targetId: EntityId) => void
   confirmDistribute: () => void
   clearDistribute: () => void
+  startCounterDistribution: (state: CounterDistributionState) => void
+  incrementCounterRemoval: (entityId: EntityId) => void
+  decrementCounterRemoval: (entityId: EntityId) => void
+  cancelCounterDistribution: () => void
+  confirmCounterDistribution: () => void
   showRevealedHand: (cardIds: readonly EntityId[]) => void
   dismissRevealedHand: () => void
   showRevealedCards: (cardIds: readonly EntityId[], cardNames: readonly string[], imageUris: readonly (string | null)[], source: string | null, isYourReveal: boolean) => void

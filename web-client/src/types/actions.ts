@@ -57,6 +57,7 @@ export interface AdditionalCostPayment {
   readonly exiledCards?: readonly EntityId[]
   readonly tappedPermanents?: readonly EntityId[]
   readonly bouncedPermanents?: readonly EntityId[]
+  readonly counterRemovals?: Readonly<Record<EntityId, number>>
 }
 
 export interface AlternativePaymentChoice {

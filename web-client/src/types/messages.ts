@@ -568,6 +568,14 @@ export interface AdditionalCostInfo {
   readonly validExileTargets?: readonly EntityId[]
   readonly exileMinCount?: number
   readonly exileMaxCount?: number
+  readonly counterRemovalCreatures?: readonly CounterRemovalCreatureInfo[]
+}
+
+export interface CounterRemovalCreatureInfo {
+  readonly entityId: EntityId
+  readonly name: string
+  readonly availableCounters: number
+  readonly imageUri?: string | null
 }
 
 /**

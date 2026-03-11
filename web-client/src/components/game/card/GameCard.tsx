@@ -89,6 +89,9 @@ export function GameCard({
   const distributeState = useGameStore((state) => state.distributeState)
   const incrementDistribute = useGameStore((state) => state.incrementDistribute)
   const decrementDistribute = useGameStore((state) => state.decrementDistribute)
+  const counterDistributionState = useGameStore((state) => state.counterDistributionState)
+  const incrementCounterRemoval = useGameStore((state) => state.incrementCounterRemoval)
+  const decrementCounterRemoval = useGameStore((state) => state.decrementCounterRemoval)
   const submitYesNoDecision = useGameStore((state) => state.submitYesNoDecision)
   const responsive = useResponsiveContext()
   const { handleCardClick, handleDoubleClick, executeAction } = useInteraction()
@@ -164,6 +167,12 @@ export function GameCard({
   // Check if this card is a valid option in decision selection mode (SelectCardsDecision with useTargetingUI)
   const isValidDecisionSelection = decisionSelectionState?.validOptions.includes(card.id) ?? false
   const isSelectedDecisionOption = decisionSelectionState?.selectedOptions.includes(card.id) ?? false
+
+  // Inline counter distribution checks (for RemoveXPlusOnePlusOneCounters cost)
+  const counterCreature = counterDistributionState?.creatures.find((c) => c.entityId === card.id)
+  const isCounterDistTarget = counterCreature != null
+  const counterAllocated = isCounterDistTarget ? (counterDistributionState?.distribution[card.id] ?? 0) : 0
+  const counterAtMax = counterCreature != null && counterAllocated >= counterCreature.availableCounters
 
   // Inline damage distribution checks
   const isDistributeTarget = distributeState?.targets.includes(card.id) ?? false
@@ -1206,6 +1215,79 @@ export function GameCard({
               fontSize: responsive.isMobile ? 14 : 16,
               fontWeight: 'bold',
               cursor: (distributeRemaining <= 0 || distributeAtMax) ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 0,
+            }}
+          >
+            +
+          </button>
+        </div>
+      )}
+
+      {/* Inline +/- control strip for counter removal (top, so counter badges stay visible) */}
+      {isCounterDistTarget && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 2,
+            padding: responsive.isMobile ? '2px 1px' : '3px 2px',
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            borderBottom: '1px solid rgba(234, 179, 8, 0.5)',
+            zIndex: 15,
+          }}
+        >
+          <button
+            onClick={(e) => { e.stopPropagation(); decrementCounterRemoval(card.id) }}
+            disabled={counterAllocated <= 0}
+            style={{
+              width: responsive.isMobile ? 20 : 26,
+              height: responsive.isMobile ? 20 : 26,
+              borderRadius: 4,
+              border: 'none',
+              backgroundColor: counterAllocated <= 0 ? '#333' : '#dc2626',
+              color: counterAllocated <= 0 ? '#666' : 'white',
+              fontSize: responsive.isMobile ? 14 : 16,
+              fontWeight: 'bold',
+              cursor: counterAllocated <= 0 ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 0,
+            }}
+          >
+            -
+          </button>
+          <span style={{
+            color: '#eab308',
+            fontSize: responsive.isMobile ? 12 : 14,
+            fontWeight: 700,
+            minWidth: responsive.isMobile ? 18 : 24,
+            textAlign: 'center',
+          }}>
+            {counterAllocated}
+          </span>
+          <button
+            onClick={(e) => { e.stopPropagation(); incrementCounterRemoval(card.id) }}
+            disabled={counterAtMax}
+            style={{
+              width: responsive.isMobile ? 20 : 26,
+              height: responsive.isMobile ? 20 : 26,
+              borderRadius: 4,
+              border: 'none',
+              backgroundColor: (counterAtMax) ? '#333' : '#16a34a',
+              color: (counterAtMax) ? '#666' : 'white',
+              fontSize: responsive.isMobile ? 14 : 16,
+              fontWeight: 'bold',
+              cursor: (counterAtMax) ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

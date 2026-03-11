@@ -13,6 +13,7 @@ import type {
   DecisionSelectionState,
   DamageDistributionState,
   DistributeState,
+  CounterDistributionState,
   DrawAnimation,
   DamageAnimation,
   RevealAnimation,
@@ -42,6 +43,7 @@ export interface UISliceState {
   /** Persisted damage distribution from the last confirmed DamageDistributionModal (target ID -> damage) */
   lastDamageDistribution: Record<EntityId, number> | null
   distributeState: DistributeState | null
+  counterDistributionState: CounterDistributionState | null
   hoveredCardId: EntityId | null
   autoTapPreview: readonly EntityId[] | null
   draggingBlockerId: EntityId | null
@@ -118,6 +120,11 @@ export interface UISliceActions {
   decrementDistribute: (targetId: EntityId) => void
   confirmDistribute: () => void
   clearDistribute: () => void
+  startCounterDistribution: (state: CounterDistributionState) => void
+  incrementCounterRemoval: (entityId: EntityId) => void
+  decrementCounterRemoval: (entityId: EntityId) => void
+  cancelCounterDistribution: () => void
+  confirmCounterDistribution: () => void
   showRevealedHand: (cardIds: readonly EntityId[]) => void
   dismissRevealedHand: () => void
   showRevealedCards: (cardIds: readonly EntityId[], cardNames: readonly string[], imageUris: readonly (string | null)[], source: string | null, isYourReveal: boolean) => void
@@ -152,6 +159,7 @@ export const createUISlice: SliceCreator<UISlice> = (set, get) => ({
   damageDistributionState: null,
   lastDamageDistribution: null,
   distributeState: null,
+  counterDistributionState: null,
   hoveredCardId: null,
   autoTapPreview: null,
   draggingBlockerId: null,
@@ -1038,7 +1046,7 @@ export const createUISlice: SliceCreator<UISlice> = (set, get) => ({
     set((state) => {
       if (!state.distributeState) return state
       const dist = state.distributeState
-      const totalAllocated = Object.values(dist.distribution).reduce((sum, v) => sum + v, 0)
+      const totalAllocated = Object.values(dist.distribution).reduce<number>((sum, v) => sum + v, 0)
       if (totalAllocated >= dist.totalAmount) return state
       const current = dist.distribution[targetId] ?? 0
       const maxForTarget = dist.maxPerTarget?.[targetId]
@@ -1088,6 +1096,95 @@ export const createUISlice: SliceCreator<UISlice> = (set, get) => ({
 
   clearDistribute: () => {
     set({ distributeState: null })
+  },
+
+  // Counter distribution actions (for RemoveXPlusOnePlusOneCounters cost)
+  startCounterDistribution: (counterDistributionState) => {
+    set({ counterDistributionState })
+  },
+
+  incrementCounterRemoval: (entityId) => {
+    set((state) => {
+      if (!state.counterDistributionState) return state
+      const dist = state.counterDistributionState
+      const current = dist.distribution[entityId] ?? 0
+      const creature = dist.creatures.find((c) => c.entityId === entityId)
+      if (!creature || current >= creature.availableCounters) return state
+      return {
+        counterDistributionState: {
+          ...dist,
+          distribution: {
+            ...dist.distribution,
+            [entityId]: current + 1,
+          },
+        },
+      }
+    })
+  },
+
+  decrementCounterRemoval: (entityId) => {
+    set((state) => {
+      if (!state.counterDistributionState) return state
+      const dist = state.counterDistributionState
+      const current = dist.distribution[entityId] ?? 0
+      if (current <= 0) return state
+      return {
+        counterDistributionState: {
+          ...dist,
+          distribution: {
+            ...dist.distribution,
+            [entityId]: current - 1,
+          },
+        },
+      }
+    })
+  },
+
+  cancelCounterDistribution: () => {
+    set({ counterDistributionState: null })
+  },
+
+  confirmCounterDistribution: () => {
+    const { counterDistributionState, startTargeting } = get()
+    if (!counterDistributionState) return
+
+    const { actionInfo, distribution } = counterDistributionState
+    const totalAllocated = Object.values(distribution).reduce<number>((sum, v) => sum + v, 0)
+    if (totalAllocated <= 0) return
+
+    // Filter out zero entries
+    const counterRemovals: Record<string, number> = {}
+    for (const [eid, count] of Object.entries(distribution) as [string, number][]) {
+      if (count > 0) {
+        counterRemovals[eid] = count
+      }
+    }
+
+    if (actionInfo.action.type === 'ActivateAbility') {
+      const baseAction = actionInfo.action
+      const actionWithCost = {
+        ...baseAction,
+        xValue: totalAllocated,
+        costPayment: {
+          ...baseAction.costPayment,
+          counterRemovals,
+        },
+      }
+
+      if (actionInfo.requiresTargets && actionInfo.validTargets && actionInfo.validTargets.length > 0) {
+        startTargeting({
+          action: actionWithCost,
+          validTargets: [...actionInfo.validTargets],
+          selectedTargets: [],
+          minTargets: actionInfo.minTargets ?? actionInfo.targetCount ?? 1,
+          maxTargets: actionInfo.targetCount ?? 1,
+        })
+      } else {
+        getWebSocket()?.send(createSubmitActionMessage(actionWithCost))
+      }
+    }
+
+    set({ counterDistributionState: null })
   },
 
   // Revealed cards actions

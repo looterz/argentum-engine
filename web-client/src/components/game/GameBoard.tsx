@@ -53,8 +53,12 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
   const opponentDecisionStatus = useGameStore((state) => state.opponentDecisionStatus)
   const stopOverrides = useGameStore((state) => state.stopOverrides)
   const toggleStopOverride = useGameStore((state) => state.toggleStopOverride)
+  const targetingState = useGameStore((state) => state.targetingState)
   const distributeState = useGameStore((state) => state.distributeState)
   const confirmDistribute = useGameStore((state) => state.confirmDistribute)
+  const counterDistributionState = useGameStore((state) => state.counterDistributionState)
+  const confirmCounterDistribution = useGameStore((state) => state.confirmCounterDistribution)
+  const cancelCounterDistribution = useGameStore((state) => state.cancelCounterDistribution)
   const undoAvailable = useGameStore((state) => state.undoAvailable)
   const requestUndo = useGameStore((state) => state.requestUndo)
   const responsive = useResponsive(topOffset)
@@ -98,6 +102,11 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
     ? Object.values(distributeState.distribution).reduce((sum, v) => sum + v, 0)
     : 0
   const distributeRemaining = distributeState ? distributeState.totalAmount - distributeTotalAllocated : 0
+  const isInCounterDistMode = !spectatorMode && counterDistributionState !== null
+  const counterTotalAllocated = counterDistributionState
+    ? Object.values(counterDistributionState.distribution).reduce<number>((sum, v) => sum + v, 0)
+    : 0
+  // No "remaining" concept — X is determined by total allocated
 
   // Compute pass button label - prefer server-computed nextStopPoint, fall back to naive logic
   const getPassButtonLabel = () => {
@@ -318,8 +327,8 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
         ) : null}
       </div>
 
-      {/* Floating pass/undo buttons (bottom-right) - hidden in spectator mode and distribute mode */}
-      {!spectatorMode && canAct && !isInCombatMode && !isInDistributeMode && viewingPlayer && (
+      {/* Floating pass/undo buttons (bottom-right) - hidden during targeting, distribute, counter distribution, and combat modes */}
+      {!spectatorMode && canAct && !isInCombatMode && !isInDistributeMode && !isInCounterDistMode && !targetingState && viewingPlayer && (
         <div style={{
           position: 'fixed',
           bottom: 16,
@@ -550,6 +559,74 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
                 >
                   {confirmLabel}
                 </button>
+              </>
+            )
+          })()}
+        </div>
+      )}
+
+      {/* Floating counter distribution bar (bottom-right) */}
+      {isInCounterDistMode && counterDistributionState && (
+        <div style={{
+          ...styles.combatButtonContainer,
+          flexDirection: 'column',
+          gap: 8,
+          alignItems: 'flex-end',
+        }}>
+          {(() => {
+            const canConfirm = counterTotalAllocated > 0
+            return (
+              <>
+                <div style={{
+                  backgroundColor: canConfirm ? 'rgba(22, 163, 74, 0.9)' : 'rgba(234, 179, 8, 0.9)',
+                  padding: responsive.isMobile ? '6px 12px' : '8px 16px',
+                  borderRadius: 6,
+                  border: canConfirm ? '1px solid #4ade80' : '1px solid #fbbf24',
+                  textAlign: 'center',
+                }}>
+                  <div style={{
+                    color: 'white',
+                    fontSize: responsive.fontSize.small,
+                    fontWeight: 600,
+                  }}>
+                    {`X = ${counterTotalAllocated}`}
+                  </div>
+                  <div style={{
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    fontSize: responsive.isMobile ? 10 : 11,
+                    marginTop: 2,
+                  }}>
+                    Remove +1/+1 counters from your creatures
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    onClick={cancelCounterDistribution}
+                    style={{
+                      ...styles.combatButton,
+                      backgroundColor: '#4b5563',
+                      color: 'white',
+                      cursor: 'pointer',
+                      borderColor: '#6b7280',
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmCounterDistribution}
+                    disabled={!canConfirm}
+                    style={{
+                      ...styles.combatButton,
+                      ...(canConfirm ? styles.combatButtonPrimary : {}),
+                      backgroundColor: canConfirm ? '#16a34a' : '#333',
+                      color: canConfirm ? 'white' : '#666',
+                      cursor: canConfirm ? 'pointer' : 'not-allowed',
+                      borderColor: canConfirm ? '#4ade80' : '#555',
+                    }}
+                  >
+                    Confirm
+                  </button>
+                </div>
               </>
             )
           })()}

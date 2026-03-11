@@ -293,7 +293,8 @@ class ActivateAbilityHandler(
             exileChoices = action.costPayment?.exiledCards ?: emptyList(),
             tapChoices = action.costPayment?.tappedPermanents ?: emptyList(),
             bounceChoices = action.costPayment?.bouncedPermanents ?: emptyList(),
-            xValue = xValue
+            xValue = xValue,
+            counterRemovalChoices = action.costPayment?.counterRemovals ?: emptyMap()
         )
 
         // Pay the cost (using effective cost with text replacements applied)

@@ -32,6 +32,7 @@ export function useInteraction() {
   const startConvokeSelection = useGameStore((state) => state.startConvokeSelection)
   const startDelveSelection = useGameStore((state) => state.startDelveSelection)
   const startManaColorSelection = useGameStore((state) => state.startManaColorSelection)
+  const startCounterDistribution = useGameStore((state) => state.startCounterDistribution)
 
   /**
    * Get legal actions for a card.
@@ -143,6 +144,26 @@ export function useInteraction() {
           maxX: actionInfo.maxRepeatableActivations,
           selectedX: 1,
           isRepeatCount: true,
+        })
+        selectCard(null)
+        return
+      }
+
+      // Check if ability has counter removal cost - skip X selection and go straight to counter distribution
+      if (action.type === 'ActivateAbility' && actionInfo.hasXCost &&
+          actionInfo.additionalCostInfo?.counterRemovalCreatures &&
+          actionInfo.additionalCostInfo.counterRemovalCreatures.length > 0) {
+        const counterCreatures = actionInfo.additionalCostInfo.counterRemovalCreatures
+        const distribution: Record<string, number> = {}
+        for (const creature of counterCreatures) {
+          distribution[creature.entityId] = 0
+        }
+        startCounterDistribution({
+          actionInfo,
+          cardName: actionInfo.description,
+          xValue: 0,
+          creatures: counterCreatures,
+          distribution,
         })
         selectCard(null)
         return
@@ -448,7 +469,7 @@ export function useInteraction() {
       submitAction(action)
       selectCard(null)
     },
-    [submitAction, selectCard, startXSelection, startTargeting, startConvokeSelection, startDelveSelection, startManaColorSelection]
+    [submitAction, selectCard, startXSelection, startTargeting, startConvokeSelection, startDelveSelection, startManaColorSelection, startCounterDistribution]
   )
 
   /**

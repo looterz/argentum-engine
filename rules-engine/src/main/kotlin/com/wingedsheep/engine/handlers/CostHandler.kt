@@ -471,6 +471,8 @@ class CostHandler(
                 val xCount = choices.xValue
                 if (xCount == 0) {
                     CostPaymentResult.success(state, manaPool)
+                } else if (choices.counterRemovalChoices.isNotEmpty()) {
+                    removeCountersFromCreaturesWithChoices(state, controllerId, xCount, choices.counterRemovalChoices, manaPool)
                 } else {
                     removeCountersFromCreatures(state, controllerId, xCount, manaPool)
                 }
@@ -640,6 +642,46 @@ class CostHandler(
         return CostPaymentResult.success(newState, manaPool)
     }
 
+    /**
+     * Remove +1/+1 counters from creatures using the player's chosen distribution.
+     * Validates that each creature is controlled by the player and has enough counters.
+     */
+    private fun removeCountersFromCreaturesWithChoices(
+        state: GameState,
+        controllerId: EntityId,
+        count: Int,
+        choices: Map<EntityId, Int>,
+        manaPool: ManaPool
+    ): CostPaymentResult {
+        val totalChosen = choices.values.sum()
+        if (totalChosen != count) {
+            return CostPaymentResult.failure("Counter removal total ($totalChosen) does not match X ($count)")
+        }
+
+        var newState = state
+        for ((creatureId, toRemove) in choices) {
+            if (toRemove <= 0) continue
+            val container = state.getEntity(creatureId)
+                ?: return CostPaymentResult.failure("Creature not found for counter removal")
+            if (container.get<ControllerComponent>()?.playerId != controllerId) {
+                return CostPaymentResult.failure("Cannot remove counters from a creature you don't control")
+            }
+            if (container.get<CardComponent>()?.typeLine?.isCreature != true) {
+                return CostPaymentResult.failure("Can only remove +1/+1 counters from creatures")
+            }
+            val available = container.get<CountersComponent>()?.getCount(CounterType.PLUS_ONE_PLUS_ONE) ?: 0
+            if (available < toRemove) {
+                return CostPaymentResult.failure("Creature does not have enough +1/+1 counters (need $toRemove, have $available)")
+            }
+            newState = newState.updateEntity(creatureId) { c ->
+                val counters = c.get<CountersComponent>() ?: CountersComponent()
+                c.with(counters.withRemoved(CounterType.PLUS_ONE_PLUS_ONE, toRemove))
+            }
+        }
+
+        return CostPaymentResult.success(newState, manaPool)
+    }
+
     // Helper functions
 
     private fun findMatchingPermanentsUnified(
@@ -726,5 +768,6 @@ data class CostPaymentChoices(
     val exileChoices: List<EntityId> = emptyList(),
     val tapChoices: List<EntityId> = emptyList(),
     val bounceChoices: List<EntityId> = emptyList(),
-    val xValue: Int = 0
+    val xValue: Int = 0,
+    val counterRemovalChoices: Map<EntityId, Int> = emptyMap()
 )
