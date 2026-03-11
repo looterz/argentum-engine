@@ -2,7 +2,7 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 15 / 249
+**Implemented:** 16 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -10,7 +10,7 @@
 | Blue       | 37    | 3    |
 | Black      | 38    | 3    |
 | Red        | 38    | 3    |
-| Green      | 37    | 2    |
+| Green      | 37    | 3    |
 | Multicolor | 19    | 1    |
 | Colorless  | 30    | 1    |
 | Land       | 12    | 0    |
@@ -173,7 +173,7 @@
 - [ ] Powerstone Shard
 - [ ] Precognition Field
 - [ ] Primevals' Glorious Rebirth
-- [ ] Primordial Wurm
+- [x] Primordial Wurm
 - [ ] Radiating Lightning
 - [ ] Raff Capashen, Ship's Mage
 - [ ] Rampaging Cyclops

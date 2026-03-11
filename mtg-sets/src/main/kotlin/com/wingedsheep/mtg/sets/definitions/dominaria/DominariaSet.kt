@@ -32,6 +32,7 @@ object DominariaSet {
         MammothSpider,
         MesaUnicorn,
         Opt,
+        PrimordialWurm,
         RunAmok,
         SerraAngel,
         SparringConstruct,
