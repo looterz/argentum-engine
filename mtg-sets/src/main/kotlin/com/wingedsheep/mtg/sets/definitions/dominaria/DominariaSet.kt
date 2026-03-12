@@ -28,6 +28,7 @@ object DominariaSet {
         ArvadTheCursed,
         BalothGorger,
         Befuddle,
+        BlessedLight,
         CabalEvangel,
         CastDown,
         CloudreaderSphinx,

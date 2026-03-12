@@ -111,6 +111,11 @@ data class GameObjectFilter(
                 CardPredicate.Or(listOf(CardPredicate.IsCreature, CardPredicate.IsSorcery))
             )
         )
+        val CreatureOrEnchantment = GameObjectFilter(
+            cardPredicates = listOf(
+                CardPredicate.Or(listOf(CardPredicate.IsCreature, CardPredicate.IsEnchantment))
+            )
+        )
         val NoncreaturePermanent = GameObjectFilter(
             cardPredicates = listOf(CardPredicate.IsNoncreature, CardPredicate.IsPermanent)
         )
