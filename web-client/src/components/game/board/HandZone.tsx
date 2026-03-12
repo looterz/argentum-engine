@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useZoneCards, useZone } from '../../../store/selectors'
-import type { ZoneId, ClientCard } from '../../../types'
+import { useGameStore } from '../../../store/gameStore'
+import type { ZoneId, ClientCard, EntityId } from '../../../types'
 import { calculateFittingCardWidth } from '../../../hooks/useResponsive'
 import { useResponsiveContext } from './shared'
 import { styles } from './styles'
@@ -138,7 +139,35 @@ export function CardRow({
 }
 
 /**
+ * Apply custom hand card ordering. Cards in handCardOrder are placed first (in that order),
+ * followed by any new cards not yet in the order (appended at end).
+ */
+function applyHandOrder(cards: readonly ClientCard[], handCardOrder: readonly EntityId[]): readonly ClientCard[] {
+  if (handCardOrder.length === 0) return cards
+
+  const cardMap = new Map(cards.map(c => [c.id, c]))
+  const ordered: ClientCard[] = []
+
+  // Add cards in custom order (skip any that left the hand)
+  for (const id of handCardOrder) {
+    const card = cardMap.get(id)
+    if (card) {
+      ordered.push(card)
+      cardMap.delete(id)
+    }
+  }
+
+  // Append any new cards not in the custom order
+  for (const card of cardMap.values()) {
+    ordered.push(card)
+  }
+
+  return ordered
+}
+
+/**
  * Hand display with fan/arc effect - cards slightly overlap and rotate like held cards.
+ * Supports drag-to-reorder for the player's own hand.
  */
 export function HandFan({
   cards,
@@ -165,11 +194,36 @@ export function HandFan({
   ghostCards?: readonly ClientCard[]
 }) {
   const [, setHoveredIndex] = useState<number | null>(null)
+  const handCardOrder = useGameStore((s) => s.handCardOrder)
+  const setHandCardOrder = useGameStore((s) => s.setHandCardOrder)
+  const stopDraggingCard = useGameStore((s) => s.stopDraggingCard)
+
+  // Whether this is the player's own interactive hand (supports reorder)
+  const isPlayerHand = interactive && !faceDown && !inverted
+
+  // Apply custom ordering to cards (only for player's own hand)
+  const orderedCards = useMemo(
+    () => isPlayerHand ? applyHandOrder(cards, handCardOrder) : cards,
+    [cards, handCardOrder, isPlayerHand],
+  )
+
+  // Reorder drag state (local to this component)
+  const reorderRef = useRef<{
+    cardId: EntityId
+    startX: number
+    startIndex: number
+    currentOrder: EntityId[]
+    activated: boolean
+  } | null>(null)
+  const [reorderDragCardId, setReorderDragCardId] = useState<EntityId | null>(null)
+  const [reorderCurrentX, setReorderCurrentX] = useState(0)
+  // Tracks whether pointer is down for potential reorder (to attach window listeners)
+  const [pointerTracking, setPointerTracking] = useState(false)
 
   // When we have revealed cards in opponent's hand, show both revealed cards AND placeholders
   const baseCardCount = revealedCards
-    ? cards.length + placeholderCount
-    : (placeholderCount > 0 ? placeholderCount : cards.length)
+    ? orderedCards.length + placeholderCount
+    : (placeholderCount > 0 ? placeholderCount : orderedCards.length)
   const cardCount = baseCardCount + ghostCards.length
 
   // Scale fan parameters based on card count
@@ -196,12 +250,12 @@ export function HandFan({
   // - Otherwise: show cards normally
   const baseItems = revealedCards
     ? [
-        ...cards.map((card, index) => ({ type: 'card' as const, card, index, showFaceUp: true, isGhost: false })),
-        ...Array.from({ length: placeholderCount }, (_, i) => ({ type: 'placeholder' as const, index: cards.length + i })),
+        ...orderedCards.map((card, index) => ({ type: 'card' as const, card, index, showFaceUp: true, isGhost: false })),
+        ...Array.from({ length: placeholderCount }, (_, i) => ({ type: 'placeholder' as const, index: orderedCards.length + i })),
       ]
     : placeholderCount > 0
       ? Array.from({ length: placeholderCount }, (_, i) => ({ type: 'placeholder' as const, index: i }))
-      : cards.map((card, index) => ({ type: 'card' as const, card, index, showFaceUp: false, isGhost: false }))
+      : orderedCards.map((card, index) => ({ type: 'card' as const, card, index, showFaceUp: false, isGhost: false }))
 
   // Append ghost cards (graveyard cards with legal activated abilities)
   const ghostItems = ghostCards.map((card, i) => ({
@@ -212,6 +266,86 @@ export function HandFan({
     isGhost: true,
   }))
   const items = [...baseItems, ...ghostItems]
+
+  // Handle reorder pointer down on a card wrapper
+  const handleReorderPointerDown = useCallback((e: React.PointerEvent, cardId: EntityId, index: number) => {
+    if (!isPlayerHand) return
+    // Only primary button (left click / touch)
+    if (e.button !== 0) return
+
+    const currentOrder = orderedCards.map(c => c.id)
+    reorderRef.current = {
+      cardId,
+      startX: e.clientX,
+      startIndex: index,
+      currentOrder,
+      activated: false,
+    }
+    setPointerTracking(true)
+  }, [isPlayerHand, orderedCards])
+
+  // Global pointer move/up for reorder
+  useEffect(() => {
+    if (!pointerTracking) return
+
+    const HORIZONTAL_THRESHOLD = 15
+
+    const handlePointerMove = (e: PointerEvent) => {
+      const ref = reorderRef.current
+      if (!ref) return
+
+      const deltaX = e.clientX - ref.startX
+      const absDeltaX = Math.abs(deltaX)
+
+      // Enter reorder mode once horizontal threshold is met
+      if (!ref.activated && absDeltaX >= HORIZONTAL_THRESHOLD) {
+        ref.activated = true
+        setReorderDragCardId(ref.cardId)
+        // Cancel any in-progress play-drag to hide the DraggedCardOverlay
+        stopDraggingCard()
+      }
+
+      if (ref.activated) {
+        setReorderCurrentX(deltaX)
+
+        // Calculate which position the dragged card should be in based on horizontal offset
+        const newIndex = Math.round(ref.startIndex + deltaX / cardSpacing)
+        const clampedIndex = Math.max(0, Math.min(ref.currentOrder.length - 1, newIndex))
+
+        if (clampedIndex !== ref.startIndex) {
+          // Reorder: move the card from startIndex to clampedIndex
+          const newOrder = [...ref.currentOrder]
+          const [moved] = newOrder.splice(ref.startIndex, 1)
+          if (moved !== undefined) {
+            newOrder.splice(clampedIndex, 0, moved)
+            ref.currentOrder = newOrder
+            ref.startIndex = clampedIndex
+            ref.startX = e.clientX - (deltaX % cardSpacing) // Reset start to prevent jitter
+            setReorderCurrentX(0)
+          }
+        }
+      }
+    }
+
+    const handlePointerUp = () => {
+      const ref = reorderRef.current
+      if (ref?.activated) {
+        // Commit the reorder
+        setHandCardOrder(ref.currentOrder)
+      }
+      reorderRef.current = null
+      setReorderDragCardId(null)
+      setReorderCurrentX(0)
+      setPointerTracking(false)
+    }
+
+    window.addEventListener('pointermove', handlePointerMove)
+    window.addEventListener('pointerup', handlePointerUp)
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove)
+      window.removeEventListener('pointerup', handlePointerUp)
+    }
+  }, [pointerTracking, cardSpacing, setHandCardOrder, stopDraggingCard])
 
   return (
     <div
@@ -238,25 +372,35 @@ export function HandFan({
         // Calculate horizontal position
         const left = index * cardSpacing
 
-        // Z-index: center cards on top
-        const zIndex = 50 - Math.abs(index - Math.floor(cardCount / 2))
+        // Z-index: center cards on top, but dragged card always on top
+        const isDragging = reorderDragCardId !== null && item.type === 'card' && reorderDragCardId === item.card.id
+        const zIndex = isDragging ? 200 : 50 - Math.abs(index - Math.floor(cardCount / 2))
 
         const key = item.type === 'card' ? item.card.id : `placeholder-${item.index}`
+
+        // Apply drag offset to the card being dragged
+        const dragTranslateX = isDragging ? reorderCurrentX : 0
 
         return (
           <div
             key={key}
+            onPointerDown={
+              item.type === 'card' && !item.isGhost
+                ? (e) => handleReorderPointerDown(e, item.card.id, index)
+                : undefined
+            }
             style={{
               position: 'absolute',
               left,
               ...(inverted
-                ? { top: edgeMargin, transform: `translateY(${verticalOffset}px) rotate(${rotation}deg)` }
-                : { bottom: edgeMargin, transform: `translateY(${-verticalOffset}px) rotate(${rotation}deg)` }
+                ? { top: edgeMargin, transform: `translateX(${dragTranslateX}px) translateY(${verticalOffset}px) rotate(${rotation}deg)` }
+                : { bottom: edgeMargin, transform: `translateX(${dragTranslateX}px) translateY(${-verticalOffset}px) rotate(${rotation}deg)` }
               ),
               transformOrigin: inverted ? 'top center' : 'bottom center',
               zIndex,
-              transition: 'transform 0.12s ease-out, left 0.12s ease-out',
+              transition: isDragging ? 'none' : 'transform 0.12s ease-out, left 0.12s ease-out',
               cursor: interactive ? 'pointer' : 'default',
+              opacity: isDragging ? 0.85 : 1,
             }}
             onMouseEnter={() => !inverted && setHoveredIndex(index)}
             onMouseLeave={() => !inverted && setHoveredIndex(null)}

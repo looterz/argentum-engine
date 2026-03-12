@@ -684,4 +684,8 @@ export type GameStore = {
   matchIntro: MatchIntro | null
   setMatchIntro: (intro: MatchIntro) => void
   clearMatchIntro: () => void
+  handCardOrder: readonly EntityId[]
+  handReorderJustFinished: boolean
+  setHandCardOrder: (order: readonly EntityId[]) => void
+  clearHandReorderFlag: () => void
 }
