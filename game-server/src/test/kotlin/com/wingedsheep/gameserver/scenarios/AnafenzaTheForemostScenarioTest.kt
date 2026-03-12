@@ -64,6 +64,29 @@ class AnafenzaTheForemostScenarioTest : ScenarioTestBase() {
 
         context("Anafenza, the Foremost - attack trigger") {
 
+            test("cannot target itself when attacking alone") {
+                val game = scenario()
+                    .withPlayers("Attacker", "Defender")
+                    .withCardOnBattlefield(1, "Anafenza, the Foremost")
+                    .withActivePlayer(1)
+                    .inPhase(Phase.PRECOMBAT_MAIN, Step.PRECOMBAT_MAIN)
+                    .build()
+
+                // Move to combat and declare Anafenza as attacker
+                game.passUntilPhase(Phase.COMBAT, Step.DECLARE_ATTACKERS)
+                game.declareAttackers(mapOf("Anafenza, the Foremost" to 2))
+
+                // Triggered ability fires but there are no legal targets (only Anafenza is tapped, and she's excluded)
+                // The trigger should be removed from the stack since it has no legal targets
+                game.resolveStack()
+
+                // Anafenza should NOT have a +1/+1 counter
+                val anafenzaId = game.findPermanent("Anafenza, the Foremost")!!
+                val projected = game.state.projectedState
+                projected.getPower(anafenzaId) shouldBe 4
+                projected.getToughness(anafenzaId) shouldBe 4
+            }
+
             test("puts +1/+1 counter on another tapped creature when attacking") {
                 val game = scenario()
                     .withPlayers("Attacker", "Defender")

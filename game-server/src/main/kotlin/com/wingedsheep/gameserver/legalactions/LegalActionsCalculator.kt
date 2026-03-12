@@ -2060,6 +2060,11 @@ class LegalActionsCalculator(
         val battlefield = state.getBattlefield()
         val context = PredicateContext(controllerId = playerId, sourceId = sourceId)
         return battlefield.filter { entityId ->
+            // Exclude self if filter says "other"
+            if (filter.excludeSelf && entityId == sourceId) {
+                return@filter false
+            }
+
             val entityController = state.getEntity(entityId)?.get<ControllerComponent>()?.playerId
 
             // Check hexproof - can't be targeted by opponents

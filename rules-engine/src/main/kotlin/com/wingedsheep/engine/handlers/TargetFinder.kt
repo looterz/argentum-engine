@@ -116,6 +116,11 @@ class TargetFinder(
         val filter = requirement.filter
 
         return battlefield.filter { entityId ->
+            // Exclude self if filter says "other"
+            if (filter.excludeSelf && entityId == sourceId) {
+                return@filter false
+            }
+
             val container = state.getEntity(entityId) ?: return@filter false
             container.get<CardComponent>() ?: return@filter false
             val entityController = container.get<ControllerComponent>()?.playerId
