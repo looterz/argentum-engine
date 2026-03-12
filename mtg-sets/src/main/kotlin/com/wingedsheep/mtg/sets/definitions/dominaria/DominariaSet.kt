@@ -59,6 +59,7 @@ object DominariaSet {
         SerraAngel,
         ShivanFire,
         ShortSword,
+        SkitteringSurveyor,
         SparringConstruct,
         StrongholdConfessor,
         TolarianScholar,

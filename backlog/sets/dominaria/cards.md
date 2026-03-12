@@ -2,7 +2,7 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 44 / 249
+**Implemented:** 45 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -12,7 +12,7 @@
 | Red        | 38    | 7    |
 | Green      | 37    | 8    |
 | Multicolor | 19    | 1    |
-| Colorless  | 30    | 4    |
+| Colorless  | 30    | 5    |
 | Land       | 12    | 0    |
 
 ---
@@ -200,7 +200,7 @@
 - [x] Short Sword
 - [ ] Siege-Gang Commander
 - [ ] Skirk Prospector
-- [ ] Skittering Surveyor
+- [x] Skittering Surveyor
 - [ ] Skizzik
 - [ ] Slimefoot, the Stowaway
 - [ ] Slinn Voda, the Rising Deep
