@@ -30,6 +30,7 @@ object DominariaSet {
         CastDown,
         CloudreaderSphinx,
         Divination,
+        DrudgeSentinel,
         Eviscerate,
         FeralAbomination,
         FerventStrike,

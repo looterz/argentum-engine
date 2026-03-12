@@ -2,13 +2,13 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 28 / 249
+**Implemented:** 29 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 38    | 5    |
 | Blue       | 37    | 5    |
-| Black      | 38    | 5    |
+| Black      | 38    | 6    |
 | Red        | 38    | 5    |
 | Green      | 37    | 5    |
 | Multicolor | 19    | 1    |
@@ -73,7 +73,7 @@
 - [ ] Divest
 - [x] Divination
 - [ ] Dread Shade
-- [ ] Drudge Sentinel
+- [x] Drudge Sentinel
 - [ ] Dub
 - [ ] Elfhame Druid
 - [x] Eviscerate
