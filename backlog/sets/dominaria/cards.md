@@ -2,7 +2,7 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 106 / 249
+**Implemented:** 111 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -13,7 +13,7 @@
 | Green      | 37    | 18   |
 | Multicolor | 19    | 4    |
 | Colorless  | 30    | 12   |
-| Land       | 12    | 0    |
+| Land       | 12    | 5    |
 
 ---
 
@@ -147,11 +147,11 @@
 - [x] Lyra Dawnbringer
 - [x] Mammoth Spider
 - [ ] Marwyn, the Nurturer
-- [ ] Memorial to Folly
-- [ ] Memorial to Genius
-- [ ] Memorial to Glory
+- [x] Memorial to Folly
+- [x] Memorial to Genius
+- [x] Memorial to Glory
 - [ ] Memorial to Unity
-- [ ] Memorial to War
+- [x] Memorial to War
 - [ ] Merfolk Trickster
 - [x] Mesa Unicorn
 - [ ] Mishra's Self-Replicator
@@ -265,4 +265,4 @@
 - [x] Yavimaya Sapherd
 - [ ] Yawgmoth's Vile Offering
 - [ ] Zahid, Djinn of the Lamp
-- [ ] Zhalfirin Void
+- [x] Zhalfirin Void

@@ -82,6 +82,10 @@ object DominariaSet {
         LlanowarElves,
         LyraDawnbringer,
         MammothSpider,
+        MemorialToFolly,
+        MemorialToGenius,
+        MemorialToGlory,
+        MemorialToWar,
         MesaUnicorn,
         NaturesSpiral,
         Opt,
@@ -126,5 +130,6 @@ object DominariaSet {
         WindgraceAcolyte,
         YargleGluttonOfUrborg,
         YavimayaSapherd,
+        ZhalfirinVoid,
     )
 }
