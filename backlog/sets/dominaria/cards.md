@@ -2,11 +2,11 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 52 / 249
+**Implemented:** 53 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
-| White      | 38    | 8    |
+| White      | 38    | 9    |
 | Blue       | 37    | 9    |
 | Black      | 38    | 12   |
 | Red        | 38    | 8    |
@@ -78,7 +78,7 @@
 - [ ] Elfhame Druid
 - [x] Eviscerate
 - [ ] Evra, Halcyon Witness
-- [ ] Excavation Elephant
+- [x] Excavation Elephant
 - [ ] Fall of the Thran
 - [x] Feral Abomination
 - [x] Fervent Strike

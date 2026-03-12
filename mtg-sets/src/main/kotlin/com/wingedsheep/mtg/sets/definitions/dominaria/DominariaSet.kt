@@ -41,6 +41,7 @@ object DominariaSet {
         Divination,
         DrudgeSentinel,
         Eviscerate,
+        ExcavationElephant,
         FeralAbomination,
         FieryIntervention,
         FerventStrike,
