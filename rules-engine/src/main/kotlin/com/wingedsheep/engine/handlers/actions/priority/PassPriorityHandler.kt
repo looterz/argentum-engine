@@ -158,6 +158,16 @@ class PassPriorityHandler(
 
         // Check state-based actions after resolution
         val sbaResult = sbaChecker.checkAndApply(trackedState)
+
+        // If SBA needs player input (e.g., legend rule), return paused
+        if (sbaResult.isPaused) {
+            return ExecutionResult.paused(
+                sbaResult.state,
+                sbaResult.pendingDecision!!,
+                result.events + sbaResult.events
+            )
+        }
+
         var combinedEvents = result.events + sbaResult.events
 
         if (sbaResult.newState.gameOver) {

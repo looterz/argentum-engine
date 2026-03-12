@@ -741,6 +741,13 @@ class TurnManager(
                 // Check state-based actions after draw (Rule 704.3)
                 // This handles the case where a player tried to draw from an empty library
                 val sbaResult = sbaChecker.checkAndApply(newState)
+                if (sbaResult.isPaused) {
+                    return ExecutionResult.paused(
+                        sbaResult.state,
+                        sbaResult.pendingDecision!!,
+                        events + sbaResult.events
+                    )
+                }
                 newState = sbaResult.newState
                 events.addAll(sbaResult.events)
                 // Only give priority if the game is not over
@@ -810,6 +817,13 @@ class TurnManager(
                 events.addAll(damageResult.events)
                 // Check state-based actions (creatures with lethal damage die)
                 val sbaResult = sbaChecker.checkAndApply(newState)
+                if (sbaResult.isPaused) {
+                    return ExecutionResult.paused(
+                        sbaResult.state,
+                        sbaResult.pendingDecision!!,
+                        events + sbaResult.events
+                    )
+                }
                 newState = sbaResult.newState
                 events.addAll(sbaResult.events)
                 // Only give priority if the game is not over
@@ -832,6 +846,13 @@ class TurnManager(
                 events.addAll(damageResult.events)
                 // Check state-based actions (creatures with lethal damage die)
                 val sbaResult = sbaChecker.checkAndApply(newState)
+                if (sbaResult.isPaused) {
+                    return ExecutionResult.paused(
+                        sbaResult.state,
+                        sbaResult.pendingDecision!!,
+                        events + sbaResult.events
+                    )
+                }
                 newState = sbaResult.newState
                 events.addAll(sbaResult.events)
                 // Only give priority if the game is not over
@@ -930,6 +951,13 @@ class TurnManager(
                         events.add(PlayerLostEvent(activePlayer, GameEndReason.CARD_EFFECT, loseComponent.message))
                         // Check state-based actions to end the game
                         val sbaResult = sbaChecker.checkAndApply(newState)
+                        if (sbaResult.isPaused) {
+                            return ExecutionResult.paused(
+                                sbaResult.state,
+                                sbaResult.pendingDecision!!,
+                                events + sbaResult.events
+                            )
+                        }
                         newState = sbaResult.newState
                         events.addAll(sbaResult.events)
                         // Game is over, no priority

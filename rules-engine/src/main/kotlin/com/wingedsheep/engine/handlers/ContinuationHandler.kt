@@ -53,6 +53,7 @@ class ContinuationHandler(
         registerModule(DrawReplacementContinuationResumer(ctx, ::entityIdToChosenTarget))
         registerModule(CardSpecificContinuationResumer(ctx))
         registerModule(DiscardAndDrawContinuationResumer(ctx))
+        registerModule(StateBasedContinuationResumer(ctx))
         registerModule(SacrificeAndPayContinuationResumer(ctx))
         registerModule(ManaPaymentContinuationResumer(ctx))
         registerModule(LibraryAndZoneContinuationResumer(ctx))

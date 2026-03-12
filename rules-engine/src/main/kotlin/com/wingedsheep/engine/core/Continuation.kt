@@ -280,6 +280,21 @@ data class HandSizeDiscardContinuation(
 ) : ContinuationFrame
 
 /**
+ * Resume after player selects which legendary permanent to keep (legend rule 704.5j).
+ *
+ * The player chose one permanent to keep; all others with the same name are put into the graveyard.
+ *
+ * @property playerId The player who controls the duplicates
+ * @property allDuplicates All entity IDs of the legendary permanents with the same name
+ */
+@Serializable
+data class LegendRuleContinuation(
+    override val decisionId: String,
+    val playerId: EntityId,
+    val allDuplicates: List<EntityId>
+) : ContinuationFrame
+
+/**
  * Resume after player selects a card from their graveyard.
  *
  * Used for spells like Elven Cache and Déjà Vu that let the player

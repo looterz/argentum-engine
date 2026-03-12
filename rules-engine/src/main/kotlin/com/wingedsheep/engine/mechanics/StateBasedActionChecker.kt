@@ -1,6 +1,7 @@
 package com.wingedsheep.engine.mechanics
 
 import com.wingedsheep.engine.core.*
+import com.wingedsheep.engine.handlers.DecisionHandler
 import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
 import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.stripBattlefieldComponents
 import com.wingedsheep.engine.state.GameState
@@ -35,7 +36,9 @@ import com.wingedsheep.sdk.model.EntityId
  *
  * SBAs are checked repeatedly until none apply.
  */
-class StateBasedActionChecker {
+class StateBasedActionChecker(
+    private val decisionHandler: DecisionHandler = DecisionHandler()
+) {
 
 
     /**
@@ -50,6 +53,16 @@ class StateBasedActionChecker {
         var actionsApplied: Boolean
         do {
             val result = checkOnce(currentState)
+
+            // If an SBA needs player input (e.g., legend rule choice), return paused
+            if (result.isPaused) {
+                return ExecutionResult.paused(
+                    result.state,
+                    result.pendingDecision!!,
+                    allEvents + result.events
+                )
+            }
+
             actionsApplied = result.events.isNotEmpty()
             currentState = result.newState
             allEvents.addAll(result.events)
@@ -98,6 +111,14 @@ class StateBasedActionChecker {
 
         // 704.5j - If two or more legendary permanents with same name controlled by same player
         val legendResults = checkLegendRule(newState)
+        if (legendResults.isPaused) {
+            // Return paused with events accumulated so far + legend rule events
+            return ExecutionResult.paused(
+                legendResults.state,
+                legendResults.pendingDecision!!,
+                events + legendResults.events
+            )
+        }
         newState = legendResults.newState
         events.addAll(legendResults.events)
 
@@ -312,9 +333,6 @@ class StateBasedActionChecker {
      * with the same name, that player chooses one and puts the rest into graveyard.
      */
     private fun checkLegendRule(state: GameState): ExecutionResult {
-        var newState = state
-        val events = mutableListOf<GameEvent>()
-
         for (playerId in state.turnOrder) {
             val battlefieldZone = ZoneKey(playerId, Zone.BATTLEFIELD)
             val permanents = state.getZone(battlefieldZone)
@@ -331,24 +349,55 @@ class StateBasedActionChecker {
                 }
             }
 
-            // For each name with duplicates, keep only one (first one for now - should be player choice)
-            for ((_, entityIds) in legendaryByName) {
+            // Find first name group with duplicates and ask the player to choose
+            for ((name, entityIds) in legendaryByName) {
                 if (entityIds.size > 1) {
-                    // Keep first, sacrifice rest
-                    for (i in 1 until entityIds.size) {
-                        val entityId = entityIds[i]
-                        val container = state.getEntity(entityId) ?: continue
-                        val cardComponent = container.get<CardComponent>() ?: continue
+                    // Ask the player which one to keep (select exactly 1)
+                    val decisionResult = decisionHandler.createCardSelectionDecision(
+                        state = state,
+                        playerId = playerId,
+                        sourceId = null,
+                        sourceName = null,
+                        prompt = "Choose which $name to keep (legend rule)",
+                        options = entityIds,
+                        minSelections = 1,
+                        maxSelections = 1,
+                        ordered = false,
+                        phase = DecisionPhase.STATE_BASED,
+                        useTargetingUI = true
+                    )
 
-                        val result = putCreatureInGraveyard(newState, entityId, cardComponent, "legend rule")
-                        newState = result.newState
-                        events.addAll(result.events)
-                    }
+                    val continuation = LegendRuleContinuation(
+                        decisionId = decisionResult.pendingDecision!!.id,
+                        playerId = playerId,
+                        allDuplicates = entityIds
+                    )
+
+                    val stateWithContinuation = decisionResult.state.pushContinuation(continuation)
+
+                    return ExecutionResult.paused(
+                        stateWithContinuation,
+                        decisionResult.pendingDecision,
+                        decisionResult.events
+                    )
                 }
             }
         }
 
-        return ExecutionResult.success(newState, events)
+        return ExecutionResult.success(state)
+    }
+
+    /**
+     * Puts a permanent into the graveyard for the legend rule.
+     * This is not "destroy" — it's a state-based action that moves the permanent to graveyard.
+     * Respects zone change replacement effects but not indestructible/regeneration.
+     */
+    internal fun putPermanentInGraveyardForLegendRule(
+        state: GameState,
+        entityId: EntityId,
+        cardComponent: CardComponent
+    ): ExecutionResult {
+        return putCreatureInGraveyard(state, entityId, cardComponent, "legend rule")
     }
 
     /**

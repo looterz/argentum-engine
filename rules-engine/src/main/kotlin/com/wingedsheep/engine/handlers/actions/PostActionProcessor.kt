@@ -104,6 +104,16 @@ class PostActionProcessor(
         activePlayerId: EntityId
     ): ExecutionResult {
         val sbaResult = sbaChecker.checkAndApply(state)
+
+        // If SBA needs player input (e.g., legend rule), return paused
+        if (sbaResult.isPaused) {
+            return ExecutionResult.paused(
+                sbaResult.state,
+                sbaResult.pendingDecision!!,
+                events + sbaResult.events
+            )
+        }
+
         val combinedEvents = events + sbaResult.events
 
         // If game is over, don't give priority

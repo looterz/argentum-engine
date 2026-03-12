@@ -88,6 +88,16 @@ class SubmitDecisionHandler(
             // Check SBAs after continuation completes
             if (result.isSuccess && !result.isPaused) {
                 val sbaResult = sbaChecker.checkAndApply(result.state)
+
+                // If SBA needs player input (e.g., legend rule), return paused
+                if (sbaResult.isPaused) {
+                    return ExecutionResult.paused(
+                        sbaResult.state,
+                        sbaResult.pendingDecision!!,
+                        listOf(submittedEvent) + result.events + sbaResult.events
+                    )
+                }
+
                 var combinedEvents = listOf(submittedEvent) + result.events + sbaResult.events
 
                 if (sbaResult.newState.gameOver) {
