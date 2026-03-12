@@ -2,7 +2,7 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 58 / 249
+**Implemented:** 59 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -10,7 +10,7 @@
 | Blue       | 37    | 10   |
 | Black      | 38    | 12   |
 | Red        | 38    | 10   |
-| Green      | 37    | 10   |
+| Green      | 37    | 11   |
 | Multicolor | 19    | 1    |
 | Colorless  | 30    | 5    |
 | Land       | 12    | 0    |
@@ -137,7 +137,7 @@
 - [ ] Knight of Grace
 - [ ] Knight of Malice
 - [x] Knight of New Benalia
-- [ ] Krosan Druid
+- [x] Krosan Druid
 - [ ] Kwende, Pride of Femeref
 - [ ] Lich's Mastery
 - [ ] Lingering Phantom

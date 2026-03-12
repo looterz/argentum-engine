@@ -52,6 +52,7 @@ object DominariaSet {
         GiftOfGrowth,
         InvokeTheDivine,
         HomaridExplorer,
+        KrosanDruid,
         KnightOfNewBenalia,
         KeldonRaider,
         LlanowarElves,
