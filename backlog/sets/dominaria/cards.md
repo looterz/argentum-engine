@@ -2,14 +2,14 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 113 / 249
+**Implemented:** 114 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 38    | 20   |
 | Blue       | 37    | 14   |
 | Black      | 38    | 19   |
-| Red        | 38    | 20   |
+| Red        | 38    | 21   |
 | Green      | 37    | 18   |
 | Multicolor | 19    | 4    |
 | Colorless  | 30    | 12   |
@@ -174,7 +174,7 @@
 - [ ] Precognition Field
 - [ ] Primevals' Glorious Rebirth
 - [x] Primordial Wurm
-- [ ] Radiating Lightning
+- [x] Radiating Lightning
 - [ ] Raff Capashen, Ship's Mage
 - [x] Rampaging Cyclops
 - [x] Rat Colony

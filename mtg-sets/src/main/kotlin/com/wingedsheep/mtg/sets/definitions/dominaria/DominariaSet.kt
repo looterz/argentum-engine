@@ -96,6 +96,7 @@ object DominariaSet {
         PegasusCourser,
         PierceTheSky,
         PrimordialWurm,
+        RadiatingLightning,
         RampagingCyclops,
         RatColony,
         Rescue,
