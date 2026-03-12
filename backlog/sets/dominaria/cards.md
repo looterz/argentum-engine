@@ -2,13 +2,13 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 30 / 249
+**Implemented:** 31 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 38    | 5    |
 | Blue       | 37    | 5    |
-| Black      | 38    | 7    |
+| Black      | 38    | 8    |
 | Red        | 38    | 5    |
 | Green      | 37    | 5    |
 | Multicolor | 19    | 1    |
@@ -65,7 +65,7 @@
 - [ ] Daring Archaeologist
 - [ ] Dark Bargain
 - [ ] Dauntless Bodyguard
-- [ ] Deathbloom Thallid
+- [x] Deathbloom Thallid
 - [ ] Deep Freeze
 - [ ] Demonic Vigor
 - [ ] Demonlord Belzenlok
