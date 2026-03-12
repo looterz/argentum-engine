@@ -52,6 +52,7 @@ object DominariaSet {
         SparringConstruct,
         StrongholdConfessor,
         TolarianScholar,
+        WindgraceAcolyte,
         YargleGluttonOfUrborg,
         YavimayaSapherd,
     )
