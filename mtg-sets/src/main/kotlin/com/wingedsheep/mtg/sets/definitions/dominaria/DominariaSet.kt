@@ -26,6 +26,7 @@ object DominariaSet {
         ArborArmament,
         AvenSentry,
         ArvadTheCursed,
+        BalothGorger,
         Befuddle,
         CabalEvangel,
         CastDown,

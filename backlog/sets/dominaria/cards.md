@@ -2,7 +2,7 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 40 / 249
+**Implemented:** 41 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -10,7 +10,7 @@
 | Blue       | 37    | 7    |
 | Black      | 38    | 10   |
 | Red        | 38    | 6    |
-| Green      | 37    | 7    |
+| Green      | 37    | 8    |
 | Multicolor | 19    | 1    |
 | Colorless  | 30    | 3    |
 | Land       | 12    | 0    |
@@ -32,7 +32,7 @@
 - [ ] Aryel, Knight of Windgrace
 - [x] Aven Sentry
 - [ ] Baird, Steward of Argive
-- [ ] Baloth Gorger
+- [x] Baloth Gorger
 - [x] Befuddle
 - [ ] Benalish Honor Guard
 - [ ] Benalish Marshal
