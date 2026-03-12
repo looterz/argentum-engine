@@ -5,7 +5,6 @@ import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.effects.MayEffect
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.TargetCreature
 
@@ -31,8 +30,9 @@ val IcefeatherAven = card("Icefeather Aven") {
 
     triggeredAbility {
         trigger = Triggers.TurnedFaceUp
+        optional = true
         val t = target("another creature", TargetCreature(filter = TargetFilter.OtherCreature))
-        effect = MayEffect(Effects.ReturnToHand(t))
+        effect = Effects.ReturnToHand(t)
     }
 
     metadata {
