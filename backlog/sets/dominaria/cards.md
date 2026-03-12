@@ -2,7 +2,7 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 87 / 249
+**Implemented:** 89 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -10,7 +10,7 @@
 | Blue       | 37    | 14   |
 | Black      | 38    | 15   |
 | Red        | 38    | 15   |
-| Green      | 37    | 14   |
+| Green      | 37    | 16   |
 | Multicolor | 19    | 4    |
 | Colorless  | 30    | 9    |
 | Land       | 12    | 0    |
@@ -21,7 +21,7 @@
 - [ ] Academy Journeymage
 - [x] Adamant Will
 - [x] Adeliz, the Cinder Wind
-- [ ] Adventurous Impulse
+- [x] Adventurous Impulse
 - [x] Aesthir Glider
 - [x] Amaranthine Wall
 - [ ] Ancient Animus
@@ -209,7 +209,7 @@
 - [x] Soul Salvage
 - [x] Sparring Construct
 - [x] Spore Swarm
-- [ ] Sporecrown Thallid
+- [x] Sporecrown Thallid
 - [ ] Squee, the Immortal
 - [x] Steel Leaf Champion
 - [x] Stronghold Confessor

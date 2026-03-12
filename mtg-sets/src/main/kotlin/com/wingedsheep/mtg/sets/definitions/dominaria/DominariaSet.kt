@@ -22,6 +22,7 @@ object DominariaSet {
      */
     val allCards = listOf(
         AcademyDrake,
+        AdventurousImpulse,
         AdelizTheCinderWind,
         AmaranthineWall,
         ArcaneFlight,
@@ -91,6 +92,7 @@ object DominariaSet {
         SlimefootTheStowaway,
         SkitteringSurveyor,
         SoulSalvage,
+        SporecrownThallid,
         SporeSwarm,
         SparringConstruct,
         SteelLeafChampion,
