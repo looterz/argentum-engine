@@ -2,11 +2,11 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 35 / 249
+**Implemented:** 36 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
-| White      | 38    | 5    |
+| White      | 38    | 6    |
 | Blue       | 37    | 6    |
 | Black      | 38    | 9    |
 | Red        | 38    | 6    |
@@ -189,7 +189,7 @@
 - [ ] Seal Away
 - [ ] Seismic Shift
 - [ ] Sentinel of the Pearl Trident
-- [ ] Sergeant-at-Arms
+- [x] Sergeant-at-Arms
 - [x] Serra Angel
 - [ ] Serra Disciple
 - [ ] Settle the Score

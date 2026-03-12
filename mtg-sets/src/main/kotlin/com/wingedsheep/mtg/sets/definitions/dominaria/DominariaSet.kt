@@ -48,6 +48,7 @@ object DominariaSet {
         PrimordialWurm,
         RunAmok,
         SaprolingMigration,
+        SergeantAtArms,
         SerraAngel,
         ShivanFire,
         SparringConstruct,

@@ -1,0 +1,52 @@
+package com.wingedsheep.mtg.sets.definitions.dominaria.cards
+
+import com.wingedsheep.sdk.core.Color
+import com.wingedsheep.sdk.core.ManaCost
+import com.wingedsheep.sdk.dsl.Triggers
+import com.wingedsheep.sdk.dsl.card
+import com.wingedsheep.sdk.model.Rarity
+import com.wingedsheep.sdk.scripting.KeywordAbility
+import com.wingedsheep.sdk.scripting.conditions.WasKicked
+import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
+import com.wingedsheep.sdk.scripting.effects.CreateTokenEffect
+
+/**
+ * Sergeant-at-Arms
+ * {2}{W}
+ * Creature — Human Soldier
+ * 2/3
+ * Kicker {2}{W}
+ * When this creature enters, if it was kicked, create two 1/1 white Soldier creature tokens.
+ */
+val SergeantAtArms = card("Sergeant-at-Arms") {
+    manaCost = "{2}{W}"
+    typeLine = "Creature — Human Soldier"
+    power = 2
+    toughness = 3
+    oracleText = "Kicker {2}{W}\nWhen this creature enters, if it was kicked, create two 1/1 white Soldier creature tokens."
+
+    keywordAbility(KeywordAbility.Kicker(ManaCost.parse("{2}{W}")))
+
+    triggeredAbility {
+        trigger = Triggers.EntersBattlefield
+        effect = ConditionalEffect(
+            condition = WasKicked,
+            effect = CreateTokenEffect(
+                count = 2,
+                power = 1,
+                toughness = 1,
+                colors = setOf(Color.WHITE),
+                creatureTypes = setOf("Soldier"),
+                imageUri = "https://cards.scryfall.io/normal/front/4/4/44e5318f-4689-4cec-ac2e-42277018d1a0.jpg?1675455190"
+            )
+        )
+    }
+
+    metadata {
+        rarity = Rarity.COMMON
+        collectorNumber = "32"
+        artist = "Scott Murphy"
+        flavorText = "\"Knights get the glory. Soldiers get things done.\""
+        imageUri = "https://cards.scryfall.io/normal/front/8/f/8f70b1ee-47b6-4904-850d-8ea8064bd27d.jpg?1562739444"
+    }
+}
