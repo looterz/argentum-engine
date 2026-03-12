@@ -325,9 +325,9 @@ class TargetValidator {
             return "Target spell not on the stack"
         }
 
-        // Use unified filter
+        // Use unified filter with projected state (face-down spells need projection to be seen as creatures)
         val predicateContext = PredicateContext(controllerId = casterId)
-        val matches = predicateEvaluator.matches(state, target.spellEntityId, filter.baseFilter, predicateContext)
+        val matches = predicateEvaluator.matchesWithProjection(state, state.projectedState, target.spellEntityId, filter.baseFilter, predicateContext)
         if (!matches) {
             return "Target does not match filter: ${filter.description}"
         }
