@@ -50,6 +50,7 @@ object DominariaSet {
         FungalInfection,
         GhituChronicler,
         GiftOfGrowth,
+        InvokeTheDivine,
         HomaridExplorer,
         KnightOfNewBenalia,
         KeldonRaider,

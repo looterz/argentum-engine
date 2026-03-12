@@ -2,11 +2,11 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 56 / 249
+**Implemented:** 57 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
-| White      | 38    | 9    |
+| White      | 38    | 10   |
 | Blue       | 37    | 10   |
 | Black      | 38    | 12   |
 | Red        | 38    | 9    |
@@ -117,7 +117,7 @@
 - [ ] Howling Golem
 - [ ] Icy Manipulator
 - [ ] In Bolas's Clutches
-- [ ] Invoke the Divine
+- [x] Invoke the Divine
 - [ ] Isolated Chapel
 - [ ] Jaya Ballard
 - [ ] Jaya's Immolating Inferno

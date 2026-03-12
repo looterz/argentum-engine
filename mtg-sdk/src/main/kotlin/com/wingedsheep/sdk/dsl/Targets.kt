@@ -142,6 +142,11 @@ object Targets {
     val CreatureOrEnchantment: TargetRequirement = TargetPermanent(filter = TargetFilter.CreatureOrEnchantment)
 
     /**
+     * Target artifact or enchantment.
+     */
+    val ArtifactOrEnchantment: TargetRequirement = TargetPermanent(filter = TargetFilter.ArtifactOrEnchantment)
+
+    /**
      * Target land.
      */
     val Land: TargetRequirement = TargetPermanent(filter = TargetFilter.Land)
