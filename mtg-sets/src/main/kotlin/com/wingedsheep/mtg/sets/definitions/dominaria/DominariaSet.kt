@@ -27,6 +27,7 @@ object DominariaSet {
         Befuddle,
         CabalEvangel,
         CastDown,
+        CloudreaderSphinx,
         Divination,
         Eviscerate,
         FeralAbomination,
