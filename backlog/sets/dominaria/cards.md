@@ -2,11 +2,11 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 25 / 249
+**Implemented:** 26 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
-| White      | 38    | 4    |
+| White      | 38    | 5    |
 | Blue       | 37    | 4    |
 | Black      | 38    | 5    |
 | Red        | 38    | 5    |
@@ -19,7 +19,7 @@
 
 - [ ] Academy Drake
 - [ ] Academy Journeymage
-- [ ] Adamant Will
+- [x] Adamant Will
 - [ ] Adeliz, the Cinder Wind
 - [ ] Adventurous Impulse
 - [ ] Aesthir Glider
