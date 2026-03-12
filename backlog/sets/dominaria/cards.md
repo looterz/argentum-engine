@@ -2,12 +2,12 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 71 / 249
+**Implemented:** 72 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 38    | 13   |
-| Blue       | 37    | 12   |
+| Blue       | 37    | 13   |
 | Black      | 38    | 12   |
 | Red        | 38    | 12   |
 | Green      | 37    | 13   |
@@ -218,7 +218,7 @@
 - [ ] Syncopate
 - [ ] Tatyova, Benthic Druid
 - [ ] Teferi, Hero of Dominaria
-- [ ] Tempest Djinn
+- [x] Tempest Djinn
 - [ ] Territorial Allosaurus
 - [ ] Teshar, Ancestor's Apostle
 - [ ] Tetsuko Umezawa, Fugitive
