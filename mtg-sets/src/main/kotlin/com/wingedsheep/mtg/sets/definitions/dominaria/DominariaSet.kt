@@ -78,6 +78,7 @@ object DominariaSet {
         KrosanDruid,
         KwendePrideOfFemeref,
         KnightOfNewBenalia,
+        KeldonOverseer,
         KeldonRaider,
         LlanowarEnvoy,
         LlanowarElves,

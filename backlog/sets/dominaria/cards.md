@@ -2,14 +2,14 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 112 / 249
+**Implemented:** 113 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 38    | 20   |
 | Blue       | 37    | 14   |
 | Black      | 38    | 19   |
-| Red        | 38    | 19   |
+| Red        | 38    | 20   |
 | Green      | 37    | 18   |
 | Multicolor | 19    | 4    |
 | Colorless  | 30    | 12   |
@@ -131,7 +131,7 @@
 - [ ] Karn's Temporal Sundering
 - [ ] Karn, Scion of Urza
 - [ ] Kazarov, Sengir Pureblood
-- [ ] Keldon Overseer
+- [x] Keldon Overseer
 - [x] Keldon Raider
 - [ ] Keldon Warcaller
 - [ ] Knight of Grace
