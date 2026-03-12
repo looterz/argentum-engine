@@ -82,6 +82,7 @@ object DominariaSet {
         Skizzik,
         ShortSword,
         SkirkProspector,
+        SlimefootTheStowaway,
         SkitteringSurveyor,
         SporeSwarm,
         SparringConstruct,
