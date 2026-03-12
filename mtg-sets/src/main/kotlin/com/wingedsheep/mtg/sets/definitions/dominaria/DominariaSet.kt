@@ -22,6 +22,7 @@ object DominariaSet {
      */
     val allCards = listOf(
         AcademyDrake,
+        AmaranthineWall,
         ArcaneFlight,
         AesthirGlider,
         AdamantWill,
@@ -62,6 +63,7 @@ object DominariaSet {
         MammothSpider,
         MesaUnicorn,
         Opt,
+        OrcishVandal,
         PardicWanderer,
         PierceTheSky,
         PrimordialWurm,

@@ -2,17 +2,17 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 64 / 249
+**Implemented:** 66 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 38    | 12   |
 | Blue       | 37    | 12   |
 | Black      | 38    | 12   |
-| Red        | 38    | 10   |
+| Red        | 38    | 11   |
 | Green      | 37    | 12   |
 | Multicolor | 19    | 1    |
-| Colorless  | 30    | 5    |
+| Colorless  | 30    | 6    |
 | Land       | 12    | 0    |
 
 ---
@@ -23,7 +23,7 @@
 - [ ] Adeliz, the Cinder Wind
 - [ ] Adventurous Impulse
 - [x] Aesthir Glider
-- [ ] Amaranthine Wall
+- [x] Amaranthine Wall
 - [ ] Ancient Animus
 - [x] Arbor Armament
 - [x] Arcane Flight
@@ -165,7 +165,7 @@
 - [ ] Oath of Teferi
 - [ ] On Serra's Wings
 - [x] Opt
-- [ ] Orcish Vandal
+- [x] Orcish Vandal
 - [x] Pardic Wanderer
 - [ ] Pegasus Courser
 - [ ] Phyrexian Scriptures
