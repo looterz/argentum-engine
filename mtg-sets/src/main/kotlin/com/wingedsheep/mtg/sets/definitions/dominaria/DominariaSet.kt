@@ -86,6 +86,7 @@ object DominariaSet {
         SkitteringSurveyor,
         SporeSwarm,
         SparringConstruct,
+        SteelLeafChampion,
         StrongholdConfessor,
         TatyovaBenthicDruid,
         TempestDjinn,
