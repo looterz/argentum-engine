@@ -100,6 +100,18 @@ data object WasCastFromHand : Condition {
 }
 
 /**
+ * Condition: "If this spell was kicked"
+ * Used for kicker spells like Shivan Fire where the effect changes based on
+ * whether the kicker cost was paid.
+ */
+@SerialName("WasKicked")
+@Serializable
+data object WasKicked : Condition {
+    override val description: String = "this spell was kicked"
+    override fun applyTextReplacement(replacer: TextReplacer): Condition = this
+}
+
+/**
  * Condition: "As long as this creature is a [subtype]"
  * Used for cards like Mistform Wall: "This creature has defender as long as it's a Wall."
  *

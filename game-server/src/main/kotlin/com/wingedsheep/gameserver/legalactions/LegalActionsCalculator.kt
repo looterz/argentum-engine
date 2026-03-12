@@ -482,6 +482,113 @@ class LegalActionsCalculator(
             }
         }
 
+        // Check for kicker cards in hand — generate kicked action alongside normal cast
+        for (cardId in hand) {
+            val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: continue
+            if (cardComponent.typeLine.isLand) continue
+            if (cantCastSpells) continue
+
+            val cardDef = cardRegistry.getCard(cardComponent.name) ?: continue
+            val kickerAbility = cardDef.keywordAbilities
+                .filterIsInstance<com.wingedsheep.sdk.scripting.KeywordAbility.Kicker>()
+                .firstOrNull() ?: continue
+
+            // Check timing (same rules as normal cast)
+            val isInstant = cardComponent.typeLine.isInstant
+            val hasFlash = cardDef.keywords.contains(Keyword.FLASH)
+            val grantedFlash = hasFlash || hasGrantedFlash(state, cardId)
+            if (!isInstant && !grantedFlash && !canPlaySorcerySpeed) continue
+
+            // Check cast restrictions
+            val castRestrictions = cardDef.script.castRestrictions
+            if (castRestrictions.isNotEmpty() && !checkCastRestrictions(state, playerId, castRestrictions)) continue
+
+            // Calculate kicked cost = base effective cost + kicker cost
+            val baseCost = costCalculator.calculateEffectiveCost(state, cardDef, playerId)
+            val kickedCost = com.wingedsheep.sdk.core.ManaCost(baseCost.symbols + kickerAbility.cost.symbols)
+            val canAffordKicked = manaSolver.canPay(state, playerId, kickedCost)
+            val kickedCostString = kickedCost.toString()
+            val kickedAutoTapSolution = manaSolver.solve(state, playerId, kickedCost)
+            val kickedAutoTapPreview = kickedAutoTapSolution?.sources?.map { it.entityId }
+
+            // Build target info (same targets as normal cast)
+            val targetReqs = buildList {
+                addAll(cardDef.script.targetRequirements)
+                cardDef.script.auraTarget?.let { add(it) }
+            }
+
+            if (targetReqs.isNotEmpty()) {
+                val targetReqInfos = targetReqs.mapIndexed { index, req ->
+                    val validTargets = findValidTargets(state, playerId, req)
+                    LegalActionTargetInfo(
+                        index = index,
+                        description = req.description,
+                        minTargets = req.effectiveMinCount,
+                        maxTargets = req.count,
+                        validTargets = validTargets,
+                        targetZone = getTargetZone(req)
+                    )
+                }
+                val allRequirementsSatisfied = targetReqInfos.all { reqInfo ->
+                    reqInfo.validTargets.isNotEmpty() || reqInfo.minTargets == 0
+                }
+                if (allRequirementsSatisfied) {
+                    val firstReq = targetReqs.first()
+                    val firstReqInfo = targetReqInfos.first()
+
+                    val canAutoSelect = targetReqs.size == 1 &&
+                        shouldAutoSelectPlayerTarget(firstReq, firstReqInfo.validTargets)
+
+                    if (canAutoSelect) {
+                        val autoSelectedTarget = ChosenTarget.Player(firstReqInfo.validTargets.first())
+                        result.add(LegalActionInfo(
+                            actionType = "CastWithKicker",
+                            description = "Cast ${cardComponent.name} (Kicked)",
+                            action = CastSpell(playerId, cardId, targets = listOf(autoSelectedTarget), wasKicked = true),
+                            isAffordable = canAffordKicked,
+                            manaCostString = kickedCostString,
+                            autoTapPreview = kickedAutoTapPreview
+                        ))
+                    } else {
+                        result.add(LegalActionInfo(
+                            actionType = "CastWithKicker",
+                            description = "Cast ${cardComponent.name} (Kicked)",
+                            action = CastSpell(playerId, cardId, wasKicked = true),
+                            validTargets = firstReqInfo.validTargets,
+                            requiresTargets = true,
+                            targetCount = firstReq.count,
+                            minTargets = firstReq.effectiveMinCount,
+                            targetDescription = firstReq.description,
+                            targetRequirements = if (targetReqInfos.size > 1) targetReqInfos else null,
+                            isAffordable = canAffordKicked,
+                            manaCostString = kickedCostString,
+                            autoTapPreview = kickedAutoTapPreview
+                        ))
+                    }
+                }
+            } else {
+                result.add(LegalActionInfo(
+                    actionType = "CastWithKicker",
+                    description = "Cast ${cardComponent.name} (Kicked)",
+                    action = CastSpell(playerId, cardId, wasKicked = true),
+                    isAffordable = canAffordKicked,
+                    manaCostString = kickedCostString,
+                    autoTapPreview = kickedAutoTapPreview
+                ))
+            }
+
+            // If normal cast is not affordable but kicker is (unlikely), ensure normal cast shows unaffordable
+            if (!manaSolver.canPay(state, playerId, baseCost)) {
+                result.add(LegalActionInfo(
+                    actionType = "CastSpell",
+                    description = "Cast ${cardComponent.name}",
+                    action = CastSpell(playerId, cardId),
+                    isAffordable = false,
+                    manaCostString = baseCost.toString()
+                ))
+            }
+        }
+
         // Check if cycling is prevented by any permanent on the battlefield (e.g., Stabilizer)
         val cyclingPrevented = isCyclingPrevented(state)
 

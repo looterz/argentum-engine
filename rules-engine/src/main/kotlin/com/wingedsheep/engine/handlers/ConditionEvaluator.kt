@@ -40,6 +40,7 @@ import com.wingedsheep.sdk.scripting.conditions.SourceIsBlocking
 import com.wingedsheep.sdk.scripting.conditions.SourceIsTapped
 import com.wingedsheep.sdk.scripting.conditions.SourceIsUntapped
 import com.wingedsheep.sdk.scripting.conditions.WasCastFromHand
+import com.wingedsheep.sdk.scripting.conditions.WasKicked
 import com.wingedsheep.sdk.scripting.conditions.YouAttackedThisTurn
 import com.wingedsheep.sdk.scripting.conditions.YouWereAttackedThisStep
 import com.wingedsheep.sdk.scripting.conditions.YouWereDealtCombatDamageThisTurn
@@ -71,6 +72,7 @@ class ConditionEvaluator {
 
             // Source conditions
             is WasCastFromHand -> evaluateWasCastFromHand(state, context)
+            is WasKicked -> context.wasKicked
             is SourceIsAttacking -> evaluateSourceAttacking(state, context)
             is SourceIsBlocking -> evaluateSourceBlocking(state, context)
             is SourceIsTapped -> evaluateSourceTapped(state, context)

@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.scripting.conditions.ComparisonOperator
 import com.wingedsheep.sdk.scripting.conditions.Exists
 import com.wingedsheep.sdk.scripting.conditions.NotCondition
 import com.wingedsheep.sdk.scripting.conditions.WasCastFromHand as WasCastFromHandCondition
+import com.wingedsheep.sdk.scripting.conditions.WasKicked as WasKickedCondition
 import com.wingedsheep.sdk.scripting.conditions.SourceIsAttacking as SourceIsAttackingCondition
 import com.wingedsheep.sdk.scripting.conditions.SourceIsBlocking as SourceIsBlockingCondition
 import com.wingedsheep.sdk.scripting.conditions.SourceIsTapped as SourceIsTappedCondition
@@ -233,6 +234,13 @@ object Conditions {
      */
     val WasCastFromHand: ConditionInterface =
         WasCastFromHandCondition
+
+    /**
+     * If this spell was kicked.
+     * Used for kicker spells like Shivan Fire.
+     */
+    val WasKicked: ConditionInterface =
+        WasKickedCondition
 
     /**
      * If this creature is attacking.

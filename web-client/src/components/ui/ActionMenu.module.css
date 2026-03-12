@@ -159,6 +159,10 @@
   background: var(--gradient-special);
 }
 
+.actionCastWithKicker {
+  background: var(--gradient-primary);
+}
+
 .actionCycle {
   background: var(--gradient-cycle);
 }
@@ -258,6 +262,10 @@
 
 .fallbackCastFaceDown {
   background-color: #555599;
+}
+
+.fallbackCastWithKicker {
+  background-color: var(--color-primary);
 }
 
 .fallbackTurnFaceUp {

@@ -15,6 +15,7 @@ data class EffectContext(
     val opponentId: EntityId?,
     val targets: List<ChosenTarget> = emptyList(),
     val xValue: Int? = null,
+    val wasKicked: Boolean = false,
     val sacrificedPermanents: List<EntityId> = emptyList(),
     /** Projected subtypes of sacrificed permanents at time of sacrifice (before zone change) */
     val sacrificedPermanentSubtypes: Map<EntityId, Set<String>> = emptyMap(),

@@ -144,14 +144,26 @@ class CastSpellHandler(
             }
         }
 
+        // Validate kicker: card must have Kicker keyword ability
+        if (action.wasKicked && cardDef != null) {
+            val kickerAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Kicker>().firstOrNull()
+                ?: return "This card does not have kicker"
+        }
+
         // Calculate effective cost (free if PlayWithoutPayingCostComponent is present)
         val playForFree = hasPlayWithoutPayingCost(state, action.playerId, action.cardId)
-        val effectiveCost = if (playForFree) {
+        var effectiveCost = if (playForFree) {
             ManaCost.ZERO
         } else if (cardDef != null) {
             costCalculator.calculateEffectiveCost(state, cardDef, action.playerId)
         } else {
             cardComponent.manaCost
+        }
+
+        // Add kicker cost if kicked
+        if (action.wasKicked && !playForFree && cardDef != null) {
+            val kickerAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Kicker>().first()
+            effectiveCost = ManaCost(effectiveCost.symbols + kickerAbility.cost.symbols)
         }
 
         // Account for Delve/Convoke reduction before validating payment
@@ -452,6 +464,12 @@ class CastSpellHandler(
             cardComponent.manaCost
         }
 
+        // Add kicker cost if kicked
+        if (action.wasKicked && !playForFreeInExecute && cardDef != null) {
+            val kickerAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Kicker>().first()
+            effectiveCost = ManaCost(effectiveCost.symbols + kickerAbility.cost.symbols)
+        }
+
         // Process additional costs (sacrifice, exile, etc.)
         val sacrificedPermanentIds = mutableListOf<EntityId>()
         val sacrificedPermanentSubtypes = mutableMapOf<EntityId, Set<String>>()
@@ -609,7 +627,8 @@ class CastSpellHandler(
             action.castFaceDown,
             action.damageDistribution,
             spellTargetRequirements,
-            exiledCardCount = exiledCardCount
+            exiledCardCount = exiledCardCount,
+            wasKicked = action.wasKicked
         )
 
         if (!castResult.isSuccess) {

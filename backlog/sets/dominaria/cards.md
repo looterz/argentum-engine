@@ -2,14 +2,14 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 22 / 249
+**Implemented:** 24 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 38    | 4    |
 | Blue       | 37    | 4    |
-| Black      | 38    | 4    |
-| Red        | 38    | 4    |
+| Black      | 38    | 5    |
+| Red        | 38    | 5    |
 | Green      | 37    | 3    |
 | Multicolor | 19    | 1    |
 | Colorless  | 30    | 2    |
@@ -44,7 +44,7 @@
 - [ ] Bloodtallow Candle
 - [ ] Board the Weatherlight
 - [ ] Broken Bond
-- [ ] Cabal Evangel
+- [x] Cabal Evangel
 - [ ] Cabal Paladin
 - [ ] Cabal Stronghold
 - [ ] Caligo Skin-Witch
@@ -196,7 +196,7 @@
 - [ ] Shalai, Voice of Plenty
 - [ ] Shanna, Sisay's Legacy
 - [ ] Shield of the Realm
-- [ ] Shivan Fire
+- [x] Shivan Fire
 - [ ] Short Sword
 - [ ] Siege-Gang Commander
 - [ ] Skirk Prospector

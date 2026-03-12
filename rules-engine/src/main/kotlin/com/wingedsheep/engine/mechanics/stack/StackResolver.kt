@@ -83,7 +83,8 @@ class StackResolver(
         damageDistribution: Map<EntityId, Int>? = null,
         targetRequirements: List<TargetRequirement> = emptyList(),
         chosenCreatureType: String? = null,
-        exiledCardCount: Int = 0
+        exiledCardCount: Int = 0,
+        wasKicked: Boolean = false
     ): ExecutionResult {
         val container = state.getEntity(cardId)
             ?: return ExecutionResult.error(state, "Card not found: $cardId")
@@ -102,6 +103,7 @@ class StackResolver(
             var updated = c.with(SpellOnStackComponent(
                 casterId = casterId,
                 xValue = xValue,
+                wasKicked = wasKicked,
                 sacrificedPermanents = sacrificedPermanents,
                 sacrificedPermanentSubtypes = sacrificedPermanentSubtypes,
                 castFaceDown = castFaceDown,
@@ -660,6 +662,7 @@ class StackResolver(
                 opponentId = newState.getOpponent(spellComponent.casterId),
                 targets = targets,
                 xValue = spellComponent.xValue,
+                wasKicked = spellComponent.wasKicked,
                 sacrificedPermanents = spellComponent.sacrificedPermanents,
                 sacrificedPermanentSubtypes = spellComponent.sacrificedPermanentSubtypes,
                 damageDistribution = spellComponent.damageDistribution,

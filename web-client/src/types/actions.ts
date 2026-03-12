@@ -81,6 +81,8 @@ export interface CastSpellAction {
   readonly alternativePayment?: AlternativePaymentChoice
   /** Whether to cast this card face-down (for Morph creatures) */
   readonly castFaceDown?: boolean
+  /** Whether to cast this spell with kicker */
+  readonly wasKicked?: boolean
   /** Pre-chosen damage distribution for DividedDamageEffect spells (target ID -> damage amount) */
   readonly damageDistribution?: Record<EntityId, number>
 }

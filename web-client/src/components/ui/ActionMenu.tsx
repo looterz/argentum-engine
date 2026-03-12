@@ -22,7 +22,7 @@ interface ActionOption {
   /** The legal action info if available */
   action: LegalActionInfo | null
   /** Action type for coloring */
-  actionType: 'cast' | 'castFaceDown' | 'cycle' | 'playLand' | 'activate' | 'turnFaceUp'
+  actionType: 'cast' | 'castFaceDown' | 'castWithKicker' | 'cycle' | 'playLand' | 'activate' | 'turnFaceUp'
 }
 
 /**
@@ -48,8 +48,9 @@ function buildActionOptions(
 
   // Find each type of action - server sends all potential actions with isAffordable flag
   const castAction = legalActions.find(
-    (a) => a.action.type === 'CastSpell' && a.actionType !== 'CastFaceDown'
+    (a) => a.action.type === 'CastSpell' && a.actionType !== 'CastFaceDown' && a.actionType !== 'CastWithKicker'
   )
+  const kickerAction = legalActions.find((a) => a.actionType === 'CastWithKicker')
   const morphAction = legalActions.find((a) => a.actionType === 'CastFaceDown')
   const cycleAction = legalActions.find((a) => a.action.type === 'CycleCard')
   const typecycleAction = legalActions.find((a) => a.action.type === 'TypecycleCard')
@@ -119,6 +120,18 @@ function buildActionOptions(
       isAvailable: morphAction.isAffordable !== false,
       action: morphAction,
       actionType: 'castFaceDown',
+    })
+  }
+
+  // 3b. Cast with kicker
+  if (kickerAction) {
+    options.push({
+      key: 'castWithKicker',
+      label: `Cast ${cardInfo.name} (Kicked)`,
+      manaCost: kickerAction.manaCostString || null,
+      isAvailable: kickerAction.isAffordable !== false,
+      action: kickerAction,
+      actionType: 'castWithKicker',
     })
   }
 
@@ -307,6 +320,8 @@ function getActionStyleClass(actionType: ActionOption['actionType'], isAvailable
       return styles.actionCast ?? ''
     case 'castFaceDown':
       return styles.actionCastFaceDown ?? ''
+    case 'castWithKicker':
+      return styles.actionCastWithKicker ?? ''
     case 'cycle':
       return styles.actionCycle ?? ''
     case 'playLand':
@@ -371,9 +386,12 @@ function ActionButton({
   onClick: () => void
 }) {
   const getActionColorClass = () => {
-    // Handle morph-specific action types first (these have actionType different from action.type)
+    // Handle special action types first (these have actionType different from action.type)
     if (action.actionType === 'CastFaceDown') {
       return styles.fallbackCastFaceDown
+    }
+    if (action.actionType === 'CastWithKicker') {
+      return styles.fallbackCastWithKicker
     }
     if (action.actionType === 'TurnFaceUp') {
       return styles.fallbackTurnFaceUp
@@ -402,6 +420,8 @@ function ActionButton({
     switch (action.actionType) {
       case 'CastFaceDown':
         return 'Cast Face-Down ({3})'
+      case 'CastWithKicker':
+        return `Cast (Kicked) (${action.manaCostString ?? ''})`
       case 'TurnFaceUp':
         return `Turn Face-Up (${action.manaCostString ?? ''})`
       default:
