@@ -32,7 +32,8 @@ val MarduAscendancy = card("Mardu Ascendancy") {
             colors = setOf(Color.RED),
             creatureTypes = setOf("Goblin"),
             tapped = true,
-            attacking = true
+            attacking = true,
+            imageUri = "https://cards.scryfall.io/normal/front/e/d/ed418a8b-f158-492d-a323-6265b3175292.jpg?1562640121"
         )
     }
 
