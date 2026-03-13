@@ -2,7 +2,7 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 125 / 249
+**Implemented:** 126 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -11,7 +11,7 @@
 | Black      | 38    | 20   |
 | Red        | 38    | 21   |
 | Green      | 37    | 19   |
-| Multicolor | 19    | 7    |
+| Multicolor | 19    | 8    |
 | Colorless  | 30    | 13   |
 | Land       | 12    | 5    |
 
@@ -194,7 +194,7 @@
 - [ ] Serra Disciple
 - [ ] Settle the Score
 - [ ] Shalai, Voice of Plenty
-- [ ] Shanna, Sisay's Legacy
+- [x] Shanna, Sisay's Legacy
 - [ ] Shield of the Realm
 - [x] Shivan Fire
 - [x] Short Sword

@@ -114,6 +114,7 @@ object DominariaSet {
         SergeantAtArms,
         SerraAngel,
         SiegeGangCommander,
+        ShannaSisaysLegacy,
         ShivanFire,
         Skizzik,
         ShortSword,
