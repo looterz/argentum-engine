@@ -2,11 +2,11 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 141 / 249
+**Implemented:** 142 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
-| White      | 38    | 23   |
+| White      | 38    | 24   |
 | Blue       | 37    | 22   |
 | Black      | 38    | 23   |
 | Red        | 38    | 22   |
@@ -220,7 +220,7 @@
 - [ ] Teferi, Hero of Dominaria
 - [x] Tempest Djinn
 - [x] Territorial Allosaurus
-- [ ] Teshar, Ancestor's Apostle
+- [x] Teshar, Ancestor's Apostle
 - [x] Tetsuko Umezawa, Fugitive
 - [ ] Thallid Omnivore
 - [x] Thallid Soothsayer

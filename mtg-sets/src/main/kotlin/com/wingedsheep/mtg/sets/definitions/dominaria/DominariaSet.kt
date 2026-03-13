@@ -142,6 +142,7 @@ object DominariaSet {
         Syncopate,
         TatyovaBenthicDruid,
         TempestDjinn,
+        TesharAncestorsApostle,
         TerritorialAllosaurus,
         TetsukoUmezawaFugitive,
         ThallidSoothsayer,
