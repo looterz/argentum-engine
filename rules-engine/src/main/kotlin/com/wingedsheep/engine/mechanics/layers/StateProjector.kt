@@ -3,12 +3,14 @@ package com.wingedsheep.engine.mechanics.layers
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.components.battlefield.GrantCantBeBlockedToSmallCreaturesComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.ProtectionComponent
 import com.wingedsheep.engine.state.components.identity.TextReplacementComponent
+import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Subtype
@@ -129,6 +131,11 @@ class StateProjector(
 
         // Apply counters (layer 7d)
         effectApplicator.applyCounters(state, projectedValues)
+
+        // Post-layer pass: grant CANT_BE_BLOCKED to creatures qualifying via
+        // GrantCantBeBlockedToSmallCreatures (e.g., Tetsuko Umezawa, Fugitive).
+        // Must happen after all P/T layers so projected power/toughness is final.
+        applyGrantCantBeBlockedToSmallCreatures(state, projectedValues)
 
         // Convert to immutable
         val finalValues = projectedValues.mapValues { (_, v) ->
@@ -335,6 +342,42 @@ class StateProjector(
                 is CharacteristicValue.DynamicWithOffset ->
                     values.toughness = resolveDynamicAmount(toughness.source) + toughness.offset
                 is CharacteristicValue.Fixed -> {}
+            }
+        }
+    }
+
+    /**
+     * Scan for permanents with GrantCantBeBlockedToSmallCreaturesComponent and
+     * add CANT_BE_BLOCKED to creatures they control whose projected power or
+     * toughness is at most the threshold.
+     */
+    private fun applyGrantCantBeBlockedToSmallCreatures(
+        state: GameState,
+        projectedValues: MutableMap<EntityId, MutableProjectedValues>
+    ) {
+        // Collect all grant sources: (controllerId, maxValue)
+        val sources = mutableListOf<Pair<EntityId, Int>>()
+        for (entityId in state.getBattlefield()) {
+            val container = state.getEntity(entityId) ?: continue
+            val grant = container.get<GrantCantBeBlockedToSmallCreaturesComponent>() ?: continue
+            val controllerId = projectedValues[entityId]?.controllerId ?: continue
+            sources.add(controllerId to grant.maxValue)
+        }
+        if (sources.isEmpty()) return
+
+        // For each creature on the battlefield, check if any source applies
+        for (entityId in state.getBattlefield()) {
+            val values = projectedValues[entityId] ?: continue
+            if (!values.types.contains("CREATURE")) continue
+            val power = values.power ?: continue
+            val toughness = values.toughness ?: continue
+            val controllerId = values.controllerId ?: continue
+
+            for ((sourceController, maxValue) in sources) {
+                if (sourceController == controllerId && (power <= maxValue || toughness <= maxValue)) {
+                    values.keywords.add(AbilityFlag.CANT_BE_BLOCKED.name)
+                    break
+                }
             }
         }
     }

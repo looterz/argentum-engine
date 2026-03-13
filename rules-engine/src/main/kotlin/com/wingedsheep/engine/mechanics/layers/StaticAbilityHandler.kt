@@ -3,6 +3,7 @@ package com.wingedsheep.engine.mechanics.layers
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.components.battlefield.CantBeTargetedByOpponentAbilitiesComponent
+import com.wingedsheep.engine.state.components.battlefield.GrantCantBeBlockedToSmallCreaturesComponent
 import com.wingedsheep.engine.state.components.battlefield.GrantsControllerShroudComponent
 import com.wingedsheep.engine.state.components.battlefield.ReplacementEffectSourceComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -43,6 +44,7 @@ import com.wingedsheep.sdk.scripting.GlobalEffectType
 import com.wingedsheep.sdk.scripting.GrantKeyword
 import com.wingedsheep.sdk.scripting.GrantKeywordForChosenCreatureType
 import com.wingedsheep.sdk.scripting.GrantCantBeBlockedExceptBySubtype
+import com.wingedsheep.sdk.scripting.GrantCantBeBlockedToSmallCreatures
 import com.wingedsheep.sdk.scripting.GrantDynamicStatsEffect
 import com.wingedsheep.sdk.scripting.GrantKeywordToCreatureGroup
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
@@ -115,6 +117,14 @@ class StaticAbilityHandler(
         // Add tag component for "can't be the target of abilities your opponents control"
         if (cardDefinition.staticAbilities.any { it is CantBeTargetedByOpponentAbilities }) {
             result = result.with(CantBeTargetedByOpponentAbilitiesComponent)
+        }
+
+        // Add component for "creatures you control with power or toughness N or less can't be blocked"
+        val smallCreaturesAbility = cardDefinition.staticAbilities
+            .filterIsInstance<GrantCantBeBlockedToSmallCreatures>()
+            .firstOrNull()
+        if (smallCreaturesAbility != null) {
+            result = result.with(GrantCantBeBlockedToSmallCreaturesComponent(smallCreaturesAbility.maxValue))
         }
 
         return result

@@ -1006,8 +1006,8 @@ export function GameCard({
       )}
 
       {/* Keyword ability icons (shown for face-up cards, and for face-down cards with granted keywords) */}
-      {battlefield && (card.keywords.length > 0 || (card.protections && card.protections.length > 0)) && (
-        <KeywordIcons keywords={card.keywords} protections={card.protections ?? []} size={responsive.isMobile ? 14 : 18} />
+      {battlefield && (card.keywords.length > 0 || (card.abilityFlags && card.abilityFlags.length > 0) || (card.protections && card.protections.length > 0)) && (
+        <KeywordIcons keywords={card.keywords} abilityFlags={card.abilityFlags ?? []} protections={card.protections ?? []} size={responsive.isMobile ? 14 : 18} />
       )}
 
       {/* Revealed face-down eye icon (e.g., peeked via Spy Network) */}

@@ -170,6 +170,14 @@ data object GrantsControllerShroudComponent : Component
 data object CantBeTargetedByOpponentAbilitiesComponent : Component
 
 /**
+ * Marks a permanent as granting "can't be blocked" to creatures its controller
+ * controls with power or toughness at most [maxValue].
+ * Used for Tetsuko Umezawa, Fugitive.
+ */
+@Serializable
+data class GrantCantBeBlockedToSmallCreaturesComponent(val maxValue: Int) : Component
+
+/**
  * Tracks entity IDs of cards exiled by this permanent, so they can be
  * returned when the permanent leaves the battlefield.
  *
