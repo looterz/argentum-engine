@@ -847,6 +847,7 @@ class GameSession(
         gameState = checkpoint
         undoCheckpoint = null
         preCombatState = null
+        retapCheckpoint = null
         logger.info("Player $playerId undid their last action")
         ActionResult.Success(checkpoint, emptyList())
     }
