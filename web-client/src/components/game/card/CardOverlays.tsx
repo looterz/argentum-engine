@@ -1,5 +1,5 @@
 import React from 'react'
-import type { Keyword, ClientCardEffect, Color } from '../../../types'
+import type { Keyword, AbilityFlag, ClientCardEffect, Color } from '../../../types'
 import { keywordManaClass, displayableKeywords } from '../../../assets/icons/keywords'
 import { styles } from '../board/styles'
 
@@ -27,17 +27,21 @@ const PROTECTION_COLORS: Record<string, string> = {
  */
 export function KeywordIcons({
   keywords,
+  abilityFlags,
   protections,
   size,
 }: {
   keywords: readonly Keyword[]
+  abilityFlags?: readonly AbilityFlag[]
   protections: readonly Color[]
   size: number
 }) {
-  // Filter out PROTECTION from normal keywords (rendered via protections array instead)
-  const filteredKeywords = keywords.filter(k => displayableKeywords.has(k) && k !== 'PROTECTION')
+  // Filter out PROTECTION (rendered via protections array) and FIRST_STRIKE when DOUBLE_STRIKE is present
+  const hasDoubleStrike = keywords.includes('DOUBLE_STRIKE' as Keyword)
+  const filteredKeywords = keywords.filter(k => displayableKeywords.has(k) && k !== 'PROTECTION' && !(k === 'FIRST_STRIKE' && hasDoubleStrike))
+  const displayableFlags = (abilityFlags ?? []).filter(f => displayableKeywords.has(f))
   const hasProtections = protections.length > 0
-  const hasKeywords = filteredKeywords.length > 0
+  const hasKeywords = filteredKeywords.length > 0 || displayableFlags.length > 0
 
   if (!hasKeywords && !hasProtections) return null
 
@@ -47,6 +51,19 @@ export function KeywordIcons({
         <div key={keyword} style={styles.keywordIconWrapper} title={keyword.replace(/_/g, ' ')}>
           <i
             className={`ms ms-${keywordManaClass[keyword] ?? 'ability-static'}`}
+            style={{
+              fontSize: size,
+              color: '#ffffff',
+              display: 'block',
+              lineHeight: 1,
+            }}
+          />
+        </div>
+      ))}
+      {displayableFlags.map((flag) => (
+        <div key={flag} style={styles.keywordIconWrapper} title={flag.replace(/_/g, ' ')}>
+          <i
+            className={`ms ms-${keywordManaClass[flag] ?? 'ability-static'}`}
             style={{
               fontSize: size,
               color: '#ffffff',
