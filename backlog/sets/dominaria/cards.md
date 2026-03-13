@@ -2,12 +2,12 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 127 / 249
+**Implemented:** 128 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 38    | 20   |
-| Blue       | 37    | 19   |
+| Blue       | 37    | 20   |
 | Black      | 38    | 20   |
 | Red        | 38    | 21   |
 | Green      | 37    | 20   |
@@ -152,7 +152,7 @@
 - [x] Memorial to Glory
 - [ ] Memorial to Unity
 - [x] Memorial to War
-- [ ] Merfolk Trickster
+- [x] Merfolk Trickster
 - [x] Mesa Unicorn
 - [ ] Mishra's Self-Replicator
 - [ ] Mox Amber

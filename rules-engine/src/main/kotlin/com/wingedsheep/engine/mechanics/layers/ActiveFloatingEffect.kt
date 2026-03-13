@@ -335,6 +335,13 @@ sealed interface SerializableModification {
     data object RedirectCombatDamageToController : SerializableModification
 
     /**
+     * Remove all abilities from the affected creature(s).
+     * Used by Merfolk Trickster and similar effects.
+     */
+    @Serializable
+    data object RemoveAllAbilities : SerializableModification
+
+    /**
      * Damage prevention + reflection shield: the next time the specified source would deal
      * damage to the affected player this turn, prevent that damage and deal that much damage
      * to the source's controller.
@@ -412,4 +419,5 @@ fun SerializableModification.toModification(): Modification = when (this) {
     is SerializableModification.RedirectCombatDamageToController -> Modification.NoOp
     // DeflectNextDamageFromSource doesn't map to a layer modification - it's checked during damage resolution directly
     is SerializableModification.DeflectNextDamageFromSource -> Modification.NoOp
+    is SerializableModification.RemoveAllAbilities -> Modification.RemoveAllAbilities
 }

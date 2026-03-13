@@ -264,6 +264,7 @@ constructors.
 | `GrantKeywordEffect`          | `keyword, target, duration`                                                 | Keyword for single target                |
 | `GrantExileOnLeaveEffect`     | `target`                                                                    | Exile instead of leaving battlefield     |
 | `RemoveKeywordEffect`         | `keyword, target, duration`                                                 | Remove keyword from single target        |
+| `RemoveAllAbilitiesEffect`    | `target, duration`                                                          | Remove all abilities from target         |
 | `GrantTriggeredAbilityEffect` | `ability, target, duration`                                                 | Grant triggered ability                  |
 | `GrantActivatedAbilityEffect` | `ability, target, duration`                                                 | Grant activated ability                  |
 | `GrantActivatedAbilityToGroupEffect`        | `ability, filter, duration`                                                 | Grant activated ability to group         |

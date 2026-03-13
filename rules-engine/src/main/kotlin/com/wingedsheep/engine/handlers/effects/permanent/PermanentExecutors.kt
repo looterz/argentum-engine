@@ -47,6 +47,7 @@ class PermanentExecutors(
         DistributeCountersFromSelfExecutor(),
         DistributeCountersAmongTargetsExecutor(),
         AttachEquipmentExecutor(),
-        GrantExileOnLeaveExecutor()
+        GrantExileOnLeaveExecutor(),
+        RemoveAllAbilitiesExecutor()
     )
 }

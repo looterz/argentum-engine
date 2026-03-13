@@ -186,6 +186,27 @@ data class RemoveKeywordEffect(
 }
 
 /**
+ * Remove all abilities from a target creature until the specified duration.
+ * "Target creature loses all abilities until end of turn."
+ *
+ * @property target The creature that loses all abilities
+ * @property duration How long the effect lasts
+ */
+@SerialName("RemoveAllAbilities")
+@Serializable
+data class RemoveAllAbilitiesEffect(
+    val target: EffectTarget,
+    val duration: Duration = Duration.EndOfTurn
+) : Effect {
+    override val description: String = buildString {
+        append("${target.description} loses all abilities")
+        if (duration.description.isNotEmpty()) append(" ${duration.description}")
+    }
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
+}
+
+/**
  * Put -1/-1 counters on a creature.
  * Used for blight effects and wither-style damage.
  *

@@ -94,6 +94,7 @@ object DominariaSet {
         MemorialToGenius,
         MemorialToGlory,
         MemorialToWar,
+        MerfolkTrickster,
         MesaUnicorn,
         NaturesSpiral,
         Opt,
