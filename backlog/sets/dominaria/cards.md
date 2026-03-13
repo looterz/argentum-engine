@@ -2,7 +2,7 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 148 / 249
+**Implemented:** 149 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -10,7 +10,7 @@
 | Blue       | 37    | 23   |
 | Black      | 38    | 23   |
 | Red        | 38    | 23   |
-| Green      | 37    | 24   |
+| Green      | 37    | 25   |
 | Multicolor | 19    | 10   |
 | Colorless  | 30    | 15   |
 | Land       | 12    | 5    |
@@ -256,7 +256,7 @@
 - [ ] Weatherlight
 - [x] Weight of Memory
 - [x] Whisper, Blood Liturgist
-- [ ] Wild Onslaught
+- [x] Wild Onslaught
 - [x] Windgrace Acolyte
 - [ ] Wizard's Lightning
 - [x] Wizard's Retort

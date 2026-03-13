@@ -162,6 +162,7 @@ object DominariaSet {
         VoltaicServant,
         WarlordsFury,
         WeightOfMemory,
+        WildOnslaught,
         WhisperBloodLiturgist,
         WindgraceAcolyte,
         WizardsRetort,
