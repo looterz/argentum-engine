@@ -118,6 +118,7 @@ object DominariaSet {
         SaprolingMigration,
         SergeantAtArms,
         SerraAngel,
+        SerraDisciple,
         SiegeGangCommander,
         ShannaSisaysLegacy,
         ShivanFire,

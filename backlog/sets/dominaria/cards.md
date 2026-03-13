@@ -2,11 +2,11 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 135 / 249
+**Implemented:** 136 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
-| White      | 38    | 21   |
+| White      | 38    | 22   |
 | Blue       | 37    | 21   |
 | Black      | 38    | 22   |
 | Red        | 38    | 22   |
@@ -191,7 +191,7 @@
 - [ ] Sentinel of the Pearl Trident
 - [x] Sergeant-at-Arms
 - [x] Serra Angel
-- [ ] Serra Disciple
+- [x] Serra Disciple
 - [ ] Settle the Score
 - [ ] Shalai, Voice of Plenty
 - [x] Shanna, Sisay's Legacy
