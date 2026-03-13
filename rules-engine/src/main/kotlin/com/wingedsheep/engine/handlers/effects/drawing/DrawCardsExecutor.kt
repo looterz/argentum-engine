@@ -47,11 +47,24 @@ class DrawCardsExecutor(
         effect: DrawCardsEffect,
         context: EffectContext
     ): ExecutionResult {
-        val playerId = EffectExecutorUtils.resolvePlayerTarget(effect.target, context, state)
-            ?: return ExecutionResult.error(state, "No valid player for draw")
+        val playerIds = EffectExecutorUtils.resolvePlayerTargets(effect.target, state, context)
+        if (playerIds.isEmpty()) {
+            return ExecutionResult.error(state, "No valid player for draw")
+        }
 
         val count = amountEvaluator.evaluate(state, effect.count, context)
-        return executeDraws(state, playerId, count)
+
+        var currentState = state
+        val allEvents = mutableListOf<com.wingedsheep.engine.core.GameEvent>()
+        for (playerId in playerIds) {
+            val result = executeDraws(currentState, playerId, count)
+            currentState = result.state
+            allEvents.addAll(result.events)
+            if (result.pendingDecision != null) {
+                return ExecutionResult.paused(currentState, result.pendingDecision, allEvents)
+            }
+        }
+        return ExecutionResult.success(currentState, allEvents)
     }
 
     /**
