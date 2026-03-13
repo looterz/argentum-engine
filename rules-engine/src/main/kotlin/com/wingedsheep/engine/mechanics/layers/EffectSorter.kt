@@ -81,6 +81,10 @@ internal class EffectSorter {
         if (effectB.modification is Modification.AddType || effectB.modification is Modification.RemoveType) {
             return effectA.affectedEntities.any { it in effectB.affectedEntities }
         }
+        // GrantKeyword depends on RemoveAllAbilities — apply removal first, then re-add specific keywords
+        if (effectB.modification is Modification.RemoveAllAbilities && effectA.modification is Modification.GrantKeyword) {
+            return effectA.affectedEntities.any { it in effectB.affectedEntities }
+        }
         return false
     }
 }

@@ -3,6 +3,7 @@ package com.wingedsheep.engine.scenarios
 import com.wingedsheep.engine.mechanics.layers.StateProjector
 import com.wingedsheep.engine.support.GameTestDriver
 import com.wingedsheep.engine.support.TestCards
+import com.wingedsheep.mtg.sets.definitions.dominaria.cards.DeepFreeze
 import com.wingedsheep.sdk.core.*
 import com.wingedsheep.sdk.model.*
 import com.wingedsheep.sdk.scripting.ActivatedAbility
@@ -34,7 +35,7 @@ class DeepFreezeTest : FunSpec({
 
     fun createDriver(): GameTestDriver {
         val driver = GameTestDriver()
-        driver.registerCards(TestCards.all + listOf(FlyingCreature))
+        driver.registerCards(TestCards.all + listOf(FlyingCreature, DeepFreeze))
         return driver
     }
 

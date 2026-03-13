@@ -2,12 +2,12 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 119 / 249
+**Implemented:** 120 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 38    | 20   |
-| Blue       | 37    | 17   |
+| Blue       | 37    | 18   |
 | Black      | 38    | 19   |
 | Red        | 38    | 21   |
 | Green      | 37    | 18   |
@@ -66,7 +66,7 @@
 - [x] Dark Bargain
 - [ ] Dauntless Bodyguard
 - [x] Deathbloom Thallid
-- [ ] Deep Freeze
+- [x] Deep Freeze
 - [x] Demonic Vigor
 - [ ] Demonlord Belzenlok
 - [ ] Diligent Excavator

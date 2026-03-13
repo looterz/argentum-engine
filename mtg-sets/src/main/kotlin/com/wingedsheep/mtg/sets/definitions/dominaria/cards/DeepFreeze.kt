@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.scripting.GrantKeyword
 import com.wingedsheep.sdk.scripting.GrantSubtype
 import com.wingedsheep.sdk.scripting.LoseAllAbilities
 import com.wingedsheep.sdk.scripting.SetBasePowerToughnessStatic
+import com.wingedsheep.sdk.scripting.StaticTarget
 
 /**
  * Deep Freeze
@@ -39,7 +40,7 @@ val DeepFreeze = card("Deep Freeze") {
     }
 
     staticAbility {
-        ability = GrantSubtype("Wall")
+        ability = GrantSubtype("Wall", target = StaticTarget.AttachedCreature)
     }
 
     staticAbility {
