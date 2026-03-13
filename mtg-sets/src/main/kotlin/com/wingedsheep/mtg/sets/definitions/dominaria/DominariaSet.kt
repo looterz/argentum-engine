@@ -85,6 +85,7 @@ object DominariaSet {
         KeldonRaider,
         LlanowarEnvoy,
         LlanowarElves,
+        LlanowarScout,
         LyraDawnbringer,
         MammothSpider,
         MemorialToFolly,

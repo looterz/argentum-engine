@@ -2,7 +2,7 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 120 / 249
+**Implemented:** 121 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -10,7 +10,7 @@
 | Blue       | 37    | 18   |
 | Black      | 38    | 19   |
 | Red        | 38    | 21   |
-| Green      | 37    | 18   |
+| Green      | 37    | 19   |
 | Multicolor | 19    | 5    |
 | Colorless  | 30    | 13   |
 | Land       | 12    | 5    |
@@ -143,7 +143,7 @@
 - [ ] Lingering Phantom
 - [x] Llanowar Elves
 - [x] Llanowar Envoy
-- [ ] Llanowar Scout
+- [x] Llanowar Scout
 - [x] Lyra Dawnbringer
 - [x] Mammoth Spider
 - [ ] Marwyn, the Nurturer
