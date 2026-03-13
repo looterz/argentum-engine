@@ -657,6 +657,23 @@ class CastSpellHandler(
         // Increment spell count for this turn
         currentState = currentState.copy(spellsCastThisTurn = stormCount + 1)
 
+        // Track spell types cast this turn (for conditional evasion like Relic Runner)
+        if (!action.castFaceDown && cardComponent != null) {
+            val spellTypes = buildSet {
+                add("ANY")
+                if (cardComponent.typeLine.isCreature) add("CREATURE")
+                if (!cardComponent.typeLine.isCreature) add("NONCREATURE")
+                if (cardComponent.typeLine.isInstant || cardComponent.typeLine.isSorcery) add("INSTANT_OR_SORCERY")
+                if (cardComponent.typeLine.isEnchantment) add("ENCHANTMENT")
+                if (cardComponent.typeLine.isArtifact || cardComponent.typeLine.isLegendary) add("HISTORIC")
+            }
+            val existingTypes = currentState.spellTypesCastThisTurn[action.playerId] ?: emptySet()
+            currentState = currentState.copy(
+                spellTypesCastThisTurn = currentState.spellTypesCastThisTurn +
+                    (action.playerId to existingTypes + spellTypes)
+            )
+        }
+
         // Cast the spell
         val castResult = stackResolver.castSpell(
             currentState,

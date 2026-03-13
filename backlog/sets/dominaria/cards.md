@@ -2,12 +2,12 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 146 / 249
+**Implemented:** 147 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 38    | 24   |
-| Blue       | 37    | 22   |
+| Blue       | 37    | 23   |
 | Black      | 38    | 23   |
 | Red        | 38    | 23   |
 | Green      | 37    | 24   |
@@ -178,7 +178,7 @@
 - [x] Raff Capashen, Ship's Mage
 - [x] Rampaging Cyclops
 - [x] Rat Colony
-- [ ] Relic Runner
+- [x] Relic Runner
 - [x] Rescue
 - [ ] Rite of Belzenlok
 - [ ] Rona, Disciple of Gix

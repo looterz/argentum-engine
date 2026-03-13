@@ -80,6 +80,7 @@ class TurnManager(
             priorityPlayerId = null, // No priority during untap
             priorityPassedBy = emptySet(),
             spellsCastThisTurn = 0,
+            spellTypesCastThisTurn = emptyMap(),
             pendingSpellCopies = emptyList()
         )
 

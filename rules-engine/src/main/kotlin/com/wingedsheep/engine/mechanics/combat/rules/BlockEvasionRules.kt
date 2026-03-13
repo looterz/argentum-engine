@@ -10,6 +10,7 @@ import com.wingedsheep.sdk.scripting.CantBeBlockedByPower
 import com.wingedsheep.sdk.scripting.CantBeBlockedByPowerOrLess
 import com.wingedsheep.sdk.scripting.CantBeBlockedBySubtype
 import com.wingedsheep.sdk.scripting.CantBeBlockedExceptByKeyword
+import com.wingedsheep.sdk.scripting.CantBeBlockedIfCastSpellType
 import com.wingedsheep.sdk.scripting.CantBeBlockedUnlessDefenderSharesCreatureType
 import com.wingedsheep.sdk.scripting.GrantCantBeBlockedToSmallCreatures
 
@@ -401,6 +402,27 @@ class GrantCantBeBlockedToSmallCreaturesRule : BlockEvasionRule {
 }
 
 /**
+ * CantBeBlockedIfCastSpellType: Can't be blocked if the attacker's controller
+ * has cast a spell of the specified type this turn (e.g., Relic Runner + historic).
+ */
+class CantBeBlockedIfCastSpellTypeRule : BlockEvasionRule {
+    override fun check(ctx: BlockCheckContext): String? {
+        val attackerCard = ctx.state.getEntity(ctx.attackerId)?.get<CardComponent>() ?: return null
+        val cardDef = ctx.cardRegistry?.getCard(attackerCard.cardDefinitionId) ?: return null
+        val restriction = cardDef.staticAbilities.filterIsInstance<CantBeBlockedIfCastSpellType>().firstOrNull()
+            ?: return null
+
+        val attackerController = ctx.projected.getController(ctx.attackerId) ?: return null
+        val castTypes = ctx.state.spellTypesCastThisTurn[attackerController] ?: return null
+
+        if (restriction.spellType.name in castTypes) {
+            return "${attackerCard.name} can't be blocked (controller cast a ${restriction.spellType.name.lowercase().replace('_', ' ')} spell this turn)"
+        }
+        return null
+    }
+}
+
+/**
  * Default set of block evasion rules, ordered for efficient short-circuiting.
  */
 fun defaultBlockEvasionRules(): List<BlockEvasionRule> = listOf(
@@ -418,6 +440,7 @@ fun defaultBlockEvasionRules(): List<BlockEvasionRule> = listOf(
     CantBeBlockedExceptBySubtypeRule(),
     CantBeBlockedUnlessDefenderSharesCreatureTypeRule(),
     GrantCantBeBlockedToSmallCreaturesRule(),
+    CantBeBlockedIfCastSpellTypeRule(),
     ProtectionFromColorRule(),
     ProtectionFromSubtypeRule(),
     CanOnlyBlockCreaturesWithKeywordRule(),

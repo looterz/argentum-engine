@@ -4,6 +4,7 @@ import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.conditions.Condition
+import com.wingedsheep.sdk.scripting.events.SpellTypeFilter
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.TriggeredAbility
 import com.wingedsheep.sdk.scripting.text.TextReplaceable
@@ -843,6 +844,27 @@ data class GrantCantBeBlockedToSmallCreatures(
 ) : StaticAbility {
     override val description: String =
         "Creatures you control with power or toughness $maxValue or less can't be blocked"
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
+}
+
+/**
+ * This creature can't be blocked if its controller has cast a spell of the specified
+ * type this turn. Used for Relic Runner: "can't be blocked if you've cast a historic
+ * spell this turn."
+ *
+ * The engine tracks which spell types each player has cast this turn in
+ * `GameState.spellTypesCastThisTurn`. The block evasion rule checks this map.
+ *
+ * @property spellType The type of spell that grants unblockability when cast
+ * @property target What this ability applies to
+ */
+@SerialName("CantBeBlockedIfCastSpellType")
+@Serializable
+data class CantBeBlockedIfCastSpellType(
+    val spellType: SpellTypeFilter,
+    val target: StaticTarget = StaticTarget.SourceCreature
+) : StaticAbility {
+    override val description: String = "can't be blocked if you've cast a ${spellType.name.lowercase().replace('_', ' ')} spell this turn"
     override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
 }
 

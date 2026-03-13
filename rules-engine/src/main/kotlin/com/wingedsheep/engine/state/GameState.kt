@@ -87,6 +87,9 @@ data class GameState(
     /** Number of spells cast this turn (by all players), used for Storm count */
     val spellsCastThisTurn: Int = 0,
 
+    /** Per-player spell types cast this turn, for conditional evasion (e.g., Relic Runner) */
+    val spellTypesCastThisTurn: Map<EntityId, Set<String>> = emptyMap(),
+
     /** Pending spell copies — copy the next instant/sorcery spell cast by a player (e.g., Howl of the Horde) */
     val pendingSpellCopies: List<PendingSpellCopy> = emptyList()
 ) {

@@ -118,6 +118,7 @@ object DominariaSet {
         PrimordialWurm,
         RaffCapashenShipsMage,
         RadiatingLightning,
+        RelicRunner,
         RampagingCyclops,
         RatColony,
         Rescue,
