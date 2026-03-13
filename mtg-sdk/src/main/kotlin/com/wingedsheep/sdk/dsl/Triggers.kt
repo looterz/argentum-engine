@@ -483,6 +483,15 @@ object Triggers {
         binding = TriggerBinding.ANY
     )
 
+    /**
+     * Whenever you cast a historic spell.
+     * Historic = artifact, legendary, or Saga.
+     */
+    val YouCastHistoric: TriggerSpec = TriggerSpec(
+        event = SpellCastEvent(spellType = SpellTypeFilter.HISTORIC, player = Player.You),
+        binding = TriggerBinding.ANY
+    )
+
     // =========================================================================
     // Stack Triggers
     // =========================================================================

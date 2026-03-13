@@ -1964,6 +1964,8 @@ class TriggerDetector(
             SpellTypeFilter.INSTANT_OR_SORCERY ->
                 cardComponent.typeLine.isInstant || cardComponent.typeLine.isSorcery
             SpellTypeFilter.ENCHANTMENT -> cardComponent.typeLine.isEnchantment
+            SpellTypeFilter.HISTORIC ->
+                cardComponent.typeLine.isArtifact || cardComponent.typeLine.isLegendary
         }
         if (!typeMatches) return false
 

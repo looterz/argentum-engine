@@ -174,7 +174,9 @@ enum class SpellTypeFilter {
     CREATURE,
     NONCREATURE,
     INSTANT_OR_SORCERY,
-    ENCHANTMENT
+    ENCHANTMENT,
+    /** Artifacts, legendaries, and Sagas. */
+    HISTORIC
 }
 
 // =============================================================================

@@ -618,6 +618,7 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
                 SpellTypeFilter.NONCREATURE -> append("a noncreature spell")
                 SpellTypeFilter.INSTANT_OR_SORCERY -> append("an instant or sorcery spell")
                 SpellTypeFilter.ENCHANTMENT -> append("an enchantment spell")
+                SpellTypeFilter.HISTORIC -> append("a historic spell")
             }
             if (manaValueAtLeast != null) append(" with mana value $manaValueAtLeast or greater")
             if (manaValueAtMost != null) append(" with mana value $manaValueAtMost or less")

@@ -46,6 +46,7 @@ object DominariaSet {
         Charge,
         CloudreaderSphinx,
         ColdWaterSnapper,
+        DAvenantTrapper,
         DarkBargain,
         DeathbloomThallid,
         DeepFreeze,

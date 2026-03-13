@@ -2,11 +2,11 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 133 / 249
+**Implemented:** 134 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
-| White      | 38    | 20   |
+| White      | 38    | 21   |
 | Blue       | 37    | 21   |
 | Black      | 38    | 22   |
 | Red        | 38    | 22   |
@@ -58,7 +58,7 @@
 - [x] Cold-Water Snapper
 - [ ] Corrosive Ooze
 - [ ] Curator's Ward
-- [ ] D'Avenant Trapper
+- [x] D'Avenant Trapper
 - [ ] Damping Sphere
 - [ ] Danitha Capashen, Paragon
 - [ ] Darigaaz Reincarnated
