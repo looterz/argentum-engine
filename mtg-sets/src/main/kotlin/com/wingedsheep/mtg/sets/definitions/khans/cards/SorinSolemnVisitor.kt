@@ -58,7 +58,8 @@ val SorinSolemnVisitor = card("Sorin, Solemn Visitor") {
             toughness = 2,
             colors = setOf(Color.BLACK),
             creatureTypes = setOf("Vampire"),
-            keywords = setOf(Keyword.FLYING)
+            keywords = setOf(Keyword.FLYING),
+            imageUri = "https://cards.scryfall.io/normal/front/7/1/71496671-f7ba-4014-a895-d70a27979db7.jpg?1562639857"
         )
     }
 

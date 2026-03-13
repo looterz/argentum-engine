@@ -43,7 +43,8 @@ val HoodedHydra = card("Hooded Hydra") {
             power = 1,
             toughness = 1,
             colors = setOf(Color.GREEN),
-            creatureTypes = setOf("Snake")
+            creatureTypes = setOf("Snake"),
+            imageUri = "https://cards.scryfall.io/normal/front/0/3/032e9f9d-b1e5-4724-9b80-e51500d12d5b.jpg?1562639651"
         )
     }
 

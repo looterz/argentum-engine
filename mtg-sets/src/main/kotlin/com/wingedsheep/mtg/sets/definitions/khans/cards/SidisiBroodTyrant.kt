@@ -48,7 +48,7 @@ val SidisiBroodTyrant = card("Sidisi, Brood Tyrant") {
             toughness = 2,
             colors = setOf(Color.BLACK),
             creatureTypes = setOf("Zombie"),
-            imageUri = "https://cards.scryfall.io/normal/front/1/7/17f001ab-514b-49e7-a657-b2872ad7a1de.jpg?1767954964"
+            imageUri = "https://cards.scryfall.io/normal/front/b/a/ba7da3d0-2471-48ab-8e7c-af8046d9e0be.jpg?1562640008"
         )
     }
 

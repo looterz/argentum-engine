@@ -28,7 +28,8 @@ val EmptyThePits = card("Empty the Pits") {
             toughness = 2,
             colors = setOf(Color.BLACK),
             creatureTypes = setOf("Zombie"),
-            tapped = true
+            tapped = true,
+            imageUri = "https://cards.scryfall.io/normal/front/b/a/ba7da3d0-2471-48ab-8e7c-af8046d9e0be.jpg?1562640008"
         )
     }
 

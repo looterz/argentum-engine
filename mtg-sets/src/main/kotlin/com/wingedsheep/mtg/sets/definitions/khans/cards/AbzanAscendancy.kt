@@ -59,7 +59,8 @@ val AbzanAscendancy = card("Abzan Ascendancy") {
             toughness = 1,
             colors = setOf(Color.WHITE),
             creatureTypes = setOf("Spirit"),
-            keywords = setOf(Keyword.FLYING)
+            keywords = setOf(Keyword.FLYING),
+            imageUri = "https://cards.scryfall.io/normal/front/7/0/7071930c-689a-44b9-b52d-45027fd14446.jpg?1562639854"
         )
     }
 
