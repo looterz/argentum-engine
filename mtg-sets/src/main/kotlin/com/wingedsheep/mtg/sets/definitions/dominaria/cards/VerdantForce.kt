@@ -26,7 +26,8 @@ val VerdantForce = card("Verdant Force") {
             power = 1,
             toughness = 1,
             colors = setOf(Color.GREEN),
-            creatureTypes = setOf("Saproling")
+            creatureTypes = setOf("Saproling"),
+            imageUri = "https://cards.scryfall.io/normal/front/e/6/e6544989-91b4-4db7-ad44-f1355f1d6e6b.jpg?1562540216"
         )
     }
 

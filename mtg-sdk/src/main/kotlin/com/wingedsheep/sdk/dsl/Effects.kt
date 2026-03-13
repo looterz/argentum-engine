@@ -575,8 +575,9 @@ object Effects {
         creatureTypes: Set<String>,
         keywords: Set<Keyword> = emptySet(),
         count: Int = 1,
-        controller: EffectTarget? = null
-    ): Effect = CreateTokenEffect(count, power, toughness, colors, creatureTypes, keywords, controller = controller)
+        controller: EffectTarget? = null,
+        imageUri: String? = null
+    ): Effect = CreateTokenEffect(count, power, toughness, colors, creatureTypes, keywords, controller = controller, imageUri = imageUri)
 
     /**
      * Create creature tokens with dynamic power/toughness evaluated at resolution time.
