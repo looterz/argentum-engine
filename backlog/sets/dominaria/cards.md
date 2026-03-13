@@ -2,11 +2,11 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 154 / 249
+**Implemented:** 155 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
-| White      | 38    | 24   |
+| White      | 38    | 25   |
 | Blue       | 37    | 24   |
 | Black      | 38    | 24   |
 | Red        | 38    | 25   |
@@ -42,7 +42,7 @@
 - [x] Blink of an Eye
 - [ ] Bloodstone Goblin
 - [x] Bloodtallow Candle
-- [ ] Board the Weatherlight
+- [x] Board the Weatherlight
 - [x] Broken Bond
 - [x] Cabal Evangel
 - [x] Cabal Paladin

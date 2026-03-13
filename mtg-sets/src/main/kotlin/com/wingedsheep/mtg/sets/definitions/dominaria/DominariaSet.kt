@@ -40,6 +40,7 @@ object DominariaSet {
         BlinkOfAnEye,
         BlessedLight,
         BloodtallowCandle,
+        BoardTheWeatherlight,
         BrokenBond,
         CaligoSkinWitch,
         CallTheCavalry,
