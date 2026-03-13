@@ -2,7 +2,7 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 134 / 249
+**Implemented:** 135 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -12,7 +12,7 @@
 | Red        | 38    | 22   |
 | Green      | 37    | 21   |
 | Multicolor | 19    | 8    |
-| Colorless  | 30    | 13   |
+| Colorless  | 30    | 14   |
 | Land       | 12    | 5    |
 
 ---
@@ -237,7 +237,7 @@
 - [x] Tolarian Scholar
 - [ ] Torgaar, Famine Incarnate
 - [x] Tragic Poet
-- [ ] Traxos, Scourge of Kroog
+- [x] Traxos, Scourge of Kroog
 - [ ] Triumph of Gerrard
 - [ ] Two-Headed Giant
 - [x] Untamed Kavu

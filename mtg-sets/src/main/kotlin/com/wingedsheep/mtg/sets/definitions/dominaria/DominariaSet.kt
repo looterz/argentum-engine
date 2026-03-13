@@ -140,6 +140,7 @@ object DominariaSet {
         TetsukoUmezawaFugitive,
         ThallidSoothsayer,
         TolarianScholar,
+        TraxosScourgeOfKroog,
         TragicPoet,
         UntamedKavu,
         VerdantForce,
