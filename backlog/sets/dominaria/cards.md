@@ -2,12 +2,12 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 139 / 249
+**Implemented:** 140 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 38    | 23   |
-| Blue       | 37    | 21   |
+| Blue       | 37    | 22   |
 | Black      | 38    | 22   |
 | Red        | 38    | 22   |
 | Green      | 37    | 22   |
@@ -69,7 +69,7 @@
 - [x] Deep Freeze
 - [x] Demonic Vigor
 - [x] Demonlord Belzenlok
-- [ ] Diligent Excavator
+- [x] Diligent Excavator
 - [x] Divest
 - [x] Divination
 - [x] Dread Shade

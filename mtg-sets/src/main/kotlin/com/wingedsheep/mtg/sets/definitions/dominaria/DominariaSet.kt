@@ -51,6 +51,7 @@ object DominariaSet {
         DarkBargain,
         DeathbloomThallid,
         DeepFreeze,
+        DiligentExcavator,
         DemonicVigor,
         DemonlordBelzenlok,
         DreadShade,
