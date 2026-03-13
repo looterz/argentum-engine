@@ -2,7 +2,7 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 137 / 249
+**Implemented:** 138 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -10,7 +10,7 @@
 | Blue       | 37    | 21   |
 | Black      | 38    | 22   |
 | Red        | 38    | 22   |
-| Green      | 37    | 21   |
+| Green      | 37    | 22   |
 | Multicolor | 19    | 9    |
 | Colorless  | 30    | 14   |
 | Land       | 12    | 5    |
@@ -146,7 +146,7 @@
 - [x] Llanowar Scout
 - [x] Lyra Dawnbringer
 - [x] Mammoth Spider
-- [ ] Marwyn, the Nurturer
+- [x] Marwyn, the Nurturer
 - [x] Memorial to Folly
 - [x] Memorial to Genius
 - [x] Memorial to Glory

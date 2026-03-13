@@ -94,6 +94,7 @@ object DominariaSet {
         LlanowarScout,
         LyraDawnbringer,
         MammothSpider,
+        MarwynTheNurturer,
         MemorialToFolly,
         MemorialToGenius,
         MemorialToGlory,
