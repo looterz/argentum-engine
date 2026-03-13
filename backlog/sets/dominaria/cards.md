@@ -2,7 +2,7 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 145 / 249
+**Implemented:** 146 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -10,7 +10,7 @@
 | Blue       | 37    | 22   |
 | Black      | 38    | 23   |
 | Red        | 38    | 23   |
-| Green      | 37    | 23   |
+| Green      | 37    | 24   |
 | Multicolor | 19    | 10   |
 | Colorless  | 30    | 14   |
 | Land       | 12    | 5    |
@@ -91,7 +91,7 @@
 - [x] Frenzied Rage
 - [x] Fungal Infection
 - [ ] Fungal Plots
-- [ ] Gaea's Blessing
+- [x] Gaea's Blessing
 - [ ] Gaea's Protector
 - [x] Garna, the Bloodflame
 - [x] Ghitu Chronicler

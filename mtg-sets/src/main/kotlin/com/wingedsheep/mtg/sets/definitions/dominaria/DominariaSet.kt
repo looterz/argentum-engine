@@ -78,6 +78,7 @@ object DominariaSet {
         GideonsReproach,
         GoblinChainwhirler,
         GoblinWarchief,
+        GaeasBlessing,
         GarnaTheBloodflame,
         GildedLotus,
         GrandWarlordRadha,
