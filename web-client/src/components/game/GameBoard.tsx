@@ -214,9 +214,13 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
     if (stackCards.length > 0) {
       return 'Resolve'
     }
+    // On opponent's turn, just show "Pass" — we're yielding priority, not driving the turn
+    if (!isMyTurn) {
+      return 'Pass'
+    }
     const nextStep = getNextStep(gameState.currentStep)
     if (nextStep) {
-      if (nextStep === 'END' && isMyTurn) {
+      if (nextStep === 'END') {
         return 'End Turn'
       }
       return `Pass to ${StepShortNames[nextStep]}`
@@ -425,7 +429,7 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
       </div>
 
       {/* Floating pass/resolve button (bottom-right) - always present, disabled when unavailable */}
-      {!spectatorMode && viewingPlayer && (() => {
+      {!spectatorMode && viewingPlayer && !isInRetapMode && (() => {
         const passEnabled = canAct && !isInCombatMode && !isInDistributeMode && !isInCounterDistMode && !isInRetapMode && !delveSelectionState && !targetingState
         return (
           <div style={{
@@ -445,9 +449,9 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
               style={{
                 ...styles.floatingBarButton,
                 ...(passEnabled ? getPassButtonStyle() : {}),
-                width: 160,
-                height: 36,
-                padding: '0 20px',
+                width: 170,
+                height: 42,
+                padding: '0 24px',
                 color: passEnabled ? 'white' : '#555',
                 fontWeight: 600,
                 fontSize: responsive.fontSize.normal,
@@ -464,10 +468,10 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
       })()}
 
       {/* Undo, retap, priority mode icons (bottom-right, above pass button) */}
-      {!spectatorMode && viewingPlayer && (
+      {!spectatorMode && viewingPlayer && !isInRetapMode && (
         <div style={{
           position: 'fixed',
-          bottom: responsive.isMobile ? 58 : 60,
+          bottom: responsive.isMobile ? 64 : 66,
           right: 16,
           display: 'flex',
           gap: 4,
