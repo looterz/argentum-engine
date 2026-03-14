@@ -679,12 +679,19 @@ class AutoPassManager {
             return if (willBeMyTurn) "To my turn" else "To opponent's turn"
         }
 
+        // On opponent's turn, use neutral "Pass" — the player is just yielding priority,
+        // not driving the turn forward. Destination-specific labels like "Pass to Attackers"
+        // feel misleading when it's not your turn.
+        if (!currentlyMyTurn) {
+            return "Pass"
+        }
+
         // END on own turn is "End Turn" (a distinct action feel)
-        if (step == Step.END && currentlyMyTurn) {
+        if (step == Step.END) {
             return "End Turn"
         }
 
-        // Otherwise show "Pass to <step>"
+        // Own turn: show "Pass to <step>" to indicate where the game is heading
         return when (step) {
             Step.UNTAP -> "Pass to Untap"
             Step.UPKEEP -> "Pass to Upkeep"
