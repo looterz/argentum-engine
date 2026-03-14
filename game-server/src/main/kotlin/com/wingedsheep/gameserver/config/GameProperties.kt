@@ -30,8 +30,12 @@ data class AdminProperties(
 data class AiProperties(
     val enabled: Boolean = false,
     val openRouterApiKey: String = "",
-    val model: String = "google/gemini-3.1-flash-lite-preview",
+    val model: String = "stepfun/step-3.5-flash:free",
+    val deckbuildingModel: String = "",
     val maxRetries: Int = 2,
     val timeoutMs: Long = 10000,
     val thinkingDelayMs: Long = 500
-)
+) {
+    /** Returns the model to use for deckbuilding — falls back to the gameplay model if not set. */
+    val effectiveDeckbuildingModel: String get() = deckbuildingModel.ifBlank { model }
+}

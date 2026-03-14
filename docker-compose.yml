@@ -19,6 +19,10 @@ services:
       - CACHE_REDIS_PORT=6379
       - CACHE_REDIS_TTL_MINUTES=${CACHE_REDIS_TTL_MINUTES:-1440}
       - GAME_ADMIN_PASSWORD=${GAME_ADMIN_PASSWORD:-}
+      - GAME_AI_ENABLED=${GAME_AI_ENABLED:-false}
+      - GAME_AI_MODEL=${GAME_AI_MODEL:-stepfun/step-3.5-flash:free}
+      - GAME_AI_DECKBUILDING_MODEL=${GAME_AI_DECKBUILDING_MODEL:-}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
     networks:
       - app_network
     labels:

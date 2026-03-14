@@ -41,9 +41,10 @@ class OpenRouterClient(
      * Send a chat completion request and return the assistant's response text.
      * Retries with exponential backoff on failure.
      */
-    fun chatCompletion(messages: List<ChatMessage>): String? {
+    fun chatCompletion(messages: List<ChatMessage>, modelOverride: String? = null): String? {
+        val effectiveModel = modelOverride ?: properties.model
         val request = ChatCompletionRequest(
-            model = properties.model,
+            model = effectiveModel,
             messages = messages,
             temperature = 0.3
         )
@@ -51,7 +52,7 @@ class OpenRouterClient(
         val requestBody = json.encodeToString(request)
 
         logger.info("OpenRouter request: model={}, messages={}, lastUserMsg={}chars",
-            properties.model, messages.size, messages.lastOrNull { it.role == "user" }?.content?.length ?: 0)
+            effectiveModel, messages.size, messages.lastOrNull { it.role == "user" }?.content?.length ?: 0)
 
         var lastException: Exception? = null
         for (attempt in 0..properties.maxRetries) {

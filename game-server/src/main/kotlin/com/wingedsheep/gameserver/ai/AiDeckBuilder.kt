@@ -98,7 +98,7 @@ class AiDeckBuilder(
             ChatMessage("user", prompt)
         )
 
-        val response = openRouterClient.chatCompletion(messages) ?: return null
+        val response = openRouterClient.chatCompletion(messages, properties.effectiveDeckbuildingModel) ?: return null
         logger.info("AI deckbuilder response ({} chars)", response.length)
 
         return parseDeckList(response, matchingCards)
