@@ -2,7 +2,7 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 172 / 249
+**Implemented:** 173 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -12,7 +12,7 @@
 | Red        | 38    | 27   |
 | Green      | 37    | 27   |
 | Multicolor | 19    | 13   |
-| Colorless  | 30    | 18   |
+| Colorless  | 30    | 19   |
 | Land       | 12    | 9    |
 
 ---
@@ -154,7 +154,7 @@
 - [x] Memorial to War
 - [x] Merfolk Trickster
 - [x] Mesa Unicorn
-- [ ] Mishra's Self-Replicator
+- [x] Mishra's Self-Replicator
 - [x] Mox Amber
 - [ ] Muldrotha, the Gravetide
 - [x] Multani, Yavimaya's Avatar

@@ -122,6 +122,7 @@ constructors.
 
 - `Effects.CreateToken(power, toughness, colors, creatureTypes, keywords, count = 1, legendary = false)`
 - `Effects.CreateDynamicToken(dynamicPower, dynamicToughness, colors, creatureTypes, keywords, count = 1)` — token with P/T evaluated at resolution time
+- `Effects.CreateTokenCopyOfSelf(count = 1)` — create a token that's a copy of the source permanent (copies CardComponent + abilities via cardDefinitionId)
 - `Effects.CreateTreasure(count = 1)`
 
 ### Library
@@ -334,6 +335,7 @@ constructors.
 | `CreateTokenEffect`              | `count: DynamicAmount, power, toughness, colors, creatureTypes, keywords, name?, imageUri?, tapped?, attacking?, legendary?` | Create token (tapped = enter tapped, attacking = enter attacking, legendary = legendary supertype) |
 | `CreateChosenTokenEffect`        | `dynamicPower: DynamicAmount, dynamicToughness: DynamicAmount`                              | Create token with chosen stats |
 | `CreateTreasureTokensEffect`     | `count: DynamicAmount`                                                                      | Create Treasure                |
+| `CreateTokenCopyOfSourceEffect`  | `count: Int`                                                                                | Create token copy of source permanent |
 | `CreateTokenFromGraveyardEffect` | `power, toughness, colors, creatureTypes`                                                   | Token from graveyard           |
 
 ### Composite & Control Flow

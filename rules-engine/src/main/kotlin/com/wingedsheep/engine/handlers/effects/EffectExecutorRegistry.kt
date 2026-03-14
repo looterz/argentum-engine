@@ -50,7 +50,7 @@ class EffectExecutorRegistry(
         registerModule(DamageExecutors(amountEvaluator, decisionHandler))
         registerModule(PermanentExecutors(decisionHandler, amountEvaluator, cardRegistry))
         registerModule(ManaExecutors(amountEvaluator))
-        registerModule(TokenExecutors(amountEvaluator, StaticAbilityHandler(cardRegistry)))
+        registerModule(TokenExecutors(amountEvaluator, StaticAbilityHandler(cardRegistry), cardRegistry))
         registerModule(LibraryExecutors(cardRegistry = cardRegistry, targetFinder = TargetFinder()))
         registerModule(StackExecutors(amountEvaluator, cardRegistry))
         registerModule(PlayerExecutors(decisionHandler))

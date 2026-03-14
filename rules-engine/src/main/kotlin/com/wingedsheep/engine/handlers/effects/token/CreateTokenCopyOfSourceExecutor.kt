@@ -1,0 +1,98 @@
+package com.wingedsheep.engine.handlers.effects.token
+
+import com.wingedsheep.engine.core.ExecutionResult
+import com.wingedsheep.engine.core.ZoneChangeEvent
+import com.wingedsheep.engine.handlers.EffectContext
+import com.wingedsheep.engine.handlers.effects.EffectExecutor
+import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
+import com.wingedsheep.engine.registry.CardRegistry
+import com.wingedsheep.engine.state.Component
+import com.wingedsheep.engine.state.ComponentContainer
+import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.ZoneKey
+import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
+import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.identity.ControllerComponent
+import com.wingedsheep.engine.state.components.identity.TokenComponent
+import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.effects.CreateTokenCopyOfSourceEffect
+import kotlin.reflect.KClass
+
+/**
+ * Executor for CreateTokenCopyOfSourceEffect.
+ * Creates a token that's a copy of the source permanent (the permanent with this ability).
+ *
+ * The token copies the source's CardComponent (name, mana cost, types, stats, keywords, colors)
+ * and uses the same cardDefinitionId so the engine picks up triggered/static abilities automatically.
+ */
+class CreateTokenCopyOfSourceExecutor(
+    private val cardRegistry: CardRegistry? = null,
+    private val staticAbilityHandler: StaticAbilityHandler? = null
+) : EffectExecutor<CreateTokenCopyOfSourceEffect> {
+
+    override val effectType: KClass<CreateTokenCopyOfSourceEffect> = CreateTokenCopyOfSourceEffect::class
+
+    override fun execute(
+        state: GameState,
+        effect: CreateTokenCopyOfSourceEffect,
+        context: EffectContext
+    ): ExecutionResult {
+        val sourceId = context.sourceId
+            ?: return ExecutionResult.success(state)
+
+        val sourceContainer = state.getEntity(sourceId)
+            ?: return ExecutionResult.success(state)
+
+        val sourceCard = sourceContainer.get<CardComponent>()
+            ?: return ExecutionResult.success(state)
+
+        val controllerId = context.controllerId
+
+        var newState = state
+        val createdTokens = mutableListOf<EntityId>()
+
+        repeat(effect.count) {
+            val tokenId = EntityId.generate()
+            createdTokens.add(tokenId)
+
+            // Copy the source's CardComponent, setting the token's owner to the controller
+            val tokenCard = sourceCard.copy(ownerId = controllerId)
+
+            val components = mutableListOf<Component>(
+                tokenCard,
+                TokenComponent,
+                ControllerComponent(controllerId),
+                SummoningSicknessComponent
+            )
+
+            var container = ComponentContainer.of(*components.toTypedArray())
+
+            // Add static abilities from the card definition (uses cardDefinitionId lookup)
+            if (staticAbilityHandler != null) {
+                container = staticAbilityHandler.addContinuousEffectComponent(container)
+                container = staticAbilityHandler.addReplacementEffectComponent(container)
+            }
+
+            newState = newState.withEntity(tokenId, container)
+
+            // Add to battlefield
+            val battlefieldZone = ZoneKey(controllerId, Zone.BATTLEFIELD)
+            newState = newState.addToZone(battlefieldZone, tokenId)
+        }
+
+        val events = createdTokens.map { tokenId ->
+            val entity = newState.getEntity(tokenId)!!
+            val card = entity.get<CardComponent>()!!
+            ZoneChangeEvent(
+                entityId = tokenId,
+                entityName = card.name,
+                fromZone = null,
+                toZone = Zone.BATTLEFIELD,
+                ownerId = controllerId
+            )
+        }
+
+        return ExecutionResult.success(newState, events)
+    }
+}

@@ -122,6 +122,7 @@ object DominariaSet {
         MemorialToWar,
         MerfolkTrickster,
         MesaUnicorn,
+        MishrasSelfReplicator,
         MoxAmber,
         MultaniYavimayasAvatar,
         NaturesSpiral,

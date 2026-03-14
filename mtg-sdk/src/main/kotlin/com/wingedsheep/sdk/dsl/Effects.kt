@@ -67,6 +67,7 @@ import com.wingedsheep.sdk.scripting.effects.SelectTargetEffect
 import com.wingedsheep.sdk.scripting.effects.SeparatePermanentsIntoPilesEffect
 import com.wingedsheep.sdk.scripting.effects.TapUntapEffect
 import com.wingedsheep.sdk.scripting.effects.ZonePlacement
+import com.wingedsheep.sdk.scripting.effects.CreateTokenCopyOfSourceEffect
 import com.wingedsheep.sdk.scripting.effects.CreateTokenEffect
 import com.wingedsheep.sdk.scripting.effects.CreateTreasureTokensEffect
 import com.wingedsheep.sdk.scripting.effects.CounterAbilityEffect
@@ -645,6 +646,13 @@ object Effects {
         controller = controller,
         dynamicPower = dynamicPower, dynamicToughness = dynamicToughness
     )
+
+    /**
+     * Create a token that's a copy of the source permanent.
+     * "Create a token that's a copy of this creature."
+     */
+    fun CreateTokenCopyOfSelf(count: Int = 1): Effect =
+        CreateTokenCopyOfSourceEffect(count)
 
     /**
      * Create Treasure tokens.

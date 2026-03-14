@@ -148,6 +148,30 @@ data class CreateTreasureTokensEffect(
 }
 
 /**
+ * Create a token that's a copy of the source permanent.
+ * "Create a token that's a copy of Mishra's Self-Replicator."
+ *
+ * The token copies the source's copiable values (name, mana cost, colors, types,
+ * abilities, power/toughness) from its CardComponent and CardDefinition. The token
+ * enters with summoning sickness and is marked as a token (TokenComponent).
+ *
+ * The source is determined by [EffectTarget.Self] — the permanent that has this ability.
+ */
+@SerialName("CreateTokenCopyOfSource")
+@Serializable
+data class CreateTokenCopyOfSourceEffect(
+    val count: Int = 1
+) : Effect {
+    override val description: String = if (count == 1) {
+        "Create a token that's a copy of this creature"
+    } else {
+        "Create $count tokens that are copies of this creature"
+    }
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
+}
+
+/**
  * Effect that can be activated from the graveyard.
  * Used for cards like Goldmeadow Nomad with graveyard abilities.
  * Note: This is typically handled as an activated ability, not a spell effect.
