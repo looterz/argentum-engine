@@ -2,6 +2,7 @@ package com.wingedsheep.sdk.scripting
 
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.events.SpellTypeFilter
@@ -1342,6 +1343,24 @@ data object LookAtTopOfLibrary : StaticAbility {
 data object LookAtFaceDownCreatures : StaticAbility {
     override val description: String =
         "You may look at face-down creatures you don't control any time."
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
+}
+
+/**
+ * You may cast this card from specified zones (e.g., graveyard, exile).
+ * This is an intrinsic property of the card, checked when the card is in a matching zone.
+ * Used for Squee, the Immortal (graveyard + exile).
+ *
+ * @property zones The zones from which this card may be cast
+ */
+@SerialName("MayCastSelfFromZones")
+@Serializable
+data class MayCastSelfFromZones(
+    val zones: List<Zone>
+) : StaticAbility {
+    override val description: String = "You may cast this card from ${
+        zones.joinToString(" or ") { it.displayName }
+    }."
     override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
 }
 

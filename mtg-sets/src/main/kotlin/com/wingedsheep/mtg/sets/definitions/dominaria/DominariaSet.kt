@@ -160,6 +160,7 @@ object DominariaSet {
         SporecrownThallid,
         SporeSwarm,
         SparringConstruct,
+        SqueeTheImmortal,
         SteelLeafChampion,
         StrongholdConfessor,
         SulfurFalls,

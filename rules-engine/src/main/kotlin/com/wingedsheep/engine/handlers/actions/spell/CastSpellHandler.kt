@@ -50,6 +50,7 @@ import com.wingedsheep.sdk.scripting.effects.StormCopyEffect
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.GrantFlashToSpellType
 import com.wingedsheep.sdk.scripting.CastSpellTypesFromTopOfLibrary
+import com.wingedsheep.sdk.scripting.MayCastSelfFromZones
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.PlayFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
@@ -103,7 +104,9 @@ class CastSpellHandler(
         val inHand = action.cardId in state.getZone(handZone)
         val onTopOfLibrary = !inHand && isOnTopOfLibraryWithPermission(state, action.playerId, action.cardId)
         val mayPlayFromExile = !inHand && !onTopOfLibrary && isInExileWithPlayPermission(state, action.playerId, action.cardId)
-        if (!inHand && !onTopOfLibrary && !mayPlayFromExile) {
+        val mayCastFromZone = !inHand && !onTopOfLibrary && !mayPlayFromExile &&
+            hasMayCastSelfFromZonePermission(state, action.playerId, action.cardId)
+        if (!inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone) {
             return "Card is not in your hand"
         }
 
@@ -1215,6 +1218,29 @@ class CastSpellHandler(
         if (!inAnyExile) return false
         val component = state.getEntity(cardId)?.get<MayPlayFromExileComponent>()
         return component?.controllerId == playerId
+    }
+
+    /**
+     * Check if a card has an intrinsic MayCastSelfFromZones static ability
+     * that permits casting from its current zone (e.g., Squee, the Immortal).
+     */
+    private fun hasMayCastSelfFromZonePermission(
+        state: GameState,
+        playerId: EntityId,
+        cardId: EntityId
+    ): Boolean {
+        val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: return false
+        val cardDef = cardRegistry?.getCard(cardComponent.cardDefinitionId) ?: return false
+        val mayCastAbility = cardDef.script.staticAbilities
+            .filterIsInstance<MayCastSelfFromZones>()
+            .firstOrNull() ?: return false
+
+        // Find what zone the card is in for this player
+        for (zone in mayCastAbility.zones) {
+            val zoneKey = ZoneKey(playerId, zone)
+            if (cardId in state.getZone(zoneKey)) return true
+        }
+        return false
     }
 
     /**

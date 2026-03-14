@@ -202,6 +202,16 @@ abstract class ScenarioTestBase : FunSpec() {
         }
 
         /**
+         * Add a card to a player's exile zone.
+         */
+        fun withCardInExile(playerNumber: Int, cardName: String): ScenarioBuilder {
+            val playerId = if (playerNumber == 1) player1Id!! else player2Id!!
+            val cardId = createCard(cardName, playerId)
+            state = state.addToZone(ZoneKey(playerId, Zone.EXILE), cardId)
+            return this
+        }
+
+        /**
          * Set a player's life total.
          */
         fun withLifeTotal(playerNumber: Int, life: Int): ScenarioBuilder {
@@ -353,6 +363,52 @@ abstract class ScenarioTestBase : FunSpec() {
             val cardId = hand.find { entityId ->
                 state.getEntity(entityId)?.get<CardComponent>()?.name == spellName
             } ?: error("Card '$spellName' not found in player $playerNumber's hand")
+
+            val targets = if (targetId != null) {
+                listOf(ChosenTarget.Permanent(targetId))
+            } else {
+                emptyList()
+            }
+
+            return execute(CastSpell(playerId, cardId, targets))
+        }
+
+        /**
+         * Cast a spell by name from a player's graveyard (for cards with MayCastSelfFromZones).
+         */
+        fun castSpellFromGraveyard(
+            playerNumber: Int,
+            spellName: String,
+            targetId: EntityId? = null
+        ): ExecutionResult {
+            val playerId = if (playerNumber == 1) player1Id else player2Id
+            val graveyard = state.getGraveyard(playerId)
+            val cardId = graveyard.find { entityId ->
+                state.getEntity(entityId)?.get<CardComponent>()?.name == spellName
+            } ?: error("Card '$spellName' not found in player $playerNumber's graveyard")
+
+            val targets = if (targetId != null) {
+                listOf(ChosenTarget.Permanent(targetId))
+            } else {
+                emptyList()
+            }
+
+            return execute(CastSpell(playerId, cardId, targets))
+        }
+
+        /**
+         * Cast a spell by name from a player's exile zone (for cards with MayCastSelfFromZones).
+         */
+        fun castSpellFromExile(
+            playerNumber: Int,
+            spellName: String,
+            targetId: EntityId? = null
+        ): ExecutionResult {
+            val playerId = if (playerNumber == 1) player1Id else player2Id
+            val exile = state.getExile(playerId)
+            val cardId = exile.find { entityId ->
+                state.getEntity(entityId)?.get<CardComponent>()?.name == spellName
+            } ?: error("Card '$spellName' not found in player $playerNumber's exile")
 
             val targets = if (targetId != null) {
                 listOf(ChosenTarget.Permanent(targetId))

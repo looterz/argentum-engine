@@ -2,14 +2,14 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 170 / 249
+**Implemented:** 171 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 38    | 26   |
 | Blue       | 37    | 25   |
 | Black      | 38    | 26   |
-| Red        | 38    | 26   |
+| Red        | 38    | 27   |
 | Green      | 37    | 27   |
 | Multicolor | 19    | 13   |
 | Colorless  | 30    | 18   |
@@ -210,7 +210,7 @@
 - [x] Sparring Construct
 - [x] Spore Swarm
 - [x] Sporecrown Thallid
-- [ ] Squee, the Immortal
+- [x] Squee, the Immortal
 - [x] Steel Leaf Champion
 - [x] Stronghold Confessor
 - [x] Sulfur Falls

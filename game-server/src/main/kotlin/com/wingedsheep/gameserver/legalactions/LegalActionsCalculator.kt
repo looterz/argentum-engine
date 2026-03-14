@@ -54,6 +54,7 @@ import com.wingedsheep.sdk.scripting.GrantActivatedAbilityToAttachedCreature
 import com.wingedsheep.sdk.scripting.GrantActivatedAbilityToCreatureGroup
 import com.wingedsheep.sdk.scripting.GrantFlashToSpellType
 import com.wingedsheep.sdk.scripting.CastSpellTypesFromTopOfLibrary
+import com.wingedsheep.sdk.scripting.MayCastSelfFromZones
 import com.wingedsheep.sdk.scripting.PlayFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.PreventCycling
 import com.wingedsheep.sdk.scripting.effects.AddAnyColorManaEffect
@@ -1089,6 +1090,105 @@ class LegalActionsCalculator(
                             isAffordable = false,
                             manaCostString = costString,
                             sourceZone = "EXILE"
+                        ))
+                    }
+                }
+            }
+        }
+
+        // Check for cards with intrinsic MayCastSelfFromZones ability (e.g., Squee, the Immortal)
+        // These cards can be cast from their graveyard or exile without needing a component grant.
+        for (zone in listOf(Zone.GRAVEYARD, Zone.EXILE)) {
+            val zoneCards = state.getZone(ZoneKey(playerId, zone))
+            for (cardId in zoneCards) {
+                val container = state.getEntity(cardId) ?: continue
+                // Skip cards already handled by MayPlayFromExileComponent (to avoid duplicates)
+                if (zone == Zone.EXILE && container.get<MayPlayFromExileComponent>()?.controllerId == playerId) continue
+                val cardComponent = container.get<CardComponent>() ?: continue
+                val cardDef = cardRegistry.getCard(cardComponent.name) ?: continue
+                val hasCastFromZone = cardDef.script.staticAbilities
+                    .filterIsInstance<MayCastSelfFromZones>()
+                    .any { zone in it.zones }
+                if (!hasCastFromZone) continue
+
+                // Only non-land spells (Squee is a creature)
+                if (cardComponent.typeLine.isLand) continue
+
+                val sourceZoneName = zone.name
+                if (cantCastSpells) {
+                    val costString = cardComponent.manaCost.toString()
+                    result.add(LegalActionInfo(
+                        actionType = "CastSpell",
+                        description = "Cast ${cardComponent.name}",
+                        action = CastSpell(playerId, cardId),
+                        isAffordable = false,
+                        manaCostString = costString,
+                        sourceZone = sourceZoneName
+                    ))
+                } else {
+                    val isInstant = cardComponent.typeLine.isInstant
+                    val hasCorrectTiming = isInstant || canPlaySorcerySpeed
+                    val castRestrictions = cardDef.script.castRestrictions
+                    val meetsRestrictions = checkCastRestrictions(state, playerId, castRestrictions)
+                    val effectiveCost = costCalculator.calculateEffectiveCost(state, cardDef, playerId)
+                    val costString = effectiveCost.toString()
+                    val canAfford = manaSolver.canPay(state, playerId, effectiveCost)
+
+                    if (hasCorrectTiming && meetsRestrictions && canAfford) {
+                        val targetReqs = buildList {
+                            addAll(cardDef.script.targetRequirements)
+                            cardDef.script.auraTarget?.let { add(it) }
+                        }
+
+                        if (targetReqs.isNotEmpty()) {
+                            val targetReqInfos = targetReqs.mapIndexed { index, req ->
+                                val validTargets = findValidTargets(state, playerId, req)
+                                LegalActionTargetInfo(
+                                    index = index,
+                                    description = req.description,
+                                    minTargets = req.effectiveMinCount,
+                                    maxTargets = req.count,
+                                    validTargets = validTargets,
+                                    targetZone = getTargetZone(req)
+                                )
+                            }
+                            val allRequirementsSatisfied = targetReqInfos.all { reqInfo ->
+                                reqInfo.validTargets.isNotEmpty() || reqInfo.minTargets == 0
+                            }
+                            if (allRequirementsSatisfied) {
+                                val firstReq = targetReqs.first()
+                                val firstReqInfo = targetReqInfos.first()
+                                result.add(LegalActionInfo(
+                                    actionType = "CastSpell",
+                                    description = "Cast ${cardComponent.name}",
+                                    action = CastSpell(playerId, cardId),
+                                    validTargets = firstReqInfo.validTargets,
+                                    requiresTargets = true,
+                                    targetCount = firstReq.count,
+                                    minTargets = firstReq.effectiveMinCount,
+                                    targetDescription = firstReq.description,
+                                    targetRequirements = if (targetReqInfos.size > 1) targetReqInfos else null,
+                                    manaCostString = costString,
+                                    sourceZone = sourceZoneName
+                                ))
+                            }
+                        } else {
+                            result.add(LegalActionInfo(
+                                actionType = "CastSpell",
+                                description = "Cast ${cardComponent.name}",
+                                action = CastSpell(playerId, cardId),
+                                manaCostString = costString,
+                                sourceZone = sourceZoneName
+                            ))
+                        }
+                    } else {
+                        result.add(LegalActionInfo(
+                            actionType = "CastSpell",
+                            description = "Cast ${cardComponent.name}",
+                            action = CastSpell(playerId, cardId),
+                            isAffordable = false,
+                            manaCostString = costString,
+                            sourceZone = sourceZoneName
                         ))
                     }
                 }
