@@ -377,7 +377,8 @@ sealed interface ServerMessage {
         val playerName: String,
         val isHost: Boolean,
         val isConnected: Boolean,
-        val deckSubmitted: Boolean = false
+        val deckSubmitted: Boolean = false,
+        val isAi: Boolean = false
     )
 
     /**

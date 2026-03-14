@@ -168,6 +168,13 @@ sealed interface ClientMessage {
     data object AddAiToLobby : ClientMessage
 
     /**
+     * Remove an AI player from the current lobby (host only, waiting state only).
+     */
+    @Serializable
+    @SerialName("removeAiFromLobby")
+    data class RemoveAiFromLobby(val playerId: String) : ClientMessage
+
+    /**
      * Leave the current lobby.
      */
     @Serializable

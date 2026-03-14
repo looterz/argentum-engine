@@ -318,6 +318,7 @@ export {
   createWinstonSkipPileMessage,
   createLeaveLobbyMessage,
   createAddAiToLobbyMessage,
+  createRemoveAiFromLobbyMessage,
   createStopLobbyMessage,
   createUnsubmitDeckMessage,
   createUpdateLobbySettingsMessage,

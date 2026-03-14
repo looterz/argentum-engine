@@ -338,6 +338,7 @@ function LobbyOverlay({
   const startLobby = useGameStore((state) => state.startLobby)
   const leaveLobby = useGameStore((state) => state.leaveLobby)
   const addAiToLobby = useGameStore((state) => state.addAiToLobby)
+  const removeAiFromLobby = useGameStore((state) => state.removeAiFromLobby)
   const aiEnabled = useGameStore((state) => state.aiEnabled)
   const updateLobbySettings = useGameStore((state) => state.updateLobbySettings)
   const tournamentState = useGameStore((state) => state.tournamentState)
@@ -738,19 +739,30 @@ function LobbyOverlay({
                   <span className={styles.hostBadge}>Host</span>
                 )}
               </div>
-              <span className={`${styles.playerStatus} ${
-                !player.isConnected
-                  ? styles.playerStatusDisconnected
-                  : player.deckSubmitted
-                    ? styles.playerStatusReady
-                    : styles.playerStatusJoined
-              }`}>
-                {!player.isConnected
-                  ? 'Disconnected'
-                  : player.deckSubmitted
-                    ? 'Deck Ready'
-                    : 'Joined'}
-              </span>
+              <div className={styles.playerActions}>
+                <span className={`${styles.playerStatus} ${
+                  !player.isConnected
+                    ? styles.playerStatusDisconnected
+                    : player.deckSubmitted
+                      ? styles.playerStatusReady
+                      : styles.playerStatusJoined
+                }`}>
+                  {!player.isConnected
+                    ? 'Disconnected'
+                    : player.deckSubmitted
+                      ? 'Deck Ready'
+                      : 'Joined'}
+                </span>
+                {isWaiting && lobbyState.isHost && player.isAi && (
+                  <button
+                    onClick={() => removeAiFromLobby(player.playerId)}
+                    className={styles.removeAiButton}
+                    title="Remove AI player"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
             </div>
           ))}
           {lobbyState.players.length === 0 && (

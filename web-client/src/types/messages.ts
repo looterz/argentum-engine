@@ -756,6 +756,7 @@ export interface LobbyPlayerInfo {
   readonly isHost: boolean
   readonly isConnected: boolean
   readonly deckSubmitted: boolean
+  readonly isAi: boolean
 }
 
 export interface AvailableSet {
@@ -1216,6 +1217,7 @@ export type ClientMessage =
   | GridDraftPickMessage
   | LeaveLobbyMessage
   | AddAiToLobbyMessage
+  | RemoveAiFromLobbyMessage
   | StopLobbyMessage
   | UnsubmitDeckMessage
   | UpdateLobbySettingsMessage
@@ -1512,6 +1514,11 @@ export interface AddAiToLobbyMessage {
   readonly type: 'addAiToLobby'
 }
 
+export interface RemoveAiFromLobbyMessage {
+  readonly type: 'removeAiFromLobby'
+  readonly playerId: string
+}
+
 export interface StopLobbyMessage {
   readonly type: 'stopLobby'
 }
@@ -1693,6 +1700,10 @@ export function createLeaveLobbyMessage(): LeaveLobbyMessage {
 
 export function createAddAiToLobbyMessage(): AddAiToLobbyMessage {
   return { type: 'addAiToLobby' }
+}
+
+export function createRemoveAiFromLobbyMessage(playerId: string): RemoveAiFromLobbyMessage {
+  return { type: 'removeAiFromLobby', playerId }
 }
 
 export function createStopLobbyMessage(): StopLobbyMessage {

@@ -72,6 +72,7 @@ class LobbyHandler(
             is ClientMessage.StopLobby -> handleStopLobby(session)
             is ClientMessage.UpdateLobbySettings -> handleUpdateLobbySettings(session, message)
             is ClientMessage.AddAiToLobby -> handleAddAiToLobby(session)
+            is ClientMessage.RemoveAiFromLobby -> handleRemoveAiFromLobby(session, message)
             is ClientMessage.SpectateGame -> handleSpectateGame(session, message)
             is ClientMessage.StopSpectating -> handleStopSpectating(session)
             else -> {}
@@ -427,7 +428,7 @@ class LobbyHandler(
                 broadcastLobbyUpdate(lobby)
             }
             LobbyState.DRAFTING -> {
-                sender.send(session, lobby.buildLobbyUpdate(identity.playerId))
+                sender.send(session, lobby.buildLobbyUpdate(identity.playerId, aiGameManager::isAiPlayer))
                 // Winston Draft reconnection
                 if (lobby.format == TournamentFormat.WINSTON_DRAFT) {
                     broadcastWinstonDraftState(lobby, null)
@@ -513,7 +514,7 @@ class LobbyHandler(
             cardPool = poolInfos,
             basicLands = basicLandInfos
         ))
-        sender.send(session, lobby.buildLobbyUpdate(identity.playerId))
+        sender.send(session, lobby.buildLobbyUpdate(identity.playerId, aiGameManager::isAiPlayer))
 
         val tournament = lobbyRepository.findTournamentById(lobby.lobbyId) ?: return
         sendTournamentStartedToPlayer(lobby, tournament, identity, wsOverride = session)
@@ -714,7 +715,7 @@ class LobbyHandler(
         logger.info("Player ${identity.playerName} joined tournament ${lobby.lobbyId} as spectator")
 
         // Send lobby update so client shows lobby/tournament UI
-        sender.send(session, lobby.buildLobbyUpdate(identity.playerId))
+        sender.send(session, lobby.buildLobbyUpdate(identity.playerId, aiGameManager::isAiPlayer))
 
         // Send tournament state based on lobby phase
         val tournament = lobbyRepository.findTournamentById(lobby.lobbyId)
@@ -1520,6 +1521,56 @@ class LobbyHandler(
         broadcastLobbyUpdate(lobby)
     }
 
+    private fun handleRemoveAiFromLobby(session: WebSocketSession, message: ClientMessage.RemoveAiFromLobby) {
+        val token = sessionRegistry.getTokenByWsId(session.id)
+        val identity = token?.let { sessionRegistry.getIdentityByToken(it) }
+        if (identity == null) {
+            sender.sendError(session, ErrorCode.NOT_CONNECTED, "Not connected")
+            return
+        }
+
+        val lobbyId = identity.currentLobbyId
+        if (lobbyId == null) {
+            sender.sendError(session, ErrorCode.INVALID_ACTION, "Not in a lobby")
+            return
+        }
+
+        val lobby = lobbyRepository.findLobbyById(lobbyId)
+        if (lobby == null) {
+            sender.sendError(session, ErrorCode.INVALID_ACTION, "Lobby not found")
+            return
+        }
+
+        if (!lobby.isHost(identity.playerId)) {
+            sender.sendError(session, ErrorCode.INVALID_ACTION, "Only the host can remove AI players")
+            return
+        }
+
+        if (lobby.state != LobbyState.WAITING_FOR_PLAYERS) {
+            sender.sendError(session, ErrorCode.INVALID_ACTION, "Can only remove AI while waiting for players")
+            return
+        }
+
+        val aiPlayerId = EntityId(message.playerId)
+        if (!aiGameManager.isAiPlayer(aiPlayerId)) {
+            sender.sendError(session, ErrorCode.INVALID_ACTION, "Player is not an AI")
+            return
+        }
+
+        val aiPlayerState = lobby.players[aiPlayerId]
+        if (aiPlayerState == null) {
+            sender.sendError(session, ErrorCode.INVALID_ACTION, "AI player not found in lobby")
+            return
+        }
+
+        lobby.forceRemovePlayer(aiPlayerId)
+        sessionRegistry.removeIdentity(aiPlayerState.identity.token)
+        lobbyRepository.saveLobby(lobby)
+
+        logger.info("AI player ${aiPlayerState.identity.playerName} (${aiPlayerId.value}) removed from lobby $lobbyId")
+        broadcastLobbyUpdate(lobby)
+    }
+
     /**
      * After sealed pools are generated, auto-submit decks for all AI players.
      * Builds a simple deck: all non-land cards + enough basic lands to reach 40 cards.
@@ -2283,7 +2334,7 @@ class LobbyHandler(
         lobby.players.forEach { (playerId, playerState) ->
             val ws = playerState.identity.webSocketSession
             if (ws != null && ws.isOpen) {
-                sender.send(ws, lobby.buildLobbyUpdate(playerId))
+                sender.send(ws, lobby.buildLobbyUpdate(playerId, aiGameManager::isAiPlayer))
             }
         }
     }

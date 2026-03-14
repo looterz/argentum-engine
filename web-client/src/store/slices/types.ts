@@ -577,6 +577,7 @@ export type GameStore = {
   startLobby: () => void
   leaveLobby: () => void
   addAiToLobby: () => void
+  removeAiFromLobby: (playerId: string) => void
   stopLobby: () => void
   updateLobbySettings: (settings: { setCodes?: string[]; format?: 'SEALED' | 'DRAFT' | 'WINSTON_DRAFT' | 'GRID_DRAFT'; boosterCount?: number; boosterDistribution?: Record<string, number>; maxPlayers?: number; gamesPerMatch?: number; pickTimeSeconds?: number; picksPerRound?: number }) => void
   /** Disconnected tournament players: playerId -> info */

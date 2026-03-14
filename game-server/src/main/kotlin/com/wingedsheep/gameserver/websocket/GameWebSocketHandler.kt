@@ -91,7 +91,8 @@ class GameWebSocketHandler(
                 is ClientMessage.LeaveLobby,
                 is ClientMessage.StopLobby,
                 is ClientMessage.UpdateLobbySettings,
-                is ClientMessage.AddAiToLobby -> lobbyHandler.handle(session, clientMessage)
+                is ClientMessage.AddAiToLobby,
+                is ClientMessage.RemoveAiFromLobby -> lobbyHandler.handle(session, clientMessage)
 
                 is ClientMessage.ReadyForNextRound -> {
                     lobbyHandler.handleReadyForNextRound(session)

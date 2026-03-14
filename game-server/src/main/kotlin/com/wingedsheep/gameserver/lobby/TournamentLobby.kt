@@ -1194,14 +1194,15 @@ class TournamentLobby(
     /**
      * Build a lobby update message for a specific player.
      */
-    fun buildLobbyUpdate(forPlayerId: EntityId): ServerMessage.LobbyUpdate {
+    fun buildLobbyUpdate(forPlayerId: EntityId, isAiPlayer: (EntityId) -> Boolean = { false }): ServerMessage.LobbyUpdate {
         val playerInfos = players.values.map { ps ->
             ServerMessage.LobbyPlayerInfo(
                 playerId = ps.identity.playerId.value,
                 playerName = ps.identity.playerName,
                 isHost = isHost(ps.identity.playerId),
                 isConnected = ps.identity.isConnected,
-                deckSubmitted = ps.hasSubmittedDeck
+                deckSubmitted = ps.hasSubmittedDeck,
+                isAi = isAiPlayer(ps.identity.playerId)
             )
         }
 
