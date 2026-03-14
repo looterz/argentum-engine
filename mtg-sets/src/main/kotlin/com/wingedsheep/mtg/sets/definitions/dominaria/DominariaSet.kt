@@ -48,6 +48,7 @@ object DominariaSet {
         CabalEvangel,
         CabalStronghold,
         CastDown,
+        ClifftopRetreat,
         ChampionOfTheFlame,
         Charge,
         CloudreaderSphinx,

@@ -2,7 +2,7 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 158 / 249
+**Implemented:** 159 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -13,7 +13,7 @@
 | Green      | 37    | 26   |
 | Multicolor | 19    | 10   |
 | Colorless  | 30    | 16   |
-| Land       | 12    | 7    |
+| Land       | 12    | 8    |
 
 ---
 
@@ -53,7 +53,7 @@
 - [ ] Chainer's Torment
 - [x] Champion of the Flame
 - [x] Charge
-- [ ] Clifftop Retreat
+- [x] Clifftop Retreat
 - [x] Cloudreader Sphinx
 - [x] Cold-Water Snapper
 - [ ] Corrosive Ooze
