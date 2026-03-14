@@ -28,7 +28,7 @@ import io.mockk.mockk
 /**
  * Type of stack item for test mocking.
  */
-enum class StackItemType { ABILITY, PERMANENT_SPELL, INSTANT_SORCERY }
+enum class StackItemType { ABILITY, PERMANENT_SPELL, AURA_SPELL, INSTANT_SORCERY }
 
 /**
  * Tests for the Arena-style AutoPassManager.
@@ -112,6 +112,19 @@ class AutoPassManagerTest : FunSpec({
                     )
                     val cardComponent = mockk<com.wingedsheep.engine.state.components.identity.CardComponent>(relaxed = true)
                     every { cardComponent.isPermanent } returns true
+                    every { cardComponent.isAura } returns false
+                    every { stackEntity.get<com.wingedsheep.engine.state.components.stack.ActivatedAbilityOnStackComponent>() } returns null
+                    every { stackEntity.get<com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent>() } returns null
+                    every { stackEntity.get<com.wingedsheep.engine.state.components.stack.SpellOnStackComponent>() } returns spellComponent
+                    every { stackEntity.get<com.wingedsheep.engine.state.components.identity.CardComponent>() } returns cardComponent
+                }
+                StackItemType.AURA_SPELL -> {
+                    val spellComponent = com.wingedsheep.engine.state.components.stack.SpellOnStackComponent(
+                        casterId = controllerId
+                    )
+                    val cardComponent = mockk<com.wingedsheep.engine.state.components.identity.CardComponent>(relaxed = true)
+                    every { cardComponent.isPermanent } returns true
+                    every { cardComponent.isAura } returns true
                     every { stackEntity.get<com.wingedsheep.engine.state.components.stack.ActivatedAbilityOnStackComponent>() } returns null
                     every { stackEntity.get<com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent>() } returns null
                     every { stackEntity.get<com.wingedsheep.engine.state.components.stack.SpellOnStackComponent>() } returns spellComponent
@@ -621,6 +634,18 @@ class AutoPassManagerTest : FunSpec({
             )
 
             // Stop when player can actually respond to the permanent spell
+            autoPassManager.shouldAutoPass(state, player1, actions) shouldBe false
+        }
+
+        test("STOP when opponent's aura spell is on stack even with no responses") {
+            // player2's aura on stack, player1 has priority but no responses → stop to see what it targets
+            val state = createMockState(player1, player1, Step.PRECOMBAT_MAIN, stackEmpty = false, stackControllerId = player2, stackItemType = StackItemType.AURA_SPELL)
+            val actions = listOf(
+                passPriorityAction(player1),
+                manaAbilityAction(player1) // Only mana ability, not a response
+            )
+
+            // Auras are targeting spells - always stop so opponent can see what's being targeted
             autoPassManager.shouldAutoPass(state, player1, actions) shouldBe false
         }
     }

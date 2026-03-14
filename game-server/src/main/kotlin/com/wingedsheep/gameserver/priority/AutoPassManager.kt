@@ -105,13 +105,16 @@ class AutoPassManager {
 
                 // Auto mode: check what type it is
                 val container = state.getEntity(topOfStack)
+                val cardComponent = container?.get<CardComponent>()
                 val isPermanentSpell = container?.get<SpellOnStackComponent>()?.let {
-                    container.get<CardComponent>()?.isPermanent ?: false
+                    cardComponent?.isPermanent ?: false
                 } ?: false
+                val isAura = cardComponent?.isAura ?: false
 
-                if (isPermanentSpell) {
-                    // Permanent spells (creatures, enchantments, artifacts, planeswalkers):
-                    // Auto-pass if we have no meaningful instant-speed responses
+                if (isPermanentSpell && !isAura) {
+                    // Non-aura permanent spells (creatures, artifacts, non-aura enchantments, planeswalkers):
+                    // Auto-pass if we have no meaningful instant-speed responses.
+                    // Auras are excluded because they target, and the opponent should see what's being targeted.
                     val hasResponses = meaningfulActions.any {
                         it.actionType == "CastSpell" || it.actionType == "ActivateAbility" || it.actionType == "CycleCard" || it.actionType == "TypecycleCard"
                     }
