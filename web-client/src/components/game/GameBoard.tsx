@@ -424,107 +424,118 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
         ) : null}
       </div>
 
-      {/* Floating pass/change-lands buttons (bottom-right) - hidden during targeting, distribute, counter distribution, combat, retap, and delve modes */}
-      {!spectatorMode && canAct && !isInCombatMode && !isInDistributeMode && !isInCounterDistMode && !isInRetapMode && !delveSelectionState && !targetingState && viewingPlayer && (
+      {/* Floating pass/resolve button (bottom-right) - always present, disabled when unavailable */}
+      {!spectatorMode && viewingPlayer && (() => {
+        const passEnabled = canAct && !isInCombatMode && !isInDistributeMode && !isInCounterDistMode && !isInRetapMode && !delveSelectionState && !targetingState
+        return (
+          <div style={{
+            position: 'fixed',
+            bottom: 16,
+            right: 16,
+            zIndex: 100,
+          }}>
+            <button
+              disabled={!passEnabled}
+              onClick={() => {
+                submitAction({
+                  type: 'PassPriority',
+                  playerId: viewingPlayer.playerId,
+                })
+              }}
+              style={{
+                ...styles.floatingBarButton,
+                ...(passEnabled ? getPassButtonStyle() : {}),
+                width: 160,
+                height: 36,
+                padding: '0 20px',
+                color: passEnabled ? 'white' : '#555',
+                fontWeight: 600,
+                fontSize: responsive.fontSize.normal,
+                border: passEnabled ? `1px solid ${getPassButtonStyle().borderColor}` : '1px solid #333',
+                transition: 'background-color 0.2s, border-color 0.2s',
+                opacity: passEnabled ? 1 : 0.4,
+                cursor: passEnabled ? 'pointer' : 'default',
+              }}
+            >
+              {passEnabled ? getPassButtonLabel() : 'Pass'}
+            </button>
+          </div>
+        )
+      })()}
+
+      {/* Undo, retap, priority mode icons (bottom-right, above pass button) */}
+      {!spectatorMode && viewingPlayer && (
         <div style={{
           position: 'fixed',
-          bottom: 16,
+          bottom: responsive.isMobile ? 58 : 60,
           right: 16,
           display: 'flex',
-          gap: 8,
+          gap: 4,
+          alignItems: 'stretch',
           zIndex: 100,
         }}>
-          {undoAvailable && (
-            <button
-              onClick={requestUndo}
-              style={{
-                ...styles.floatingUndoButton,
-                position: 'static',
-                padding: responsive.isMobile ? '10px 20px' : '12px 24px',
-                fontSize: responsive.fontSize.normal,
-              }}
-            >
-              Undo
-            </button>
-          )}
-          {retapInfo && (
-            <button
-              onClick={startRetapSelection}
-              style={{
-                ...styles.floatingUndoButton,
-                position: 'static',
-                padding: responsive.isMobile ? '10px 20px' : '12px 24px',
-                fontSize: responsive.fontSize.normal,
-                backgroundColor: 'rgba(40, 40, 40, 0.9)',
-                color: '#60a5fa',
-                border: '2px solid #3b82f6',
-              }}
-            >
-              Retap
-            </button>
-          )}
           <button
-            onClick={() => {
-              submitAction({
-                type: 'PassPriority',
-                playerId: viewingPlayer.playerId,
-              })
-            }}
+            onClick={requestUndo}
+            disabled={!undoAvailable}
+            title="Undo"
             style={{
-              ...styles.floatingPassButton,
-              ...getPassButtonStyle(),
-              position: 'static',
-              padding: responsive.isMobile ? '10px 20px' : '12px 24px',
-              fontSize: responsive.fontSize.normal,
-              border: `2px solid ${getPassButtonStyle().borderColor}`,
-              transition: 'background-color 0.2s, border-color 0.2s',
+              ...styles.floatingBarButton,
+              color: undoAvailable ? '#d4a017' : '#555',
+              border: undoAvailable ? '1px solid #8b7000' : '1px solid #333',
+              opacity: undoAvailable ? 1 : 0.4,
+              cursor: undoAvailable ? 'pointer' : 'default',
             }}
           >
-            {getPassButtonLabel()}
+            <i className="ms ms-untap" style={{ fontSize: 14 }} />
+          </button>
+          <button
+            onClick={startRetapSelection}
+            disabled={!retapInfo}
+            title="Retap lands"
+            style={{
+              ...styles.floatingBarButton,
+              color: retapInfo ? '#60a5fa' : '#555',
+              border: retapInfo ? '1px solid #3b82f6' : '1px solid #333',
+              opacity: retapInfo ? 1 : 0.4,
+              cursor: retapInfo ? 'pointer' : 'default',
+            }}
+          >
+            <i className="ms ms-land" style={{ fontSize: 14 }} />
+          </button>
+          <button
+            onClick={cyclePriorityMode}
+            title={
+              serverPriorityMode === 'fullControl'
+                ? 'Full Control: You receive priority at every step. Click to switch to Auto.'
+                : serverPriorityMode === 'stops'
+                ? 'Stops: Pauses on opponent spells/abilities and combat damage. Click to switch to Full Control.'
+                : 'Auto: Smart auto-passing. Click to switch to Stops.'
+            }
+            style={{
+              ...styles.floatingBarButton,
+              width: 'auto',
+              padding: '0 8px',
+              backgroundColor:
+                serverPriorityMode === 'fullControl' ? 'rgba(79, 195, 247, 0.9)' :
+                serverPriorityMode === 'stops' ? 'rgba(245, 158, 11, 0.9)' :
+                'rgba(40, 40, 40, 0.8)',
+              color:
+                serverPriorityMode === 'fullControl' ? '#000' :
+                serverPriorityMode === 'stops' ? '#000' :
+                '#999',
+              border:
+                serverPriorityMode === 'fullControl' ? '1px solid #4fc3f7' :
+                serverPriorityMode === 'stops' ? '1px solid #f59e0b' :
+                '1px solid #555',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+          >
+            {serverPriorityMode === 'fullControl' ? 'Full Control' :
+             serverPriorityMode === 'stops' ? 'Stops' :
+             'Auto'}
           </button>
         </div>
-      )}
-
-      {/* Priority mode toggle button (bottom-right, above pass button) - hidden in spectator mode */}
-      {!spectatorMode && viewingPlayer && (
-        <button
-          onClick={cyclePriorityMode}
-          title={
-            serverPriorityMode === 'fullControl'
-              ? 'Full Control: You receive priority at every step. Click to switch to Auto.'
-              : serverPriorityMode === 'stops'
-              ? 'Stops: Pauses on opponent spells/abilities and combat damage. Click to switch to Full Control.'
-              : 'Auto: Smart auto-passing. Click to switch to Stops.'
-          }
-          style={{
-            position: 'fixed',
-            bottom: responsive.isMobile ? 60 : 70,
-            right: 16,
-            padding: responsive.isMobile ? '4px 10px' : '6px 12px',
-            fontSize: responsive.fontSize.small,
-            fontWeight: 500,
-            backgroundColor:
-              serverPriorityMode === 'fullControl' ? 'rgba(79, 195, 247, 0.9)' :
-              serverPriorityMode === 'stops' ? 'rgba(245, 158, 11, 0.9)' :
-              'rgba(40, 40, 40, 0.8)',
-            color:
-              serverPriorityMode === 'fullControl' ? '#000' :
-              serverPriorityMode === 'stops' ? '#000' :
-              '#999',
-            border:
-              serverPriorityMode === 'fullControl' ? '1px solid #4fc3f7' :
-              serverPriorityMode === 'stops' ? '1px solid #f59e0b' :
-              '1px solid #555',
-            borderRadius: 4,
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            zIndex: 100,
-          }}
-        >
-          {serverPriorityMode === 'fullControl' ? 'Full Control' :
-           serverPriorityMode === 'stops' ? 'Stops' :
-           'Auto'}
-        </button>
       )}
 
       {/* Combat buttons (bottom-right) */}
@@ -532,23 +543,14 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
         <div style={styles.combatButtonContainer}>
           {combatState.selectedAttackers.length === 0 ? (
             <>
-              {undoAvailable && (
-                <button
-                  onClick={requestUndo}
-                  style={{
-                    ...styles.combatButton,
-                    ...styles.combatButtonUndo,
-                  }}
-                >
-                  Undo
-                </button>
-              )}
               <button
                 onClick={attackWithAll}
                 disabled={combatState.validCreatures.length === 0}
                 style={{
-                  ...styles.combatButton,
-                  ...styles.combatButtonPrimary,
+                  ...styles.floatingBarButton,
+                  ...styles.combatActionButton,
+                  backgroundColor: '#c62828',
+                  border: '1px solid #ef5350',
                   opacity: combatState.validCreatures.length === 0 ? 0.5 : 1,
                 }}
               >
@@ -557,8 +559,8 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
               <button
                 onClick={confirmCombat}
                 style={{
-                  ...styles.combatButton,
-                  ...styles.combatButtonSecondary,
+                  ...styles.floatingBarButton,
+                  ...styles.combatPassButton,
                 }}
               >
                 Skip Attacking
@@ -566,22 +568,13 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
             </>
           ) : (
             <>
-              {undoAvailable && (
-                <button
-                  onClick={requestUndo}
-                  style={{
-                    ...styles.combatButton,
-                    ...styles.combatButtonUndo,
-                  }}
-                >
-                  Undo
-                </button>
-              )}
               <button
                 onClick={confirmCombat}
                 style={{
-                  ...styles.combatButton,
-                  ...styles.combatButtonPrimary,
+                  ...styles.floatingBarButton,
+                  ...styles.combatActionButton,
+                  backgroundColor: '#c62828',
+                  border: '1px solid #ef5350',
                 }}
               >
                 Attack with {combatState.selectedAttackers.length}
@@ -589,8 +582,10 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
               <button
                 onClick={clearAttackers}
                 style={{
-                  ...styles.combatButton,
-                  ...styles.combatButtonSecondary,
+                  ...styles.floatingBarButton,
+                  ...styles.combatActionButton,
+                  backgroundColor: '#424242',
+                  border: '1px solid #757575',
                 }}
               >
                 Clear Attackers
@@ -607,31 +602,22 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
               <button
                 onClick={confirmCombat}
                 style={{
-                  ...styles.combatButton,
-                  ...styles.combatButtonSecondary,
+                  ...styles.floatingBarButton,
+                  ...styles.combatPassButton,
                 }}
               >
                 No Blocks
               </button>
-              {undoAvailable && (
-                <button
-                  onClick={requestUndo}
-                  style={{
-                    ...styles.combatButton,
-                    ...styles.combatButtonUndo,
-                  }}
-                >
-                  Undo
-                </button>
-              )}
             </>
           ) : (
             <>
               <button
                 onClick={confirmCombat}
                 style={{
-                  ...styles.combatButton,
-                  ...styles.combatButtonPrimary,
+                  ...styles.floatingBarButton,
+                  ...styles.combatActionButton,
+                  backgroundColor: '#c62828',
+                  border: '1px solid #ef5350',
                 }}
               >
                 Confirm Blocks
@@ -639,23 +625,14 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
               <button
                 onClick={clearBlockerAssignments}
                 style={{
-                  ...styles.combatButton,
-                  ...styles.combatButtonSecondary,
+                  ...styles.floatingBarButton,
+                  ...styles.combatActionButton,
+                  backgroundColor: '#424242',
+                  border: '1px solid #757575',
                 }}
               >
                 Clear Blockers
               </button>
-              {undoAvailable && (
-                <button
-                  onClick={requestUndo}
-                  style={{
-                    ...styles.combatButton,
-                    ...styles.combatButtonUndo,
-                  }}
-                >
-                  Undo
-                </button>
-              )}
             </>
           )}
         </div>
