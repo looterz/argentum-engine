@@ -103,6 +103,7 @@ object DominariaSet {
         KwendePrideOfFemeref,
         KnightOfNewBenalia,
         KeldonOverseer,
+        KazarovSengirPureblood,
         KeldonRaider,
         LlanowarEnvoy,
         LlanowarElves,

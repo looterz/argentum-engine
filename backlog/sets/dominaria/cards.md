@@ -2,13 +2,13 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 159 / 249
+**Implemented:** 160 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 38    | 25   |
 | Blue       | 37    | 24   |
-| Black      | 38    | 24   |
+| Black      | 38    | 25   |
 | Red        | 38    | 25   |
 | Green      | 37    | 26   |
 | Multicolor | 19    | 10   |
@@ -130,7 +130,7 @@
 - [ ] Kamahl's Druidic Vow
 - [ ] Karn's Temporal Sundering
 - [ ] Karn, Scion of Urza
-- [ ] Kazarov, Sengir Pureblood
+- [x] Kazarov, Sengir Pureblood
 - [x] Keldon Overseer
 - [x] Keldon Raider
 - [ ] Keldon Warcaller
