@@ -2,13 +2,13 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 181 / 249
+**Implemented:** 182 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 38    | 26   |
 | Blue       | 37    | 25   |
-| Black      | 38    | 27   |
+| Black      | 38    | 28   |
 | Red        | 38    | 31   |
 | Green      | 37    | 29   |
 | Multicolor | 19    | 13   |
@@ -50,7 +50,7 @@
 - [x] Caligo Skin-Witch
 - [x] Call the Cavalry
 - [x] Cast Down
-- [ ] Chainer's Torment
+- [x] Chainer's Torment
 - [x] Champion of the Flame
 - [x] Charge
 - [x] Clifftop Retreat

@@ -50,6 +50,7 @@ object DominariaSet {
         CabalEvangel,
         CabalStronghold,
         CastDown,
+        ChainersTorment,
         ClifftopRetreat,
         ChampionOfTheFlame,
         Charge,
