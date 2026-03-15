@@ -189,6 +189,9 @@ export interface ClientCard {
 
   /** Damage distribution for DividedDamageEffect spells on the stack (target entity ID -> damage amount) */
   readonly damageDistribution?: Record<EntityId, number> | null
+
+  /** For Sagas: the total number of chapters (e.g., 3). Null for non-Sagas. */
+  readonly sagaTotalChapters?: number | null
 }
 
 /**

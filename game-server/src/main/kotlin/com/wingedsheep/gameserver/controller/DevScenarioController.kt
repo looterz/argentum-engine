@@ -7,6 +7,7 @@ import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
 import com.wingedsheep.engine.state.components.battlefield.AttachmentsComponent
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
+import com.wingedsheep.engine.state.components.battlefield.SagaComponent
 import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.*
@@ -402,44 +403,44 @@ class DevScenarioController(
             val builder = ScenarioBuilder(cardRegistry)
 
             // Initialize players
-            builder.withPlayers(request.player1Name, request.player2Name)
+            builder.withPlayers(request.player1Name ?: "Player1", request.player2Name ?: "Player2")
 
             // Set up player 1
             request.player1?.let { config ->
                 config.lifeTotal?.let { builder.withLifeTotal(1, it) }
-                config.hand.forEach { builder.withCardInHand(1, it) }
-                config.battlefield.forEach { card ->
+                config.hand?.forEach { builder.withCardInHand(1, it) }
+                config.battlefield?.forEach { card ->
                     builder.withCardOnBattlefield(
                         1, card.name,
-                        tapped = card.tapped,
-                        summoningSickness = card.summoningSickness,
+                        tapped = card.tapped ?: false,
+                        summoningSickness = card.summoningSickness ?: false,
                         counters = card.counters ?: emptyMap()
                     )
                 }
-                config.battlefield.forEach { card ->
+                config.battlefield?.forEach { card ->
                     card.attachedTo?.let { hostName -> builder.wireAttachment(card.name, hostName) }
                 }
-                config.graveyard.forEach { builder.withCardInGraveyard(1, it) }
-                config.library.forEach { builder.withCardInLibrary(1, it) }
+                config.graveyard?.forEach { builder.withCardInGraveyard(1, it) }
+                config.library?.forEach { builder.withCardInLibrary(1, it) }
             }
 
             // Set up player 2
             request.player2?.let { config ->
                 config.lifeTotal?.let { builder.withLifeTotal(2, it) }
-                config.hand.forEach { builder.withCardInHand(2, it) }
-                config.battlefield.forEach { card ->
+                config.hand?.forEach { builder.withCardInHand(2, it) }
+                config.battlefield?.forEach { card ->
                     builder.withCardOnBattlefield(
                         2, card.name,
-                        tapped = card.tapped,
-                        summoningSickness = card.summoningSickness,
+                        tapped = card.tapped ?: false,
+                        summoningSickness = card.summoningSickness ?: false,
                         counters = card.counters ?: emptyMap()
                     )
                 }
-                config.battlefield.forEach { card ->
+                config.battlefield?.forEach { card ->
                     card.attachedTo?.let { hostName -> builder.wireAttachment(card.name, hostName) }
                 }
-                config.graveyard.forEach { builder.withCardInGraveyard(2, it) }
-                config.library.forEach { builder.withCardInLibrary(2, it) }
+                config.graveyard?.forEach { builder.withCardInGraveyard(2, it) }
+                config.library?.forEach { builder.withCardInLibrary(2, it) }
             }
 
             // Set game state
@@ -463,11 +464,15 @@ class DevScenarioController(
             gameSession.injectStateForDevScenario(state)
 
             // Apply per-step stop overrides (prevents auto-pass at specified steps)
-            if (request.player1StopAtSteps.isNotEmpty() || request.player1OpponentStopAtSteps.isNotEmpty()) {
-                gameSession.setStopOverrides(player1Id, request.player1StopAtSteps.toSet(), request.player1OpponentStopAtSteps.toSet())
+            val p1Stops = request.player1StopAtSteps.orEmpty()
+            val p1OppStops = request.player1OpponentStopAtSteps.orEmpty()
+            if (p1Stops.isNotEmpty() || p1OppStops.isNotEmpty()) {
+                gameSession.setStopOverrides(player1Id, p1Stops.toSet(), p1OppStops.toSet())
             }
-            if (request.player2StopAtSteps.isNotEmpty() || request.player2OpponentStopAtSteps.isNotEmpty()) {
-                gameSession.setStopOverrides(player2Id, request.player2StopAtSteps.toSet(), request.player2OpponentStopAtSteps.toSet())
+            val p2Stops = request.player2StopAtSteps.orEmpty()
+            val p2OppStops = request.player2OpponentStopAtSteps.orEmpty()
+            if (p2Stops.isNotEmpty() || p2OppStops.isNotEmpty()) {
+                gameSession.setStopOverrides(player2Id, p2Stops.toSet(), p2OppStops.toSet())
             }
 
             // Save the session
@@ -475,10 +480,13 @@ class DevScenarioController(
 
             // Create player identities with matching player IDs from the scenario
             // Default to stable tokens "p1"/"p2" for easy dev workflow (bookmark browser tabs)
+            val p1Name = request.player1Name ?: "Player1"
+            val p2Name = request.player2Name ?: "Player2"
+
             val identity1 = PlayerIdentity(
                 token = player1Token ?: "p1",
                 playerId = player1Id,
-                playerName = request.player1Name
+                playerName = p1Name
             ).apply {
                 currentGameSessionId = gameSession.sessionId
             }
@@ -486,7 +494,7 @@ class DevScenarioController(
             val identity2 = PlayerIdentity(
                 token = player2Token ?: "p2",
                 playerId = player2Id,
-                playerName = request.player2Name
+                playerName = p2Name
             ).apply {
                 currentGameSessionId = gameSession.sessionId
             }
@@ -500,12 +508,12 @@ class DevScenarioController(
             return ResponseEntity.ok(ScenarioResponse(
                 sessionId = gameSession.sessionId,
                 player1 = PlayerInfo(
-                    name = request.player1Name,
+                    name = p1Name,
                     token = identity1.token,
                     playerId = player1Id.value
                 ),
                 player2 = PlayerInfo(
-                    name = request.player2Name,
+                    name = p2Name,
                     token = identity2.token,
                     playerId = player2Id.value
                 ),
@@ -640,6 +648,16 @@ class DevScenarioController(
                 val staticHandler = StaticAbilityHandler(cardRegistry)
                 container = staticHandler.addContinuousEffectComponent(container, cardDef)
                 container = staticHandler.addReplacementEffectComponent(container, cardDef)
+
+                // Add SagaComponent for sagas, marking chapters as triggered based on lore counters
+                if (cardDef.finalChapter != null) {
+                    val loreCount = counters["LORE"] ?: 0
+                    val triggeredChapters = cardDef.sagaChapters
+                        .filter { it.chapter <= loreCount }
+                        .map { it.chapter }
+                        .toSet()
+                    container = container.with(SagaComponent(triggeredChapters))
+                }
             }
 
             state = state.withEntity(cardId, container)
@@ -766,8 +784,8 @@ class DevScenarioController(
 // ============================================================================
 
 data class ScenarioRequest(
-    val player1Name: String = "Player1",
-    val player2Name: String = "Player2",
+    val player1Name: String? = "Player1",
+    val player2Name: String? = "Player2",
     val player1: PlayerConfig? = null,
     val player2: PlayerConfig? = null,
     val phase: Phase? = null,
@@ -775,21 +793,21 @@ data class ScenarioRequest(
     val activePlayer: Int? = null,
     val priorityPlayer: Int? = null,
     /** Steps where player 1 should stop on their own turn (prevents auto-pass) */
-    val player1StopAtSteps: List<Step> = emptyList(),
+    val player1StopAtSteps: List<Step>? = null,
     /** Steps where player 2 should stop on their own turn (prevents auto-pass) */
-    val player2StopAtSteps: List<Step> = emptyList(),
+    val player2StopAtSteps: List<Step>? = null,
     /** Steps where player 1 should stop on opponent's turn (prevents auto-pass) */
-    val player1OpponentStopAtSteps: List<Step> = emptyList(),
+    val player1OpponentStopAtSteps: List<Step>? = null,
     /** Steps where player 2 should stop on opponent's turn (prevents auto-pass) */
-    val player2OpponentStopAtSteps: List<Step> = emptyList()
+    val player2OpponentStopAtSteps: List<Step>? = null
 )
 
 data class PlayerConfig(
     val lifeTotal: Int? = null,
-    val hand: List<String> = emptyList(),
-    val battlefield: List<BattlefieldCardConfig> = emptyList(),
-    val graveyard: List<String> = emptyList(),
-    val library: List<String> = emptyList()
+    val hand: List<String>? = null,
+    val battlefield: List<BattlefieldCardConfig>? = null,
+    val graveyard: List<String>? = null,
+    val library: List<String>? = null
 )
 
 /**
@@ -801,8 +819,8 @@ data class PlayerConfig(
  */
 data class BattlefieldCardConfig(
     val name: String,
-    val tapped: Boolean = false,
-    val summoningSickness: Boolean = false,
+    val tapped: Boolean? = false,
+    val summoningSickness: Boolean? = false,
     val counters: Map<String, Int>? = null,
     val attachedTo: String? = null
 )

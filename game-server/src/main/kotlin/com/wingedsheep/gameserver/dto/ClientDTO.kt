@@ -209,7 +209,10 @@ data class ClientCard(
     val copyOf: String? = null,
 
     /** Damage distribution for DividedDamageEffect spells on the stack (target entity ID -> damage amount) */
-    val damageDistribution: Map<EntityId, Int>? = null
+    val damageDistribution: Map<EntityId, Int>? = null,
+
+    /** For Sagas: the total number of chapters (e.g., 3). Null for non-Sagas. */
+    val sagaTotalChapters: Int? = null
 )
 
 /**

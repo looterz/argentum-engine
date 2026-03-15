@@ -20,6 +20,7 @@ import {
   getTokenFrameGradient,
   getTokenFrameTextColor,
   getCardFallbackColor,
+  getLoreCounters,
 } from '../board/shared'
 import { styles } from '../board/styles'
 import {
@@ -1002,6 +1003,51 @@ export function GameCard({
           </span>
         </div>
       )}
+
+      {/* Saga lore counter badge and chapter progress track */}
+      {battlefield && card.subtypes.includes('Saga') && (() => {
+        const loreCount = getLoreCounters(card)
+        const totalChapters = card.sagaTotalChapters ?? 3
+        const toRoman = (n: number) => ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'][n - 1] ?? String(n)
+        return (
+          <>
+            {/* Chapter progress track along left edge */}
+            <div style={{
+              ...styles.sagaChapterTrack,
+            }}>
+              {Array.from({ length: totalChapters }, (_, i) => {
+                const chapter = i + 1
+                const isActive = loreCount === chapter
+                const isCompleted = loreCount > chapter
+                return (
+                  <div key={chapter} style={{
+                    ...styles.sagaChapterMarker,
+                    ...(isActive ? styles.sagaChapterActive : {}),
+                    ...(isCompleted ? styles.sagaChapterCompleted : {}),
+                    width: responsive.isMobile ? 14 : 18,
+                    height: responsive.isMobile ? 14 : 18,
+                    fontSize: responsive.isMobile ? 7 : 9,
+                  }}>
+                    {toRoman(chapter)}
+                  </div>
+                )
+              })}
+            </div>
+            {/* Lore counter badge in P/T position */}
+            {loreCount > 0 && (
+              <div style={{
+                ...styles.sagaLoreBadge,
+                fontSize: responsive.isMobile ? 10 : 12,
+                padding: responsive.isMobile ? '1px 4px' : '2px 6px',
+              }}>
+                <span style={{ fontWeight: 700 }}>
+                  {loreCount} / {totalChapters}
+                </span>
+              </div>
+            )}
+          </>
+        )
+      })()}
 
       {/* Keyword ability icons (shown for face-up cards, and for face-down cards with granted keywords) */}
       {battlefield && (card.keywords.length > 0 || (card.abilityFlags && card.abilityFlags.length > 0) || (card.protections && card.protections.length > 0)) && (

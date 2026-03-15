@@ -51,4 +51,5 @@ export const counterManaClass: Record<string, string> = {
   PLAGUE: 'counter-skull',
   TRAP: 'counter-arrow',
   DEPLETION: 'counter-void',
+  LORE: 'counter-lore',
 }
