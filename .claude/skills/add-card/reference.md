@@ -238,7 +238,7 @@ constructors.
 
 | Effect                                      | Parameters                                            | Purpose                  |
 |---------------------------------------------|-------------------------------------------------------|--------------------------|
-| `MoveToZoneEffect`                          | `target, destination: Zone, placement, byDestruction, controllerOverride` | Unified zone movement    |
+| `MoveToZoneEffect`                          | `target, destination: Zone, placement, byDestruction, controllerOverride, linkToSource` | Unified zone movement    |
 | `SacrificeEffect`                           | `filter, count, any`                                  | Sacrifice permanents     |
 | `SacrificeSelfEffect`                       | (object)                                              | Sacrifice this permanent |
 | `SacrificeTargetEffect`                     | `target`                                              | Sacrifice specific permanent by target |
@@ -964,6 +964,7 @@ Set via `staticAbility { ability = ... }`:
 - `CastSpellTypesFromTopOfLibrary(filter: GameObjectFilter)` — cast matching spells from top of library (e.g., instants/sorceries only)
 - `LookAtTopOfLibrary` — look at top card of your library any time (private, controller only)
 - `MayCastSelfFromZones(zones: List<Zone>)` — intrinsic permission to cast this card from specified zones (e.g., graveyard, exile)
+- `GrantMayCastFromLinkedExile(filter: GameObjectFilter)` — you may cast cards exiled with this permanent that match the filter (e.g., Rona, Disciple of Gix). Works with LinkedExileComponent.
 - `LookAtFaceDownCreatures` — look at face-down creatures you don't control any time
 - `PreventCycling` — players can't cycle cards
 - `PreventManaPoolEmptying` — players don't lose unspent mana as steps and phases end

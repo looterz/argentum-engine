@@ -34,6 +34,7 @@ import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
+import com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.MayPlayFromExileComponent
 import com.wingedsheep.engine.state.components.identity.PlayWithoutPayingCostComponent
@@ -51,6 +52,7 @@ import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.GrantFlashToSpellType
 import com.wingedsheep.sdk.scripting.CastSpellTypesFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.MayCastSelfFromZones
+import com.wingedsheep.sdk.scripting.GrantMayCastFromLinkedExile
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.PlayFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
@@ -1206,6 +1208,9 @@ class CastSpellHandler(
      * the player permission to play it from exile. Checks all players' exile zones
      * because cards like Villainous Wealth exile from an opponent's library (cards
      * remain in their owner's exile zone but are castable by the spell's controller).
+     *
+     * Also checks for permanents with GrantMayCastFromLinkedExile static ability
+     * (e.g., Rona, Disciple of Gix) that link exiled cards via LinkedExileComponent.
      */
     private fun isInExileWithPlayPermission(
         state: GameState,
@@ -1216,8 +1221,48 @@ class CastSpellHandler(
             cardId in state.getZone(ZoneKey(pid, Zone.EXILE))
         }
         if (!inAnyExile) return false
+
+        // Check direct MayPlayFromExileComponent grant
         val component = state.getEntity(cardId)?.get<MayPlayFromExileComponent>()
-        return component?.controllerId == playerId
+        if (component?.controllerId == playerId) return true
+
+        // Check for GrantMayCastFromLinkedExile static abilities on battlefield permanents
+        return hasLinkedExileCastPermission(state, playerId, cardId)
+    }
+
+    /**
+     * Check if any permanent controlled by the player has a GrantMayCastFromLinkedExile
+     * static ability and the card is in that permanent's LinkedExileComponent.
+     */
+    private fun hasLinkedExileCastPermission(
+        state: GameState,
+        playerId: EntityId,
+        cardId: EntityId
+    ): Boolean {
+        val cardContainer = state.getEntity(cardId) ?: return false
+        val cardComponent = cardContainer.get<CardComponent>() ?: return false
+
+        for (entityId in state.getBattlefield()) {
+            val container = state.getEntity(entityId) ?: continue
+            val controller = container.get<ControllerComponent>()?.playerId ?: continue
+            if (controller != playerId) continue
+
+            val linked = container.get<LinkedExileComponent>() ?: continue
+            if (cardId !in linked.exiledIds) continue
+
+            // Check if this permanent has a GrantMayCastFromLinkedExile static ability
+            val entityCardComponent = container.get<CardComponent>() ?: continue
+            val cardDef = cardRegistry?.getCard(entityCardComponent.cardDefinitionId) ?: continue
+            val grantAbility = cardDef.script.staticAbilities
+                .filterIsInstance<GrantMayCastFromLinkedExile>()
+                .firstOrNull() ?: continue
+
+            // Check if the exiled card passes the filter (e.g., nonland)
+            if (matchesCardFilter(cardComponent, grantAbility.filter)) {
+                return true
+            }
+        }
+        return false
     }
 
     /**

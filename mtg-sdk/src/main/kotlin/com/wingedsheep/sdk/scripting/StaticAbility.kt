@@ -1696,3 +1696,22 @@ data class AdditionalETBTriggers(
 ) : StaticAbility {
     override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
 }
+
+/**
+ * You may cast cards exiled with this permanent (linked via LinkedExileComponent).
+ * The [filter] restricts which exiled cards can be cast (e.g., GameObjectFilter.Nonland
+ * for "you may cast spells from among cards exiled with ~").
+ *
+ * When this permanent leaves the battlefield, the static ability naturally ceases to apply
+ * and the exiled cards can no longer be cast. The cards remain in exile.
+ *
+ * Used by Rona, Disciple of Gix and similar cards.
+ */
+@SerialName("GrantMayCastFromLinkedExile")
+@Serializable
+data class GrantMayCastFromLinkedExile(
+    val filter: GameObjectFilter = GameObjectFilter.Companion.Nonland
+) : StaticAbility {
+    override val description: String = "You may cast ${filter.description} cards exiled with this permanent."
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
+}

@@ -12,6 +12,7 @@ import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
+import com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent
 import com.wingedsheep.engine.state.components.battlefield.GrantsControllerShroudComponent
 import com.wingedsheep.engine.state.components.player.CantCastSpellsComponent
 import com.wingedsheep.engine.state.components.player.PlayerShroudComponent
@@ -56,6 +57,7 @@ import com.wingedsheep.sdk.scripting.GrantActivatedAbilityToAttachedCreature
 import com.wingedsheep.sdk.scripting.GrantActivatedAbilityToCreatureGroup
 import com.wingedsheep.sdk.scripting.GrantFlashToSpellType
 import com.wingedsheep.sdk.scripting.CastSpellTypesFromTopOfLibrary
+import com.wingedsheep.sdk.scripting.GrantMayCastFromLinkedExile
 import com.wingedsheep.sdk.scripting.MayCastSelfFromZones
 import com.wingedsheep.sdk.scripting.PlayFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.PreventCycling
@@ -1110,14 +1112,145 @@ class LegalActionsCalculator(
             }
         }
 
+        // Check for cards castable from linked exile (e.g., Rona, Disciple of Gix)
+        // Scan battlefield for permanents with GrantMayCastFromLinkedExile that link exiled cards.
+        val linkedExileCardIds = mutableSetOf<EntityId>()
+        for (entityId in state.getBattlefield()) {
+            val container = state.getEntity(entityId) ?: continue
+            val controller = container.get<ControllerComponent>()?.playerId ?: continue
+            if (controller != playerId) continue
+            val linked = container.get<LinkedExileComponent>() ?: continue
+            val entityCard = container.get<CardComponent>() ?: continue
+            val cardDef = cardRegistry.getCard(entityCard.cardDefinitionId) ?: continue
+            val grantAbility = cardDef.script.staticAbilities
+                .filterIsInstance<GrantMayCastFromLinkedExile>()
+                .firstOrNull() ?: continue
+
+            for (exiledId in linked.exiledIds) {
+                // Skip if already handled by MayPlayFromExileComponent
+                val exiledContainer = state.getEntity(exiledId) ?: continue
+                if (exiledContainer.get<MayPlayFromExileComponent>()?.controllerId == playerId) continue
+                val exiledCard = exiledContainer.get<CardComponent>() ?: continue
+                // Check filter (e.g., nonland)
+                val passesFilter = grantAbility.filter.cardPredicates.all { pred ->
+                    when (pred) {
+                        is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsNonland -> !exiledCard.typeLine.isLand
+                        is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsCreature -> exiledCard.typeLine.isCreature
+                        is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsArtifact -> exiledCard.typeLine.isArtifact
+                        else -> true
+                    }
+                }
+                if (!passesFilter) continue
+                // Verify card is actually in exile
+                val inExile = state.turnOrder.any { pid -> exiledId in state.getZone(ZoneKey(pid, Zone.EXILE)) }
+                if (!inExile) continue
+                if (exiledId in linkedExileCardIds) continue
+                linkedExileCardIds.add(exiledId)
+
+                // Lands in linked exile cannot be cast (oracle says "spells")
+                if (exiledCard.typeLine.isLand) continue
+
+                val exiledCardDef = cardRegistry.getCard(exiledCard.name)
+                if (cantCastSpells) {
+                    result.add(LegalActionInfo(
+                        actionType = "CastSpell",
+                        description = "Cast ${exiledCard.name}",
+                        action = CastSpell(playerId, exiledId),
+                        isAffordable = false,
+                        manaCostString = exiledCard.manaCost.toString(),
+                        sourceZone = "EXILE"
+                    ))
+                } else {
+                    val isInstant = exiledCard.typeLine.isInstant
+                    val hasCorrectTiming = isInstant || canPlaySorcerySpeed
+                    val castRestrictions = exiledCardDef?.script?.castRestrictions ?: emptyList()
+                    val meetsRestrictions = checkCastRestrictions(state, playerId, castRestrictions)
+                    val costString = run {
+                        val effectiveCost = if (exiledCardDef != null) {
+                            costCalculator.calculateEffectiveCost(state, exiledCardDef, playerId)
+                        } else {
+                            exiledCard.manaCost
+                        }
+                        effectiveCost.toString()
+                    }
+                    val canAfford = run {
+                        val effectiveCost = if (exiledCardDef != null) {
+                            costCalculator.calculateEffectiveCost(state, exiledCardDef, playerId)
+                        } else {
+                            exiledCard.manaCost
+                        }
+                        manaSolver.canPay(state, playerId, effectiveCost)
+                    }
+
+                    if (hasCorrectTiming && meetsRestrictions && canAfford) {
+                        val targetReqs = buildList {
+                            addAll(exiledCardDef?.script?.targetRequirements ?: emptyList())
+                            exiledCardDef?.script?.auraTarget?.let { add(it) }
+                        }
+                        if (targetReqs.isNotEmpty()) {
+                            val targetReqInfos = targetReqs.mapIndexed { index, req ->
+                                val validTargets = findValidTargets(state, playerId, req)
+                                LegalActionTargetInfo(
+                                    index = index,
+                                    description = req.description,
+                                    minTargets = req.effectiveMinCount,
+                                    maxTargets = req.count,
+                                    validTargets = validTargets,
+                                    targetZone = getTargetZone(req)
+                                )
+                            }
+                            val allRequirementsSatisfied = targetReqInfos.all { reqInfo ->
+                                reqInfo.validTargets.isNotEmpty() || reqInfo.minTargets == 0
+                            }
+                            if (allRequirementsSatisfied) {
+                                val firstReq = targetReqs.first()
+                                val firstReqInfo = targetReqInfos.first()
+                                result.add(LegalActionInfo(
+                                    actionType = "CastSpell",
+                                    description = "Cast ${exiledCard.name}",
+                                    action = CastSpell(playerId, exiledId),
+                                    validTargets = firstReqInfo.validTargets,
+                                    requiresTargets = true,
+                                    targetCount = firstReq.count,
+                                    minTargets = firstReq.effectiveMinCount,
+                                    targetDescription = firstReq.description,
+                                    targetRequirements = if (targetReqInfos.size > 1) targetReqInfos else null,
+                                    manaCostString = costString,
+                                    sourceZone = "EXILE"
+                                ))
+                            }
+                        } else {
+                            result.add(LegalActionInfo(
+                                actionType = "CastSpell",
+                                description = "Cast ${exiledCard.name}",
+                                action = CastSpell(playerId, exiledId),
+                                manaCostString = costString,
+                                sourceZone = "EXILE"
+                            ))
+                        }
+                    } else {
+                        result.add(LegalActionInfo(
+                            actionType = "CastSpell",
+                            description = "Cast ${exiledCard.name}",
+                            action = CastSpell(playerId, exiledId),
+                            isAffordable = false,
+                            manaCostString = costString,
+                            sourceZone = "EXILE"
+                        ))
+                    }
+                }
+            }
+        }
+
         // Check for cards with intrinsic MayCastSelfFromZones ability (e.g., Squee, the Immortal)
         // These cards can be cast from their graveyard or exile without needing a component grant.
         for (zone in listOf(Zone.GRAVEYARD, Zone.EXILE)) {
             val zoneCards = state.getZone(ZoneKey(playerId, zone))
             for (cardId in zoneCards) {
                 val container = state.getEntity(cardId) ?: continue
-                // Skip cards already handled by MayPlayFromExileComponent (to avoid duplicates)
+                // Skip cards already handled by MayPlayFromExileComponent or linked exile (to avoid duplicates)
                 if (zone == Zone.EXILE && container.get<MayPlayFromExileComponent>()?.controllerId == playerId) continue
+                if (zone == Zone.EXILE && cardId in linkedExileCardIds) continue
                 val cardComponent = container.get<CardComponent>() ?: continue
                 val cardDef = cardRegistry.getCard(cardComponent.name) ?: continue
                 val hasCastFromZone = cardDef.script.staticAbilities

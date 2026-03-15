@@ -2,7 +2,7 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 197 / 249
+**Implemented:** 198 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -11,7 +11,7 @@
 | Black      | 38    | 30   |
 | Red        | 38    | 34   |
 | Green      | 37    | 30   |
-| Multicolor | 19    | 15   |
+| Multicolor | 19    | 16   |
 | Colorless  | 30    | 23   |
 | Land       | 12    | 9    |
 
@@ -181,7 +181,7 @@
 - [x] Relic Runner
 - [x] Rescue
 - [ ] Rite of Belzenlok
-- [ ] Rona, Disciple of Gix
+- [x] Rona, Disciple of Gix
 - [x] Run Amok
 - [x] Sage of Lat-Nam
 - [x] Sanctum Spirit

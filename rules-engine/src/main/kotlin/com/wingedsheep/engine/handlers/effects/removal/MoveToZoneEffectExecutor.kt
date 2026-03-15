@@ -15,6 +15,7 @@ import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.stripBattlefi
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
+import com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent
 import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.combat.AttackingComponent
@@ -85,7 +86,7 @@ class MoveToZoneEffectExecutor(
             return moveToBattlefieldFaceDown(state, targetId, cardComponent, ownerId, controllerId, currentZone)
         }
 
-        return when (effect.placement) {
+        val result = when (effect.placement) {
             ZonePlacement.Top -> moveToLibraryTop(state, targetId, cardComponent, ownerId, currentZone)
             ZonePlacement.Bottom -> moveToLibraryBottom(state, targetId, cardComponent, ownerId, currentZone)
             ZonePlacement.Shuffled -> moveToLibraryShuffled(state, targetId, cardComponent, ownerId, currentZone)
@@ -99,6 +100,20 @@ class MoveToZoneEffectExecutor(
                 }
             }
         }
+
+        // Link exiled card to source permanent via LinkedExileComponent
+        if (effect.linkToSource && effect.destination == Zone.EXILE && result.error == null) {
+            val sourceId = context.sourceId ?: return result
+            val sourceContainer = result.state.getEntity(sourceId) ?: return result
+            val existingLinked = sourceContainer.get<LinkedExileComponent>()
+            val allExiled = (existingLinked?.exiledIds ?: emptyList()) + listOf(targetId)
+            val linkedState = result.state.updateEntity(sourceId) { c ->
+                c.with(LinkedExileComponent(allExiled))
+            }
+            return ExecutionResult(state = linkedState, events = result.events)
+        }
+
+        return result
     }
 
     private fun moveToLibraryTop(

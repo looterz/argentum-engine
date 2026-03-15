@@ -298,7 +298,9 @@ data class MoveToZoneEffect(
     /** When set, the move is skipped if the target is not currently in this zone. */
     val fromZone: Zone? = null,
     /** When true and destination is BATTLEFIELD, the card enters face down (as a 2/2 morph creature). */
-    val faceDown: Boolean = false
+    val faceDown: Boolean = false,
+    /** When true and destination is EXILE, the exiled card is linked to the source permanent via LinkedExileComponent. */
+    val linkToSource: Boolean = false
 ) : Effect {
     override val description: String = buildString {
         when {

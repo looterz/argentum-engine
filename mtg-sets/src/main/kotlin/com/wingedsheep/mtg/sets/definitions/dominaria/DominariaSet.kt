@@ -154,6 +154,7 @@ object DominariaSet {
         RampagingCyclops,
         RatColony,
         Rescue,
+        RonaDiscipleOfGix,
         RunAmok,
         SageOfLatNam,
         SanctumSpirit,
