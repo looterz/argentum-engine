@@ -116,26 +116,46 @@ class AiPlayerController(
         val prompt = formatter.format(state, filteredActions, pendingDecision, recentGameLog)
         logger.info("AI prompt ({} chars):\n{}", prompt.length, prompt)
 
-        val response = queryLlm(prompt)
-
-        if (response != null) {
-            logger.info("AI LLM response: {}", response.take(500))
-            val parsed = if (pendingDecision != null) {
-                parseDecisionResponse(response, pendingDecision, state)
+        // Try LLM with one retry on parse failure
+        for (attempt in 0..1) {
+            val queryPrompt = if (attempt == 0) {
+                prompt
             } else {
-                parseActionResponse(response, filteredActions, state)
+                "Invalid response. Reply with ONLY your choice inside <answer> tags. Example: <answer>B</answer>"
             }
-            if (parsed != null) {
-                logger.info("AI parsed LLM response successfully: {}", when (parsed) {
-                    is ActionResponse.SubmitAction -> "Action(${parsed.action::class.simpleName})"
-                    is ActionResponse.SubmitDecision -> "Decision(${parsed.response::class.simpleName})"
-                })
-                return parsed
+            val response = queryLlm(queryPrompt)
+
+            if (response != null) {
+                logger.info("AI LLM response (attempt {}): {}", attempt, response.take(500))
+                val parsed = if (pendingDecision != null) {
+                    parseDecisionResponse(response, pendingDecision, state)
+                } else {
+                    parseActionResponse(response, filteredActions, state)
+                }
+                if (parsed != null) {
+                    // Validate: reject unaffordable actions
+                    if (parsed is ActionResponse.SubmitAction) {
+                        val chosenAction = filteredActions.find { it.action == parsed.action }
+                            ?: filteredActions.find { it.action::class == parsed.action::class }
+                        if (chosenAction != null && !chosenAction.isAffordable) {
+                            logger.warn("AI chose unaffordable action: {}, retrying", chosenAction.description)
+                            continue
+                        }
+                    }
+                    logger.info("AI parsed LLM response successfully: {}", when (parsed) {
+                        is ActionResponse.SubmitAction -> "Action(${parsed.action::class.simpleName})"
+                        is ActionResponse.SubmitDecision -> "Decision(${parsed.response::class.simpleName})"
+                    })
+                    return parsed
+                }
+                logger.warn("AI failed to parse LLM response (attempt {})", attempt)
+            } else {
+                logger.warn("AI LLM returned null (attempt {})", attempt)
+                break // No point retrying if the API itself failed
             }
-            logger.warn("AI failed to parse LLM response, falling back to heuristic")
-        } else {
-            logger.warn("AI LLM returned null, falling back to heuristic")
         }
+
+        logger.warn("AI falling back to heuristic after LLM failure")
 
         // Fallback: heuristic
         val heuristic = if (pendingDecision != null) {
@@ -174,9 +194,10 @@ class AiPlayerController(
             return true
         }
 
-        val response = queryLlm(prompt)
+        val response = queryLlmEphemeral(prompt)
         if (response != null) {
-            val choice = parser.parseMulliganChoice(response)
+            val cleaned = extractAnswer(response) ?: response
+            val choice = parser.parseMulliganChoice(cleaned)
             if (choice != null) {
                 logger.info("AI mulligan decision: ${if (choice) "keep" else "mulligan"}")
                 return choice
@@ -212,7 +233,7 @@ class AiPlayerController(
                 )
             }
             val prompt = formatter.formatChooseBottomCards(cardDisplays, hand, cardCount)
-            val response = queryLlm(prompt)
+            val response = queryLlmEphemeral(prompt)
             if (response != null) {
                 val indices = parser.parseMultipleSelections(response, hand.size - 1)
                 if (indices != null && indices.size == cardCount) {
@@ -234,9 +255,16 @@ class AiPlayerController(
     private fun queryLlm(prompt: String): String? {
         conversationHistory.add(ChatMessage("user", prompt))
 
-        // Trim history if too long (keep system prompt + last N exchanges)
-        while (conversationHistory.size > maxHistorySize * 2 + 1) {
-            conversationHistory.removeAt(1) // Remove oldest non-system message
+        // Trim history if too long — keep all system messages (prompt + deck context)
+        // and the last N user/assistant exchanges
+        while (conversationHistory.size > maxHistorySize * 2 + 2) {
+            // Find the first non-system message and remove it
+            val firstNonSystem = conversationHistory.indexOfFirst { it.role != "system" }
+            if (firstNonSystem >= 0) {
+                conversationHistory.removeAt(firstNonSystem)
+            } else {
+                break
+            }
         }
 
         val response = openRouterClient.chatCompletion(conversationHistory)
@@ -251,16 +279,31 @@ class AiPlayerController(
         return response
     }
 
+    /**
+     * Query the LLM without persisting the exchange in conversation history.
+     * Used for combat declarations, mulligans, and other self-contained prompts
+     * that don't benefit from — and would pollute — the main conversation context.
+     */
+    private fun queryLlmEphemeral(prompt: String): String? {
+        // Build a temporary message list: system messages + this prompt only
+        val messages = conversationHistory.filter { it.role == "system" }.toMutableList()
+        messages.add(ChatMessage("user", prompt))
+        return openRouterClient.chatCompletion(messages)
+    }
+
     // =========================================================================
     // Response parsing
     // =========================================================================
 
     private fun parseActionResponse(response: String, legalActions: List<LegalActionInfo>, state: ClientGameState? = null): ActionResponse? {
-        // Phase 3: Try parsing action + target together (e.g., "C2")
-        val actionWithTarget = parseActionWithTarget(response, legalActions, state)
+        // Extract <answer> tags first to isolate the actual choice from reasoning text
+        val cleaned = extractAnswer(response) ?: response
+
+        // Try parsing action + target together (e.g., "C2")
+        val actionWithTarget = parseActionWithTarget(cleaned, legalActions, state)
         if (actionWithTarget != null) return actionWithTarget
 
-        val index = parser.parseActionChoice(response, legalActions.size - 1) ?: return null
+        val index = parser.parseActionChoice(cleaned, legalActions.size - 1) ?: return null
         val chosen = legalActions[index]
         val action = maybeAddTargets(chosen, state)
         return ActionResponse.SubmitAction(action)
@@ -468,10 +511,12 @@ class AiPlayerController(
         decision: PendingDecision,
         state: ClientGameState
     ): ActionResponse? {
+        // Extract <answer> tags to isolate the choice from reasoning text
+        val cleaned = extractAnswer(response) ?: response
         val handler = decisionRegistry.getHandler(decision) ?: return null
         @Suppress("UNCHECKED_CAST")
         val typedHandler = handler as AiDecisionHandler<PendingDecision>
-        val decisionResponse = typedHandler.parse(response, decision, state, parser) ?: return null
+        val decisionResponse = typedHandler.parse(cleaned, decision, state, parser) ?: return null
         return ActionResponse.SubmitDecision(playerId, decisionResponse)
     }
 
@@ -494,6 +539,11 @@ class AiPlayerController(
             val opponentId = state.players.find { it.playerId != state.viewingPlayerId }?.playerId
                 ?: return ActionResponse.SubmitAction(declareAttackers.action)
 
+            // Build attack target list: opponent player + any planeswalkers that can be attacked
+            val validAttackTargets = declareAttackers.validAttackTargets ?: emptyList()
+            val planeswalkerTargets = validAttackTargets.filter { it != opponentId }
+                .mapNotNull { pwId -> state.cards[pwId]?.let { pwId to it } }
+
             val you = state.players.find { it.playerId == state.viewingPlayerId }
             val opp = state.players.find { it.playerId != state.viewingPlayerId }
 
@@ -503,6 +553,21 @@ class AiPlayerController(
                 appendLine("Choose which creatures to attack with. The opponent can block with their untapped creatures.")
                 appendLine("Note: Creatures with summoning sickness cannot attack, but they CAN block.")
                 appendLine()
+
+                // Show attack targets if there are planeswalkers
+                if (planeswalkerTargets.isNotEmpty()) {
+                    appendLine("Attack targets:")
+                    appendLine("  [P] Opponent (life: ${opp?.life ?: "?"})")
+                    for ((i, pwPair) in planeswalkerTargets.withIndex()) {
+                        val (_, pw) = pwPair
+                        val loyaltyStr = pw.counters.entries
+                            .find { it.key.name.equals("LOYALTY", ignoreCase = true) }
+                            ?.let { " (loyalty: ${it.value})" } ?: ""
+                        appendLine("  [${i + 1}] ${pw.name}$loyaltyStr")
+                    }
+                    appendLine()
+                }
+
                 appendLine("Your creatures that can attack:")
                 for ((i, attackerId) in validAttackers.withIndex()) {
                     val card = state.cards[attackerId] ?: continue
@@ -535,12 +600,20 @@ class AiPlayerController(
                 appendLine("<reasoning>")
                 appendLine("Analyze the board: lethality, trades, risk of crackback. Think about what blocks the opponent can make.")
                 appendLine("</reasoning>")
-                appendLine("<answer>A, C</answer>")
-                appendLine()
-                appendLine("Put ONLY the creature letters (e.g., \"A, C\") or \"NONE\" inside <answer> tags.")
+                if (planeswalkerTargets.isNotEmpty()) {
+                    appendLine("<answer>A, C->1</answer>")
+                    appendLine()
+                    appendLine("Put creature letters inside <answer> tags. By default creatures attack the opponent.")
+                    appendLine("To attack a planeswalker, use \"letter->number\" (e.g., \"C->1\" means creature C attacks planeswalker 1).")
+                    appendLine("Use \"NONE\" to not attack.")
+                } else {
+                    appendLine("<answer>A, C</answer>")
+                    appendLine()
+                    appendLine("Put ONLY the creature letters (e.g., \"A, C\") or \"NONE\" inside <answer> tags.")
+                }
             }
 
-            val response = queryLlm(prompt)
+            val response = queryLlmEphemeral(prompt)
             val attackerMap = mutableMapOf<EntityId, EntityId>()
 
             if (response != null) {
@@ -548,11 +621,26 @@ class AiPlayerController(
                 val answerText = extractAnswer(response) ?: response
                 val upper = answerText.trim().uppercase()
                 if (upper != "NONE" && upper != "PASS" && upper != "NO") {
+                    // Parse attacker assignments, supporting "A, B->1, C" format
+                    val assignmentPattern = Regex("""([A-Z])\s*(?:->|→)\s*(\d+)""", RegexOption.IGNORE_CASE)
+                    val assignmentMatches = assignmentPattern.findAll(answerText).associate { m ->
+                        val attackerIdx = GameStateFormatter.letterToIndex(m.groupValues[1])
+                        val pwNum = m.groupValues[2].toIntOrNull()?.minus(1)
+                        attackerIdx to pwNum
+                    }
+
                     val indices = parser.parseMultipleSelections(answerText, validAttackers.size - 1)
                     if (indices != null) {
                         for (idx in indices) {
                             if (idx < validAttackers.size) {
-                                attackerMap[validAttackers[idx]] = opponentId
+                                // Check if this attacker has a planeswalker assignment
+                                val pwIdx = assignmentMatches[idx]
+                                val targetId = if (pwIdx != null && pwIdx in planeswalkerTargets.indices) {
+                                    planeswalkerTargets[pwIdx].first
+                                } else {
+                                    opponentId
+                                }
+                                attackerMap[validAttackers[idx]] = targetId
                             }
                         }
                     } else {
@@ -571,7 +659,11 @@ class AiPlayerController(
                 }
             }
 
-            val attackerNames = attackerMap.keys.mapNotNull { state.cards[it]?.name }
+            val attackerNames = attackerMap.entries.mapNotNull { (eid, targetId) ->
+                val name = state.cards[eid]?.name ?: return@mapNotNull null
+                val targetName = if (targetId == opponentId) "" else state.cards[targetId]?.name?.let { " -> $it" } ?: ""
+                "$name$targetName"
+            }
             logger.info("AI combat: attacking with {} creatures: {}", attackerMap.size, attackerNames.joinToString(", "))
             return ActionResponse.SubmitAction(DeclareAttackers(playerId, attackerMap))
         }
@@ -630,14 +722,16 @@ class AiPlayerController(
                 appendLine()
                 appendLine("<reasoning>")
                 appendLine("Analyze the board: is this lethal? What trades are available? Is it better to take damage and keep creatures?")
+                appendLine("Consider gang-blocking: multiple blockers on one large attacker can trade favorably.")
                 appendLine("</reasoning>")
-                appendLine("<answer>A blocks 1, C blocks 2</answer>")
+                appendLine("<answer>A blocks 1, B blocks 1, C blocks 2</answer>")
                 appendLine()
-                appendLine("Put ONLY blocking assignments (e.g., \"A blocks 1, C blocks 2\") or \"NONE\" inside <answer> tags.")
+                appendLine("Put blocking assignments inside <answer> tags, or \"NONE\" to not block.")
                 appendLine("Format: <blocker letter> blocks <attacker number>")
+                appendLine("Multiple blockers CAN block the same attacker (gang-block): \"A blocks 1, B blocks 1\"")
             }
 
-            val response = queryLlm(prompt)
+            val response = queryLlmEphemeral(prompt)
             val blockerMap = mutableMapOf<EntityId, List<EntityId>>()
 
             if (response != null) {
@@ -645,8 +739,9 @@ class AiPlayerController(
                 val answerText = extractAnswer(response) ?: response
                 val upper = answerText.trim().uppercase()
                 if (upper != "NONE" && upper != "PASS" && upper != "NO") {
-                    val blockPattern = Regex("""([A-Z])\s*(?:blocks?|->|:)\s*(\d+)""", RegexOption.IGNORE_CASE)
+                    val blockPattern = Regex("""([A-Z])\s*(?:blocks?|->|→|:)\s*(\d+)""", RegexOption.IGNORE_CASE)
                     val matches = blockPattern.findAll(answerText).toList()
+                    // Group by blocker — each blocker blocks one attacker (the blockerMap key is blocker, value is list of attackers)
                     for (m in matches) {
                         val blockerIdx = GameStateFormatter.letterToIndex(m.groupValues[1])
                         val attackerNum = m.groupValues[2].toIntOrNull()?.minus(1)
@@ -688,18 +783,33 @@ class AiPlayerController(
     // =========================================================================
 
     private fun heuristicAction(legalActions: List<LegalActionInfo>, state: ClientGameState? = null): ActionResponse {
+        // 1. Play a land first (never miss a land drop)
         val playLand = legalActions.find { it.actionType == "PlayLand" }
         if (playLand != null) {
             logger.info("AI heuristic: playing land")
             return ActionResponse.SubmitAction(playLand.action)
         }
-        val castSpell = legalActions.find {
+        // 2. Cast a spell — prefer the cheapest affordable spell so more mana is left
+        //    for additional casts this turn (the heuristic will be called again with updated state).
+        val affordableSpells = legalActions.filter {
             (it.actionType == "CastSpell" || it.actionType == "CastFaceDown") && it.isAffordable
         }
-        if (castSpell != null) {
-            logger.info("AI heuristic: casting {}", castSpell.description)
-            return ActionResponse.SubmitAction(maybeAddTargets(castSpell, state))
+        if (affordableSpells.isNotEmpty()) {
+            // Among affordable spells, prefer creatures over non-creatures, then cheapest first
+            // so remaining mana can be used for a second spell this turn.
+            val bestSpell = affordableSpells.minByOrNull { estimateManaCost(it.manaCostString) }!!
+            logger.info("AI heuristic: casting {} (cheapest affordable, saving mana for more)", bestSpell.description)
+            return ActionResponse.SubmitAction(maybeAddTargets(bestSpell, state))
         }
+        // 3. Activate affordable non-mana abilities
+        val activateAbility = legalActions.find {
+            it.actionType == "ActivateAbility" && it.isAffordable && !it.isManaAbility
+        }
+        if (activateAbility != null) {
+            logger.info("AI heuristic: activating ability {}", activateAbility.description)
+            return ActionResponse.SubmitAction(maybeAddTargets(activateAbility, state))
+        }
+        // 4. Pass priority
         val passAction = legalActions.find { it.actionType == "PassPriority" }
         if (passAction != null) {
             logger.info("AI heuristic: passing priority")
@@ -707,6 +817,23 @@ class AiPlayerController(
         }
         logger.info("AI heuristic: selecting first legal action")
         return ActionResponse.SubmitAction(legalActions.first().action)
+    }
+
+    /**
+     * Estimate the converted mana cost from a mana cost string like "{2}{R}{G}".
+     * Used by heuristics to prefer casting expensive spells first.
+     */
+    private fun estimateManaCost(manaCostString: String?): Int {
+        if (manaCostString.isNullOrBlank()) return 0
+        var total = 0
+        val genericPattern = Regex("""\{(\d+)}""")
+        for (match in genericPattern.findAll(manaCostString)) {
+            total += match.groupValues[1].toIntOrNull() ?: 0
+        }
+        // Count colored symbols ({W}, {U}, {B}, {R}, {G}) as 1 each
+        val coloredPattern = Regex("""\{[WUBRGC]}""")
+        total += coloredPattern.findAll(manaCostString).count()
+        return total
     }
 
     private fun heuristicDecision(decision: PendingDecision, state: ClientGameState): ActionResponse {
@@ -728,29 +855,28 @@ class AiPlayerController(
             You are an AI playing Magic: The Gathering. You will be shown the game state and asked to choose ONE action at a time.
 
             RESPONSE FORMAT — CRITICAL:
-            - Reply with EXACTLY ONE letter (or letter+number for targeting). Nothing else.
-            - Example action: B
-            - Example action with target: C2 (action C, target 2)
-            - Do NOT chain multiple actions (e.g., "D, E, F, C" is WRONG)
-            - You can only take ONE action per prompt. After you act, you will get a new prompt with updated state.
-            - For selection decisions (discard, scry, etc.), reply with the letter(s) of the card(s) to select.
-            - For yes/no questions, reply with "Yes" or "No".
-            - For number choices, reply with just the number.
+            - Always wrap your final answer in <answer> tags.
+            - You may think briefly before answering, but the <answer> must contain ONLY your choice.
+            - For actions: <answer>B</answer> or <answer>C2</answer> (action C, target 2)
+            - For selections: <answer>A, C</answer>
+            - For yes/no: <answer>Yes</answer> or <answer>No</answer>
+            - For numbers: <answer>3</answer>
+            - Do NOT chain multiple actions. You can only take ONE action per prompt.
+            - Actions marked "(can't afford)" cannot be chosen — pick something else.
 
             GAME FLOW:
             - You take one action, then the game state updates, then you choose again.
             - To cast a spell: first play a land, then on the next prompt you will see updated mana and can cast spells.
             - Mana abilities (like "{T}: Add {G}") are activated automatically when you cast a spell — you do NOT need to activate them manually.
             - NEVER activate mana abilities manually (tapping lands for mana). The engine handles mana payment automatically. Tapping a land when you have nothing to cast wastes it for no benefit.
-            - Actions marked "(can't afford)" cannot be chosen.
 
             STRATEGY PRIORITIES:
             1. LANDS: Play a land every turn — never miss a land drop.
-            2. CURVE: Cast spells efficiently — use all your mana each turn if possible.
-            3. REMOVAL: Remove opponent's biggest threats first (highest power/toughness creatures, dangerous abilities).
-            4. CREATURES: Build your board — cast creatures on curve to establish presence.
+            2. PLAN YOUR TURN: Before choosing an action, consider what else you could cast this turn with your available mana. For example, if you have 5 mana, casting a 3-drop + a 2-drop is better than just a 5-drop if both options are equally good. Think about sequencing: play a land first, then consider which combination of spells uses your mana most efficiently.
+            3. REMOVAL: Remove opponent's biggest threats first (highest power/toughness creatures, dangerous abilities). Save removal for targets that matter.
+            4. CREATURES: Build your board — cast creatures to establish presence. Prefer creatures with evasion or good stats for their cost.
             5. COMBAT: Attack when favorable (evasion creatures, opponent has no blockers, or your creatures trade up). Don't attack into unfavorable blocks where you lose creatures for nothing.
-            6. PASS: Pass priority when you have nothing productive to do.
+            6. PASS: Pass priority when you have nothing productive to do. Don't cast spells just because you can — save instant-speed responses for the opponent's turn when possible.
 
             TARGETING PRIORITIES:
             - Removal: Target opponent's biggest/most dangerous creature.

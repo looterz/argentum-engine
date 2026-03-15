@@ -461,6 +461,34 @@ class GameStateFormatter(
             if (action.manaCostString != null) sb.append(" ${action.manaCostString}")
             if (!action.isAffordable) sb.append(" (can't afford)")
 
+            // X-cost spells: show the range of X values the player can choose
+            if (action.hasXCost && action.maxAffordableX != null) {
+                sb.append(" (X can be ${action.minX}-${action.maxAffordableX})")
+            }
+
+            // Additional costs: show sacrifice/discard/etc. requirements
+            if (action.additionalCostInfo != null) {
+                val costInfo = action.additionalCostInfo
+                sb.append(" [additional cost: ${costInfo.description}]")
+            }
+
+            // Convoke: show that creatures can help pay
+            if (action.hasConvoke && !action.validConvokeCreatures.isNullOrEmpty()) {
+                val creatureNames = action.validConvokeCreatures.map { c ->
+                    val colors = c.colors.joinToString("/") { it.name.lowercase() }
+                    "${c.name} ($colors)"
+                }
+                sb.append(" [Convoke: tap creatures to help pay — ${creatureNames.joinToString(", ")}]")
+            }
+
+            // Delve: show that graveyard cards can reduce cost
+            if (action.hasDelve && !action.validDelveCards.isNullOrEmpty()) {
+                val minNeeded = action.minDelveNeeded ?: 0
+                sb.append(" [Delve: exile graveyard cards to pay {1} each, ${action.validDelveCards.size} available")
+                if (minNeeded > 0) sb.append(", need at least $minNeeded")
+                sb.append("]")
+            }
+
             // Inline targets for LLM selection
             if (action.requiresTargets) {
                 // Show oracle text so the LLM knows what the spell does when picking targets

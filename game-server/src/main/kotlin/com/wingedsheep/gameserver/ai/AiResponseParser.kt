@@ -93,6 +93,37 @@ class AiResponseParser {
     }
 
     /**
+     * Parse a multi-target response where each comma-separated letter corresponds to a different
+     * target requirement, each with its own valid range.
+     * E.g., "A, B" means first requirement = A (index 0), second requirement = B (index 1).
+     * Returns list of 0-based indices (one per requirement), or null if parsing fails.
+     */
+    fun parseMultiTargetSelections(response: String, maxIndicesPerRequirement: List<Int>): List<Int>? {
+        val cleaned = response.trim().uppercase()
+
+        // Extract answer from tags if present
+        val answerMatch = Regex("""<answer>(.*?)</answer>""", RegexOption.DOT_MATCHES_ALL).find(cleaned)
+        val text = answerMatch?.groupValues?.get(1)?.trim() ?: cleaned
+
+        // Find all letters in order
+        val letterPattern = Regex("""[A-Z]""")
+        val letters = letterPattern.findAll(text).toList()
+
+        if (letters.size >= maxIndicesPerRequirement.size) {
+            val indices = letters.take(maxIndicesPerRequirement.size).mapIndexed { i, match ->
+                val index = GameStateFormatter.letterToIndex(match.value)
+                if (index != null && index <= maxIndicesPerRequirement[i]) index else null
+            }
+            if (indices.all { it != null }) {
+                return indices.filterNotNull()
+            }
+        }
+
+        logger.warn("Failed to parse multi-target selections from: ${cleaned.take(200)}")
+        return null
+    }
+
+    /**
      * Parse a yes/no response. Returns true for yes, false for no, null if unparseable.
      */
     fun parseYesNo(response: String): Boolean? {

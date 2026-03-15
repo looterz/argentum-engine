@@ -6,6 +6,7 @@ import com.wingedsheep.engine.core.PendingDecision
 import com.wingedsheep.engine.core.SubmitDecision
 import com.wingedsheep.engine.core.engineSerializersModule
 import com.wingedsheep.gameserver.dto.ClientGameState
+import com.wingedsheep.gameserver.dto.StateDelta
 import com.wingedsheep.gameserver.protocol.LegalActionInfo
 import com.wingedsheep.gameserver.protocol.ServerMessage
 import com.wingedsheep.sdk.model.EntityId
@@ -99,10 +100,13 @@ class AiWebSocketSession(
                     message.pendingDecision?.let { it::class.simpleName },
                     lastFullState != null)
                 accumulateEvents(message.events.map { it.description })
-                // Use cached full state with the fresh legal actions / pending decision from the delta
+                // Apply delta to cached state to keep it current
                 val cachedState = lastFullState
-                if (cachedState != null && (message.legalActions.isNotEmpty() || message.pendingDecision != null)) {
-                    handleStateUpdate(cachedState, message.legalActions, message.pendingDecision)
+                val updatedState = if (cachedState != null) {
+                    applyDelta(cachedState, message.delta).also { lastFullState = it }
+                } else null
+                if (updatedState != null && (message.legalActions.isNotEmpty() || message.pendingDecision != null)) {
+                    handleStateUpdate(updatedState, message.legalActions, message.pendingDecision)
                 } else if (message.legalActions.isNotEmpty() || message.pendingDecision != null) {
                     logger.warn("AI received delta update but has no cached state — falling back to heuristics")
                     handleActionsOnlyFallback(message.legalActions, message.pendingDecision)
@@ -288,6 +292,51 @@ class AiWebSocketSession(
                 onActionReady(aiPlayerId, action)
             }
         }
+    }
+
+    /**
+     * Apply a StateDelta to a previous ClientGameState to produce an updated state.
+     * Mirrors the logic in ProtocolTestBase/GameServerTestBase.
+     */
+    private fun applyDelta(previous: ClientGameState, delta: StateDelta): ClientGameState {
+        val cards = previous.cards.toMutableMap()
+        delta.removedCardIds?.forEach { cards.remove(it) }
+        delta.addedCards?.forEach { (id, card) -> cards[id] = card }
+        delta.updatedCards?.forEach { (id, card) -> cards[id] = card }
+
+        val zones = if (delta.updatedZones != null) {
+            val updatedMap = delta.updatedZones.associateBy { it.zoneId }
+            previous.zones.map { updatedMap[it.zoneId] ?: it }
+        } else {
+            previous.zones
+        }
+
+        val gameLog = if (delta.newLogEntries != null) {
+            previous.gameLog + delta.newLogEntries
+        } else {
+            previous.gameLog
+        }
+
+        val combat = when {
+            delta.combatCleared == true -> null
+            delta.combat != null -> delta.combat
+            else -> previous.combat
+        }
+
+        return previous.copy(
+            cards = cards,
+            zones = zones,
+            players = delta.players,
+            currentPhase = delta.currentPhase ?: previous.currentPhase,
+            currentStep = delta.currentStep ?: previous.currentStep,
+            activePlayerId = delta.activePlayerId ?: previous.activePlayerId,
+            priorityPlayerId = delta.priorityPlayerId ?: previous.priorityPlayerId,
+            turnNumber = delta.turnNumber ?: previous.turnNumber,
+            isGameOver = delta.isGameOver ?: previous.isGameOver,
+            winnerId = if (delta.winnerId != null) delta.winnerId else previous.winnerId,
+            combat = combat,
+            gameLog = gameLog,
+        )
     }
 
     fun shutdown() {
