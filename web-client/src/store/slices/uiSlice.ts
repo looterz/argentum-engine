@@ -389,6 +389,23 @@ export const createUISlice: SliceCreator<UISlice> = (set, get) => ({
           return { type: 'Permanent' as const, entityId: targetId }
         })
         const modifiedAction = { ...action, targets }
+
+        // Check if mana selection is needed (e.g., after Delve targeting)
+        const multiActionInfo = targetingState.pendingActionInfo
+        if (
+          action.type === 'CastSpell' &&
+          multiActionInfo?.availableManaSources &&
+          multiActionInfo.availableManaSources.length > 0
+        ) {
+          const manaActionInfo: import('../../types').LegalActionInfo = {
+            ...multiActionInfo,
+            action: modifiedAction,
+          }
+          set({ targetingState: null })
+          get().startManaSelection(manaActionInfo)
+          return
+        }
+
         submitAction(modifiedAction)
       } else {
         submitAction(action)
@@ -446,6 +463,21 @@ export const createUISlice: SliceCreator<UISlice> = (set, get) => ({
           distribution: initialDistribution,
         })
         set({ targetingState: null })
+        return
+      }
+
+      // Check if mana selection is needed (e.g., after Delve targeting)
+      if (
+        action.type === 'CastSpell' &&
+        actionInfo?.availableManaSources &&
+        actionInfo.availableManaSources.length > 0
+      ) {
+        const manaActionInfo: import('../../types').LegalActionInfo = {
+          ...actionInfo,
+          action: modifiedAction,
+        }
+        set({ targetingState: null })
+        get().startManaSelection(manaActionInfo)
         return
       }
 
@@ -934,7 +966,8 @@ export const createUISlice: SliceCreator<UISlice> = (set, get) => ({
           selectedTargets: [],
           minTargets: actionInfo.minTargets ?? actionInfo.targetCount ?? 1,
           maxTargets: actionInfo.targetCount ?? 1,
-          ...(actionInfo.requiresDamageDistribution ? { pendingActionInfo: actionInfo } : {}),
+          // Always pass modifiedActionInfo so confirmTargeting can route to mana selection
+          pendingActionInfo: modifiedActionInfo,
         })
       } else if (actionInfo.availableManaSources && actionInfo.availableManaSources.length > 0) {
         // Transition to mana selection with the delve-reduced cost
