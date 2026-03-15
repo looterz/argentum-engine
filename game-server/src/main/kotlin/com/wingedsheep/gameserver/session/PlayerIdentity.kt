@@ -14,7 +14,8 @@ import java.util.concurrent.ScheduledFuture
 class PlayerIdentity(
     val token: String = UUID.randomUUID().toString(),
     val playerId: EntityId,
-    val playerName: String
+    val playerName: String,
+    val isAi: Boolean = false
 ) {
     /** Current WebSocket session — swapped on reconnect */
     @Volatile
@@ -44,7 +45,7 @@ class PlayerIdentity(
     @Volatile
     var disconnectExpiresAt: Long? = null
 
-    val isConnected: Boolean get() = webSocketSession?.isOpen == true
+    val isConnected: Boolean get() = isAi || webSocketSession?.isOpen == true
 
     /**
      * Create a legacy PlayerSession for compatibility with GameSession/SealedSession.

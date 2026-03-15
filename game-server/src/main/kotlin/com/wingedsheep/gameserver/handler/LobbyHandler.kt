@@ -3003,6 +3003,9 @@ class LobbyHandler(
             }
         }
 
+        // Auto-ready AI players so they participate in matchmaking
+        autoReadyAiPlayers(lobby, tournament)
+
         lobbyRepository.saveLobby(lobby)
         lobbyRepository.saveTournament(lobbyId, tournament)
     }

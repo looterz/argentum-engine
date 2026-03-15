@@ -51,7 +51,7 @@ class AiGameManager(
         fun randomAiName(): String = "[AI] ${AI_NAMES.random()}"
     }
 
-    val isEnabled: Boolean get() = gameProperties.ai.enabled && gameProperties.ai.openRouterApiKey.isNotBlank()
+    val isEnabled: Boolean get() = gameProperties.ai.enabled && gameProperties.ai.effectiveApiKey.isNotBlank()
 
     /**
      * Create an AI opponent and add it to the game session.
@@ -71,14 +71,14 @@ class AiGameManager(
         onMulliganTake: (EntityId) -> Unit,
         onBottomCards: (EntityId, List<EntityId>) -> Unit
     ): PlayerSession {
-        require(isEnabled) { "AI is not enabled. Set game.ai.enabled=true and provide OPENROUTER_API_KEY." }
+        require(isEnabled) { "AI is not enabled. Set game.ai.enabled=true and provide an API key." }
 
         val aiPlayerId = EntityId("ai-${UUID.randomUUID().toString().take(8)}")
         val aiProperties = gameProperties.ai
         val aiName = randomAiName()
 
-        val openRouterClient = OpenRouterClient(aiProperties)
-        val controller = AiPlayerController(aiProperties, openRouterClient, aiPlayerId)
+        val llmClient = LlmClient(aiProperties)
+        val controller = AiPlayerController(aiProperties, llmClient, aiPlayerId)
 
         val aiSession = AiWebSocketSession(
             aiPlayerId = aiPlayerId,
@@ -100,7 +100,8 @@ class AiGameManager(
         val identity = com.wingedsheep.gameserver.session.PlayerIdentity(
             token = "ai-token-${UUID.randomUUID().toString().take(8)}",
             playerId = aiPlayerId,
-            playerName = aiName
+            playerName = aiName,
+            isAi = true
         )
         identity.webSocketSession = aiSession
         sessionRegistry.register(identity, aiSession, playerSession)
@@ -130,13 +131,13 @@ class AiGameManager(
      * @return The AI PlayerIdentity, registered in SessionRegistry.
      */
     fun createAiIdentity(): PlayerIdentity {
-        require(isEnabled) { "AI is not enabled. Set game.ai.enabled=true and provide OPENROUTER_API_KEY." }
+        require(isEnabled) { "AI is not enabled. Set game.ai.enabled=true and provide an API key." }
 
         val aiPlayerId = EntityId("ai-${UUID.randomUUID().toString().take(8)}")
         val aiProperties = gameProperties.ai
 
-        val openRouterClient = OpenRouterClient(aiProperties)
-        val controller = AiPlayerController(aiProperties, openRouterClient, aiPlayerId)
+        val llmClient = LlmClient(aiProperties)
+        val controller = AiPlayerController(aiProperties, llmClient, aiPlayerId)
 
         val aiSession = AiWebSocketSession(
             aiPlayerId = aiPlayerId,
@@ -153,7 +154,8 @@ class AiGameManager(
         val identity = PlayerIdentity(
             token = "ai-token-${UUID.randomUUID().toString().take(8)}",
             playerId = aiPlayerId,
-            playerName = aiName
+            playerName = aiName,
+            isAi = true
         )
         identity.webSocketSession = aiSession
 
@@ -191,8 +193,8 @@ class AiGameManager(
         }
 
         val aiProperties = gameProperties.ai
-        val openRouterClient = OpenRouterClient(aiProperties)
-        val controller = AiPlayerController(aiProperties, openRouterClient, aiPlayerId)
+        val llmClient = LlmClient(aiProperties)
+        val controller = AiPlayerController(aiProperties, llmClient, aiPlayerId)
 
         // Give the AI knowledge of its deck composition
         if (deckList != null) {
@@ -252,11 +254,11 @@ class AiGameManager(
      * Try to build a deck using LLM-assisted deckbuilding.
      * Returns null if the required data isn't available (e.g., no card pool on the generator).
      */
-    private fun tryAiDeckBuild(openRouterClient: OpenRouterClient): AiDeckResult? {
+    private fun tryAiDeckBuild(llmClient: LlmClient): AiDeckResult? {
         return try {
             val builder = AiDeckBuilder(
                 properties = gameProperties.ai,
-                openRouterClient = openRouterClient,
+                llmClient = llmClient,
                 cardPool = deckGenerator.cardPool,
                 basicLandVariants = deckGenerator.basicLandVariants,
                 setCodes = deckGenerator.setCodes
