@@ -207,6 +207,7 @@ object DominariaSet {
         UrzasTome,
         VoltaicServant,
         WarlordsFury,
+        Weatherlight,
         WeightOfMemory,
         WildOnslaught,
         WhisperBloodLiturgist,

@@ -2,7 +2,7 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 196 / 249
+**Implemented:** 197 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -12,7 +12,7 @@
 | Red        | 38    | 34   |
 | Green      | 37    | 30   |
 | Multicolor | 19    | 15   |
-| Colorless  | 30    | 22   |
+| Colorless  | 30    | 23   |
 | Land       | 12    | 9    |
 
 ---
@@ -253,7 +253,7 @@
 - [x] Voltaic Servant
 - [ ] Warcry Phoenix
 - [x] Warlord's Fury
-- [ ] Weatherlight
+- [x] Weatherlight
 - [x] Weight of Memory
 - [x] Whisper, Blood Liturgist
 - [x] Wild Onslaught
