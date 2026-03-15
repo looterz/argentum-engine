@@ -199,19 +199,7 @@ class AlternativePaymentHandler {
      * Reduce generic mana cost by specified amount.
      */
     private fun reduceGenericCost(cost: ManaCost, reduction: Int): ManaCost {
-        if (reduction <= 0) return cost
-
-        val coloredSymbols = cost.symbols.filter { it !is ManaSymbol.Generic }
-        val genericAmount = cost.genericAmount
-        val newGenericAmount = (genericAmount - reduction).coerceAtLeast(0)
-
-        val newSymbols = if (newGenericAmount > 0) {
-            listOf(ManaSymbol.Generic(newGenericAmount)) + coloredSymbols
-        } else {
-            coloredSymbols
-        }
-
-        return ManaCost(newSymbols)
+        return cost.reduceGeneric(reduction)
     }
 
     /**

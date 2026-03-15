@@ -453,23 +453,7 @@ class CostCalculator(
      * Never reduces below 0 generic mana. Colored costs are preserved.
      */
     private fun reduceGenericCost(cost: ManaCost, reduction: Int): ManaCost {
-        if (reduction <= 0) return cost
-
-        // Separate colored and generic symbols
-        val coloredSymbols = cost.symbols.filter { it !is ManaSymbol.Generic }
-        val genericAmount = cost.genericAmount
-
-        // Apply reduction to generic cost only
-        val newGenericAmount = (genericAmount - reduction).coerceAtLeast(0)
-
-        // Rebuild the mana cost
-        val newSymbols = if (newGenericAmount > 0) {
-            listOf(ManaSymbol.Generic(newGenericAmount)) + coloredSymbols
-        } else {
-            coloredSymbols
-        }
-
-        return ManaCost(newSymbols)
+        return cost.reduceGeneric(reduction)
     }
 
     /**

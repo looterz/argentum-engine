@@ -3084,11 +3084,10 @@ class LegalActionsCalculator(
         manaCost: com.wingedsheep.sdk.core.ManaCost,
         delveCards: List<DelveCardInfo>
     ): Boolean {
-        val availableMana = manaSolver.getAvailableManaCount(state, playerId)
-        // Delve only pays generic mana, so total resources = mana + delve cards (capped at generic amount)
-        val delveReduction = minOf(delveCards.size, manaCost.genericAmount)
-        val totalResources = availableMana + delveReduction
-        return totalResources >= manaCost.cmc
+        // Delve only pays generic mana — reduce generic portion, then check if mana sources cover the rest
+        val maxDelve = minOf(delveCards.size, manaCost.genericAmount)
+        val reducedCost = manaCost.reduceGeneric(maxDelve)
+        return manaSolver.canPay(state, playerId, reducedCost)
     }
 
     /**
@@ -3101,11 +3100,16 @@ class LegalActionsCalculator(
         manaCost: com.wingedsheep.sdk.core.ManaCost,
         delveCards: List<DelveCardInfo>
     ): Int {
-        val availableMana = manaSolver.getAvailableManaCount(state, playerId)
-        val deficit = manaCost.cmc - availableMana
-        if (deficit <= 0) return 0
-        // Can only delve up to the generic portion of the cost
-        return minOf(deficit, manaCost.genericAmount, delveCards.size)
+        // Check if castable without any delve
+        if (manaSolver.canPay(state, playerId, manaCost)) return 0
+        // Try increasing delve counts until the reduced cost is payable
+        val maxDelve = minOf(delveCards.size, manaCost.genericAmount)
+        for (delveCount in 1..maxDelve) {
+            if (manaSolver.canPay(state, playerId, manaCost.reduceGeneric(delveCount))) {
+                return delveCount
+            }
+        }
+        return maxDelve
     }
 
     /**

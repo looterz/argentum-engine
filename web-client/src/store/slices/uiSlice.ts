@@ -30,6 +30,7 @@ import {
   createUpdateBlockerAssignmentsMessage,
 } from '../../types'
 import { getWebSocket } from './shared'
+import { parseManaCost as parseManaCostUtil, getRemainingCostSymbols } from '../../utils/manaCost'
 
 export interface UISliceState {
   selectedCardId: EntityId | null
@@ -897,7 +898,7 @@ export const createUISlice: SliceCreator<UISlice> = (set, get) => ({
   },
 
   confirmDelveSelection: () => {
-    const { delveSelectionState, startTargeting } = get()
+    const { delveSelectionState, startTargeting, startManaSelection } = get()
     if (!delveSelectionState) return
 
     const { actionInfo, selectedCards } = delveSelectionState
@@ -913,6 +914,19 @@ export const createUISlice: SliceCreator<UISlice> = (set, get) => ({
         },
       }
 
+      // Calculate remaining cost after delve for display
+      const originalSymbols = parseManaCostUtil(delveSelectionState.manaCost)
+      const remainingSymbols = getRemainingCostSymbols(originalSymbols, selectedCards.length)
+      const remainingCostString = remainingSymbols.map(s => `{${s}}`).join('')
+
+      // Omit delve fields so executeAction won't re-open the Delve selector
+      const { hasDelve: _, validDelveCards: _2, minDelveNeeded: _3, ...restActionInfo } = actionInfo
+      const modifiedActionInfo: import('../../types').LegalActionInfo = {
+        ...restActionInfo,
+        action: actionWithDelve,
+        manaCostString: remainingCostString,
+      }
+
       if (actionInfo.requiresTargets && actionInfo.validTargets && actionInfo.validTargets.length > 0) {
         startTargeting({
           action: actionWithDelve,
@@ -922,6 +936,9 @@ export const createUISlice: SliceCreator<UISlice> = (set, get) => ({
           maxTargets: actionInfo.targetCount ?? 1,
           ...(actionInfo.requiresDamageDistribution ? { pendingActionInfo: actionInfo } : {}),
         })
+      } else if (actionInfo.availableManaSources && actionInfo.availableManaSources.length > 0) {
+        // Transition to mana selection with the delve-reduced cost
+        startManaSelection(modifiedActionInfo)
       } else {
         getWebSocket()?.send(createSubmitActionMessage(actionWithDelve))
       }

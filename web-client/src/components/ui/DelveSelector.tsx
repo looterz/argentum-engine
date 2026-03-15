@@ -1,45 +1,9 @@
 import { useMemo, useState } from 'react'
 import { useGameStore } from '../../store/gameStore'
 import { getCardImageUrl } from '../../utils/cardImages'
+import { parseManaCost, getRemainingCostSymbols } from '../../utils/manaCost'
 import { ManaSymbol } from './ManaSymbols'
 import type { EntityId } from '../../types'
-
-/**
- * Parse a mana cost string into individual symbols.
- * e.g., "{4}{U}{B}" -> ["4", "U", "B"]
- */
-function parseManaCost(manaCost: string): string[] {
-  const symbols: string[] = []
-  const regex = /\{([^}]+)\}/g
-  let match
-  while ((match = regex.exec(manaCost)) !== null) {
-    symbols.push(match[1]!)
-  }
-  return symbols
-}
-
-/**
- * Build the remaining mana cost symbols after applying N delve exiles.
- */
-function getRemainingCostSymbols(originalSymbols: string[], delveCount: number): string[] {
-  const remaining = [...originalSymbols]
-  let reductionsLeft = delveCount
-  for (let i = 0; i < remaining.length && reductionsLeft > 0; i++) {
-    const symbol = remaining[i]!
-    if (/^\d+$/.test(symbol)) {
-      const genericValue = parseInt(symbol, 10)
-      if (genericValue > reductionsLeft) {
-        remaining[i] = String(genericValue - reductionsLeft)
-        reductionsLeft = 0
-      } else {
-        reductionsLeft -= genericValue
-        remaining.splice(i, 1)
-        i--
-      }
-    }
-  }
-  return remaining
-}
 
 /**
  * Delve selector overlay.
@@ -173,7 +137,11 @@ export function DelveSelector() {
           </button>
           <button
             onClick={confirmDelveSelection}
-            style={styles.confirmButton}
+            disabled={!castInfo?.isCastable}
+            style={{
+              ...styles.confirmButton,
+              ...(!castInfo?.isCastable ? styles.confirmButtonDisabled : {}),
+            }}
           >
             Cast
           </button>
@@ -408,6 +376,11 @@ const styles: Record<string, React.CSSProperties> = {
     border: 'none',
     borderRadius: 8,
     cursor: 'pointer',
+  },
+  confirmButtonDisabled: {
+    backgroundColor: '#333',
+    color: '#666',
+    cursor: 'not-allowed',
   },
   // Floating return button (visible when viewing battlefield)
   floatingReturn: {

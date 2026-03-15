@@ -41,6 +41,21 @@ data class ManaCost(val symbols: List<ManaSymbol>) {
 
     fun isEmpty(): Boolean = symbols.isEmpty()
 
+    /**
+     * Reduce the generic mana portion of this cost by [amount].
+     * Colored/hybrid/phyrexian symbols are unaffected.
+     */
+    fun reduceGeneric(amount: Int): ManaCost {
+        if (amount <= 0) return this
+        val coloredSymbols = symbols.filter { it !is ManaSymbol.Generic }
+        val newGenericAmount = (genericAmount - amount).coerceAtLeast(0)
+        return if (newGenericAmount > 0) {
+            ManaCost(listOf(ManaSymbol.Generic(newGenericAmount)) + coloredSymbols)
+        } else {
+            ManaCost(coloredSymbols)
+        }
+    }
+
     operator fun plus(other: ManaCost): ManaCost {
         val mergedGeneric = this.genericAmount + other.genericAmount
         val nonGeneric = this.symbols.filterNot { it is ManaSymbol.Generic } +
