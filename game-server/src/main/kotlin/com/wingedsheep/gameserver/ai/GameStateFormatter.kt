@@ -502,9 +502,9 @@ class GameStateFormatter(
                 // Gather all valid targets from targetRequirements or validTargets
                 val allTargets = if (!action.targetRequirements.isNullOrEmpty()) {
                     action.targetRequirements.flatMap { req ->
-                        req.validTargets?.map { tid ->
+                        req.validTargets.map { tid ->
                             formatTarget(tid, state, labels)
-                        } ?: emptyList()
+                        }
                     }
                 } else if (!action.validTargets.isNullOrEmpty()) {
                     action.validTargets.map { tid ->
@@ -565,8 +565,7 @@ class GameStateFormatter(
         // Delegate to the handler registry
         val handler = decisionHandlerRegistry.getHandler(decision)
         if (handler != null) {
-            @Suppress("UNCHECKED_CAST")
-            (handler as AiDecisionHandler<PendingDecision>).format(sb, decision, state, labels)
+            handler.format(sb, decision, state, labels)
         }
     }
 

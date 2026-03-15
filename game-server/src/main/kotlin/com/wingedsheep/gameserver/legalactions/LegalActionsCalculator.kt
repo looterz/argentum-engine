@@ -403,7 +403,7 @@ class LegalActionsCalculator(
                         val minDamagePerTarget = if (dividedDamageEffect != null) 1 else null
 
                         // Compute alternative cost info for this spell
-                        val altCostInfo = if (canAffordAlternative && cardDef != null) {
+                        val altCostInfo = if (canAffordAlternative) {
                             val altCost = alternativeCastingCosts.first()
                             val altEffective = costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, altCost)
                             val altSolution = manaSolver.solve(state, playerId, altEffective)
@@ -773,7 +773,7 @@ class LegalActionsCalculator(
                 val isInstant = cardComponent.typeLine.isInstant
                 val canCastTiming = isInstant || canPlaySorcerySpeed
                 // Check if a cast action was already added (affordable, with proper targeting)
-                val hasCastAction = result.any { it.action is CastSpell && (it.action as CastSpell).cardId == cardId }
+                val hasCastAction = result.any { it.action is CastSpell && it.action.cardId == cardId }
                 if (!hasCastAction) {
                     if (canCastTiming) {
                         // Check if we can afford to cast normally (with cost reductions)

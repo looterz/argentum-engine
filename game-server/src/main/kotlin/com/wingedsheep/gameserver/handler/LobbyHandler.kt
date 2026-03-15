@@ -1108,7 +1108,6 @@ class LobbyHandler(
                     is WinstonActionResult.PileTaken -> result.lastAction
                     is WinstonActionResult.BlindPick -> result.lastAction
                     is WinstonActionResult.PileSkipped -> result.lastAction
-                    else -> null
                 }
                 logger.info("Winston Draft [${lobby.lobbyId}]: $lastAction")
 
@@ -2824,7 +2823,7 @@ class LobbyHandler(
         val player2State = lobby.players[match.player2Id ?: return] ?: return
 
         val deck1 = lobby.getSubmittedDeck(match.player1Id) ?: return
-        val deck2 = lobby.getSubmittedDeck(match.player2Id!!) ?: return
+        val deck2 = lobby.getSubmittedDeck(match.player2Id) ?: return
 
         val gameSession = GameSession(
             cardRegistry = cardRegistry,

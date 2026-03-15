@@ -69,7 +69,7 @@ class AiWebSocketSession(
     override fun sendMessage(message: WebSocketMessage<*>) {
         if (!open.get()) return
 
-        val text = message.payload?.toString() ?: return
+        val text = message.payload.toString()
 
         scope.launch {
             try {

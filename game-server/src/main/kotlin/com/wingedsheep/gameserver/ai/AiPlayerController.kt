@@ -89,11 +89,9 @@ class AiPlayerController(
         if (pendingDecision != null) {
             val handler = decisionRegistry.getHandler(pendingDecision)
             if (handler != null) {
-                @Suppress("UNCHECKED_CAST")
-                val typedHandler = handler as AiDecisionHandler<PendingDecision>
-                if (typedHandler.canAutoResolve(pendingDecision)) {
+                if (handler.canAutoResolve(pendingDecision)) {
                     logger.info("AI auto-resolved decision: {}", pendingDecision::class.simpleName)
-                    return ActionResponse.SubmitDecision(playerId, typedHandler.autoResolve(pendingDecision))
+                    return ActionResponse.SubmitDecision(playerId, handler.autoResolve(pendingDecision))
                 }
             }
         }
@@ -333,7 +331,7 @@ class AiPlayerController(
 
         // Collect all valid targets across all requirements, or from validTargets
         val allValidTargets = if (!chosen.targetRequirements.isNullOrEmpty()) {
-            chosen.targetRequirements.flatMap { req -> req.validTargets ?: emptyList() }
+            chosen.targetRequirements.flatMap { req -> req.validTargets }
         } else if (!chosen.validTargets.isNullOrEmpty()) {
             chosen.validTargets
         } else {
@@ -514,9 +512,7 @@ class AiPlayerController(
         // Extract <answer> tags to isolate the choice from reasoning text
         val cleaned = extractAnswer(response) ?: response
         val handler = decisionRegistry.getHandler(decision) ?: return null
-        @Suppress("UNCHECKED_CAST")
-        val typedHandler = handler as AiDecisionHandler<PendingDecision>
-        val decisionResponse = typedHandler.parse(cleaned, decision, state, parser) ?: return null
+        val decisionResponse = handler.parse(cleaned, decision, state, parser) ?: return null
         return ActionResponse.SubmitDecision(playerId, decisionResponse)
     }
 
@@ -840,8 +836,7 @@ class AiPlayerController(
         logger.info("AI heuristic for decision: ${decision::class.simpleName}")
         val handler = decisionRegistry.getHandler(decision)
         val response = if (handler != null) {
-            @Suppress("UNCHECKED_CAST")
-            (handler as AiDecisionHandler<PendingDecision>).heuristic(decision, state)
+            handler.heuristic(decision, state)
         } else {
             logger.warn("No handler for decision type: ${decision::class.simpleName}")
             // Last resort: try to pass priority
