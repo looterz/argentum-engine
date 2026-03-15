@@ -526,6 +526,16 @@ class TournamentManager(
     }
 
     /**
+     * Get all in-progress matches across all rounds (started but not complete).
+     * With eager match starting, games from future rounds may already be running
+     * while the current round isn't finished yet.
+     */
+    fun getAllInProgressMatches(): List<TournamentMatch> {
+        return rounds.flatMap { it.matches }
+            .filter { !it.isBye && !it.isComplete && it.gameSessionId != null }
+    }
+
+    /**
      * Get the match for a specific player in the current round.
      */
     fun getPlayerMatchInCurrentRound(playerId: EntityId): TournamentMatch? {

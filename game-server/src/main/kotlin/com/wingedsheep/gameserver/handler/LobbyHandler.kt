@@ -3213,7 +3213,7 @@ class LobbyHandler(
      * Build a list of active matches for spectating.
      */
     private fun buildActiveMatchesList(tournament: TournamentManager): List<ServerMessage.ActiveMatchInfo> {
-        val matches = tournament.getCurrentRoundGameMatches()
+        val matches = tournament.getAllInProgressMatches()
         return matches.mapNotNull { match ->
             val gameSessionId = match.gameSessionId ?: return@mapNotNull null
             val gameSession = gameRepository.findById(gameSessionId) ?: return@mapNotNull null
