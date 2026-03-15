@@ -2,14 +2,14 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 192 / 249
+**Implemented:** 193 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 38    | 26   |
 | Blue       | 37    | 28   |
 | Black      | 38    | 30   |
-| Red        | 38    | 32   |
+| Red        | 38    | 33   |
 | Green      | 37    | 30   |
 | Multicolor | 19    | 14   |
 | Colorless  | 30    | 22   |
@@ -187,7 +187,7 @@
 - [x] Sanctum Spirit
 - [x] Saproling Migration
 - [x] Seal Away
-- [ ] Seismic Shift
+- [x] Seismic Shift
 - [x] Sentinel of the Pearl Trident
 - [x] Sergeant-at-Arms
 - [x] Serra Angel

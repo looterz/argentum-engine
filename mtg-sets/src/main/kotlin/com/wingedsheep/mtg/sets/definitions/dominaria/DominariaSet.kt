@@ -157,6 +157,7 @@ object DominariaSet {
         SanctumSpirit,
         SealAway,
         SaprolingMigration,
+        SeismicShift,
         SentinelOfThePearlTrident,
         SergeantAtArms,
         SerraAngel,
