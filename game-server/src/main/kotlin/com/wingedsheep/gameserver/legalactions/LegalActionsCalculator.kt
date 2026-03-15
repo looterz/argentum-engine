@@ -183,6 +183,8 @@ class LegalActionsCalculator(
         if (canPlaySorcerySpeed) {
             val morphCost = costCalculator.calculateFaceDownCost(state, playerId)
             val canAffordMorph = manaSolver.canPay(state, playerId, morphCost)
+            val morphAutoTapSolution = manaSolver.solve(state, playerId, morphCost)
+            val morphAutoTapPreview = morphAutoTapSolution?.sources?.map { it.entityId }
             for (cardId in hand) {
                 val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: continue
                 val cardDef = cardRegistry.getCard(cardComponent.name) ?: continue
@@ -198,7 +200,8 @@ class LegalActionsCalculator(
                         description = "Cast ${cardComponent.name} face-down",
                         action = CastSpell(playerId, cardId, castFaceDown = true),
                         isAffordable = canAffordMorph,
-                        manaCostString = morphCost.toString()
+                        manaCostString = morphCost.toString(),
+                        autoTapPreview = morphAutoTapPreview
                     ))
 
                     // Check if we can afford to cast normally - if not, add unaffordable cast action
