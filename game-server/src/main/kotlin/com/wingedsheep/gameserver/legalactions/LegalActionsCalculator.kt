@@ -750,24 +750,30 @@ class LegalActionsCalculator(
             // Add cycling action if present
             if (cyclingAbility != null && !cyclingPrevented) {
                 val canAffordCycling = manaSolver.canPay(state, playerId, cyclingAbility.cost)
+                val cyclingAutoTapSolution = manaSolver.solve(state, playerId, cyclingAbility.cost)
+                val cyclingAutoTapPreview = cyclingAutoTapSolution?.sources?.map { it.entityId }
                 result.add(LegalActionInfo(
                     actionType = "CycleCard",
                     description = "Cycle ${cardComponent.name}",
                     action = CycleCard(playerId, cardId),
                     isAffordable = canAffordCycling,
-                    manaCostString = cyclingAbility.cost.toString()
+                    manaCostString = cyclingAbility.cost.toString(),
+                    autoTapPreview = cyclingAutoTapPreview
                 ))
             }
 
             // Add typecycling action if present
             if (typecyclingAbility != null && !cyclingPrevented) {
                 val canAffordTypecycling = manaSolver.canPay(state, playerId, typecyclingAbility.cost)
+                val typecyclingAutoTapSolution = manaSolver.solve(state, playerId, typecyclingAbility.cost)
+                val typecyclingAutoTapPreview = typecyclingAutoTapSolution?.sources?.map { it.entityId }
                 result.add(LegalActionInfo(
                     actionType = "TypecycleCard",
                     description = "${typecyclingAbility.type}cycling ${cardComponent.name}",
                     action = TypecycleCard(playerId, cardId),
                     isAffordable = canAffordTypecycling,
-                    manaCostString = typecyclingAbility.cost.toString()
+                    manaCostString = typecyclingAbility.cost.toString(),
+                    autoTapPreview = typecyclingAutoTapPreview
                 ))
             }
 
