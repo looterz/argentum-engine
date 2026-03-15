@@ -174,6 +174,7 @@ object DominariaSet {
         TempestDjinn,
         TesharAncestorsApostle,
         TerritorialAllosaurus,
+        TheFirstEruption,
         TheFlameOfKeld,
         TheMendingOfDominaria,
         TetsukoUmezawaFugitive,
