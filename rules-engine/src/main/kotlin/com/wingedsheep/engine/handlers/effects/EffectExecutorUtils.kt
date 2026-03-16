@@ -289,6 +289,10 @@ object EffectExecutorUtils {
             val sourceId = context.sourceId ?: return null
             return state.getEntity(sourceId)?.get<AttachedToComponent>()?.targetId
         }
+        if (effectTarget is EffectTarget.ChosenCreature) {
+            val sourceId = context.sourceId ?: return null
+            return state.getEntity(sourceId)?.get<com.wingedsheep.engine.state.components.identity.ChosenCreatureComponent>()?.creatureId
+        }
         if (effectTarget is EffectTarget.ControllerOfTriggeringEntity) {
             val triggerId = context.triggeringEntityId ?: return null
             val entity = state.getEntity(triggerId) ?: return null

@@ -2,6 +2,7 @@ package com.wingedsheep.engine.state.components.identity
 
 import com.wingedsheep.engine.state.Component
 import com.wingedsheep.sdk.core.Color
+import com.wingedsheep.sdk.model.EntityId
 import kotlinx.serialization.Serializable
 
 /**
@@ -20,4 +21,13 @@ data class ChosenColorComponent(
 @Serializable
 data class ChosenCreatureTypeComponent(
     val creatureType: String
+) : Component
+
+/**
+ * Stores the creature chosen when this permanent entered the battlefield.
+ * Used by cards like Dauntless Bodyguard ("As this creature enters, choose another creature you control").
+ */
+@Serializable
+data class ChosenCreatureComponent(
+    val creatureId: EntityId
 ) : Component

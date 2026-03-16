@@ -504,6 +504,49 @@ class StackResolver(
                 return ExecutionResult.paused(pausedState, decision)
             }
 
+            // Check for EntersWithCreatureChoice replacement effect
+            val entersWithCreatureChoice = cardDef.script.replacementEffects.filterIsInstance<com.wingedsheep.sdk.scripting.EntersWithCreatureChoice>().firstOrNull()
+            if (entersWithCreatureChoice != null) {
+                // Find other creatures the controller controls on the battlefield
+                val battlefieldCreatures = state.getBattlefield().filter { entityId ->
+                    val container = state.getEntity(entityId) ?: return@filter false
+                    val card = container.get<CardComponent>() ?: return@filter false
+                    val controller = container.get<com.wingedsheep.engine.state.components.identity.ControllerComponent>()?.playerId ?: return@filter false
+                    controller == controllerId && card.typeLine.isCreature && entityId != spellId
+                }
+
+                if (battlefieldCreatures.isNotEmpty()) {
+                    val decisionId = "choose-creature-enters-${spellId.value}"
+                    val decision = SelectCardsDecision(
+                        id = decisionId,
+                        playerId = controllerId,
+                        prompt = "Choose another creature you control",
+                        context = DecisionContext(
+                            sourceId = spellId,
+                            sourceName = cardComponent?.name,
+                            phase = DecisionPhase.RESOLUTION
+                        ),
+                        options = battlefieldCreatures,
+                        minSelections = 1,
+                        maxSelections = 1,
+                        useTargetingUI = true
+                    )
+
+                    val continuation = ChooseCreatureEntersContinuation(
+                        decisionId = decisionId,
+                        spellId = spellId,
+                        controllerId = controllerId,
+                        ownerId = ownerId
+                    )
+
+                    val pausedState = state
+                        .pushContinuation(continuation)
+                        .withPendingDecision(decision)
+                    return ExecutionResult.paused(pausedState, decision)
+                }
+                // No other creatures on battlefield — enter without a chosen creature
+            }
+
             // Check for Amplify replacement effect
             val amplifyEffect = cardDef.script.replacementEffects.filterIsInstance<com.wingedsheep.sdk.scripting.AmplifyEffect>().firstOrNull()
             if (amplifyEffect != null) {

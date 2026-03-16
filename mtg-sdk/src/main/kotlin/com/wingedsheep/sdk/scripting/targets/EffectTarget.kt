@@ -154,6 +154,16 @@ sealed interface EffectTarget {
     }
 
     /**
+     * CHOSEN CREATURE: Refers to the creature chosen when this permanent entered the battlefield.
+     * Used by cards like Dauntless Bodyguard that store a chosen creature reference.
+     */
+    @SerialName("ChosenCreature")
+    @Serializable
+    data object ChosenCreature : EffectTarget {
+        override val description: String = "the chosen creature"
+    }
+
+    /**
      * TRIGGERING ENTITY: Refers to the entity that caused the trigger to fire.
      * Used for effects like Aurification: "put a gold counter on it" where "it"
      * refers to the creature that dealt damage.

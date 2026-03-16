@@ -1034,6 +1034,7 @@ Used in card definitions for effects that intercept events before they happen:
 - `EntersAsCopy(optional, copyFilter, appliesTo)` — clone effects (copyFilter defaults to Creature; use `GameObjectFilter.NonlandPermanent` for Clever Impersonator)
 - `EntersWithColorChoice(appliesTo)` — choose color on entry
 - `EntersWithCreatureTypeChoice(opponentChooses, appliesTo)` — choose creature type on entry
+- `EntersWithCreatureChoice(appliesTo)` — choose another creature you control on entry (Dauntless Bodyguard). Stores chosen creature as `ChosenCreatureComponent`. Reference via `EffectTarget.ChosenCreature`
 - `AmplifyEffect(countersPerReveal, appliesTo)` — Amplify N: reveal cards sharing creature type from hand, put N +1/+1 counters per card
 
 ### Damage
@@ -1106,6 +1107,7 @@ All target references for effects (sealed interface):
 - `EffectTarget.FilteredTarget(filter: TargetFilter)` — any game object matching filter
 - `EffectTarget.SpecificEntity(entityId)` — a specific entity by ID
 - `EffectTarget.PipelineTarget(collectionName, index)` — target from a pipeline collection
+- `EffectTarget.ChosenCreature` — creature chosen when permanent entered (reads `ChosenCreatureComponent`)
 - `EffectTarget.TriggeringEntity` — the entity that caused the trigger
 - `EffectTarget.ControllerOfTriggeringEntity` — controller of the triggering entity
 

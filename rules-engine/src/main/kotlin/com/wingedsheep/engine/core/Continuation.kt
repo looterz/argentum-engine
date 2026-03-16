@@ -1053,6 +1053,25 @@ data class ChooseCreatureTypeEntersContinuation(
 ) : ContinuationFrame
 
 /**
+ * Resume after player chooses a creature for an "as enters, choose another creature you control" effect.
+ *
+ * When a permanent with EntersWithCreatureChoice resolves, the player is asked to choose
+ * another creature they control. This continuation handles the response and stores the
+ * chosen creature's EntityId as a component.
+ *
+ * @property spellId The spell entity being resolved
+ * @property controllerId The player who cast the spell
+ * @property ownerId The owner of the card
+ */
+@Serializable
+data class ChooseCreatureEntersContinuation(
+    override val decisionId: String,
+    val spellId: EntityId,
+    val controllerId: EntityId,
+    val ownerId: EntityId
+) : ContinuationFrame
+
+/**
  * Resume after player reveals cards from hand for Amplify.
  *
  * When a creature with Amplify enters, the controller may reveal cards from hand

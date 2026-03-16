@@ -2,11 +2,11 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 205 / 249
+**Implemented:** 206 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
-| White      | 38    | 28   |
+| White      | 38    | 29   |
 | Blue       | 37    | 29   |
 | Black      | 38    | 32   |
 | Red        | 38    | 34   |
@@ -64,7 +64,7 @@
 - [x] Darigaaz Reincarnated
 - [x] Daring Archaeologist
 - [x] Dark Bargain
-- [ ] Dauntless Bodyguard
+- [x] Dauntless Bodyguard
 - [x] Deathbloom Thallid
 - [x] Deep Freeze
 - [x] Demonic Vigor

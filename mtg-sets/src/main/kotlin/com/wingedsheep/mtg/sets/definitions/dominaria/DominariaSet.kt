@@ -62,6 +62,7 @@ object DominariaSet {
         DarigaazReincarnated,
         DaringArchaeologist,
         DarkBargain,
+        DauntlessBodyguard,
         DeathbloomThallid,
         DeepFreeze,
         DiligentExcavator,

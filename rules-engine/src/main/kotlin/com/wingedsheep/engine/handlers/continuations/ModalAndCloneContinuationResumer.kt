@@ -22,6 +22,7 @@ class ModalAndCloneContinuationResumer(
         resumer(CloneEntersContinuation::class, ::resumeCloneEnters),
         resumer(ChooseColorEntersContinuation::class, ::resumeChooseColorEnters),
         resumer(ChooseCreatureTypeEntersContinuation::class, ::resumeChooseCreatureTypeEnters),
+        resumer(ChooseCreatureEntersContinuation::class, ::resumeChooseCreatureEnters),
         resumer(AmplifyEntersContinuation::class, ::resumeAmplifyEnters),
         resumer(CastWithCreatureTypeContinuation::class, ::resumeCastWithCreatureType)
     )
@@ -420,6 +421,61 @@ class ModalAndCloneContinuationResumer(
         // Store the chosen creature type on the entity
         var newState = state.updateEntity(spellId) { c ->
             c.with(com.wingedsheep.engine.state.components.identity.ChosenCreatureTypeComponent(chosenType))
+        }
+
+        // Complete the permanent entry
+        val cardDef = ctx.stackResolver.cardRegistry?.getCard(cardComponent.cardDefinitionId)
+        newState = ctx.stackResolver.enterPermanentOnBattlefield(
+            newState, spellId, spellComponent, cardComponent, cardDef
+        )
+
+        events.add(ResolvedEvent(spellId, cardComponent.name))
+        events.add(
+            ZoneChangeEvent(
+                spellId,
+                cardComponent.name,
+                null,
+                Zone.BATTLEFIELD,
+                ownerId
+            )
+        )
+
+        return checkForMore(newState, events)
+    }
+
+    /**
+     * Resume after player chooses a creature for an "as enters, choose another creature" effect
+     * (e.g., Dauntless Bodyguard).
+     */
+    fun resumeChooseCreatureEnters(
+        state: GameState,
+        continuation: ChooseCreatureEntersContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        if (response !is CardsSelectedResponse) {
+            return ExecutionResult.error(state, "Expected cards selected response for creature choice")
+        }
+
+        val chosenCreatureId = response.selectedCards.firstOrNull()
+            ?: return ExecutionResult.error(state, "No creature selected")
+
+        val spellId = continuation.spellId
+        val ownerId = continuation.ownerId
+        val events = mutableListOf<GameEvent>()
+
+        val spellContainer = state.getEntity(spellId)
+            ?: return ExecutionResult.error(state, "Spell entity not found: $spellId")
+
+        val cardComponent = spellContainer.get<CardComponent>()
+            ?: return ExecutionResult.error(state, "Spell has no CardComponent")
+
+        val spellComponent = spellContainer.get<SpellOnStackComponent>()
+            ?: return ExecutionResult.error(state, "Spell has no SpellOnStackComponent")
+
+        // Store the chosen creature on the entity
+        var newState = state.updateEntity(spellId) { c ->
+            c.with(com.wingedsheep.engine.state.components.identity.ChosenCreatureComponent(chosenCreatureId))
         }
 
         // Complete the permanent entry

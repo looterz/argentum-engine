@@ -581,6 +581,31 @@ data class EntersWithCreatureTypeChoice(
 }
 
 // =============================================================================
+// Creature Choice Replacement Effects
+// =============================================================================
+
+/**
+ * As this permanent enters, choose another creature you control.
+ * The chosen creature's EntityId is stored on the permanent for use by other abilities.
+ * Example: Dauntless Bodyguard ("As this creature enters, choose another creature you control")
+ */
+@SerialName("EntersWithCreatureChoice")
+@Serializable
+data class EntersWithCreatureChoice(
+    override val appliesTo: GameEvent = GameEvent.ZoneChangeEvent(
+        filter = GameObjectFilter.Any,
+        to = Zone.BATTLEFIELD
+    )
+) : ReplacementEffect {
+    override val description: String = "As this creature enters, choose another creature you control"
+
+    override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
+        val newAppliesTo = appliesTo.applyTextReplacement(replacer)
+        return if (newAppliesTo !== appliesTo) copy(appliesTo = newAppliesTo) else this
+    }
+}
+
+// =============================================================================
 // Amplify Replacement Effect
 // =============================================================================
 
