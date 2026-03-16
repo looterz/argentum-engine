@@ -28,8 +28,9 @@ test.describe('Sunfire Balm - damage prevention choice', () => {
     const p1 = player1.gamePage
     const p2 = player2.gamePage
 
-    // P2 advances to declare attackers
+    // Both players pass to advance from main phase to combat
     await p2.pass()
+    await p1.pass()
 
     // P2 attacks with both creatures
     await p2.attackAll()
