@@ -179,6 +179,7 @@ constructors.
 - `RedirectCombatDamageToControllerEffect(target)` — next time creature deals combat damage this turn, deals it to controller instead (Goblin Psychopath)
 - `Effects.AttachEquipment(target)` — attach this equipment to target creature (for equip abilities)
 - `Effects.DeflectNextDamageFromChosenSource()` — choose a source, prevent next damage from it, deal that much to source's controller (Deflecting Palm)
+- `Effects.PreventNextDamageFromChosenSource(amount, target)` — choose a source, prevent next N damage from it to target (Healing Grace)
 
 ### Chain Copy (Chain of X)
 
@@ -390,6 +391,7 @@ constructors.
 | `RedirectNextDamageEffect`                          | `protectedTargets, redirectTo, amount?`     | Redirect next damage (amount=null for all) |
 | `PreventNextDamageFromChosenCreatureTypeEffect`     | (object)                                    | Prevent damage from chosen type |
 | `DeflectNextDamageFromChosenSourceEffect`           | (object)                                    | Choose source, prevent + reflect damage to source's controller |
+| `PreventNextDamageFromChosenSourceEffect`           | `amount, target`                            | Choose source, prevent next N damage from it to target |
 | `GrantAttackBlockTaxPerCreatureTypeEffect`          | `target, creatureType, manaCostPer, duration` | Can't attack/block unless pays per type |
 | `PreventAllDamageDealtByTargetEffect`               | `target`                                    | Prevent all damage by target    |
 | `PreventCombatDamageToAndByEffect`                  | `target`                                    | Prevent combat damage to and by creature |

@@ -36,6 +36,7 @@ class CombatExecutors(
         RedirectCombatDamageToControllerExecutor(),
         GrantAttackBlockTaxPerCreatureTypeExecutor(),
         GrantKeywordToAttackersBlockedByExecutor(),
-        DeflectNextDamageFromChosenSourceExecutor()
+        DeflectNextDamageFromChosenSourceExecutor(),
+        PreventNextDamageFromChosenSourceExecutor(amountEvaluator)
     )
 }

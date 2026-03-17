@@ -26,7 +26,8 @@ class CombatContinuationResumer(
         resumer(BlockerOrderContinuation::class, ::resumeBlockerOrder),
         resumer(AttackerOrderContinuation::class, ::resumeAttackerOrder),
         resumer(DistributeDamageContinuation::class, ::resumeDistributeDamage),
-        resumer(DeflectDamageSourceChoiceContinuation::class, ::resumeDeflectDamageSourceChoice)
+        resumer(DeflectDamageSourceChoiceContinuation::class, ::resumeDeflectDamageSourceChoice),
+        resumer(PreventDamageFromChosenSourceContinuation::class, ::resumePreventDamageFromChosenSource)
     )
 
     fun resumeDamageAssignment(
@@ -401,6 +402,44 @@ class CombatContinuationResumer(
                     deflectSourceId = deflectSourceId
                 ),
                 affectedEntities = setOf(continuation.controllerId)
+            ),
+            duration = com.wingedsheep.sdk.scripting.Duration.EndOfTurn,
+            sourceId = continuation.sourceId,
+            sourceName = continuation.sourceName,
+            controllerId = continuation.controllerId,
+            timestamp = System.currentTimeMillis()
+        )
+
+        val newState = state.copy(
+            floatingEffects = state.floatingEffects + floatingEffect
+        )
+
+        return checkForMore(newState, emptyList())
+    }
+
+    fun resumePreventDamageFromChosenSource(
+        state: GameState,
+        continuation: PreventDamageFromChosenSourceContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        if (response !is CardsSelectedResponse) {
+            return ExecutionResult.error(state, "Expected cards selected response for source selection")
+        }
+
+        val chosenSourceId = response.selectedCards.firstOrNull()
+            ?: return ExecutionResult.error(state, "No source selected")
+
+        val floatingEffect = ActiveFloatingEffect(
+            id = EntityId.generate(),
+            effect = FloatingEffectData(
+                layer = Layer.ABILITY,
+                sublayer = null,
+                modification = SerializableModification.PreventNextDamage(
+                    remainingAmount = continuation.amount,
+                    onlyFromSource = chosenSourceId
+                ),
+                affectedEntities = setOf(continuation.targetId)
             ),
             duration = com.wingedsheep.sdk.scripting.Duration.EndOfTurn,
             sourceId = continuation.sourceId,

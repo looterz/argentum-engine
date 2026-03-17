@@ -968,6 +968,12 @@ object Effects {
         com.wingedsheep.sdk.scripting.effects.DeflectNextDamageFromChosenSourceEffect
 
     /**
+     * Prevent the next N damage that would be dealt to a target this turn by a source of your choice.
+     */
+    fun PreventNextDamageFromChosenSource(amount: Int, target: EffectTarget): Effect =
+        com.wingedsheep.sdk.scripting.effects.PreventNextDamageFromChosenSourceEffect(amount, target)
+
+    /**
      * Remove a creature from combat.
      */
     fun RemoveFromCombat(target: EffectTarget): Effect =

@@ -102,6 +102,7 @@ object DominariaSet {
         GuardiansOfKoilos,
         GiftOfGrowth,
         GrowFromTheAshes,
+        HealingGrace,
         HaphazardBombardment,
         IcyManipulator,
         InvokeTheDivine,

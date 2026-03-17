@@ -475,7 +475,7 @@ object EffectExecutorUtils {
                 if (deflectResult != null) return deflectResult
             }
 
-            val (shieldState, reducedAmount) = applyDamagePreventionShields(newState, targetId, effectiveAmount)
+            val (shieldState, reducedAmount) = applyDamagePreventionShields(newState, targetId, effectiveAmount, sourceId = sourceId)
             newState = shieldState
             effectiveAmount = reducedAmount
         }

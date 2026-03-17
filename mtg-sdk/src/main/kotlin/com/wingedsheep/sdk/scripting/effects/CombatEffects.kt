@@ -481,3 +481,29 @@ data object DeflectNextDamageFromChosenSourceEffect : Effect {
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
 }
 
+/**
+ * Prevent the next N damage that would be dealt to a target this turn by a source of your choice.
+ * The player chooses the damage source on resolution.
+ *
+ * Used for Healing Grace and similar source-specific damage prevention spells.
+ *
+ * @property amount The amount of damage to prevent
+ * @property target The entity receiving the prevention shield
+ */
+@SerialName("PreventNextDamageFromChosenSource")
+@Serializable
+data class PreventNextDamageFromChosenSourceEffect(
+    val amount: DynamicAmount,
+    val target: EffectTarget
+) : Effect {
+    constructor(amount: Int, target: EffectTarget) : this(DynamicAmount.Fixed(amount), target)
+
+    override val description: String =
+        "Prevent the next ${amount.description} damage that would be dealt to ${target.description} this turn by a source of your choice"
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect {
+        val newAmount = amount.applyTextReplacement(replacer)
+        return if (newAmount !== amount) copy(amount = newAmount) else this
+    }
+}
+

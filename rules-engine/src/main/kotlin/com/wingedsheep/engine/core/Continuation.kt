@@ -1666,6 +1666,28 @@ data class DeflectDamageSourceChoiceContinuation(
 ) : ContinuationFrame
 
 /**
+ * Continuation for PreventNextDamageFromChosenSourceEffect.
+ *
+ * Resume after a player chooses a damage source. Creates a prevention shield
+ * on the target that only prevents damage from the chosen source.
+ *
+ * @property controllerId The player who controls the spell
+ * @property targetId The entity receiving the prevention shield
+ * @property amount The amount of damage to prevent
+ * @property sourceId The spell/ability that created this effect
+ * @property sourceName Name of the source for display
+ */
+@Serializable
+data class PreventDamageFromChosenSourceContinuation(
+    override val decisionId: String,
+    val controllerId: EntityId,
+    val targetId: EntityId,
+    val amount: Int,
+    val sourceId: EntityId?,
+    val sourceName: String?
+) : ContinuationFrame
+
+/**
  * Continuation for AddDynamicManaEffect.
  *
  * Resume after a player chooses how to distribute mana among allowed colors.
