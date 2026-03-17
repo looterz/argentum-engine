@@ -1661,6 +1661,13 @@ class LegalActionsCalculator(
                     )
                 } else null
 
+                val manaAbilityManaCostString = when (effectiveCost) {
+                    is AbilityCost.Mana -> effectiveCost.cost.toString()
+                    is AbilityCost.Composite -> effectiveCost.costs
+                        .filterIsInstance<AbilityCost.Mana>().firstOrNull()?.cost?.toString()
+                    else -> null
+                }
+
                 result.add(LegalActionInfo(
                     actionType = "ActivateAbility",
                     description = ability.description,
@@ -1669,7 +1676,8 @@ class LegalActionsCalculator(
                     additionalCostInfo = costInfo,
                     requiresManaColorChoice = ability.effect is AddAnyColorManaEffect ||
                         ability.effect is AddManaOfColorAmongEffect ||
-                        (ability.effect is CompositeEffect && (ability.effect as CompositeEffect).effects.any { it is AddAnyColorManaEffect })
+                        (ability.effect is CompositeEffect && (ability.effect as CompositeEffect).effects.any { it is AddAnyColorManaEffect }),
+                    manaCostString = manaAbilityManaCostString
                 ))
             }
         }
@@ -2145,6 +2153,7 @@ class LegalActionsCalculator(
                         .filterIsInstance<AbilityCost.Mana>().firstOrNull()?.cost
                     else -> null
                 }
+                val abilityManaCostString = abilityManaCost?.toString()
                 val abilityHasXInManaCost = abilityManaCost?.hasX == true
 
                 // Reuse the early checks for X-variable costs
@@ -2263,7 +2272,8 @@ class LegalActionsCalculator(
                             additionalCostInfo = costInfo,
                             hasXCost = abilityHasXCost,
                             maxAffordableX = abilityMaxAffordableX,
-                            autoTapPreview = abilityAutoTapPreview
+                            autoTapPreview = abilityAutoTapPreview,
+                            manaCostString = abilityManaCostString
                         ))
                     } else if (targetReqs.size == 1 && firstReqInfo.validTargets.size == 1 && firstReqInfo.validTargets.first() == entityId) {
                         // Self-targeting: only valid target is the source itself — auto-select and offer repeat
@@ -2276,7 +2286,8 @@ class LegalActionsCalculator(
                             hasXCost = abilityHasXCost,
                             maxAffordableX = abilityMaxAffordableX,
                             autoTapPreview = abilityAutoTapPreview,
-                            maxRepeatableActivations = maxRepeatableActivations
+                            maxRepeatableActivations = maxRepeatableActivations,
+                            manaCostString = abilityManaCostString
                         ))
                     } else {
                         result.add(LegalActionInfo(
@@ -2292,7 +2303,8 @@ class LegalActionsCalculator(
                             additionalCostInfo = costInfo,
                             hasXCost = abilityHasXCost,
                             maxAffordableX = abilityMaxAffordableX,
-                            autoTapPreview = abilityAutoTapPreview
+                            autoTapPreview = abilityAutoTapPreview,
+                            manaCostString = abilityManaCostString
                         ))
                     }
                 } else {
@@ -2304,7 +2316,8 @@ class LegalActionsCalculator(
                         hasXCost = abilityHasXCost,
                         maxAffordableX = abilityMaxAffordableX,
                         autoTapPreview = abilityAutoTapPreview,
-                        maxRepeatableActivations = maxRepeatableActivations
+                        maxRepeatableActivations = maxRepeatableActivations,
+                        manaCostString = abilityManaCostString
                     ))
                 }
             }
@@ -2336,10 +2349,11 @@ class LegalActionsCalculator(
                     }
 
                     // Check cost payability (Free cost always passes)
-                    when (effectiveCost) {
-                        is AbilityCost.Free -> {} // Always payable
+                    val anyPlayerManaCostString = when (effectiveCost) {
+                        is AbilityCost.Free -> null
                         is AbilityCost.Mana -> {
                             if (!manaSolver.canPay(state, playerId, effectiveCost.cost)) continue
+                            effectiveCost.cost.toString()
                         }
                         else -> continue // Other costs on opponent's permanents not yet supported
                     }
@@ -2388,13 +2402,15 @@ class LegalActionsCalculator(
                             targetCount = firstReq.count,
                             minTargets = firstReq.effectiveMinCount,
                             targetDescription = firstReq.description,
-                            targetRequirements = if (targetReqInfos.size > 1) targetReqInfos else null
+                            targetRequirements = if (targetReqInfos.size > 1) targetReqInfos else null,
+                            manaCostString = anyPlayerManaCostString
                         ))
                     } else {
                         result.add(LegalActionInfo(
                             actionType = "ActivateAbility",
                             description = ability.description,
-                            action = ActivateAbility(playerId, entityId, ability.id)
+                            action = ActivateAbility(playerId, entityId, ability.id),
+                            manaCostString = anyPlayerManaCostString
                         ))
                     }
                 }
@@ -2497,6 +2513,7 @@ class LegalActionsCalculator(
                         .filterIsInstance<AbilityCost.Mana>().firstOrNull()?.cost
                     else -> null
                 }
+                val graveyardManaCostString = abilityManaCost?.toString()
                 val abilityHasXCost = abilityManaCost?.hasX == true
                 val abilityMaxAffordableX: Int? = if (abilityHasXCost) {
                     val availableSources = manaSolver.getAvailableManaCount(state, playerId)
@@ -2541,7 +2558,8 @@ class LegalActionsCalculator(
                             additionalCostInfo = costInfo,
                             hasXCost = abilityHasXCost,
                             maxAffordableX = abilityMaxAffordableX,
-                            autoTapPreview = abilityAutoTapPreview
+                            autoTapPreview = abilityAutoTapPreview,
+                            manaCostString = graveyardManaCostString
                         ))
                     } else {
                         result.add(LegalActionInfo(
@@ -2557,7 +2575,8 @@ class LegalActionsCalculator(
                             additionalCostInfo = costInfo,
                             hasXCost = abilityHasXCost,
                             maxAffordableX = abilityMaxAffordableX,
-                            autoTapPreview = abilityAutoTapPreview
+                            autoTapPreview = abilityAutoTapPreview,
+                            manaCostString = graveyardManaCostString
                         ))
                     }
                 } else {
@@ -2568,7 +2587,8 @@ class LegalActionsCalculator(
                         additionalCostInfo = costInfo,
                         hasXCost = abilityHasXCost,
                         maxAffordableX = abilityMaxAffordableX,
-                        autoTapPreview = abilityAutoTapPreview
+                        autoTapPreview = abilityAutoTapPreview,
+                        manaCostString = graveyardManaCostString
                     ))
                 }
             }
