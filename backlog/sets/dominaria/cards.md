@@ -2,7 +2,7 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 209 / 249
+**Implemented:** 210 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -12,7 +12,7 @@
 | Red        | 38    | 34   |
 | Green      | 37    | 31   |
 | Multicolor | 19    | 17   |
-| Colorless  | 30    | 26   |
+| Colorless  | 30    | 27   |
 | Land       | 12    | 9    |
 
 ---
@@ -231,7 +231,7 @@
 - [x] The Mending of Dominaria
 - [ ] The Mirari Conjecture
 - [x] Thorn Elemental
-- [ ] Thran Temporal Gateway
+- [x] Thran Temporal Gateway
 - [x] Tiana, Ship's Caretaker
 - [ ] Time of Ice
 - [x] Tolarian Scholar

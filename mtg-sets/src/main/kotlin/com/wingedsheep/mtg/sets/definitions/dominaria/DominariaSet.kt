@@ -206,6 +206,7 @@ object DominariaSet {
         ThallidOmnivore,
         ThallidSoothsayer,
         ThornElemental,
+        ThranTemporalGateway,
         TolarianScholar,
         TorgaarFamineIncarnate,
         TraxosScourgeOfKroog,
