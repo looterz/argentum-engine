@@ -31,7 +31,9 @@ class TakeExtraTurnExecutor : EffectExecutor<TakeExtraTurnEffect> {
         effect: TakeExtraTurnEffect,
         context: EffectContext
     ): ExecutionResult {
-        val controllerId = context.controllerId
+        // Resolve who takes the extra turn — defaults to the controller
+        val turnTakerId = EffectExecutorUtils.resolveTarget(effect.target, context, state)
+            ?: context.controllerId
             ?: return ExecutionResult.error(state, "No controller for TakeExtraTurnEffect")
 
         // Check if extra turns are prevented (e.g., Ugin's Nexus on the battlefield)
@@ -39,19 +41,19 @@ class TakeExtraTurnExecutor : EffectExecutor<TakeExtraTurnEffect> {
             return ExecutionResult.success(state)
         }
 
-        // In a 2-player game, "take an extra turn" means the opponent skips their next turn
-        val opponentId = state.getOpponent(controllerId)
+        // In a 2-player game, "take an extra turn" means the other player skips their next turn
+        val otherPlayerId = state.getOpponent(turnTakerId)
             ?: return ExecutionResult.error(state, "No opponent found")
 
-        // Add SkipNextTurnComponent to opponent
-        var newState = state.updateEntity(opponentId) { container ->
+        // Add SkipNextTurnComponent to the other player
+        var newState = state.updateEntity(otherPlayerId) { container ->
             container.with(SkipNextTurnComponent)
         }
 
-        // If loseAtEndStep is true, mark the caster to lose at their next end step
+        // If loseAtEndStep is true, mark the turn-taker to lose at their next end step
         // turnsUntilLoss=1 means skip this turn's end step, trigger on the next turn's end step
         if (effect.loseAtEndStep) {
-            newState = newState.updateEntity(controllerId) { container ->
+            newState = newState.updateEntity(turnTakerId) { container ->
                 container.with(
                     LoseAtEndStepComponent(
                         turnsUntilLoss = 1,

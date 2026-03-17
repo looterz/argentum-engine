@@ -405,7 +405,7 @@ constructors.
 | `SkipUntapEffect`                                  | `target, affectsCreatures, affectsLands` | Skip untap                         |
 | `PlayAdditionalLandsEffect`                        | `count`                                  | Play extra lands                   |
 | `AddCombatPhaseEffect`                             | (object)                                 | Additional combat phase            |
-| `TakeExtraTurnEffect`                              | `loseAtEndStep`                          | Extra turn                         |
+| `TakeExtraTurnEffect`                              | `loseAtEndStep, target`                  | Extra turn (target defaults to Controller) |
 | `PreventLandPlaysThisTurnEffect`                   | (object)                                 | Prevent land plays                 |
 | `CreateGlobalTriggeredAbilityUntilEndOfTurnEffect` | `ability: TriggeredAbility`              | Global triggered ability until EOT |
 | `GrantShroudEffect`                                | `target: EffectTarget = Controller, duration: Duration = EndOfTurn` | Grant shroud (player or permanent) |

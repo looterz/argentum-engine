@@ -787,24 +787,27 @@ class StackResolver(
             val effectResult = effectHandler.execute(newState, spellEffect, context)
 
             // If effect is paused awaiting a decision, we still need to move the spell
-            // to graveyard (it has already resolved from the stack). The decision only
+            // to graveyard/exile (it has already resolved from the stack). The decision only
             // determines how the effect completes.
             if (effectResult.isPaused) {
                 val ownerId = cardComponent?.ownerId ?: spellComponent.casterId
-                val graveyardZone = ZoneKey(ownerId, Zone.GRAVEYARD)
+                val pausedCardDef = cardComponent?.let { cardRegistry?.getCard(it.name) }
+                val pausedSelfExile = pausedCardDef?.script?.selfExileOnResolve == true
+                val pausedDestZone = if (pausedSelfExile) Zone.EXILE else Zone.GRAVEYARD
+                val pausedDestZoneKey = ZoneKey(ownerId, pausedDestZone)
 
-                // Move spell to graveyard even though effect is paused
+                // Move spell to graveyard/exile even though effect is paused
                 var pausedState = effectResult.state.updateEntity(spellId) { c ->
                     c.without<SpellOnStackComponent>().without<TargetsComponent>()
                 }
-                pausedState = pausedState.addToZone(graveyardZone, spellId)
+                pausedState = pausedState.addToZone(pausedDestZoneKey, spellId)
 
                 // Include the zone change event along with effect events
                 val allEvents = events + effectResult.events + ZoneChangeEvent(
                     spellId,
                     cardComponent?.name ?: "Unknown",
                     null,
-                    Zone.GRAVEYARD,
+                    pausedDestZone,
                     ownerId
                 )
 
@@ -823,21 +826,24 @@ class StackResolver(
             events.addAll(effectResult.events)
         }
 
-        // Move to graveyard
+        // Move to graveyard (or exile if selfExileOnResolve)
         val ownerId = cardComponent?.ownerId ?: spellComponent.casterId
-        val graveyardZone = ZoneKey(ownerId, Zone.GRAVEYARD)
+        val cardDef = cardComponent?.let { cardRegistry?.getCard(it.name) }
+        val selfExile = cardDef?.script?.selfExileOnResolve == true
+        val destinationZone = if (selfExile) Zone.EXILE else Zone.GRAVEYARD
+        val destZoneKey = ZoneKey(ownerId, destinationZone)
 
         newState = newState.updateEntity(spellId) { c ->
             c.without<SpellOnStackComponent>().without<TargetsComponent>()
         }
-        newState = newState.addToZone(graveyardZone, spellId)
+        newState = newState.addToZone(destZoneKey, spellId)
 
         events.add(
             ZoneChangeEvent(
                 spellId,
                 cardComponent?.name ?: "Unknown",
                 null,
-                Zone.GRAVEYARD,
+                destinationZone,
                 ownerId
             )
         )

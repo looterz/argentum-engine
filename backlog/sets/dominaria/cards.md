@@ -2,12 +2,12 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 212 / 249
+**Implemented:** 213 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 38    | 31   |
-| Blue       | 37    | 30   |
+| Blue       | 37    | 31   |
 | Black      | 38    | 32   |
 | Red        | 38    | 34   |
 | Green      | 37    | 31   |
@@ -128,7 +128,7 @@
 - [x] Jousting Lance
 - [x] Juggernaut
 - [x] Kamahl's Druidic Vow
-- [ ] Karn's Temporal Sundering
+- [x] Karn's Temporal Sundering
 - [x] Karn, Scion of Urza
 - [x] Kazarov, Sengir Pureblood
 - [x] Keldon Overseer

@@ -468,7 +468,8 @@ class CardBuilder(private val name: String) {
             conditionalFlash = conditionalFlash,
             kickerTargetRequirements = spellBuilder?.kickerTargetRequirements ?: emptyList(),
             kickerSpellEffect = spellBuilder?.kickerEffect,
-            sagaChapters = sagaChaptersList.toList()
+            sagaChapters = sagaChaptersList.toList(),
+            selfExileOnResolve = spellBuilder?.exilesOnResolve ?: false
         )
 
         // Build metadata
@@ -532,6 +533,17 @@ class SpellBuilder {
     var effect: Effect? = null
     var target: TargetRequirement? = null
     var condition: Condition? = null
+    private var selfExileOnResolve: Boolean = false
+
+    /**
+     * Mark this spell to exile itself on resolution instead of going to the graveyard.
+     * Used for cards that say "Exile <card name>."
+     */
+    fun selfExile() {
+        selfExileOnResolve = true
+    }
+
+    internal val exilesOnResolve: Boolean get() = selfExileOnResolve
 
     /**
      * Alternate effect used when kicker is paid. When set along with [kickerTarget],

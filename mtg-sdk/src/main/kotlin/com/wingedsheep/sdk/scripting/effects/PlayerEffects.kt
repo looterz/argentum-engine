@@ -84,11 +84,13 @@ data object AddCombatPhaseEffect : Effect {
  * Used for Last Chance: "Take an extra turn after this one. At the beginning of that turn's end step, you lose the game."
  *
  * @param loseAtEndStep If true, you lose the game at the beginning of that turn's end step
+ * @param target The player who takes the extra turn. Defaults to the controller.
  */
 @SerialName("TakeExtraTurn")
 @Serializable
 data class TakeExtraTurnEffect(
-    val loseAtEndStep: Boolean = false
+    val loseAtEndStep: Boolean = false,
+    val target: EffectTarget = EffectTarget.Controller
 ) : Effect {
     override val description: String = buildString {
         append("Take an extra turn after this one")

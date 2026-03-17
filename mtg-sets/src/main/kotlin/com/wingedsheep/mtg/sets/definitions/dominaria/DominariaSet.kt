@@ -115,6 +115,7 @@ object DominariaSet {
         JoustingLance,
         Juggernaut,
         KarnScionOfUrza,
+        KarnsTemporalSundering,
         HowlingGolem,
         HomaridExplorer,
         KrosanDruid,

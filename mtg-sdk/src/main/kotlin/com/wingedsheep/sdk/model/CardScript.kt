@@ -186,7 +186,13 @@ data class CardScript(
      * Each chapter triggers when lore counters reach or exceed the chapter number.
      * Sagas add a lore counter on ETB and at the beginning of each precombat main phase.
      */
-    val sagaChapters: List<SagaChapterAbility> = emptyList()
+    val sagaChapters: List<SagaChapterAbility> = emptyList(),
+
+    /**
+     * Whether this spell exiles itself on resolution instead of going to the graveyard.
+     * Used for cards like Karn's Temporal Sundering that say "Exile <card name>."
+     */
+    val selfExileOnResolve: Boolean = false
 ) {
     /**
      * Whether this card has any scripted behavior.
