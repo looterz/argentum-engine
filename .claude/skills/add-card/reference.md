@@ -956,6 +956,7 @@ Set via `staticAbility { ability = ... }`:
 ### Type & Subtype
 
 - `AddCreatureTypeByCounter(creatureType, counterType)` — add type when counter present
+- `GrantSupertype(supertype, target)` — grant a supertype (e.g., "LEGENDARY") via Layer 4 continuous effect
 - `SetEnchantedLandType(landType)` — set enchanted land's type
 
 ### Other

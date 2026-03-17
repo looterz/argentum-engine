@@ -2,11 +2,11 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 218 / 249
+**Implemented:** 219 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
-| White      | 38    | 32   |
+| White      | 38    | 33   |
 | Blue       | 37    | 31   |
 | Black      | 38    | 34   |
 | Red        | 38    | 34   |
@@ -163,7 +163,7 @@
 - [x] Nature's Spiral
 - [ ] Navigator's Compass
 - [x] Oath of Teferi
-- [ ] On Serra's Wings
+- [x] On Serra's Wings
 - [x] Opt
 - [x] Orcish Vandal
 - [x] Pardic Wanderer

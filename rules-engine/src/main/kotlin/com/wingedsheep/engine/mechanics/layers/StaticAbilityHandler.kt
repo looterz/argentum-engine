@@ -27,6 +27,7 @@ import com.wingedsheep.sdk.scripting.SetEnchantedLandType
 import com.wingedsheep.sdk.scripting.GrantKeywordByCounter
 import com.wingedsheep.sdk.scripting.GrantProtection
 import com.wingedsheep.sdk.scripting.GrantSubtype
+import com.wingedsheep.sdk.scripting.GrantSupertype
 import com.wingedsheep.sdk.scripting.GrantProtectionFromChosenColorToGroup
 import com.wingedsheep.sdk.scripting.ModifyStatsByCounterOnSource
 import com.wingedsheep.sdk.scripting.ModifyStatsPerSharedCreatureType
@@ -372,6 +373,14 @@ class StaticAbilityHandler(
                     layer = Layer.TYPE,
                     sublayer = null,
                     modification = Modification.AddSubtype(ability.subtype),
+                    affectsFilter = convertStaticTarget(ability.target)
+                )
+            }
+            is GrantSupertype -> {
+                ContinuousEffectData(
+                    layer = Layer.TYPE,
+                    sublayer = null,
+                    modification = Modification.AddType(ability.supertype),
                     affectsFilter = convertStaticTarget(ability.target)
                 )
             }

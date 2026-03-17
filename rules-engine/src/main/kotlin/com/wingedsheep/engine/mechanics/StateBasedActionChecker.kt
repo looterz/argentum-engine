@@ -358,18 +358,19 @@ class StateBasedActionChecker(
      * with the same name, that player chooses one and puts the rest into graveyard.
      */
     private fun checkLegendRule(state: GameState): ExecutionResult {
+        val projected = state.projectedState
         for (playerId in state.turnOrder) {
             val battlefieldZone = ZoneKey(playerId, Zone.BATTLEFIELD)
             val permanents = state.getZone(battlefieldZone)
 
-            // Group legendary permanents by name
+            // Group legendary permanents by name (using projected state to see type-changing effects)
             val legendaryByName = mutableMapOf<String, MutableList<EntityId>>()
 
             for (entityId in permanents) {
                 val container = state.getEntity(entityId) ?: continue
                 val cardComponent = container.get<CardComponent>() ?: continue
 
-                if (cardComponent.typeLine.isLegendary) {
+                if (projected.isLegendary(entityId)) {
                     legendaryByName.getOrPut(cardComponent.name) { mutableListOf() }.add(entityId)
                 }
             }

@@ -149,6 +149,7 @@ object DominariaSet {
         NaruMehaMasterWizard,
         NaturesSpiral,
         OathOfTeferi,
+        OnSerrasWings,
         Opt,
         OrcishVandal,
         PardicWanderer,

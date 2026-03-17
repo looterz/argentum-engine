@@ -1027,6 +1027,25 @@ data class GrantSubtype(
 }
 
 /**
+ * Grants a supertype (e.g., Legendary) to the target permanent.
+ * Used for On Serra's Wings: "Enchanted creature is legendary."
+ *
+ * This is a Layer 4 (type-changing) continuous effect that adds a supertype.
+ *
+ * @property supertype The supertype to add (e.g., "LEGENDARY")
+ * @property target What this ability applies to (typically AttachedCreature for auras)
+ */
+@SerialName("GrantSupertype")
+@Serializable
+data class GrantSupertype(
+    val supertype: String,
+    val target: StaticTarget = StaticTarget.AttachedCreature
+) : StaticAbility {
+    override val description: String = "is ${supertype.lowercase()}"
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
+}
+
+/**
  * Adds a color to the target permanent.
  * Used for Deep Freeze: "Enchanted creature is a blue Wall in addition to its other colors and types."
  *
