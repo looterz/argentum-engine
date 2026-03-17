@@ -517,15 +517,14 @@ function PassDirectionIndicator({
       {/* Receiving from */}
       {neighbors?.receivingFrom && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ color: '#4caf50', fontSize: 14 }}>←</span>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-            <span style={{ color: '#888', fontSize: 9, textTransform: 'uppercase' }}>From</span>
+            <span style={{ color: '#888', fontSize: 9, textTransform: 'uppercase' }}>Receiving from</span>
             <span
               style={{
                 color: neighbors.receivingFrom.isWaiting ? '#ff9800' : '#4caf50',
                 fontSize: 11,
                 fontWeight: 600,
-                maxWidth: 80,
+                maxWidth: 100,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -550,7 +549,7 @@ function PassDirectionIndicator({
         }}
       >
         <span style={{ color: isLeft ? '#ff9800' : '#2196f3', fontSize: 10, fontWeight: 600 }}>
-          {isLeft ? '←' : '→'}
+          {isLeft ? '← Pass left' : 'Pass right →'}
         </span>
       </div>
 
@@ -558,13 +557,13 @@ function PassDirectionIndicator({
       {neighbors?.passingTo && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-            <span style={{ color: '#888', fontSize: 9, textTransform: 'uppercase' }}>To</span>
+            <span style={{ color: '#888', fontSize: 9, textTransform: 'uppercase' }}>Passing to</span>
             <span
               style={{
                 color: neighbors.passingTo.isWaiting ? '#ff9800' : '#4caf50',
                 fontSize: 11,
                 fontWeight: 600,
-                maxWidth: 80,
+                maxWidth: 100,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -574,7 +573,6 @@ function PassDirectionIndicator({
               {neighbors.passingTo.isWaiting && ' ...'}
             </span>
           </div>
-          <span style={{ color: '#4caf50', fontSize: 14 }}>→</span>
         </div>
       )}
     </div>
