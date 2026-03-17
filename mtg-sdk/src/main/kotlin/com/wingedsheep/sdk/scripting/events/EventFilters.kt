@@ -82,6 +82,12 @@ sealed interface RecipientFilter {
         override val description = "enchanted creature"
     }
 
+    @SerialName("RecipientEquippedCreature")
+    @Serializable
+    data object EquippedCreature : RecipientFilter {
+        override val description = "equipped creature"
+    }
+
     @SerialName("RecipientMatching")
     @Serializable
     data class Matching(val filter: GameObjectFilter) : RecipientFilter {

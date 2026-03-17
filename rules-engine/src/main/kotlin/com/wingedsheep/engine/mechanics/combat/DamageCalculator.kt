@@ -454,7 +454,7 @@ class DamageCalculator {
 
                 val recipientMatches = when (val recipient = damageEvent.recipient) {
                     is RecipientFilter.Self -> targetId == entityId
-                    is RecipientFilter.EnchantedCreature -> {
+                    is RecipientFilter.EnchantedCreature, is RecipientFilter.EquippedCreature -> {
                         val attachedTo = container.get<AttachedToComponent>()?.targetId
                         targetId == attachedTo
                     }

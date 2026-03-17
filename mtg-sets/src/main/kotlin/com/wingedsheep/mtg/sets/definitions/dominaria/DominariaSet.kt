@@ -178,6 +178,7 @@ object DominariaSet {
         ShalaiVoiceOfPlenty,
         SiegeGangCommander,
         ShannaSisaysLegacy,
+        ShieldOfTheRealm,
         ShivanFire,
         Skizzik,
         ShortSword,

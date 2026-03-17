@@ -1167,6 +1167,12 @@ Used in `OptionalCostEffect`, `MayPayManaEffect`, `AnyPlayerMayPayEffect`, `PayO
 - `CycleEvent(player)` / `TapEvent` / `UntapEvent`
 - `TurnFaceUpEvent` / `TransformEvent(intoBackFace?)` / `ControlChangeEvent`
 
+### Event Filters
+
+- **RecipientFilter**: `Any`, `You`, `Opponent`, `AnyPlayer`, `CreatureYouControl`, `CreatureOpponentControls`, `AnyCreature`, `PermanentYouControl`, `AnyPermanent`, `Self`, `EnchantedCreature`, `EquippedCreature`, `Matching(filter)`
+- **SourceFilter**: `Any`, `Combat`, `NonCombat`, `Spell`, `Ability`, `HasColor(color)`, `HasType(type)`, `EnchantedCreature`, `Creature`, `Matching(filter)`
+- **DamageType**: `Any`, `Combat`, `NonCombat`
+
 ---
 
 ## Key File Paths

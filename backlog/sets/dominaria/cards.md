@@ -2,7 +2,7 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 214 / 249
+**Implemented:** 215 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -12,7 +12,7 @@
 | Red        | 38    | 34   |
 | Green      | 37    | 31   |
 | Multicolor | 19    | 17   |
-| Colorless  | 30    | 27   |
+| Colorless  | 30    | 28   |
 | Land       | 12    | 9    |
 
 ---
@@ -195,7 +195,7 @@
 - [x] Settle the Score
 - [x] Shalai, Voice of Plenty
 - [x] Shanna, Sisay's Legacy
-- [ ] Shield of the Realm
+- [x] Shield of the Realm
 - [x] Shivan Fire
 - [x] Short Sword
 - [x] Siege-Gang Commander
