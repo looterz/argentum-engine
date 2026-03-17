@@ -2,12 +2,12 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 211 / 249
+**Implemented:** 212 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 38    | 31   |
-| Blue       | 37    | 29   |
+| Blue       | 37    | 30   |
 | Black      | 38    | 32   |
 | Red        | 38    | 34   |
 | Green      | 37    | 31   |
@@ -159,7 +159,7 @@
 - [ ] Muldrotha, the Gravetide
 - [x] Multani, Yavimaya's Avatar
 - [x] Naban, Dean of Iteration
-- [ ] Naru Meha, Master Wizard
+- [x] Naru Meha, Master Wizard
 - [x] Nature's Spiral
 - [ ] Navigator's Compass
 - [x] Oath of Teferi

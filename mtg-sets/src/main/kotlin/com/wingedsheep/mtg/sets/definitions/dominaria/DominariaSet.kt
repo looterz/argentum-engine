@@ -143,6 +143,7 @@ object DominariaSet {
         MoxAmber,
         MultaniYavimayasAvatar,
         NabanDeanOfIteration,
+        NaruMehaMasterWizard,
         NaturesSpiral,
         OathOfTeferi,
         Opt,

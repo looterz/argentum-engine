@@ -485,7 +485,7 @@ constructors.
 ### Spell (on stack)
 
 - `Targets.Spell` / `Targets.CreatureSpell` / `Targets.NoncreatureSpell`
-- `Targets.InstantOrSorcerySpell` / `Targets.CreatureOrSorcerySpell`
+- `Targets.InstantOrSorcerySpell` / `Targets.InstantOrSorcerySpellYouControl` / `Targets.CreatureOrSorcerySpell`
 - `Targets.SpellWithManaValueAtMost(manaValue)`
 - `Targets.SpellWithManaValueAtLeast(manaValue)`
 - `Targets.ActivatedOrTriggeredAbility`
