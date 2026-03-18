@@ -7,7 +7,7 @@
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 38    | 38   |
-| Blue       | 37    | 36   |
+| Blue       | 37    | 37   |
 | Black      | 38    | 38   |
 | Red        | 38    | 38   |
 | Green      | 37    | 36   |
@@ -229,7 +229,7 @@
 - [x] The First Eruption
 - [x] The Flame of Keld
 - [x] The Mending of Dominaria
-- [ ] The Mirari Conjecture
+- [x] The Mirari Conjecture
 - [x] Thorn Elemental
 - [x] Thran Temporal Gateway
 - [x] Tiana, Ship's Caretaker

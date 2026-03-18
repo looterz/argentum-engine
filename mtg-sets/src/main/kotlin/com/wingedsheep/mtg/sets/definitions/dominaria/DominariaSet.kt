@@ -230,6 +230,7 @@ object DominariaSet {
         TheFirstEruption,
         TheFlameOfKeld,
         TheMendingOfDominaria,
+        TheMirariConjecture,
         TetsukoUmezawaFugitive,
         ThallidOmnivore,
         ThallidSoothsayer,
