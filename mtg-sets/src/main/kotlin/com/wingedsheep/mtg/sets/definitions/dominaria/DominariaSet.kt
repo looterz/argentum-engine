@@ -60,6 +60,7 @@ object DominariaSet {
         Charge,
         CloudreaderSphinx,
         ColdWaterSnapper,
+        CorrosiveOoze,
         CuratorsWard,
         DAvenantTrapper,
         DampingSphere,
