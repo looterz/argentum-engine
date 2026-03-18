@@ -175,6 +175,7 @@ object DominariaSet {
         RampagingCyclops,
         RatColony,
         Rescue,
+        RiteOfBelzenlok,
         RonaDiscipleOfGix,
         RunAmok,
         SageOfLatNam,

@@ -21,8 +21,10 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.CreatureStats
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.engine.core.ZoneChangeEvent
+import com.wingedsheep.engine.event.GrantedTriggeredAbility
 import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
+import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.effects.CreateTokenEffect
 import com.wingedsheep.sdk.scripting.effects.MoveToZoneEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
@@ -136,6 +138,22 @@ class CreateTokenExecutor(
                     controllerId = tokenControllerId
                 )
                 newState = newState.addDelayedTrigger(delayedTrigger)
+            }
+        }
+
+        // If triggered abilities are specified, grant them permanently to each created token
+        if (effect.triggeredAbilities.isNotEmpty()) {
+            for (tokenId in createdTokens) {
+                for (ability in effect.triggeredAbilities) {
+                    val grant = GrantedTriggeredAbility(
+                        entityId = tokenId,
+                        ability = ability,
+                        duration = Duration.Permanent
+                    )
+                    newState = newState.copy(
+                        grantedTriggeredAbilities = newState.grantedTriggeredAbilities + grant
+                    )
+                }
             }
         }
 

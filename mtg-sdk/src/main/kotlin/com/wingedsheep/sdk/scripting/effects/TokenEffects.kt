@@ -4,6 +4,7 @@ import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.scripting.StaticAbility
+import com.wingedsheep.sdk.scripting.TriggeredAbility
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.text.TextReplacer
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
@@ -84,6 +85,7 @@ data class CreateTokenEffect(
     val legendary: Boolean = false,
     val artifactToken: Boolean = false,
     val staticAbilities: List<StaticAbility> = emptyList(),
+    val triggeredAbilities: List<TriggeredAbility> = emptyList(),
     val exileAtStep: Step? = null
 ) : Effect {
     constructor(

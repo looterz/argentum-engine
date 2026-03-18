@@ -2,13 +2,13 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 235 / 249
+**Implemented:** 236 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 38    | 36   |
 | Blue       | 37    | 34   |
-| Black      | 38    | 37   |
+| Black      | 38    | 38   |
 | Red        | 38    | 34   |
 | Green      | 37    | 35   |
 | Multicolor | 19    | 18   |
@@ -180,7 +180,7 @@
 - [x] Rat Colony
 - [x] Relic Runner
 - [x] Rescue
-- [ ] Rite of Belzenlok
+- [x] Rite of Belzenlok
 - [x] Rona, Disciple of Gix
 - [x] Run Amok
 - [x] Sage of Lat-Nam
