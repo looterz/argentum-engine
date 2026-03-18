@@ -109,6 +109,7 @@ object DominariaSet {
         GiftOfGrowth,
         GrowFromTheAshes,
         GrunnTheLonelyKing,
+        HallarTheFirefletcher,
         HealingGrace,
         HaphazardBombardment,
         HinterlandHarbor,

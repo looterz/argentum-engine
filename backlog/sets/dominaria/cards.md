@@ -2,7 +2,7 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 237 / 249
+**Implemented:** 238 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -11,7 +11,7 @@
 | Black      | 38    | 38   |
 | Red        | 38    | 34   |
 | Green      | 37    | 35   |
-| Multicolor | 19    | 18   |
+| Multicolor | 19    | 19   |
 | Colorless  | 30    | 29   |
 | Land       | 12    | 11   |
 
@@ -107,7 +107,7 @@
 - [x] Grow from the Ashes
 - [x] Grunn, the Lonely King
 - [x] Guardians of Koilos
-- [ ] Hallar, the Firefletcher
+- [x] Hallar, the Firefletcher
 - [x] Haphazard Bombardment
 - [x] Healing Grace
 - [ ] Helm of the Host
