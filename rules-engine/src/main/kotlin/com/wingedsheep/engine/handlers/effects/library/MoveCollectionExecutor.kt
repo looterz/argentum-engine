@@ -4,7 +4,11 @@ import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.TargetFinder
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -505,9 +509,9 @@ class MoveCollectionExecutor(
 
                 // Check for regeneration shields (unless noRegenerate is set)
                 if (!noRegenerate) {
-                    val (shieldState, wasRegenerated) = EffectExecutorUtils.applyRegenerationShields(newState, cardId)
+                    val (shieldState, wasRegenerated) = ZoneMovementUtils.applyRegenerationShields(newState, cardId)
                     if (wasRegenerated) {
-                        newState = EffectExecutorUtils.applyRegenerationReplacement(shieldState, cardId).state
+                        newState = ZoneMovementUtils.applyRegenerationReplacement(shieldState, cardId).state
                         continue
                     }
                 }
@@ -521,13 +525,13 @@ class MoveCollectionExecutor(
                 // Strip battlefield-specific components when leaving the battlefield
                 // (face-down status, tapped, damage, counters, combat state, etc.)
                 if (fromZone == Zone.BATTLEFIELD) {
-                    newState = EffectExecutorUtils.cleanupCombatReferences(newState, cardId)
+                    newState = ZoneMovementUtils.cleanupCombatReferences(newState, cardId)
                     newState = newState.updateEntity(cardId) { c ->
-                        EffectExecutorUtils.stripBattlefieldComponents(c)
+                        ZoneMovementUtils.stripBattlefieldComponents(c)
                     }
                     // Remove floating effects targeting this entity (Rule 400.7)
                     if (moveType == MoveType.Destroy) {
-                        newState = EffectExecutorUtils.removeFloatingEffectsTargeting(newState, cardId)
+                        newState = ZoneMovementUtils.removeFloatingEffectsTargeting(newState, cardId)
                     }
                 }
 
@@ -557,7 +561,7 @@ class MoveCollectionExecutor(
             }
 
             // Check for zone change redirect (e.g., Anafenza exiling instead of graveyard)
-            val redirectResult = EffectExecutorUtils.checkZoneChangeRedirect(
+            val redirectResult = ZoneMovementUtils.checkZoneChangeRedirect(
                 newState, cardId, fromZone, destZone
             )
             val actualDestZone = redirectResult.destinationZone
@@ -644,7 +648,7 @@ class MoveCollectionExecutor(
 
             // Apply additional replacement effect (e.g., Ugin's Nexus extra turn)
             if (redirectResult.additionalEffect != null) {
-                newState = EffectExecutorUtils.applyReplacementAdditionalEffect(
+                newState = ZoneMovementUtils.applyReplacementAdditionalEffect(
                     newState, redirectResult.additionalEffect, redirectResult.effectControllerId, cardId
                 )
             }
@@ -721,8 +725,8 @@ class MoveCollectionExecutor(
             is Player.You -> context.controllerId
             is Player.Opponent -> context.opponentId
             is Player.TargetOpponent -> context.opponentId
-            is Player.TargetPlayer -> context.targets.firstOrNull()?.let { EffectExecutorUtils.run { it.toEntityId() } }
-            is Player.ContextPlayer -> context.targets.getOrNull(player.index)?.let { EffectExecutorUtils.run { it.toEntityId() } }
+            is Player.TargetPlayer -> context.targets.firstOrNull()?.let { TargetResolutionUtils.run { it.toEntityId() } }
+            is Player.ContextPlayer -> context.targets.getOrNull(player.index)?.let { TargetResolutionUtils.run { it.toEntityId() } }
             is Player.TriggeringPlayer -> context.triggeringEntityId
             else -> context.controllerId
         }

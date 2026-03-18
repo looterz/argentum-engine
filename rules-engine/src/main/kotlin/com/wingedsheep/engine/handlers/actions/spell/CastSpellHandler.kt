@@ -60,7 +60,7 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.PlayFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
 import com.wingedsheep.sdk.core.Keyword
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.toEntityId
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils.toEntityId
 import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent
 import kotlin.reflect.KClass
 

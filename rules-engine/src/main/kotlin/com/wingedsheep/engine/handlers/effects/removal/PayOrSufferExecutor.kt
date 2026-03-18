@@ -6,7 +6,11 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
@@ -487,7 +491,7 @@ class PayOrSufferExecutor(
         zone: Zone
     ): List<EntityId> {
         if (zone == Zone.BATTLEFIELD) {
-            return EffectExecutorUtils.findMatchingOnBattlefield(
+            return BattlefieldFilterUtils.findMatchingOnBattlefield(
                 state, filter.youControl(), PredicateContext(controllerId = playerId)
             )
         }
@@ -509,7 +513,7 @@ class PayOrSufferExecutor(
         filter: GameObjectFilter,
         sourceId: EntityId
     ): List<EntityId> {
-        return EffectExecutorUtils.findMatchingOnBattlefield(
+        return BattlefieldFilterUtils.findMatchingOnBattlefield(
             state, filter.youControl(), PredicateContext(controllerId = playerId), excludeSelfId = sourceId
         )
     }

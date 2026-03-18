@@ -3,7 +3,7 @@ package com.wingedsheep.engine.handlers.effects.combat
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.resolveTarget
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils.resolveTarget
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.combat.*
 import com.wingedsheep.sdk.scripting.effects.RemoveFromCombatEffect

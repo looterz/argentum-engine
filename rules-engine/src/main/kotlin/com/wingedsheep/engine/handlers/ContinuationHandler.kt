@@ -3,7 +3,11 @@ package com.wingedsheep.engine.handlers
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.continuations.*
 import com.wingedsheep.engine.handlers.effects.EffectExecutorRegistry
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.mechanics.combat.CombatManager
 import com.wingedsheep.engine.mechanics.stack.StackResolver
 import com.wingedsheep.engine.state.GameState
@@ -816,7 +820,7 @@ class ContinuationHandler(
         // Add counters to each target (applying replacement effects like Hardened Scales)
         for ((targetId, amount) in distribution) {
             if (amount > 0) {
-                val modifiedAmount = EffectExecutorUtils.applyCounterPlacementModifiers(
+                val modifiedAmount = ReplacementEffectUtils.applyCounterPlacementModifiers(
                     newState, targetId, counterType, amount
                 )
                 val targetCounters = newState.getEntity(targetId)

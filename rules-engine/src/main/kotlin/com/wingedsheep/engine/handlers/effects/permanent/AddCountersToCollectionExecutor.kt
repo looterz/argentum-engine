@@ -4,7 +4,11 @@ import com.wingedsheep.engine.core.CountersAddedEvent
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -49,7 +53,7 @@ class AddCountersToCollectionExecutor : EffectExecutor<AddCountersToCollectionEf
             if (currentState.getEntity(entityId) == null) continue
 
             val current = currentState.getEntity(entityId)?.get<CountersComponent>() ?: CountersComponent()
-            val modifiedCount = EffectExecutorUtils.applyCounterPlacementModifiers(
+            val modifiedCount = ReplacementEffectUtils.applyCounterPlacementModifiers(
                 currentState, entityId, counterType, effect.count
             )
 

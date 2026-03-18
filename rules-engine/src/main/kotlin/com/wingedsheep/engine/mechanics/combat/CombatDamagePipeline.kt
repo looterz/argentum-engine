@@ -2,7 +2,11 @@ package com.wingedsheep.engine.mechanics.combat
 
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.state.GameState
@@ -46,7 +50,7 @@ internal class PreventAllCombatDamageModifier : CombatDamageModifier {
 /** Prevents all damage from a specific source (Chain of Silence). */
 internal class PreventAllDamageFromSourceModifier : CombatDamageModifier {
     override fun modify(state: GameState, projected: ProjectedState, assignments: List<CombatDamageAssignment>): List<CombatDamageAssignment> {
-        return assignments.filter { !EffectExecutorUtils.isAllDamageFromSourcePrevented(state, it.sourceId) }
+        return assignments.filter { !DamageUtils.isAllDamageFromSourcePrevented(state, it.sourceId) }
     }
 }
 

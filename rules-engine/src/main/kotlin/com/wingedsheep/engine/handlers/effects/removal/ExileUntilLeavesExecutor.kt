@@ -4,8 +4,8 @@ import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.resolveTarget
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.stripBattlefieldComponents
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils.resolveTarget
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.stripBattlefieldComponents
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent

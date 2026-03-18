@@ -3,8 +3,8 @@ package com.wingedsheep.engine.handlers.effects.removal
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.destroyPermanent
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.resolveTarget
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.destroyPermanent
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils.resolveTarget
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.AttachmentsComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent

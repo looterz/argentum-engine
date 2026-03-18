@@ -2,9 +2,13 @@ package com.wingedsheep.engine.mechanics
 
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.DecisionHandler
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.cleanupReverseAttachmentLink
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.stripBattlefieldComponents
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.cleanupReverseAttachmentLink
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.stripBattlefieldComponents
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
@@ -287,9 +291,9 @@ class StateBasedActionChecker(
 
             if (hasLethalDamage || hasDeathtouch) {
                 // Check for regeneration shields (lethal damage is destruction, so it can be regenerated)
-                val (shieldState, wasRegenerated) = EffectExecutorUtils.applyRegenerationShields(newState, entityId)
+                val (shieldState, wasRegenerated) = ZoneMovementUtils.applyRegenerationShields(newState, entityId)
                 if (wasRegenerated) {
-                    val regenResult = EffectExecutorUtils.applyRegenerationReplacement(shieldState, entityId)
+                    val regenResult = ZoneMovementUtils.applyRegenerationReplacement(shieldState, entityId)
                     newState = regenResult.newState
                     events.addAll(regenResult.events)
                     continue
@@ -467,7 +471,7 @@ class StateBasedActionChecker(
             newState = newState.removeFromZone(battlefieldZone, entityId)
             newState = newState.addToZone(graveyardZone, entityId)
             newState = newState.updateEntity(entityId) { c ->
-                EffectExecutorUtils.stripBattlefieldComponents(c)
+                ZoneMovementUtils.stripBattlefieldComponents(c)
             }
 
             events.add(
@@ -715,7 +719,7 @@ class StateBasedActionChecker(
         val exileInstead = exileOnDeathIndex != -1
 
         // Check for RedirectZoneChange replacement effects (e.g., Anafenza, Ugin's Nexus)
-        val redirectResult = EffectExecutorUtils.checkZoneChangeRedirect(
+        val redirectResult = ZoneMovementUtils.checkZoneChangeRedirect(
             state, entityId, Zone.BATTLEFIELD, Zone.GRAVEYARD
         )
         val destinationZone = if (exileInstead) Zone.EXILE else redirectResult.destinationZone
@@ -759,7 +763,7 @@ class StateBasedActionChecker(
         newState = newState.addToZone(destinationZoneKey, entityId)
 
         // Clean up combat references before stripping components
-        newState = EffectExecutorUtils.cleanupCombatReferences(newState, entityId)
+        newState = ZoneMovementUtils.cleanupCombatReferences(newState, entityId)
 
         // Remove permanent components
         newState = newState.updateEntity(entityId) { c -> stripBattlefieldComponents(c) }
@@ -804,7 +808,7 @@ class StateBasedActionChecker(
 
         // Apply additional replacement effect (e.g., Ugin's Nexus extra turn, Darigaaz egg counters)
         if (redirectResult.additionalEffect != null) {
-            newState = EffectExecutorUtils.applyReplacementAdditionalEffect(
+            newState = ZoneMovementUtils.applyReplacementAdditionalEffect(
                 newState, redirectResult.additionalEffect, redirectResult.effectControllerId, entityId
             )
         }

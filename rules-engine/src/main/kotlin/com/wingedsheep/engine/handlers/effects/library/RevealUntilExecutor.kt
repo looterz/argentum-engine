@@ -6,7 +6,11 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -126,7 +130,7 @@ class RevealUntilExecutor : EffectExecutor<RevealUntilEffect> {
             is Player.TargetOpponent -> context.opponentId
             is Player.TargetPlayer -> context.opponentId
             is Player.ContextPlayer -> context.targets.getOrNull(player.index)?.let {
-                EffectExecutorUtils.run { it.toEntityId() }
+                TargetResolutionUtils.run { it.toEntityId() }
             }
             is Player.TriggeringPlayer -> context.triggeringEntityId
             else -> context.controllerId

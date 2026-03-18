@@ -5,7 +5,7 @@ import com.wingedsheep.engine.core.TappedEvent
 import com.wingedsheep.engine.core.UntappedEvent
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.resolveTarget
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils.resolveTarget
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent

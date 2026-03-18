@@ -5,8 +5,12 @@ import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.toEntityId
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils.toEntityId
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -64,7 +68,7 @@ class DistributeCountersAmongTargetsExecutor : EffectExecutor<DistributeCounters
             val countersForTarget = distribution.getOrElse(index) { 0 }
             if (countersForTarget <= 0) continue
 
-            val modifiedCount = EffectExecutorUtils.applyCounterPlacementModifiers(
+            val modifiedCount = ReplacementEffectUtils.applyCounterPlacementModifiers(
                 currentState, targetId, counterType, countersForTarget
             )
 

@@ -3,7 +3,11 @@ package com.wingedsheep.engine.handlers.effects.combat
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.mechanics.layers.ActiveFloatingEffect
 import com.wingedsheep.engine.mechanics.layers.FloatingEffectData
 import com.wingedsheep.engine.mechanics.layers.Layer
@@ -32,11 +36,11 @@ class RedirectNextDamageExecutor : EffectExecutor<RedirectNextDamageEffect> {
         effect: RedirectNextDamageEffect,
         context: EffectContext
     ): ExecutionResult {
-        val redirectToId = EffectExecutorUtils.resolveTarget(effect.redirectTo, context)
+        val redirectToId = TargetResolutionUtils.resolveTarget(effect.redirectTo, context)
             ?: return ExecutionResult.error(state, "Could not resolve redirect target for RedirectNextDamageEffect")
 
         val protectedIds = effect.protectedTargets.mapNotNull { target ->
-            EffectExecutorUtils.resolveTarget(target, context)
+            TargetResolutionUtils.resolveTarget(target, context)
         }.toSet()
 
         if (protectedIds.isEmpty()) {

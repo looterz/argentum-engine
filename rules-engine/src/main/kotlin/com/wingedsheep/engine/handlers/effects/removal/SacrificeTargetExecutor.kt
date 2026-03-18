@@ -3,7 +3,7 @@ package com.wingedsheep.engine.handlers.effects.removal
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.resolveTarget
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils.resolveTarget
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -57,7 +57,7 @@ class SacrificeTargetExecutor : EffectExecutor<SacrificeTargetEffect> {
         newState = newState.addToZone(graveyardZone, targetId)
 
         // Remove floating effects targeting this permanent
-        newState = com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
+        newState = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
             .removeFloatingEffectsTargeting(newState, targetId)
 
         val events = listOf(

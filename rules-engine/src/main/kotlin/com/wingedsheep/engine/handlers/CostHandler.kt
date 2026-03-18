@@ -392,7 +392,7 @@ class CostHandler(
                 val exileZone = ZoneKey(sourceOwner, Zone.EXILE)
 
                 var newState = state.updateEntity(sourceId) { c ->
-                    com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.stripBattlefieldComponents(c)
+                    com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.stripBattlefieldComponents(c)
                 }
                 newState = newState.removeFromZone(battlefieldZone, sourceId)
                 newState = newState.addToZone(exileZone, sourceId)

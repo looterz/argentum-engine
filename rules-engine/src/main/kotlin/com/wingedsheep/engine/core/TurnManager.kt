@@ -920,7 +920,7 @@ class TurnManager(
                 for ((entityId, _) in markedForDestruction) {
                     // Only destroy if still on the battlefield
                     if (newState.getBattlefield().contains(entityId)) {
-                        val destroyResult = com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
+                        val destroyResult = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
                             .destroyPermanent(newState, entityId)
                         if (destroyResult.isSuccess) {
                             newState = destroyResult.newState
@@ -952,13 +952,13 @@ class TurnManager(
                                 newState = newState.addToZone(graveyardZone, entityId)
 
                                 // Clean up combat references
-                                newState = com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
+                                newState = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
                                     .cleanupCombatReferences(newState, entityId)
                                 newState = newState.updateEntity(entityId) { c ->
-                                    com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
+                                    com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
                                         .stripBattlefieldComponents(c)
                                 }
-                                newState = com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
+                                newState = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
                                     .removeFloatingEffectsTargeting(newState, entityId)
 
                                 events.add(PermanentsSacrificedEvent(controllerId, listOf(entityId), listOf(cardComponent.name)))

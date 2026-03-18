@@ -4,7 +4,11 @@ import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.TargetFinder
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.mechanics.stack.StackResolver
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -33,7 +37,7 @@ class CopyTargetSpellExecutor(
         effect: CopyTargetSpellEffect,
         context: EffectContext
     ): ExecutionResult {
-        val spellEntityId = EffectExecutorUtils.resolveTarget(effect.target, context)
+        val spellEntityId = TargetResolutionUtils.resolveTarget(effect.target, context)
             ?: return ExecutionResult.error(state, "No target spell to copy")
 
         val container = state.getEntity(spellEntityId)

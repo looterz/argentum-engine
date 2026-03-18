@@ -3,7 +3,11 @@ package com.wingedsheep.engine.handlers.effects.mana
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.sdk.core.Color
@@ -28,7 +32,7 @@ class AddManaOfColorAmongExecutor : EffectExecutor<AddManaOfColorAmongEffect> {
         context: EffectContext
     ): ExecutionResult {
         val projected = state.projectedState
-        val matched = EffectExecutorUtils.findMatchingOnBattlefield(state, effect.filter, context)
+        val matched = BattlefieldFilterUtils.findMatchingOnBattlefield(state, effect.filter, context)
 
         // Collect colors from matching permanents
         val availableColors = mutableSetOf<Color>()

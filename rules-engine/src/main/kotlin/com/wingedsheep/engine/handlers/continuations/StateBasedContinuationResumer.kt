@@ -1,8 +1,12 @@
 package com.wingedsheep.engine.handlers.continuations
 
 import com.wingedsheep.engine.core.*
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.stripBattlefieldComponents
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.stripBattlefieldComponents
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
@@ -81,7 +85,7 @@ class StateBasedContinuationResumer(
         val ownerId = cardComponent.ownerId ?: controllerId
 
         // Check for zone change replacement effects
-        val redirectResult = EffectExecutorUtils.checkZoneChangeRedirect(
+        val redirectResult = ZoneMovementUtils.checkZoneChangeRedirect(
             state, entityId, Zone.BATTLEFIELD, Zone.GRAVEYARD
         )
         val destinationZone = redirectResult.destinationZone
@@ -94,7 +98,7 @@ class StateBasedContinuationResumer(
         newState = newState.addToZone(destinationZoneKey, entityId)
 
         // Clean up combat references before stripping components
-        newState = EffectExecutorUtils.cleanupCombatReferences(newState, entityId)
+        newState = ZoneMovementUtils.cleanupCombatReferences(newState, entityId)
 
         // Remove permanent components
         newState = newState.updateEntity(entityId) { c -> stripBattlefieldComponents(c) }
@@ -114,7 +118,7 @@ class StateBasedContinuationResumer(
 
         // Apply additional replacement effect if any
         if (redirectResult.additionalEffect != null) {
-            newState = EffectExecutorUtils.applyReplacementAdditionalEffect(
+            newState = ZoneMovementUtils.applyReplacementAdditionalEffect(
                 newState, redirectResult.additionalEffect, redirectResult.effectControllerId, entityId
             )
         }

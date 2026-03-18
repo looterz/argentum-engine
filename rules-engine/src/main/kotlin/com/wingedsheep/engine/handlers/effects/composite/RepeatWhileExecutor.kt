@@ -4,7 +4,11 @@ import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.DecisionHandler
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.model.EntityId
@@ -44,7 +48,7 @@ class RepeatWhileExecutor(
         // Resolve the decider ID (for PlayerChooses) once at the start
         val resolvedDeciderId = when (val cond = effect.repeatCondition) {
             is RepeatCondition.PlayerChooses ->
-                EffectExecutorUtils.resolvePlayerTarget(cond.decider, context)
+                TargetResolutionUtils.resolvePlayerTarget(cond.decider, context)
                     ?: return ExecutionResult.error(state, "RepeatWhile: could not resolve decider target")
             is RepeatCondition.WhileCondition -> null
         }

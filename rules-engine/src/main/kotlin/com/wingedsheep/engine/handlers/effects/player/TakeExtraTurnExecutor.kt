@@ -3,7 +3,11 @@ package com.wingedsheep.engine.handlers.effects.player
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.player.LoseAtEndStepComponent
 import com.wingedsheep.engine.state.components.player.SkipNextTurnComponent
@@ -32,12 +36,12 @@ class TakeExtraTurnExecutor : EffectExecutor<TakeExtraTurnEffect> {
         context: EffectContext
     ): ExecutionResult {
         // Resolve who takes the extra turn — defaults to the controller
-        val turnTakerId = EffectExecutorUtils.resolveTarget(effect.target, context, state)
+        val turnTakerId = TargetResolutionUtils.resolveTarget(effect.target, context, state)
             ?: context.controllerId
             ?: return ExecutionResult.error(state, "No controller for TakeExtraTurnEffect")
 
         // Check if extra turns are prevented (e.g., Ugin's Nexus on the battlefield)
-        if (EffectExecutorUtils.isExtraTurnPrevented(state)) {
+        if (ReplacementEffectUtils.isExtraTurnPrevented(state)) {
             return ExecutionResult.success(state)
         }
 

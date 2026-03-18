@@ -7,7 +7,11 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -100,7 +104,7 @@ class ExileFromTopRepeatingExecutor : EffectExecutor<ExileFromTopRepeatingEffect
             }
 
             for (cardId in cardsToExile) {
-                val exileResult = EffectExecutorUtils.moveCardToZone(currentState, cardId, Zone.EXILE)
+                val exileResult = ZoneMovementUtils.moveCardToZone(currentState, cardId, Zone.EXILE)
                 if (exileResult.isSuccess) {
                     currentState = exileResult.state
                     allEvents.addAll(exileResult.events)
@@ -109,7 +113,7 @@ class ExileFromTopRepeatingExecutor : EffectExecutor<ExileFromTopRepeatingEffect
 
             // Put match card in hand
             if (matchCard != null) {
-                val handResult = EffectExecutorUtils.moveCardToZone(currentState, matchCard, Zone.HAND)
+                val handResult = ZoneMovementUtils.moveCardToZone(currentState, matchCard, Zone.HAND)
                 if (handResult.isSuccess) {
                     currentState = handResult.state
                     allEvents.addAll(handResult.events)
@@ -130,7 +134,7 @@ class ExileFromTopRepeatingExecutor : EffectExecutor<ExileFromTopRepeatingEffect
         // Deal damage all at once (per rulings)
         if (cardsToHand > 0 && effect.damagePerCard > 0) {
             val totalDamage = cardsToHand * effect.damagePerCard
-            val damageResult = EffectExecutorUtils.dealDamageToTarget(
+            val damageResult = DamageUtils.dealDamageToTarget(
                 currentState, controllerId, totalDamage, sourceId
             )
             currentState = damageResult.state

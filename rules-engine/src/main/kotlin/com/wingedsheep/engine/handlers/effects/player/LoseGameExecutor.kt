@@ -5,7 +5,11 @@ import com.wingedsheep.engine.core.GameEndReason
 import com.wingedsheep.engine.core.PlayerLostEvent
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.GrantsCantLoseGameComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
@@ -27,7 +31,7 @@ class LoseGameExecutor : EffectExecutor<LoseGameEffect> {
         effect: LoseGameEffect,
         context: EffectContext
     ): ExecutionResult {
-        val targetId = EffectExecutorUtils.resolvePlayerTarget(effect.target, context)
+        val targetId = TargetResolutionUtils.resolvePlayerTarget(effect.target, context)
             ?: return ExecutionResult.error(state, "No target player for LoseGameEffect")
 
         // Check if player has already lost

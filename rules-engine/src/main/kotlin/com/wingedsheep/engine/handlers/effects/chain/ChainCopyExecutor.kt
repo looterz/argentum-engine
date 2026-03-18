@@ -6,12 +6,16 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.TargetFinder
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.dealDamageToTarget
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.destroyPermanent
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.moveCardToZone
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.resolvePlayerTarget
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.resolveTarget
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils.dealDamageToTarget
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.destroyPermanent
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.moveCardToZone
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils.resolvePlayerTarget
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils.resolveTarget
 import com.wingedsheep.engine.mechanics.layers.ActiveFloatingEffect
 import com.wingedsheep.engine.mechanics.layers.FloatingEffectData
 import com.wingedsheep.engine.mechanics.layers.Layer
@@ -354,7 +358,7 @@ class ChainCopyExecutor(
     }
 
     fun findControllerLands(state: GameState, controllerId: EntityId): List<EntityId> {
-        return EffectExecutorUtils.findMatchingOnBattlefield(
+        return BattlefieldFilterUtils.findMatchingOnBattlefield(
             state, GameObjectFilter.Land.youControl(), PredicateContext(controllerId = controllerId)
         )
     }

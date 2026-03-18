@@ -6,7 +6,11 @@ import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.handlers.DecisionHandler
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.scripting.effects.ChooseColorAndGrantProtectionToTargetEffect
@@ -32,7 +36,7 @@ class ChooseColorProtectionTargetExecutor(
         effect: ChooseColorAndGrantProtectionToTargetEffect,
         context: EffectContext
     ): ExecutionResult {
-        val targetEntityId = EffectExecutorUtils.resolveTarget(effect.target, context, state)
+        val targetEntityId = TargetResolutionUtils.resolveTarget(effect.target, context, state)
             ?: return ExecutionResult.error(state, "Could not resolve target for protection effect")
 
         val sourceName = context.sourceId?.let { state.getEntity(it)?.get<CardComponent>()?.name } ?: "Unknown"

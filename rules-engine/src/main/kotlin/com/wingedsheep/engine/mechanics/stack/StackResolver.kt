@@ -32,7 +32,11 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 import com.wingedsheep.sdk.scripting.EntersAsCopy
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.sdk.scripting.EntersTapped
 import com.wingedsheep.sdk.scripting.EntersWithCounters
 import com.wingedsheep.sdk.scripting.EntersWithCreatureTypeChoice
@@ -712,7 +716,7 @@ class StackResolver(
         // Handle planeswalker starting loyalty (Rule 306.5b)
         if (cardDef != null && !spellComponent.castFaceDown && cardDef.startingLoyalty != null) {
             val loyaltyCount = cardDef.startingLoyalty!!
-            val modifiedCount = EffectExecutorUtils.applyCounterPlacementModifiers(
+            val modifiedCount = ReplacementEffectUtils.applyCounterPlacementModifiers(
                 newState, spellId, CounterType.LOYALTY, loyaltyCount
             )
             val current = newState.getEntity(spellId)?.get<CountersComponent>() ?: CountersComponent()
@@ -1066,7 +1070,7 @@ class StackResolver(
             when (effect) {
                 is EntersWithCounters -> {
                     val counterType = resolveCounterType(effect.counterType)
-                    val modifiedCount = EffectExecutorUtils.applyCounterPlacementModifiers(
+                    val modifiedCount = ReplacementEffectUtils.applyCounterPlacementModifiers(
                         newState, entityId, counterType, effect.count
                     )
                     val current = newState.getEntity(entityId)?.get<CountersComponent>() ?: CountersComponent()
@@ -1084,7 +1088,7 @@ class StackResolver(
                     )
                     val count = dynamicAmountEvaluator.evaluate(newState, effect.count, context)
                     if (count > 0) {
-                        val modifiedCount = EffectExecutorUtils.applyCounterPlacementModifiers(
+                        val modifiedCount = ReplacementEffectUtils.applyCounterPlacementModifiers(
                             newState, entityId, counterType, count
                         )
                         val current = newState.getEntity(entityId)?.get<CountersComponent>() ?: CountersComponent()

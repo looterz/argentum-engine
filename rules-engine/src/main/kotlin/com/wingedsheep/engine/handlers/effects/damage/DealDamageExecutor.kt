@@ -5,9 +5,13 @@ import com.wingedsheep.engine.core.GameEvent as EngineGameEvent
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.dealDamageToTarget
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils.resolvePlayerTargets
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils.dealDamageToTarget
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils.resolvePlayerTargets
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.scripting.effects.DealDamageEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
@@ -37,7 +41,7 @@ class DealDamageExecutor(
         // Use damageSource override if specified (e.g., EnchantedCreature for Lavamancer's Skill)
         val damageSourceTarget = effect.damageSource
         val sourceId = if (damageSourceTarget != null) {
-            EffectExecutorUtils.resolveTarget(damageSourceTarget, context, state)
+            TargetResolutionUtils.resolveTarget(damageSourceTarget, context, state)
         } else {
             context.sourceId
         }
@@ -60,7 +64,7 @@ class DealDamageExecutor(
         }
 
         // Single target resolution
-        val targetId = EffectExecutorUtils.resolveTarget(effect.target, context, state)
+        val targetId = TargetResolutionUtils.resolveTarget(effect.target, context, state)
             ?: return ExecutionResult.error(state, "No valid target for damage")
 
         return dealDamageToTarget(state, targetId, amount, sourceId, effect.cantBePrevented)

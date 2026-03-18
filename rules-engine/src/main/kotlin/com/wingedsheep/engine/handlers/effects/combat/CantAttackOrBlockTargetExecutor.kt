@@ -3,7 +3,11 @@ package com.wingedsheep.engine.handlers.effects.combat
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.mechanics.layers.ActiveFloatingEffect
 import com.wingedsheep.engine.mechanics.layers.FloatingEffectData
 import com.wingedsheep.engine.mechanics.layers.Layer
@@ -30,7 +34,7 @@ class CantAttackOrBlockTargetExecutor : EffectExecutor<CantAttackOrBlockTargetEf
         effect: CantAttackOrBlockTargetEffect,
         context: EffectContext
     ): ExecutionResult {
-        val entityId = EffectExecutorUtils.resolveTarget(effect.target, context)
+        val entityId = TargetResolutionUtils.resolveTarget(effect.target, context)
             ?: return ExecutionResult.success(state)
         val container = state.getEntity(entityId) ?: return ExecutionResult.success(state)
         container.get<CardComponent>() ?: return ExecutionResult.success(state)

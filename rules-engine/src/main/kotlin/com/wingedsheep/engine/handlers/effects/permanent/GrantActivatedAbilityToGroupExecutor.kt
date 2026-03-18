@@ -4,7 +4,11 @@ import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.event.GrantedActivatedAbility
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.sdk.scripting.effects.GrantActivatedAbilityToGroupEffect
 import kotlin.reflect.KClass
@@ -26,7 +30,7 @@ class GrantActivatedAbilityToGroupExecutor : EffectExecutor<GrantActivatedAbilit
     ): ExecutionResult {
         val filter = effect.filter
         val excludeSelfId = if (filter.excludeSelf) context.sourceId else null
-        val matched = EffectExecutorUtils.findMatchingOnBattlefield(state, filter.baseFilter, context, excludeSelfId)
+        val matched = BattlefieldFilterUtils.findMatchingOnBattlefield(state, filter.baseFilter, context, excludeSelfId)
 
         if (matched.isEmpty()) {
             return ExecutionResult.success(state)

@@ -3,7 +3,11 @@ package com.wingedsheep.engine.mechanics.combat
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.registry.CardRegistry
@@ -138,7 +142,7 @@ internal class CombatDamageManager(
             }
             if (!attackerDealsDamageThisStep) continue
 
-            val allDamagePrevented = EffectExecutorUtils.isAllDamageFromSourcePrevented(state, attackerId)
+            val allDamagePrevented = DamageUtils.isAllDamageFromSourcePrevented(state, attackerId)
             val groupPrevented = isCombatDamagePreventedByGroupFilter(state, attackerId, projected)
             val toAndByPrevented = isCombatDamageToAndByPrevented(state, attackerId)
             if (allDamagePrevented || groupPrevented || toAndByPrevented) continue
@@ -454,7 +458,7 @@ internal class CombatDamageManager(
         val projected = state.projectedState
         val isPlaneswalker = !isPlayer && projected.isPlaneswalker(assignment.targetId)
 
-        val amplifiedAmount = EffectExecutorUtils.applyStaticDamageAmplification(
+        val amplifiedAmount = DamageUtils.applyStaticDamageAmplification(
             state, assignment.targetId, assignment.amount, assignment.sourceId
         )
 
@@ -476,7 +480,7 @@ internal class CombatDamageManager(
         var newState = state
 
         // Replace with counters (Force Bubble)
-        val counterResult = EffectExecutorUtils.applyReplaceDamageWithCounters(newState, targetId, amplifiedAmount, sourceId)
+        val counterResult = DamageUtils.applyReplaceDamageWithCounters(newState, targetId, amplifiedAmount, sourceId)
         if (counterResult != null) {
             newState = counterResult.state
             events.addAll(counterResult.events)
@@ -484,7 +488,7 @@ internal class CombatDamageManager(
         }
 
         // Deflection shields (Deflecting Palm) — prevent + deal back to source's controller
-        val deflectResult = EffectExecutorUtils.checkDeflectDamageShield(newState, targetId, amplifiedAmount, sourceId)
+        val deflectResult = DamageUtils.checkDeflectDamageShield(newState, targetId, amplifiedAmount, sourceId)
         if (deflectResult != null) {
             newState = deflectResult.state
             events.addAll(deflectResult.events)
@@ -492,14 +496,14 @@ internal class CombatDamageManager(
         }
 
         // Prevention shields
-        val (shieldState, effectiveAmount) = EffectExecutorUtils.applyDamagePreventionShields(
+        val (shieldState, effectiveAmount) = DamageUtils.applyDamagePreventionShields(
             newState, targetId, amplifiedAmount, isCombatDamage = true, sourceId = sourceId
         )
         newState = shieldState
         if (effectiveAmount <= 0) return newState
 
         // Damage redirection (Glarecaster, Zealous Inquisitor)
-        val (redirectState, redirectTargetId, redirectAmount) = EffectExecutorUtils.checkDamageRedirection(
+        val (redirectState, redirectTargetId, redirectAmount) = DamageUtils.checkDamageRedirection(
             newState, targetId, effectiveAmount
         )
         newState = redirectState
@@ -518,7 +522,7 @@ internal class CombatDamageManager(
         newState = newState.updateEntity(targetId) { container ->
             container.with(LifeTotalComponent(newLife))
         }
-        newState = EffectExecutorUtils.trackDamageReceivedByPlayer(newState, targetId, effectiveAmount)
+        newState = DamageUtils.trackDamageReceivedByPlayer(newState, targetId, effectiveAmount)
 
         val sourceName = state.getEntity(sourceId)?.get<CardComponent>()?.name ?: "Creature"
         events.add(DamageDealtEvent(sourceId, targetId, effectiveAmount, true,
@@ -547,7 +551,7 @@ internal class CombatDamageManager(
         var newState = state
 
         // Prevention shields
-        val (shieldState, effectiveAmount) = EffectExecutorUtils.applyDamagePreventionShields(
+        val (shieldState, effectiveAmount) = DamageUtils.applyDamagePreventionShields(
             newState, targetId, amplifiedAmount, isCombatDamage = true, sourceId = sourceId
         )
         newState = shieldState
@@ -581,14 +585,14 @@ internal class CombatDamageManager(
         var newState = state
 
         // Prevention shields
-        val (shieldState, effectiveAmount) = EffectExecutorUtils.applyDamagePreventionShields(
+        val (shieldState, effectiveAmount) = DamageUtils.applyDamagePreventionShields(
             newState, targetId, amplifiedAmount, isCombatDamage = true, sourceId = sourceId
         )
         newState = shieldState
         if (effectiveAmount <= 0) return newState
 
         // Damage redirection (Glarecaster, Zealous Inquisitor)
-        val (redirectState, redirectTargetId, redirectAmount) = EffectExecutorUtils.checkDamageRedirection(
+        val (redirectState, redirectTargetId, redirectAmount) = DamageUtils.checkDamageRedirection(
             newState, targetId, effectiveAmount
         )
         newState = redirectState
@@ -630,7 +634,7 @@ internal class CombatDamageManager(
             newState = newState.updateEntity(targetId) { container ->
                 container.with(LifeTotalComponent(newLife))
             }
-            newState = EffectExecutorUtils.trackDamageReceivedByPlayer(newState, targetId, amount)
+            newState = DamageUtils.trackDamageReceivedByPlayer(newState, targetId, amount)
             val sourceName = newState.getEntity(sourceId)?.get<CardComponent>()?.name ?: "Creature"
             events.add(DamageDealtEvent(sourceId, targetId, amount, true,
                 sourceName = sourceName, targetName = "Player", targetIsPlayer = true))
@@ -659,7 +663,7 @@ internal class CombatDamageManager(
                     deathtouchDamageReceived = hasDeathtouch || (existingDamage?.deathtouchDamageReceived == true)
                 ))
             }
-            newState = EffectExecutorUtils.trackDamageDealtToCreature(newState, sourceId, targetId)
+            newState = DamageUtils.trackDamageDealtToCreature(newState, sourceId, targetId)
             val sourceName = newState.getEntity(sourceId)?.get<CardComponent>()?.name ?: "Creature"
             val targetName = newState.getEntity(targetId)?.get<CardComponent>()?.name ?: "Creature"
             val targetIsFaceDown = newState.getEntity(targetId)?.has<FaceDownComponent>() == true
@@ -692,7 +696,7 @@ internal class CombatDamageManager(
         var newState = state.updateEntity(attackerController) { container ->
             container.with(LifeTotalComponent(newLife))
         }
-        newState = EffectExecutorUtils.trackDamageReceivedByPlayer(newState, attackerController, originalAmount)
+        newState = DamageUtils.trackDamageReceivedByPlayer(newState, attackerController, originalAmount)
         val sourceName = state.getEntity(sourceId)?.get<CardComponent>()?.name ?: "Creature"
         events.add(DamageDealtEvent(sourceId, attackerController, originalAmount, true,
             sourceName = sourceName, targetName = "Player", targetIsPlayer = true))
@@ -756,7 +760,7 @@ internal class CombatDamageManager(
                 val defenderId = attackingComponent.defenderId
                 if (!isProtectedFromAttackingCreatureDamage(state, defenderId) &&
                     !isCombatDamagePreventedByGroupFilter(state, attackerId, projected)) {
-                    val amplified = EffectExecutorUtils.applyStaticDamageAmplification(state, defenderId, attackerPower, attackerId)
+                    val amplified = DamageUtils.applyStaticDamageAmplification(state, defenderId, attackerPower, attackerId)
                     incomingDamage.getOrPut(defenderId) { mutableMapOf() }
                         .merge(attackerId, amplified) { a, b -> a + b }
                 }
@@ -773,7 +777,7 @@ internal class CombatDamageManager(
                     val targetContainer = state.getEntity(targetId)
                     val isPlayer = targetContainer?.get<LifeTotalComponent>() != null &&
                         targetContainer.get<CardComponent>() == null
-                    val amplified = EffectExecutorUtils.applyStaticDamageAmplification(state, targetId, damage, attackerId)
+                    val amplified = DamageUtils.applyStaticDamageAmplification(state, targetId, damage, attackerId)
                     if (isPlayer) {
                         incomingDamage.getOrPut(targetId) { mutableMapOf() }
                             .merge(attackerId, amplified) { a, b -> a + b }
@@ -869,7 +873,7 @@ internal class CombatDamageManager(
 
         for ((sourceId, totalDamage) in damageBySource) {
             val controllerId = projected.getController(sourceId) ?: continue
-            if (EffectExecutorUtils.isLifeGainPrevented(newState, controllerId)) continue
+            if (DamageUtils.isLifeGainPrevented(newState, controllerId)) continue
 
             val currentLife = newState.getEntity(controllerId)?.get<LifeTotalComponent>()?.life ?: continue
             val newLife = currentLife + totalDamage

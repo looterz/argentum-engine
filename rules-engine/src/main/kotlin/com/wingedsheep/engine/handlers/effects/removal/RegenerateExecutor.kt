@@ -3,7 +3,11 @@ package com.wingedsheep.engine.handlers.effects.removal
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.mechanics.layers.ActiveFloatingEffect
 import com.wingedsheep.engine.mechanics.layers.FloatingEffectData
 import com.wingedsheep.engine.mechanics.layers.Layer
@@ -30,7 +34,7 @@ class RegenerateExecutor : EffectExecutor<RegenerateEffect> {
         effect: RegenerateEffect,
         context: EffectContext
     ): ExecutionResult {
-        val targetId = EffectExecutorUtils.resolveTarget(effect.target, context)
+        val targetId = TargetResolutionUtils.resolveTarget(effect.target, context)
             ?: return ExecutionResult.error(state, "Could not resolve target for RegenerateEffect")
 
         val floatingEffect = ActiveFloatingEffect(

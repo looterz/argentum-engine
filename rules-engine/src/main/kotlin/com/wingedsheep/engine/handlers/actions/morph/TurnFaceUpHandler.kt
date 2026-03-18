@@ -18,7 +18,11 @@ import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.actions.ActionContext
 import com.wingedsheep.engine.handlers.actions.ActionHandler
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.mechanics.mana.CostCalculator
 import com.wingedsheep.engine.mechanics.mana.ManaPool
@@ -401,7 +405,7 @@ class TurnFaceUpHandler(
             }
             is PayCost.ReturnToHand -> {
                 for (targetId in action.costTargetIds) {
-                    val result = EffectExecutorUtils.movePermanentToZone(currentState, targetId, Zone.HAND)
+                    val result = ZoneMovementUtils.movePermanentToZone(currentState, targetId, Zone.HAND)
                     if (result.error != null) {
                         return ExecutionResult.error(currentState, result.error!!)
                     }
@@ -411,7 +415,7 @@ class TurnFaceUpHandler(
             }
             is PayCost.Sacrifice -> {
                 for (targetId in action.costTargetIds) {
-                    val result = EffectExecutorUtils.movePermanentToZone(currentState, targetId, Zone.GRAVEYARD)
+                    val result = ZoneMovementUtils.movePermanentToZone(currentState, targetId, Zone.GRAVEYARD)
                     if (result.error != null) {
                         return ExecutionResult.error(currentState, result.error!!)
                     }
@@ -426,7 +430,7 @@ class TurnFaceUpHandler(
                     val targetCard = currentState.getEntity(targetId)?.get<CardComponent>()
                     discardedNames.add(targetCard?.name ?: "Unknown")
                     discardedIds.add(targetId)
-                    val result = EffectExecutorUtils.moveCardToZone(currentState, targetId, Zone.GRAVEYARD)
+                    val result = ZoneMovementUtils.moveCardToZone(currentState, targetId, Zone.GRAVEYARD)
                     if (result.error != null) {
                         return ExecutionResult.error(currentState, result.error!!)
                     }
@@ -449,7 +453,7 @@ class TurnFaceUpHandler(
             is PayCost.Exile -> {
                 val sourceZone = morphData.morphCost.zone
                 for (targetId in action.costTargetIds) {
-                    val result = EffectExecutorUtils.moveCardToZone(currentState, targetId, Zone.EXILE)
+                    val result = ZoneMovementUtils.moveCardToZone(currentState, targetId, Zone.EXILE)
                     if (result.error != null) {
                         return ExecutionResult.error(currentState, result.error!!)
                     }

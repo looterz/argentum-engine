@@ -7,7 +7,11 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
-import com.wingedsheep.engine.handlers.effects.EffectExecutorUtils
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.handlers.effects.DamageUtils
+import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
+import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
+import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -110,7 +114,7 @@ class GatherCardsExecutor : EffectExecutor<GatherCardsEffect> {
                 val predicateContext = PredicateContext.fromEffectContext(context).let {
                     if (resolvedPlayerId != null) it.copy(controllerId = resolvedPlayerId) else it
                 }
-                val afterExclusion = EffectExecutorUtils.findMatchingOnBattlefield(
+                val afterExclusion = BattlefieldFilterUtils.findMatchingOnBattlefield(
                     state, baseFilter, predicateContext, excludeSelfId
                 )
                 if (source.includeAttachments) {
@@ -191,8 +195,8 @@ class GatherCardsExecutor : EffectExecutor<GatherCardsEffect> {
             is Player.You -> context.controllerId
             is Player.Opponent -> context.opponentId
             is Player.TargetOpponent -> context.opponentId
-            is Player.TargetPlayer -> context.targets.firstOrNull()?.let { EffectExecutorUtils.run { it.toEntityId() } }
-            is Player.ContextPlayer -> context.targets.getOrNull(player.index)?.let { EffectExecutorUtils.run { it.toEntityId() } }
+            is Player.TargetPlayer -> context.targets.firstOrNull()?.let { TargetResolutionUtils.run { it.toEntityId() } }
+            is Player.ContextPlayer -> context.targets.getOrNull(player.index)?.let { TargetResolutionUtils.run { it.toEntityId() } }
             is Player.TriggeringPlayer -> context.triggeringEntityId
             else -> context.controllerId
         }
