@@ -250,6 +250,7 @@ object DominariaSet {
         UrzasTome,
         VodalianArcanist,
         VoltaicServant,
+        WarcryPhoenix,
         WarlordsFury,
         Weatherlight,
         WeightOfMemory,

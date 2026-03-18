@@ -2,14 +2,14 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 243 / 249
+**Implemented:** 244 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 38    | 37   |
 | Blue       | 37    | 35   |
 | Black      | 38    | 38   |
-| Red        | 38    | 36   |
+| Red        | 38    | 37   |
 | Green      | 37    | 36   |
 | Multicolor | 19    | 19   |
 | Colorless  | 30    | 29   |
@@ -251,7 +251,7 @@
 - [x] Vicious Offering
 - [x] Vodalian Arcanist
 - [x] Voltaic Servant
-- [ ] Warcry Phoenix
+- [x] Warcry Phoenix
 - [x] Warlord's Fury
 - [x] Weatherlight
 - [x] Weight of Memory
