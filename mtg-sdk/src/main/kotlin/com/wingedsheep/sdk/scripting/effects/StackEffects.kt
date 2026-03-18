@@ -281,3 +281,28 @@ data class CopyNextSpellCastEffect(
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
 }
+
+/**
+ * Until end of turn, whenever you cast an instant or sorcery spell, copy it.
+ * You may choose new targets for the copies.
+ *
+ * Creates a persistent pending spell copy entry on the game state. Unlike
+ * CopyNextSpellCastEffect which is consumed after one use, this entry persists
+ * for the rest of the turn, copying every instant or sorcery spell cast.
+ * Used by The Mirari Conjecture Chapter III and similar effects.
+ *
+ * @property copies Number of copies to create for each spell cast
+ */
+@SerialName("CopyEachSpellCast")
+@Serializable
+data class CopyEachSpellCastEffect(
+    val copies: Int = 1
+) : Effect {
+    override val description: String = if (copies == 1) {
+        "Until end of turn, whenever you cast an instant or sorcery spell, copy it"
+    } else {
+        "Until end of turn, whenever you cast an instant or sorcery spell, copy it $copies times"
+    }
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
+}

@@ -20,5 +20,6 @@ data class PendingSpellCopy(
     val controllerId: EntityId,
     val copies: Int,
     val sourceId: EntityId,
-    val sourceName: String
+    val sourceName: String,
+    val persistent: Boolean = false
 )

@@ -5,7 +5,6 @@ import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
-import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.TargetObject
 
@@ -19,8 +18,6 @@ import com.wingedsheep.sdk.scripting.targets.TargetObject
  * III — Until end of turn, whenever you cast an instant or sorcery spell, copy it.
  *       You may choose new targets for the copy.
  *
- * Note: Chapter III's spell copy effect is not yet implemented (requires spell copying
- * infrastructure). Chapters I and II work correctly.
  */
 val TheMirariConjecture = card("The Mirari Conjecture") {
     manaCost = "{4}{U}"
@@ -46,10 +43,8 @@ val TheMirariConjecture = card("The Mirari Conjecture") {
         effect = Effects.ReturnToHand(sorcery)
     }
 
-    // Chapter III: spell copying not yet implemented
     sagaChapter(3) {
-        // TODO: Spell copying not yet implemented
-        effect = CompositeEffect(emptyList())
+        effect = Effects.CopyEachSpellCast(1)
     }
 
     metadata {

@@ -914,8 +914,10 @@ class CastSpellHandler(
             val matchingCopies = currentCastState.pendingSpellCopies.filter { it.controllerId == action.playerId }
             if (matchingCopies.isNotEmpty()) {
                 val totalCopies = matchingCopies.sumOf { it.copies }
-                // Remove consumed pending copies
-                val remainingPending = currentCastState.pendingSpellCopies.filter { it.controllerId != action.playerId }
+                // Remove consumed pending copies (keep persistent ones like The Mirari Conjecture Ch. III)
+                val remainingPending = currentCastState.pendingSpellCopies.filter {
+                    it.controllerId != action.playerId || it.persistent
+                }
                 currentCastState = currentCastState.copy(pendingSpellCopies = remainingPending)
 
                 // Create copies using Storm copy infrastructure

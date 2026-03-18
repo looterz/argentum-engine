@@ -83,6 +83,7 @@ import com.wingedsheep.sdk.scripting.effects.CounterUnlessDynamicPaysEffect
 import com.wingedsheep.sdk.scripting.effects.ChangeSpellTargetEffect
 import com.wingedsheep.sdk.scripting.effects.ChangeTargetEffect
 import com.wingedsheep.sdk.scripting.effects.ReselectTargetRandomlyEffect
+import com.wingedsheep.sdk.scripting.effects.CopyEachSpellCastEffect
 import com.wingedsheep.sdk.scripting.effects.CopyNextSpellCastEffect
 import com.wingedsheep.sdk.scripting.effects.CopyTargetSpellEffect
 import com.wingedsheep.sdk.scripting.effects.AddCreatureTypeEffect
@@ -860,6 +861,13 @@ object Effects {
      */
     fun CopyNextSpellCast(copies: Int = 1): Effect =
         CopyNextSpellCastEffect(copies)
+
+    /**
+     * Until end of turn, whenever you cast an instant or sorcery spell, copy it.
+     * You may choose new targets for the copies.
+     */
+    fun CopyEachSpellCast(copies: Int = 1): Effect =
+        CopyEachSpellCastEffect(copies)
 
     // =========================================================================
     // Sacrifice Effects
