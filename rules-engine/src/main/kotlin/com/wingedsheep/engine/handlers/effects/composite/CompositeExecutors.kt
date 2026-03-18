@@ -31,6 +31,7 @@ class CompositeExecutors : ExecutorModule {
     private val forEachInGroupExecutor by lazy { ForEachInGroupExecutor(effectExecutor) }
     private val repeatWhileExecutor by lazy { RepeatWhileExecutor(effectExecutor) }
     private val conditionalOnCollectionExecutor by lazy { ConditionalOnCollectionExecutor(effectExecutor) }
+    private val flipTwoCoinsExecutor by lazy { FlipTwoCoinsExecutor(effectExecutor) }
 
     /**
      * Initialize the module with the parent registry's execute function.
@@ -53,6 +54,7 @@ class CompositeExecutors : ExecutorModule {
         modalEffectExecutor,
         reflexiveTriggerEffectExecutor,
         flipCoinExecutor,
+        flipTwoCoinsExecutor,
         repeatWhileExecutor,
         conditionalOnCollectionExecutor
     )

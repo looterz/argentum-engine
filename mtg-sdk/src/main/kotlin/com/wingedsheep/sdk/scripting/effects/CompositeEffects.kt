@@ -582,6 +582,42 @@ data class FlipCoinEffect(
     }
 }
 
+/**
+ * Flip two coins. Execute different effects based on the combined outcome.
+ * "Flip two coins. If both are heads, [bothHeadsEffect]. If both are tails, [bothTailsEffect]."
+ *
+ * Used for cards like Two-Headed Giant where two coins determine the outcome.
+ *
+ * @property bothHeadsEffect Effect if both coins are heads (null = nothing)
+ * @property bothTailsEffect Effect if both coins are tails (null = nothing)
+ * @property mixedEffect Effect if one head and one tail (null = nothing, most common)
+ */
+@SerialName("FlipTwoCoins")
+@Serializable
+data class FlipTwoCoinsEffect(
+    val bothHeadsEffect: Effect? = null,
+    val bothTailsEffect: Effect? = null,
+    val mixedEffect: Effect? = null
+) : Effect {
+    override val description: String = buildString {
+        append("Flip two coins.")
+        if (bothHeadsEffect != null) {
+            append(" If both coins come up heads, ${bothHeadsEffect.description.replaceFirstChar { it.lowercase() }}.")
+        }
+        if (bothTailsEffect != null) {
+            append(" If both coins come up tails, ${bothTailsEffect.description.replaceFirstChar { it.lowercase() }}.")
+        }
+    }
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect {
+        val newHeads = bothHeadsEffect?.applyTextReplacement(replacer)
+        val newTails = bothTailsEffect?.applyTextReplacement(replacer)
+        val newMixed = mixedEffect?.applyTextReplacement(replacer)
+        return if (newHeads !== bothHeadsEffect || newTails !== bothTailsEffect || newMixed !== mixedEffect)
+            copy(bothHeadsEffect = newHeads, bothTailsEffect = newTails, mixedEffect = newMixed) else this
+    }
+}
+
 // =============================================================================
 // Repeat Conditions
 // =============================================================================

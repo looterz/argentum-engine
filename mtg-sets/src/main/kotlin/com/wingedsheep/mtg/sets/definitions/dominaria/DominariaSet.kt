@@ -241,6 +241,7 @@ object DominariaSet {
         TraxosScourgeOfKroog,
         TragicPoet,
         TriumphOfGerrard,
+        TwoHeadedGiant,
         UntamedKavu,
         Unwind,
         UrgorosTheEmptyOne,
