@@ -14,8 +14,11 @@ import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.GrantKeywordEffect
 import com.wingedsheep.sdk.scripting.effects.ModalEffect
 import com.wingedsheep.sdk.scripting.effects.Mode
+import com.wingedsheep.sdk.scripting.effects.AttachEquipmentEffect
 import com.wingedsheep.sdk.scripting.effects.ModifyStatsEffect
+import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.scripting.targets.TargetCreature
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.targets.TargetRequirement
 import com.wingedsheep.sdk.scripting.targets.withId
@@ -374,9 +377,23 @@ class CardBuilder(private val name: String) {
 
     /**
      * Add an equip ability with the specified cost.
+     * This sets the equipCost metadata and generates the activated ability
+     * (Equip: attach to target creature you control, sorcery speed).
      */
     fun equipAbility(cost: String) {
         equipCost = ManaCost.parse(cost)
+        activatedAbilities.add(
+            ActivatedAbility(
+                id = AbilityId.generate(),
+                cost = AbilityCost.Mana(ManaCost.parse(cost)),
+                effect = AttachEquipmentEffect(EffectTarget.BoundVariable("creature you control")),
+                targetRequirements = listOf(
+                    TargetCreature(filter = TargetFilter.CreatureYouControl, id = "creature you control")
+                ),
+                isManaAbility = false,
+                timing = TimingRule.SorcerySpeed,
+            )
+        )
     }
 
     // =========================================================================

@@ -1,12 +1,9 @@
 package com.wingedsheep.mtg.sets.definitions.khans.cards
 
-import com.wingedsheep.sdk.dsl.Costs
-import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.effects.DealDamageEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
@@ -36,14 +33,6 @@ val HeartPiercerBow = card("Heart-Piercer Bow") {
             target = creature,
             damageSource = EffectTarget.Self
         )
-    }
-
-    // Equip {1}: Attach to target creature you control. Activate only as a sorcery.
-    activatedAbility {
-        cost = Costs.Mana("{1}")
-        timing = TimingRule.SorcerySpeed
-        val creature = target("creature you control", Targets.CreatureYouControl)
-        effect = Effects.AttachEquipment(creature)
     }
 
     equipAbility("{1}")

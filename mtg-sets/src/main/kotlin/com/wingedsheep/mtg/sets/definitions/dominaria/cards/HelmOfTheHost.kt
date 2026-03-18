@@ -1,12 +1,9 @@
 package com.wingedsheep.mtg.sets.definitions.dominaria.cards
 
-import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
-import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.TimingRule
 
 /**
  * Helm of the Host
@@ -27,13 +24,6 @@ val HelmOfTheHost = card("Helm of the Host") {
             removeLegendary = true,
             grantHaste = true
         )
-    }
-
-    activatedAbility {
-        cost = Costs.Mana("{5}")
-        timing = TimingRule.SorcerySpeed
-        val creature = target("creature you control", Targets.CreatureYouControl)
-        effect = Effects.AttachEquipment(creature)
     }
 
     equipAbility("{5}")

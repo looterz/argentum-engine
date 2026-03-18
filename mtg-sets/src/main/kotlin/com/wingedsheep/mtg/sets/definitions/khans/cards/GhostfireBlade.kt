@@ -3,7 +3,6 @@ package com.wingedsheep.mtg.sets.definitions.khans.cards
 import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Filters
-import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.TimingRule
@@ -33,15 +32,6 @@ val GhostfireBlade = card("Ghostfire Blade") {
     staticAbility {
         effect = Effects.ModifyStats(+2, +2)
         filter = Filters.EquippedCreature
-    }
-
-    // Equip {3}: Attach to target creature you control.
-    activatedAbility {
-        cost = Costs.Mana("{3}")
-        timing = TimingRule.SorcerySpeed
-        description = "Equip {3}"
-        val creature = target("creature you control", Targets.CreatureYouControl)
-        effect = Effects.AttachEquipment(creature)
     }
 
     // Equip {1}: Attach to target colorless creature you control.
