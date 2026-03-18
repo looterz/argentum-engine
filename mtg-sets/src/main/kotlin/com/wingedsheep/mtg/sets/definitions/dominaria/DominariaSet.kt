@@ -113,6 +113,7 @@ object DominariaSet {
         HaphazardBombardment,
         HinterlandHarbor,
         IcyManipulator,
+        InBolassClutches,
         InvokeTheDivine,
         IsolatedChapel,
         JayaBallard,

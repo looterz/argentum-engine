@@ -2,12 +2,12 @@
 
 **Set Size:** 280 cards (249 unique card names + basic land variants)
 **Release Date:** April 27, 2018
-**Implemented:** 236 / 249
+**Implemented:** 237 / 249
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 38    | 36   |
-| Blue       | 37    | 34   |
+| Blue       | 37    | 35   |
 | Black      | 38    | 38   |
 | Red        | 38    | 34   |
 | Green      | 37    | 35   |
@@ -116,7 +116,7 @@
 - [x] Homarid Explorer
 - [x] Howling Golem
 - [x] Icy Manipulator
-- [ ] In Bolas's Clutches
+- [x] In Bolas's Clutches
 - [x] Invoke the Divine
 - [x] Isolated Chapel
 - [x] Jaya Ballard
