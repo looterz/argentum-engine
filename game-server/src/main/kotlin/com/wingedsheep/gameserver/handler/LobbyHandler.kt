@@ -1,15 +1,10 @@
 package com.wingedsheep.gameserver.handler
 
 import com.wingedsheep.gameserver.ai.AiGameManager
-import com.wingedsheep.gameserver.ai.AiWebSocketSession
 import com.wingedsheep.gameserver.handler.ConnectionHandler.Companion.cardToSealedCardInfo
-import com.wingedsheep.gameserver.lobby.GridDraftResult
-import com.wingedsheep.gameserver.lobby.GridSelection
 import com.wingedsheep.gameserver.lobby.LobbyState
-import com.wingedsheep.gameserver.lobby.PickResult
 import com.wingedsheep.gameserver.lobby.TournamentFormat
 import com.wingedsheep.gameserver.lobby.TournamentLobby
-import com.wingedsheep.gameserver.lobby.WinstonActionResult
 import com.wingedsheep.gameserver.protocol.ClientMessage
 import com.wingedsheep.gameserver.protocol.ErrorCode
 import com.wingedsheep.gameserver.protocol.ServerMessage
@@ -21,13 +16,9 @@ import com.wingedsheep.gameserver.session.PlayerIdentity
 import com.wingedsheep.gameserver.session.PlayerSession
 import com.wingedsheep.gameserver.session.SessionRegistry
 import com.wingedsheep.gameserver.session.GameSession
-import com.wingedsheep.gameserver.tournament.TournamentManager
-import com.wingedsheep.gameserver.tournament.TournamentMatch
-import com.wingedsheep.gameserver.tournament.TournamentRound
 import com.wingedsheep.gameserver.config.GameProperties
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.sdk.model.EntityId
-import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.web.socket.WebSocketSession
@@ -42,18 +33,18 @@ class LobbyHandler(
     private val gamePlayHandler: GamePlayHandler,
     private val gameProperties: GameProperties,
     private val boosterGenerator: BoosterGenerator,
-    private val aiGameManager: AiGameManager
+    private val aiGameManager: AiGameManager,
+    private val ctx: LobbySharedContext,
+    private val boosterDraftHandler: BoosterDraftHandler,
+    private val winstonDraftHandler: WinstonDraftHandler,
+    private val gridDraftHandler: GridDraftHandler,
+    private val spectatingHandler: SpectatingHandler,
+    private val tournamentMatchHandler: TournamentMatchHandler
 ) {
     private val logger = LoggerFactory.getLogger(LobbyHandler::class.java)
 
     @Volatile
     var waitingSealedSession: SealedSession? = null
-
-    /** Coroutine scope for draft timers */
-    private val draftScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
-
-    /** Per-lobby locks for round advancement to prevent concurrent ready/round-complete races */
-    private val roundLocks = java.util.concurrent.ConcurrentHashMap<String, Any>()
 
     fun handle(session: WebSocketSession, message: ClientMessage) {
         when (message) {
@@ -64,20 +55,68 @@ class LobbyHandler(
             is ClientMessage.CreateTournamentLobby -> handleCreateTournamentLobby(session, message)
             is ClientMessage.JoinLobby -> handleJoinLobby(session, message)
             is ClientMessage.StartTournamentLobby -> handleStartTournamentLobby(session)
-            is ClientMessage.MakePick -> handleMakePick(session, message)
-            is ClientMessage.WinstonTakePile -> handleWinstonTakePile(session)
-            is ClientMessage.WinstonSkipPile -> handleWinstonSkipPile(session)
-            is ClientMessage.GridDraftPick -> handleGridDraftPick(session, message)
+            is ClientMessage.MakePick -> boosterDraftHandler.handleMakePick(session, message)
+            is ClientMessage.WinstonTakePile -> winstonDraftHandler.handleWinstonTakePile(session)
+            is ClientMessage.WinstonSkipPile -> winstonDraftHandler.handleWinstonSkipPile(session)
+            is ClientMessage.GridDraftPick -> gridDraftHandler.handleGridDraftPick(session, message)
             is ClientMessage.LeaveLobby -> handleLeaveLobby(session)
             is ClientMessage.StopLobby -> handleStopLobby(session)
             is ClientMessage.UpdateLobbySettings -> handleUpdateLobbySettings(session, message)
             is ClientMessage.AddAiToLobby -> handleAddAiToLobby(session)
             is ClientMessage.RemoveAiFromLobby -> handleRemoveAiFromLobby(session, message)
-            is ClientMessage.SpectateGame -> handleSpectateGame(session, message)
-            is ClientMessage.StopSpectating -> handleStopSpectating(session)
+            is ClientMessage.SpectateGame -> spectatingHandler.handleSpectateGame(session, message)
+            is ClientMessage.StopSpectating -> spectatingHandler.handleStopSpectating(session)
             else -> {}
         }
     }
+
+    // =========================================================================
+    // Public API (delegates to sub-handlers, preserves facade for callers)
+    // =========================================================================
+
+    fun handleReadyForNextRound(session: WebSocketSession) =
+        tournamentMatchHandler.handleReadyForNextRound(session)
+
+    fun handleMatchResult(lobbyId: String, gameSessionId: String, winnerId: EntityId?, winnerLifeRemaining: Int) =
+        tournamentMatchHandler.handleMatchResult(lobbyId, gameSessionId, winnerId, winnerLifeRemaining)
+
+    fun handleAbandon(lobbyId: String, playerId: EntityId) =
+        tournamentMatchHandler.handleAbandon(lobbyId, playerId)
+
+    fun handleAddExtraRound(session: WebSocketSession) =
+        tournamentMatchHandler.handleAddExtraRound(session)
+
+    fun broadcastLobbyUpdate(lobby: TournamentLobby) =
+        ctx.broadcastLobbyUpdate(lobby)
+
+    fun startTournament(lobby: TournamentLobby) =
+        tournamentMatchHandler.startTournament(lobby)
+
+    fun startNextTournamentRound(lobbyId: String) =
+        tournamentMatchHandler.startNextTournamentRound(lobbyId)
+
+    fun handleRoundComplete(lobbyId: String) =
+        tournamentMatchHandler.handleRoundComplete(lobbyId)
+
+    fun sendActiveMatchesToPlayer(identity: PlayerIdentity, session: WebSocketSession) =
+        spectatingHandler.sendActiveMatchesToPlayer(identity, session)
+
+    fun broadcastActiveMatchesToWaitingPlayers(lobbyId: String) =
+        spectatingHandler.broadcastActiveMatchesToWaitingPlayers(lobbyId)
+
+    fun restoreSpectating(identity: PlayerIdentity, playerSession: PlayerSession, session: WebSocketSession, gameSessionId: String) =
+        spectatingHandler.restoreSpectating(identity, playerSession, session, gameSessionId)
+
+    fun broadcastSpectatorUpdate(gameSession: GameSession) =
+        spectatingHandler.broadcastSpectatorUpdate(gameSession)
+
+    fun findLobbyForReconnect(lobbyId: String): TournamentLobby? {
+        return lobbyRepository.findLobbyById(lobbyId)
+    }
+
+    // =========================================================================
+    // Sealed Game
+    // =========================================================================
 
     private fun handleCreateSealedGame(session: WebSocketSession, message: ClientMessage.CreateSealedGame) {
         val playerSession = sessionRegistry.getPlayerSession(session.id)
@@ -252,6 +291,10 @@ class LobbyHandler(
         gamePlayHandler.startGame(gameSession)
     }
 
+    // =========================================================================
+    // Lobby CRUD
+    // =========================================================================
+
     private fun handleCreateTournamentLobby(session: WebSocketSession, message: ClientMessage.CreateTournamentLobby) {
         val playerSession = sessionRegistry.getPlayerSession(session.id)
         if (playerSession == null) {
@@ -306,7 +349,7 @@ class LobbyHandler(
                 message.boosterCount.coerceIn(1, 16)
             }
             TournamentFormat.GRID_DRAFT -> {
-                gridDraftDefaultBoosters(maxPlayers)
+                gridDraftHandler.gridDraftDefaultBoosters(maxPlayers)
             }
         }
 
@@ -327,7 +370,7 @@ class LobbyHandler(
         val setNamesStr = setConfigs.joinToString(", ") { it.setName }
         logger.info("Tournament lobby created: ${lobby.lobbyId} by ${identity.playerName} (sets: $setNamesStr, format: ${format.name})")
         sender.send(session, ServerMessage.LobbyCreated(lobby.lobbyId))
-        broadcastLobbyUpdate(lobby)
+        ctx.broadcastLobbyUpdate(lobby)
     }
 
     fun handleJoinLobby(session: WebSocketSession, message: ClientMessage.JoinLobby) {
@@ -374,18 +417,11 @@ class LobbyHandler(
         lobby.addPlayer(identity)
         // Auto-adjust grid draft booster count when player count changes
         if (lobby.format == TournamentFormat.GRID_DRAFT && lobby.state == LobbyState.WAITING_FOR_PLAYERS) {
-            lobby.boosterCount = gridDraftDefaultBoosters(lobby.players.size)
+            lobby.boosterCount = gridDraftHandler.gridDraftDefaultBoosters(lobby.players.size)
         }
         logger.info("Player ${identity.playerName} joined lobby ${lobby.lobbyId}")
-        broadcastLobbyUpdate(lobby)
+        ctx.broadcastLobbyUpdate(lobby)
         lobbyRepository.saveLobby(lobby)
-    }
-
-    /**
-     * Find a lobby by ID for reconnection purposes.
-     */
-    fun findLobbyForReconnect(lobbyId: String): TournamentLobby? {
-        return lobbyRepository.findLobbyById(lobbyId)
     }
 
     /**
@@ -425,34 +461,23 @@ class LobbyHandler(
     ) {
         when (lobby.state) {
             LobbyState.WAITING_FOR_PLAYERS -> {
-                broadcastLobbyUpdate(lobby)
+                ctx.broadcastLobbyUpdate(lobby)
             }
             LobbyState.DRAFTING -> {
                 sender.send(session, lobby.buildLobbyUpdate(identity.playerId, aiGameManager::isAiPlayer))
                 // Winston Draft reconnection
                 if (lobby.format == TournamentFormat.WINSTON_DRAFT) {
-                    broadcastWinstonDraftState(lobby, null)
+                    winstonDraftHandler.broadcastWinstonDraftState(lobby, null)
                     return
                 }
 
                 // Grid Draft reconnection
                 if (lobby.format == TournamentFormat.GRID_DRAFT) {
-                    broadcastGridDraftState(lobby, null)
+                    gridDraftHandler.broadcastGridDraftState(lobby, null)
                     return
                 }
 
-                val playerState = lobby.players[identity.playerId]
-                if (playerState?.currentPack != null) {
-                    sender.send(session, ServerMessage.DraftPackReceived(
-                        packNumber = lobby.currentPackNumber,
-                        pickNumber = lobby.currentPickNumber,
-                        cards = playerState.currentPack!!.map { cardToSealedCardInfo(it) },
-                        timeRemainingSeconds = lobby.pickTimeRemaining,
-                        passDirection = lobby.getPassDirection().name,
-                        picksPerRound = minOf(lobby.picksPerRound, playerState.currentPack!!.size),
-                        pickedCards = playerState.cardPool.map { cardToSealedCardInfo(it) }
-                    ))
-                }
+                boosterDraftHandler.sendDraftReconnectionState(session, lobby, identity)
             }
             LobbyState.DECK_BUILDING -> {
                 val playerState = lobby.players[identity.playerId]
@@ -465,13 +490,13 @@ class LobbyHandler(
                     cardPool = poolInfos,
                     basicLands = basicLandInfos
                 ))
-                broadcastLobbyUpdate(lobby)
+                ctx.broadcastLobbyUpdate(lobby)
 
                 // If this player already submitted their deck, restore tournament state
                 if (playerState?.hasSubmittedDeck == true) {
                     val tournament = lobbyRepository.findTournamentById(lobby.lobbyId)
                     if (tournament != null) {
-                        sendTournamentStartedToPlayer(lobby, tournament, identity, wsOverride = session)
+                        tournamentMatchHandler.sendTournamentStartedToPlayer(lobby, tournament, identity, wsOverride = session)
                     }
                 }
             }
@@ -517,7 +542,7 @@ class LobbyHandler(
         sender.send(session, lobby.buildLobbyUpdate(identity.playerId, aiGameManager::isAiPlayer))
 
         val tournament = lobbyRepository.findTournamentById(lobby.lobbyId) ?: return
-        sendTournamentStartedToPlayer(lobby, tournament, identity, wsOverride = session)
+        tournamentMatchHandler.sendTournamentStartedToPlayer(lobby, tournament, identity, wsOverride = session)
 
         val currentRound = tournament.currentRound
         val playerMatch = currentRound?.matches?.find {
@@ -597,9 +622,9 @@ class LobbyHandler(
                 ))
                 val spectatingGameId = identity.currentSpectatingGameId
                 if (spectatingGameId != null && playerSession != null) {
-                    restoreSpectating(identity, playerSession, session, spectatingGameId)
+                    spectatingHandler.restoreSpectating(identity, playerSession, session, spectatingGameId)
                 } else {
-                    sendActiveMatchesToPlayer(identity, session)
+                    spectatingHandler.sendActiveMatchesToPlayer(identity, session)
                 }
             }
 
@@ -624,7 +649,7 @@ class LobbyHandler(
                     ))
                 }
                 // Send active matches so player can watch live games while waiting
-                sendActiveMatchesToPlayer(identity, session)
+                spectatingHandler.sendActiveMatchesToPlayer(identity, session)
                 // Send ready status
                 val readyPlayerIds = lobby.getReadyPlayerIds()
                 if (readyPlayerIds.isNotEmpty()) {
@@ -660,9 +685,9 @@ class LobbyHandler(
                     // Send active matches so player can watch live games while waiting
                     val spectatingGameId = identity.currentSpectatingGameId
                     if (spectatingGameId != null && playerSession != null) {
-                        restoreSpectating(identity, playerSession, session, spectatingGameId)
+                        spectatingHandler.restoreSpectating(identity, playerSession, session, spectatingGameId)
                     } else {
-                        sendActiveMatchesToPlayer(identity, session)
+                        spectatingHandler.sendActiveMatchesToPlayer(identity, session)
                     }
                 } else if (tournament.isComplete) {
                     // Tournament is done
@@ -677,9 +702,9 @@ class LobbyHandler(
                     // Waiting for others or spectating
                     val spectatingGameId = identity.currentSpectatingGameId
                     if (spectatingGameId != null && playerSession != null) {
-                        restoreSpectating(identity, playerSession, session, spectatingGameId)
+                        spectatingHandler.restoreSpectating(identity, playerSession, session, spectatingGameId)
                     } else {
-                        sendActiveMatchesToPlayer(identity, session)
+                        spectatingHandler.sendActiveMatchesToPlayer(identity, session)
                     }
                 }
 
@@ -733,7 +758,7 @@ class LobbyHandler(
                         standings = tournament.getStandingsInfo(connectedIds)
                     ))
                     // Send active matches so they can spectate
-                    sendActiveMatchesToPlayer(identity, session)
+                    spectatingHandler.sendActiveMatchesToPlayer(identity, session)
                 }
                 LobbyState.TOURNAMENT_COMPLETE -> {
                     sender.send(session, ServerMessage.TournamentComplete(
@@ -752,6 +777,10 @@ class LobbyHandler(
             }
         }
     }
+
+    // =========================================================================
+    // Tournament Start (dispatches to format-specific draft handlers)
+    // =========================================================================
 
     private fun handleStartTournamentLobby(session: WebSocketSession) {
         val token = sessionRegistry.getTokenByWsId(session.id)
@@ -821,10 +850,10 @@ class LobbyHandler(
                 logger.info("Lobby ${lobby.lobbyId} started drafting (${lobby.playerCount} players)")
 
                 // Send first packs to all players
-                broadcastDraftPacks(lobby)
+                boosterDraftHandler.broadcastDraftPacks(lobby)
 
                 // Start the pick timer
-                startDraftTimer(lobby)
+                boosterDraftHandler.startDraftTimer(lobby)
             }
 
             TournamentFormat.WINSTON_DRAFT -> {
@@ -842,10 +871,10 @@ class LobbyHandler(
                 logger.info("Lobby ${lobby.lobbyId} started Winston Draft (2 players)")
 
                 // Send initial state to both players
-                broadcastWinstonDraftState(lobby, null)
+                winstonDraftHandler.broadcastWinstonDraftState(lobby, null)
 
                 // Start the turn timer
-                startWinstonTimer(lobby)
+                winstonDraftHandler.startWinstonTimer(lobby)
             }
             TournamentFormat.GRID_DRAFT -> {
                 val started = lobby.startGridDraft(identity.playerId)
@@ -857,615 +886,15 @@ class LobbyHandler(
                 logger.info("Lobby ${lobby.lobbyId} started grid draft (${lobby.playerCount} players)")
 
                 // Broadcast initial grid state
-                broadcastGridDraftState(lobby, null)
+                gridDraftHandler.broadcastGridDraftState(lobby, null)
 
                 // Start the pick timer
-                startGridDraftTimer(lobby)
+                gridDraftHandler.startGridDraftTimer(lobby)
             }
         }
 
-        broadcastLobbyUpdate(lobby)
+        ctx.broadcastLobbyUpdate(lobby)
         lobbyRepository.saveLobby(lobby)
-    }
-
-    /**
-     * Handle a player making a pick during draft.
-     */
-    private fun handleMakePick(session: WebSocketSession, message: ClientMessage.MakePick) {
-        val token = sessionRegistry.getTokenByWsId(session.id)
-        val identity = token?.let { sessionRegistry.getIdentityByToken(it) }
-        if (identity == null) {
-            sender.sendError(session, ErrorCode.NOT_CONNECTED, "Not connected")
-            return
-        }
-
-        val lobbyId = identity.currentLobbyId
-        if (lobbyId == null) {
-            sender.sendError(session, ErrorCode.GAME_NOT_FOUND, "Not in a lobby")
-            return
-        }
-
-        val lobby = lobbyRepository.findLobbyById(lobbyId)
-        if (lobby == null) {
-            sender.sendError(session, ErrorCode.GAME_NOT_FOUND, "Lobby not found")
-            return
-        }
-
-        if (lobby.state != LobbyState.DRAFTING) {
-            sender.sendError(session, ErrorCode.INVALID_ACTION, "Not in drafting phase")
-            return
-        }
-
-        val result = lobby.makePick(identity.playerId, message.cardNames)
-        when (result) {
-            is PickResult.Success -> {
-                val pickedNames = result.pickedCards.map { it.name }
-                logger.info("Player ${identity.playerName} picked ${pickedNames.joinToString(", ")} (${result.totalPicked} total)")
-
-                // Send confirmation to the player who picked
-                sender.send(session, ServerMessage.DraftPickConfirmed(
-                    cardNames = pickedNames,
-                    totalPicked = result.totalPicked
-                ))
-
-                // Broadcast to all players who is still waiting
-                broadcastDraftPickMade(lobby, identity, result.waitingForPlayers)
-                lobbyRepository.saveLobby(lobby)
-
-                // Check if all players have picked
-                if (lobby.allPlayersPicked()) {
-                    processDraftRound(lobby)
-                }
-            }
-            is PickResult.Error -> {
-                sender.sendError(session, ErrorCode.INVALID_ACTION, result.message)
-            }
-        }
-    }
-
-    /**
-     * Process end of a draft pick round - pass packs and continue or finish.
-     */
-    private fun processDraftRound(lobby: TournamentLobby) {
-        // Cancel the current timer
-        lobby.pickTimerJob?.cancel()
-        lobby.pickTimerJob = null
-
-        // Pass packs
-        val continuesDraft = lobby.passPacks()
-
-        if (continuesDraft) {
-            // Continue drafting - send new packs
-            broadcastDraftPacks(lobby)
-            lobbyRepository.saveLobby(lobby)
-            startDraftTimer(lobby)
-        } else {
-            // Draft complete - transition to deck building
-            logger.info("Draft complete for lobby ${lobby.lobbyId}, transitioning to deck building")
-
-            val basicLandInfos = lobby.basicLands.values.map { cardToSealedCardInfo(it) }
-
-            lobby.players.forEach { (_, playerState) ->
-                val poolInfos = playerState.cardPool.map { cardToSealedCardInfo(it) }
-                val ws = playerState.identity.webSocketSession
-                if (ws != null && ws.isOpen) {
-                    sender.send(ws, ServerMessage.DraftComplete(
-                        pickedCards = poolInfos,
-                        basicLands = basicLandInfos
-                    ))
-                }
-            }
-
-            broadcastLobbyUpdate(lobby)
-            lobbyRepository.saveLobby(lobby)
-        }
-    }
-
-    /**
-     * Broadcast current draft packs to all players.
-     */
-    private fun broadcastDraftPacks(lobby: TournamentLobby) {
-        lobby.players.forEach { (_, playerState) ->
-            val ws = playerState.identity.webSocketSession
-            val pack = playerState.currentPack
-            if (ws != null && ws.isOpen && pack != null) {
-                sender.send(ws, ServerMessage.DraftPackReceived(
-                    packNumber = lobby.currentPackNumber,
-                    pickNumber = lobby.currentPickNumber,
-                    cards = pack.map { cardToSealedCardInfo(it) },
-                    timeRemainingSeconds = lobby.pickTimeSeconds,
-                    passDirection = lobby.getPassDirection().name,
-                    picksPerRound = minOf(lobby.picksPerRound, pack.size),
-                    pickedCards = playerState.cardPool.map { cardToSealedCardInfo(it) }
-                ))
-            }
-        }
-    }
-
-    /**
-     * Broadcast that a player made a pick.
-     */
-    private fun broadcastDraftPickMade(lobby: TournamentLobby, picker: PlayerIdentity, waitingForPlayers: List<String>) {
-        val message = ServerMessage.DraftPickMade(
-            playerId = picker.playerId.value,
-            playerName = picker.playerName,
-            waitingForPlayers = waitingForPlayers
-        )
-
-        lobby.players.forEach { (_, playerState) ->
-            val ws = playerState.identity.webSocketSession
-            if (ws != null && ws.isOpen) {
-                sender.send(ws, message)
-            }
-        }
-    }
-
-    /**
-     * Start the draft pick timer.
-     */
-    private fun startDraftTimer(lobby: TournamentLobby) {
-        lobby.pickTimeRemaining = lobby.pickTimeSeconds
-
-        lobby.pickTimerJob = draftScope.launch {
-            var remaining = lobby.pickTimeSeconds
-
-            while (remaining > 0 && isActive) {
-                delay(1000)
-                remaining--
-                lobby.pickTimeRemaining = remaining
-
-                // Broadcast timer update every second
-                broadcastTimerUpdate(lobby, remaining)
-            }
-
-            // Timer expired - auto-pick for players who haven't picked
-            if (isActive && lobby.state == LobbyState.DRAFTING) {
-                autoPickForSlowPlayers(lobby)
-            }
-        }
-    }
-
-    /**
-     * Broadcast timer update to all players.
-     */
-    private fun broadcastTimerUpdate(lobby: TournamentLobby, secondsRemaining: Int) {
-        val message = ServerMessage.DraftTimerUpdate(secondsRemaining)
-
-        lobby.players.forEach { (_, playerState) ->
-            val ws = playerState.identity.webSocketSession
-            if (ws != null && ws.isOpen) {
-                sender.send(ws, message)
-            }
-        }
-    }
-
-    /**
-     * Auto-pick for players who haven't made a selection when timer expires.
-     */
-    private fun autoPickForSlowPlayers(lobby: TournamentLobby) {
-        val slowPlayers = lobby.getPlayersWaitingToPick()
-
-        for (playerId in slowPlayers) {
-            val result = lobby.autoPickFirstCards(playerId)
-            if (result is PickResult.Success) {
-                val playerState = lobby.players[playerId]
-                val ws = playerState?.identity?.webSocketSession
-                val pickedNames = result.pickedCards.map { it.name }
-                if (ws != null && ws.isOpen) {
-                    sender.send(ws, ServerMessage.DraftPickConfirmed(
-                        cardNames = pickedNames,
-                        totalPicked = result.totalPicked
-                    ))
-                }
-                logger.info("Auto-picked ${pickedNames.joinToString(", ")} for player ${playerState?.identity?.playerName} (timeout)")
-            }
-        }
-
-        // Now process the round
-        if (lobby.allPlayersPicked()) {
-            processDraftRound(lobby)
-        }
-    }
-
-    // =========================================================================
-    // Winston Draft Handlers
-    // =========================================================================
-
-    private fun handleWinstonTakePile(session: WebSocketSession) {
-        val (identity, lobby) = getIdentityAndLobby(session) ?: return
-
-        if (lobby.format != TournamentFormat.WINSTON_DRAFT) {
-            sender.sendError(session, ErrorCode.INVALID_ACTION, "Not a Winston Draft")
-            return
-        }
-
-        synchronized(lobby.winstonLock) {
-            val result = lobby.winstonTakePile(identity.playerId)
-            handleWinstonResult(lobby, result, identity)
-        }
-    }
-
-    private fun handleWinstonSkipPile(session: WebSocketSession) {
-        val (identity, lobby) = getIdentityAndLobby(session) ?: return
-
-        if (lobby.format != TournamentFormat.WINSTON_DRAFT) {
-            sender.sendError(session, ErrorCode.INVALID_ACTION, "Not a Winston Draft")
-            return
-        }
-
-        synchronized(lobby.winstonLock) {
-            val result = lobby.winstonSkipPile(identity.playerId)
-            handleWinstonResult(lobby, result, identity)
-        }
-    }
-
-    private fun handleWinstonResult(lobby: TournamentLobby, result: WinstonActionResult, identity: PlayerIdentity) {
-        when (result) {
-            is WinstonActionResult.PileTaken,
-            is WinstonActionResult.BlindPick,
-            is WinstonActionResult.PileSkipped -> {
-                val lastAction = when (result) {
-                    is WinstonActionResult.PileTaken -> result.lastAction
-                    is WinstonActionResult.BlindPick -> result.lastAction
-                    is WinstonActionResult.PileSkipped -> result.lastAction
-                }
-                logger.info("Winston Draft [${lobby.lobbyId}]: $lastAction")
-
-                // Reset timer for new turn (take/blind = new player, skip = same player different pile)
-                when (result) {
-                    is WinstonActionResult.PileTaken, is WinstonActionResult.BlindPick -> {
-                        lobby.pickTimerJob?.cancel()
-                        startWinstonTimer(lobby)
-                    }
-                    else -> {} // Skip doesn't restart timer
-                }
-
-                val pickedCards = when (result) {
-                    is WinstonActionResult.PileTaken -> result.cards
-                    is WinstonActionResult.BlindPick -> listOf(result.card)
-                    else -> emptyList()
-                }
-                broadcastWinstonDraftState(lobby, lastAction, pickedCards, identity.playerId)
-            }
-
-            is WinstonActionResult.DraftComplete -> {
-                logger.info("Winston Draft complete for lobby ${lobby.lobbyId}: ${result.lastAction}")
-                lobby.pickTimerJob?.cancel()
-                lobby.pickTimerJob = null
-
-                val basicLandInfos = lobby.basicLands.values.map { cardToSealedCardInfo(it) }
-                lobby.players.forEach { (_, playerState) ->
-                    val poolInfos = playerState.cardPool.map { cardToSealedCardInfo(it) }
-                    val ws = playerState.identity.webSocketSession
-                    if (ws != null && ws.isOpen) {
-                        sender.send(ws, ServerMessage.DraftComplete(
-                            pickedCards = poolInfos,
-                            basicLands = basicLandInfos
-                        ))
-                    }
-                }
-
-                broadcastLobbyUpdate(lobby)
-            }
-
-            is WinstonActionResult.Error -> {
-                val ws = identity.webSocketSession
-                if (ws != null) {
-                    sender.sendError(ws, ErrorCode.INVALID_ACTION, result.message)
-                }
-            }
-        }
-    }
-
-    /**
-     * Helper to get identity and lobby for Winston handlers.
-     */
-    private fun getIdentityAndLobby(session: WebSocketSession): Pair<PlayerIdentity, TournamentLobby>? {
-        val token = sessionRegistry.getTokenByWsId(session.id)
-        val identity = token?.let { sessionRegistry.getIdentityByToken(it) }
-        if (identity == null) {
-            sender.sendError(session, ErrorCode.NOT_CONNECTED, "Not connected")
-            return null
-        }
-
-        val lobbyId = identity.currentLobbyId
-        if (lobbyId == null) {
-            sender.sendError(session, ErrorCode.GAME_NOT_FOUND, "Not in a lobby")
-            return null
-        }
-
-        val lobby = lobbyRepository.findLobbyById(lobbyId)
-        if (lobby == null) {
-            sender.sendError(session, ErrorCode.GAME_NOT_FOUND, "Lobby not found")
-            return null
-        }
-
-        return identity to lobby
-    }
-
-    /**
-     * Broadcast Winston Draft state to both players.
-     * Active player sees current pile contents, opponent sees sizes only.
-     */
-    private fun broadcastWinstonDraftState(lobby: TournamentLobby, lastAction: String?, lastPickedCards: List<com.wingedsheep.sdk.model.CardDefinition> = emptyList(), lastPickerPlayerId: EntityId? = null) {
-        val activePlayerId = lobby.getWinstonActivePlayerId() ?: return
-        val activePlayerName = lobby.players[activePlayerId]?.identity?.playerName ?: "Unknown"
-        val pileSizes = lobby.winstonPiles.map { it.size }
-        val currentPileCards = lobby.winstonPiles[lobby.winstonCurrentPileIndex].map { cardToSealedCardInfo(it) }
-
-        // Mark current pile cards as "seen" by the active player
-        val seenByActive = lobby.winstonSeenCards.getOrPut(activePlayerId) { mutableSetOf() }
-        for (card in lobby.winstonPiles[lobby.winstonCurrentPileIndex]) {
-            seenByActive.add(card.name)
-        }
-
-        lobby.players.forEach { (playerId, playerState) ->
-            val ws = playerState.identity.webSocketSession ?: return@forEach
-            if (!ws.isOpen) return@forEach
-
-            val isActivePlayer = playerId == activePlayerId
-            val opponentId = lobby.getWinstonPlayerOrder().first { it != playerId }
-            val opponentCards = lobby.players[opponentId]?.cardPool ?: emptyList()
-            val seenByPlayer = lobby.winstonSeenCards[playerId] ?: emptySet()
-
-            // Split opponent's cards into known (seen by this player) and unknown
-            val knownOpponentCards = opponentCards.filter { it.name in seenByPlayer }.map { cardToSealedCardInfo(it) }
-            val unknownOpponentCardCount = opponentCards.size - knownOpponentCards.size
-
-            // Only show last picked cards to players who didn't make the pick
-            val lastPicked = if (lastPickerPlayerId != null && lastPickerPlayerId != playerId) {
-                lastPickedCards.map { cardToSealedCardInfo(it) }
-            } else emptyList()
-
-            sender.send(ws, ServerMessage.WinstonDraftState(
-                activePlayerName = activePlayerName,
-                isYourTurn = isActivePlayer,
-                currentPileIndex = lobby.winstonCurrentPileIndex,
-                pileSizes = pileSizes,
-                mainDeckRemaining = lobby.winstonMainDeck.size,
-                currentPileCards = if (isActivePlayer) currentPileCards else null,
-                pickedCards = playerState.cardPool.map { cardToSealedCardInfo(it) },
-                totalPickedByOpponent = opponentCards.size,
-                knownOpponentCards = knownOpponentCards,
-                unknownOpponentCardCount = unknownOpponentCardCount,
-                lastAction = lastAction,
-                timeRemainingSeconds = lobby.pickTimeRemaining,
-                lastPickedCards = lastPicked
-            ))
-        }
-    }
-
-    /**
-     * Start the Winston Draft turn timer.
-     */
-    private fun startWinstonTimer(lobby: TournamentLobby) {
-        lobby.pickTimeRemaining = lobby.pickTimeSeconds
-        lobby.pickTimerJob?.cancel()
-
-        lobby.pickTimerJob = draftScope.launch {
-            var remaining = lobby.pickTimeSeconds
-
-            while (remaining > 0 && isActive) {
-                delay(1000)
-                remaining--
-                lobby.pickTimeRemaining = remaining
-
-                broadcastTimerUpdate(lobby, remaining)
-            }
-
-            // Timer expired - auto-pick for the active player
-            if (isActive && lobby.format == TournamentFormat.WINSTON_DRAFT) {
-                synchronized(lobby.winstonLock) {
-                    if (lobby.state == LobbyState.DRAFTING) {
-                        val activePlayerId = lobby.getWinstonActivePlayerId()
-                        if (activePlayerId != null) {
-                            val result = lobby.winstonAutoPickForTimeout(activePlayerId)
-                            val activeIdentity = lobby.players[activePlayerId]?.identity
-                            if (activeIdentity != null) {
-                                handleWinstonResult(lobby, result, activeIdentity)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // =========================================================================
-    // Grid Draft Handlers
-    // =========================================================================
-
-    /**
-     * Handle a player picking a row or column during grid draft.
-     */
-    private fun handleGridDraftPick(session: WebSocketSession, message: ClientMessage.GridDraftPick) {
-        val token = sessionRegistry.getTokenByWsId(session.id)
-        val identity = token?.let { sessionRegistry.getIdentityByToken(it) }
-        if (identity == null) {
-            sender.sendError(session, ErrorCode.NOT_CONNECTED, "Not connected")
-            return
-        }
-
-        val lobbyId = identity.currentLobbyId
-        if (lobbyId == null) {
-            sender.sendError(session, ErrorCode.GAME_NOT_FOUND, "Not in a lobby")
-            return
-        }
-
-        val lobby = lobbyRepository.findLobbyById(lobbyId)
-        if (lobby == null) {
-            sender.sendError(session, ErrorCode.GAME_NOT_FOUND, "Lobby not found")
-            return
-        }
-
-        val selection = try {
-            GridSelection.valueOf(message.selection)
-        } catch (e: IllegalArgumentException) {
-            sender.sendError(session, ErrorCode.INVALID_ACTION, "Invalid selection: ${message.selection}")
-            return
-        }
-
-        val lock = roundLocks.computeIfAbsent(lobbyId) { Any() }
-        synchronized(lock) {
-            if (lobby.state != LobbyState.DRAFTING || lobby.format != TournamentFormat.GRID_DRAFT) {
-                sender.sendError(session, ErrorCode.INVALID_ACTION, "Not in grid draft phase")
-                return
-            }
-
-            val result = lobby.gridPickRowOrColumn(identity.playerId, selection)
-            processGridDraftResult(lobby, result, identity.playerId)
-        }
-    }
-
-    /**
-     * Process a grid draft result: broadcast state, manage timer, handle draft completion.
-     * Must be called under the lobby's roundLock.
-     */
-    private fun processGridDraftResult(lobby: TournamentLobby, result: GridDraftResult, pickerId: EntityId) {
-        when (result) {
-            is GridDraftResult.PickMade -> {
-                logger.info("Grid draft: ${result.lastAction}")
-                lobby.pickTimerJob?.cancel()
-                broadcastGridDraftState(lobby, result.lastAction, result.cards, pickerId)
-                startGridDraftTimer(lobby)
-                lobbyRepository.saveLobby(lobby)
-            }
-            is GridDraftResult.GridComplete -> {
-                logger.info("Grid draft: ${result.lastAction} - new grid dealt")
-                lobby.pickTimerJob?.cancel()
-                broadcastGridDraftState(lobby, result.lastAction, result.cards, pickerId)
-                startGridDraftTimer(lobby)
-                lobbyRepository.saveLobby(lobby)
-            }
-            is GridDraftResult.DraftComplete -> {
-                if (lobby.isGridDraftComplete()) {
-                    logger.info("Grid draft complete for lobby ${lobby.lobbyId}")
-                    lobby.pickTimerJob?.cancel()
-                    lobby.pickTimerJob = null
-
-                    val basicLandInfos = lobby.basicLands.values.map { cardToSealedCardInfo(it) }
-                    lobby.players.forEach { (_, playerState) ->
-                        val poolInfos = playerState.cardPool.map { cardToSealedCardInfo(it) }
-                        val ws = playerState.identity.webSocketSession
-                        if (ws != null && ws.isOpen) {
-                            sender.send(ws, ServerMessage.DraftComplete(
-                                pickedCards = poolInfos,
-                                basicLands = basicLandInfos
-                            ))
-                        }
-                    }
-                    broadcastLobbyUpdate(lobby)
-                } else {
-                    logger.info("Grid draft: group complete, other group(s) still active in lobby ${lobby.lobbyId}")
-                    lobby.pickTimerJob?.cancel()
-                    broadcastGridDraftState(lobby, result.lastAction, result.cards, pickerId)
-                    startGridDraftTimer(lobby)
-                }
-                lobbyRepository.saveLobby(lobby)
-            }
-            is GridDraftResult.Error -> {
-                logger.warn("Grid draft pick failed: ${result.message}")
-            }
-        }
-    }
-
-    /**
-     * Broadcast grid draft state to all players.
-     * For 4-player mode, each player sees only their group's grid.
-     */
-    private fun broadcastGridDraftState(lobby: TournamentLobby, lastAction: String?, lastPickedCards: List<com.wingedsheep.sdk.model.CardDefinition> = emptyList(), lastPickerPlayerId: EntityId? = null) {
-        lobby.players.forEach { (playerId, playerState) ->
-            val ws = playerState.identity.webSocketSession
-            if (ws != null && ws.isOpen) {
-                // Find this player's group
-                val group = lobby.getGroupForPlayer(playerId)
-                    ?: lobby.gridGroups.firstOrNull()
-                    ?: return@forEach
-
-                val gridInfos = group.gridCards.map { card ->
-                    card?.let { cardToSealedCardInfo(it) }
-                }
-                val availableSelections = lobby.getAvailableGridSelections(group).map { it.name }
-                val activePlayer = lobby.getGridActivePlayer(group)
-                val activePlayerName = lobby.players[activePlayer]?.identity?.playerName ?: "Unknown"
-                val playerOrderNames = group.playerOrder.map { id ->
-                    lobby.players[id]?.identity?.playerName ?: "Unknown"
-                }
-
-                val pickedCards = playerState.cardPool.map { cardToSealedCardInfo(it) }
-
-                // Only show same-group opponents
-                val sameGroupPlayerIds = group.playerOrder.toSet()
-                val otherPickCounts = lobby.players
-                    .filter { it.key != playerId && it.key in sameGroupPlayerIds }
-                    .map { (_, ps) -> ps.identity.playerName to ps.cardPool.size }
-                    .toMap()
-                val otherPickedCards = lobby.players
-                    .filter { it.key != playerId && it.key in sameGroupPlayerIds }
-                    .map { (_, ps) -> ps.identity.playerName to ps.cardPool.map { cardToSealedCardInfo(it) } }
-                    .toMap()
-
-                // Show last picked cards to players in the same group
-                val lastPicked = if (lastPickerPlayerId == null || lastPickerPlayerId in sameGroupPlayerIds) {
-                    lastPickedCards.map { cardToSealedCardInfo(it) }
-                } else {
-                    emptyList()
-                }
-
-                sender.send(ws, ServerMessage.GridDraftState(
-                    grid = gridInfos,
-                    activePlayerName = activePlayerName,
-                    isYourTurn = playerId == activePlayer,
-                    mainDeckRemaining = group.mainDeck.size,
-                    pickedCards = pickedCards,
-                    totalPickedByOthers = otherPickCounts,
-                    pickedCardsByOthers = otherPickedCards,
-                    lastAction = if (lastPickerPlayerId == null || lastPickerPlayerId in sameGroupPlayerIds) lastAction else null,
-                    timeRemainingSeconds = lobby.pickTimeSeconds,
-                    availableSelections = if (playerId == activePlayer) availableSelections else emptyList(),
-                    playerOrder = playerOrderNames,
-                    currentPickerIndex = group.activePlayerIndex,
-                    gridNumber = group.gridNumber,
-                    lastPickedCards = lastPicked
-                ))
-            }
-        }
-    }
-
-    /**
-     * Start the grid draft pick timer.
-     * For multi-group mode, auto-picks for all active players across groups on timeout.
-     */
-    private fun startGridDraftTimer(lobby: TournamentLobby) {
-        lobby.pickTimeRemaining = lobby.pickTimeSeconds
-        lobby.pickTimerJob?.cancel()
-
-        lobby.pickTimerJob = draftScope.launch {
-            var remaining = lobby.pickTimeSeconds
-
-            while (remaining > 0 && isActive) {
-                delay(1000)
-                remaining--
-                lobby.pickTimeRemaining = remaining
-
-                broadcastTimerUpdate(lobby, remaining)
-            }
-
-            // Timer expired - auto-pick for all active players across all groups
-            if (isActive && lobby.state == LobbyState.DRAFTING && lobby.format == TournamentFormat.GRID_DRAFT) {
-                val lock = roundLocks.computeIfAbsent(lobby.lobbyId) { Any() }
-                synchronized(lock) {
-                    if (lobby.state != LobbyState.DRAFTING) return@synchronized
-
-                    val activePlayers = lobby.getAllGridActivePlayers()
-                    for ((_, activePlayer) in activePlayers) {
-                        val result = lobby.autoGridPick(activePlayer)
-                        processGridDraftResult(lobby, result, activePlayer)
-                        if (lobby.isGridDraftComplete()) break
-                    }
-                }
-            }
-        }
     }
 
     // =========================================================================
@@ -1517,7 +946,7 @@ class LobbyHandler(
         lobbyRepository.saveLobby(lobby)
 
         logger.info("AI player ${aiIdentity.playerName} (${aiIdentity.playerId.value}) added to lobby $lobbyId")
-        broadcastLobbyUpdate(lobby)
+        ctx.broadcastLobbyUpdate(lobby)
     }
 
     private fun handleRemoveAiFromLobby(session: WebSocketSession, message: ClientMessage.RemoveAiFromLobby) {
@@ -1567,7 +996,7 @@ class LobbyHandler(
         lobbyRepository.saveLobby(lobby)
 
         logger.info("AI player ${aiPlayerState.identity.playerName} (${aiPlayerId.value}) removed from lobby $lobbyId")
-        broadcastLobbyUpdate(lobby)
+        ctx.broadcastLobbyUpdate(lobby)
     }
 
     /**
@@ -1857,20 +1286,9 @@ class LobbyHandler(
         }
     }
 
-    /**
-     * Auto-ready all AI players in a tournament, and try to start their matches.
-     */
-    private fun autoReadyAiPlayers(lobby: TournamentLobby, tournament: TournamentManager) {
-        for ((playerId, playerState) in lobby.players) {
-            if (!aiGameManager.isAiPlayer(playerId)) continue
-
-            val wasNewlyReady = lobby.markPlayerReady(playerId)
-            if (wasNewlyReady) {
-                logger.info("AI ${playerState.identity.playerName} auto-ready for next round")
-                tryStartMatchForPlayer(lobby, tournament, playerState.identity)
-            }
-        }
-    }
+    // =========================================================================
+    // Lobby Leave / Stop / Settings
+    // =========================================================================
 
     private fun handleLeaveLobby(session: WebSocketSession) {
         val token = sessionRegistry.getTokenByWsId(session.id)
@@ -1899,9 +1317,9 @@ class LobbyHandler(
         } else {
             // Auto-adjust grid draft booster count when player count changes
             if (lobby.format == TournamentFormat.GRID_DRAFT && lobby.state == LobbyState.WAITING_FOR_PLAYERS) {
-                lobby.boosterCount = gridDraftDefaultBoosters(lobby.players.size)
+                lobby.boosterCount = gridDraftHandler.gridDraftDefaultBoosters(lobby.players.size)
             }
-            broadcastLobbyUpdate(lobby)
+            ctx.broadcastLobbyUpdate(lobby)
         }
     }
 
@@ -1922,7 +1340,7 @@ class LobbyHandler(
             lobbyRepository.removeLobby(lobbyId)
             logger.info("Lobby $lobbyId removed (empty)")
         } else {
-            broadcastLobbyUpdate(lobby)
+            ctx.broadcastLobbyUpdate(lobby)
         }
     }
 
@@ -2015,11 +1433,11 @@ class LobbyHandler(
         logger.info("Player ${identity.playerName} unsubmitted deck in lobby $lobbyId")
 
         // Notify all players of the updated lobby state
-        broadcastLobbyUpdate(lobby)
+        ctx.broadcastLobbyUpdate(lobby)
 
         // If in tournament, broadcast the updated ready status
         if (tournament != null) {
-            broadcastReadyStatus(lobby, identity)
+            tournamentMatchHandler.broadcastReadyStatus(lobby, identity)
         }
     }
 
@@ -2088,7 +1506,7 @@ class LobbyHandler(
                     TournamentFormat.DRAFT -> 3
                     TournamentFormat.SEALED -> 6
                     TournamentFormat.WINSTON_DRAFT -> 6
-                    TournamentFormat.GRID_DRAFT -> gridDraftDefaultBoosters(lobby.players.size)
+                    TournamentFormat.GRID_DRAFT -> gridDraftHandler.gridDraftDefaultBoosters(lobby.players.size)
                 }
                 lobby.recalculateDistribution()
             }
@@ -2128,7 +1546,7 @@ class LobbyHandler(
             }
             // Auto-adjust grid draft booster count when player count changes (always, since it's fixed)
             if (lobby.format == TournamentFormat.GRID_DRAFT && lobby.maxPlayers != oldMaxPlayers) {
-                lobby.boosterCount = gridDraftDefaultBoosters(lobby.players.size)
+                lobby.boosterCount = gridDraftHandler.gridDraftDefaultBoosters(lobby.players.size)
                 lobby.recalculateDistribution()
             }
         }
@@ -2136,9 +1554,13 @@ class LobbyHandler(
         message.pickTimeSeconds?.let { lobby.pickTimeSeconds = it.coerceIn(15, 180) }
         message.picksPerRound?.let { lobby.picksPerRound = it.coerceIn(1, 2) }
 
-        broadcastLobbyUpdate(lobby)
+        ctx.broadcastLobbyUpdate(lobby)
         lobbyRepository.saveLobby(lobby)
     }
+
+    // =========================================================================
+    // Deck Building / Submit
+    // =========================================================================
 
     private fun handleLobbyDeckSubmit(
         session: WebSocketSession,
@@ -2159,13 +1581,13 @@ class LobbyHandler(
                 val deckSize = deckList.values.sum()
                 logger.info("Player ${identity.playerName} submitted deck ($deckSize cards) in lobby $lobbyId")
                 sender.send(session, ServerMessage.DeckSubmitted(deckSize))
-                broadcastLobbyUpdate(lobby)
+                ctx.broadcastLobbyUpdate(lobby)
 
                 // Ensure tournament is created (for matchup info)
-                val tournament = ensureTournamentCreated(lobby)
+                val tournament = tournamentMatchHandler.ensureTournamentCreated(lobby)
 
                 // Send TournamentStarted to this player (they can now ready up for round 1)
-                sendTournamentStartedToPlayer(lobby, tournament, identity)
+                tournamentMatchHandler.sendTournamentStartedToPlayer(lobby, tournament, identity)
 
                 // NOTE: Don't auto-start matches - require players to press Ready
                 // This allows them to return to deck building while waiting
@@ -2176,7 +1598,7 @@ class LobbyHandler(
                 }
 
                 // Auto-ready AI players so they participate in matchmaking
-                autoReadyAiPlayers(lobby, tournament)
+                tournamentMatchHandler.autoReadyAiPlayers(lobby, tournament)
 
                 lobbyRepository.saveLobby(lobby)
             }
@@ -2184,1116 +1606,5 @@ class LobbyHandler(
                 sender.sendError(session, ErrorCode.INVALID_DECK, result.message)
             }
         }
-    }
-
-    /**
-     * Ensure the TournamentManager exists for a lobby.
-     * Creates it if it doesn't exist yet.
-     * Note: Does NOT transition lobby state - that still happens when all decks are submitted.
-     * This allows reconnecting players to see deck building UI while matches may be starting.
-     */
-    private fun ensureTournamentCreated(lobby: TournamentLobby): TournamentManager {
-        val lock = roundLocks.computeIfAbsent(lobby.lobbyId) { Any() }
-        return synchronized(lock) {
-            val existing = lobbyRepository.findTournamentById(lobby.lobbyId)
-            if (existing != null) return@synchronized existing
-
-            logger.info("Creating tournament for lobby ${lobby.lobbyId} with ${lobby.playerCount} players (early creation for matchups)")
-
-            // Sort players by playerId for stable ordering regardless of ConcurrentHashMap iteration order
-            val players = lobby.players.values
-                .map { ps -> ps.identity.playerId to ps.identity.playerName }
-                .sortedBy { it.first.value }
-
-            val tournament = TournamentManager(lobby.lobbyId, players, lobby.gamesPerMatch)
-            lobbyRepository.saveTournament(lobby.lobbyId, tournament)
-
-            tournament
-        }
-    }
-
-    /**
-     * Send TournamentStarted message to a single player.
-     * @param wsOverride If provided, use this session instead of identity.webSocketSession.
-     *                   Used during reconnection to avoid a race where handleDisconnect
-     *                   clears identity.webSocketSession before this method runs.
-     */
-    private fun sendTournamentStartedToPlayer(
-        lobby: TournamentLobby,
-        tournament: TournamentManager,
-        identity: PlayerIdentity,
-        wsOverride: WebSocketSession? = null
-    ) {
-        val ws = wsOverride ?: identity.webSocketSession ?: return
-
-        val connectedIds = lobby.players.values
-            .filter { it.identity.isConnected }
-            .map { it.identity.playerId }
-            .toSet()
-
-        // Find this player's next match across all rounds (not just peeking at the next round).
-        // Only show the opponent if the match is in the current round; future-round opponents
-        // are not guaranteed with dynamic matchmaking.
-        val nextMatch = tournament.getNextMatchForPlayer(identity.playerId)
-        val nextOpponentName: String?
-        val hasBye: Boolean
-
-        if (nextMatch != null) {
-            val (nextRound, match) = nextMatch
-            // When currentRound is null, the tournament just started and no round has begun yet.
-            // The next match must be round 1 (the upcoming "current" round), so treat it as current.
-            val isCurrentRound = tournament.currentRound?.let { nextRound.roundNumber == it.roundNumber } ?: true
-            val opponentId = if (match.player1Id == identity.playerId) match.player2Id else match.player1Id
-            nextOpponentName = if (isCurrentRound && !match.isBye) opponentId?.let { lobby.players[it]?.identity?.playerName } else null
-            hasBye = match.isBye
-        } else {
-            // No upcoming match — either haven't started or all done.
-            // Fall back to peekNextRoundMatchups for the pre-first-round case
-            val firstRoundMatchups = tournament.peekNextRoundMatchups()
-            val nextOpponentId = firstRoundMatchups[identity.playerId]
-            nextOpponentName = nextOpponentId?.let { lobby.players[it]?.identity?.playerName }
-            hasBye = firstRoundMatchups.containsKey(identity.playerId) && nextOpponentId == null
-        }
-
-        sender.send(ws, ServerMessage.TournamentStarted(
-            lobbyId = lobby.lobbyId,
-            totalRounds = tournament.totalRounds,
-            standings = tournament.getStandingsInfo(connectedIds),
-            nextOpponentName = nextOpponentName,
-            nextRoundHasBye = hasBye
-        ))
-
-        // Send current ready status so the client knows who is already ready
-        // (TournamentStarted resets readyPlayerIds on the client)
-        val readyPlayerIds = lobby.getReadyPlayerIds()
-        if (readyPlayerIds.isNotEmpty()) {
-            sender.send(ws, ServerMessage.PlayerReadyForRound(
-                lobbyId = lobby.lobbyId,
-                playerId = identity.playerId.value,
-                playerName = identity.playerName,
-                readyPlayerIds = readyPlayerIds.map { it.value },
-                totalConnectedPlayers = connectedIds.size
-            ))
-        }
-    }
-
-    /**
-     * Try to start a match after a player submits their deck.
-     * Starts immediately if opponent has also submitted.
-     */
-    private fun tryStartMatchAfterDeckSubmit(
-        lobby: TournamentLobby,
-        tournament: TournamentManager,
-        identity: PlayerIdentity
-    ) {
-        // Prepare first round if needed
-        if (tournament.currentRound == null) {
-            val round = tournament.startNextRound()
-            if (round == null) {
-                completeTournament(lobby.lobbyId)
-                return
-            }
-            logger.info("Prepared round ${round.roundNumber} for tournament ${lobby.lobbyId}")
-        }
-
-        val (round, match) = tournament.getNextMatchForPlayer(identity.playerId) ?: return
-
-        // Handle BYE
-        if (match.isBye) {
-            match.isComplete = true
-            val ws = identity.webSocketSession
-            if (ws != null && ws.isOpen) {
-                sender.send(ws, ServerMessage.TournamentBye(
-                    lobbyId = lobby.lobbyId,
-                    round = round.roundNumber
-                ))
-                sendActiveMatchesToPlayer(identity, ws)
-            }
-            lobbyRepository.saveTournament(lobby.lobbyId, tournament)
-            return
-        }
-
-        // Already started?
-        if (match.gameSessionId != null) return
-
-        // Find opponent
-        val opponentId = if (match.player1Id == identity.playerId) match.player2Id else match.player1Id
-        if (opponentId == null) return
-
-        // Opponent has submitted deck?
-        val opponentState = lobby.players[opponentId] ?: return
-        if (!opponentState.hasSubmittedDeck) return
-
-        // Both have submitted - start the match!
-        logger.info("Both players submitted decks, starting match: ${identity.playerName} vs ${opponentState.identity.playerName}")
-        startSingleMatch(lobby, tournament, round, match)
-    }
-
-    fun broadcastLobbyUpdate(lobby: TournamentLobby) {
-        lobby.players.forEach { (playerId, playerState) ->
-            val ws = playerState.identity.webSocketSession
-            if (ws != null && ws.isOpen) {
-                sender.send(ws, lobby.buildLobbyUpdate(playerId, aiGameManager::isAiPlayer))
-            }
-        }
-    }
-
-    fun startTournament(lobby: TournamentLobby) {
-        logger.info("Starting tournament for lobby ${lobby.lobbyId} with ${lobby.playerCount} players")
-        lobby.startTournament()
-
-        val players = lobby.players.values
-            .map { ps -> ps.identity.playerId to ps.identity.playerName }
-            .sortedBy { it.first.value }
-
-        val tournament = TournamentManager(lobby.lobbyId, players, lobby.gamesPerMatch)
-        lobbyRepository.saveTournament(lobby.lobbyId, tournament)
-
-        val connectedIds = lobby.players.values
-            .filter { it.identity.isConnected }
-            .map { it.identity.playerId }
-            .toSet()
-
-        // Get first round matchups to show who each player plays
-        val firstRoundMatchups = tournament.peekNextRoundMatchups()
-
-        lobby.players.forEach { (playerId, playerState) ->
-            val ws = playerState.identity.webSocketSession
-            if (ws != null && ws.isOpen) {
-                // Find this player's first opponent
-                val nextOpponentId = firstRoundMatchups[playerId]
-                val nextOpponentName = if (nextOpponentId != null) {
-                    lobby.players[nextOpponentId]?.identity?.playerName
-                } else {
-                    null
-                }
-                val hasBye = firstRoundMatchups.containsKey(playerId) && nextOpponentId == null
-
-                sender.send(ws, ServerMessage.TournamentStarted(
-                    lobbyId = lobby.lobbyId,
-                    totalRounds = tournament.totalRounds,
-                    standings = tournament.getStandingsInfo(connectedIds),
-                    nextOpponentName = nextOpponentName,
-                    nextRoundHasBye = hasBye
-                ))
-            }
-        }
-
-        // Don't auto-start first round - wait for players to ready up
-    }
-
-    /**
-     * Start the next tournament round.
-     * This is now primarily used as a fallback when all players ready at once.
-     * Normally, matches start eagerly via tryStartMatchForPlayer when both players are ready.
-     */
-    fun startNextTournamentRound(lobbyId: String) {
-        val lobby = lobbyRepository.findLobbyById(lobbyId) ?: return
-        val tournament = lobbyRepository.findTournamentById(lobbyId) ?: return
-
-        // Prepare round if needed (might already be prepared by eager match starting)
-        if (tournament.currentRound?.isComplete != false) {
-            val round = tournament.startNextRound()
-            if (round == null) {
-                completeTournament(lobbyId)
-                return
-            }
-            lobby.clearReadyState()
-            lobbyRepository.saveLobby(lobby)
-            lobbyRepository.saveTournament(lobbyId, tournament)
-        }
-
-        val round = tournament.currentRound ?: return
-        logger.info("Starting round ${round.roundNumber} for tournament $lobbyId")
-
-        // Start all un-started matches
-        for (match in tournament.getCurrentRoundGameMatches()) {
-            if (match.gameSessionId == null) {
-                startSingleMatch(lobby, tournament, round, match)
-            }
-        }
-        lobbyRepository.saveTournament(lobbyId, tournament)
-
-        // Handle BYEs
-        for (match in round.matches) {
-            if (match.isBye) {
-                val playerState = lobby.players[match.player1Id]
-                val identity = playerState?.identity
-                val ws = identity?.webSocketSession
-                if (identity != null && ws != null && ws.isOpen) {
-                    sender.send(ws, ServerMessage.TournamentBye(
-                        lobbyId = lobbyId,
-                        round = round.roundNumber
-                    ))
-                    // Also send active matches so they can spectate
-                    sendActiveMatchesToPlayer(identity, ws)
-                }
-            }
-        }
-    }
-
-    /**
-     * Handle a player abandoning the tournament. Records auto-losses for
-     * incomplete matches and checks for round/tournament completion.
-     *
-     * All mutations happen under the per-lobby lock.
-     */
-    fun handleAbandon(lobbyId: String, playerId: EntityId) {
-        val lock = roundLocks.computeIfAbsent(lobbyId) { Any() }
-        synchronized(lock) {
-            val tournament = lobbyRepository.findTournamentById(lobbyId) ?: return
-            tournament.recordAbandon(playerId)
-            lobbyRepository.saveTournament(lobbyId, tournament)
-
-            broadcastActiveMatchesToWaitingPlayers(lobbyId)
-
-            if (tournament.isRoundComplete()) {
-                doHandleRoundComplete(lobbyId)
-            }
-        }
-    }
-
-    fun handleRoundComplete(lobbyId: String) {
-        val lock = roundLocks.computeIfAbsent(lobbyId) { Any() }
-        synchronized(lock) {
-            doHandleRoundComplete(lobbyId)
-        }
-    }
-
-    /**
-     * Inner round-complete logic. Must be called while holding the per-lobby lock.
-     */
-    private fun doHandleRoundComplete(lobbyId: String) {
-        val lobby = lobbyRepository.findLobbyById(lobbyId) ?: return
-        val tournament = lobbyRepository.findTournamentById(lobbyId) ?: return
-        val round = tournament.currentRound ?: return
-
-        logger.info("Round ${round.roundNumber} complete for tournament $lobbyId")
-
-        // Clear ready state so all players must re-ready for next round
-        lobby.clearReadyState()
-
-        val connectedIds = lobby.players.values
-            .filter { it.identity.isConnected }
-            .map { it.identity.playerId }
-            .toSet()
-
-        lobby.players.forEach { (playerId, playerState) ->
-            playerState.identity.currentGameSessionId = null
-
-            val ws = playerState.identity.webSocketSession
-            if (ws != null && ws.isOpen) {
-                // Find this player's next opponent. Since round-robin schedules are
-                // deterministic, the immediate next-round opponent is always known.
-                // Only show the name for the very next round (round + 1); deeper
-                // future-round opponents may shift with dynamic matchmaking.
-                val nextMatch = tournament.getNextMatchForPlayer(playerId)
-                val nextOpponentName: String?
-                val hasBye: Boolean
-
-                if (nextMatch != null) {
-                    val (nextRound, nm) = nextMatch
-                    val isNextRound = nextRound.roundNumber == round.roundNumber + 1
-                    val opponentId = if (nm.player1Id == playerId) nm.player2Id else nm.player1Id
-                    nextOpponentName = if (isNextRound && !nm.isBye) opponentId?.let { lobby.players[it]?.identity?.playerName } else null
-                    hasBye = nm.isBye
-                } else {
-                    nextOpponentName = null
-                    hasBye = false
-                }
-
-                val roundComplete = ServerMessage.RoundComplete(
-                    lobbyId = lobbyId,
-                    round = round.roundNumber,
-                    results = tournament.getCurrentRoundResults(),
-                    standings = tournament.getStandingsInfo(connectedIds),
-                    nextOpponentName = nextOpponentName,
-                    nextRoundHasBye = hasBye,
-                    isTournamentComplete = tournament.isComplete
-                )
-                sender.send(ws, roundComplete)
-            }
-        }
-
-        // Also send round complete to tournament spectators
-        for ((_, spectatorIdentity) in lobby.spectators) {
-            val ws = spectatorIdentity.webSocketSession ?: continue
-            if (!ws.isOpen) continue
-
-            val roundComplete = ServerMessage.RoundComplete(
-                lobbyId = lobbyId,
-                round = round.roundNumber,
-                results = tournament.getCurrentRoundResults(),
-                standings = tournament.getStandingsInfo(connectedIds),
-                isTournamentComplete = tournament.isComplete
-            )
-            sender.send(ws, roundComplete)
-        }
-
-        // Persist round completion state
-        lobbyRepository.saveLobby(lobby)
-        lobbyRepository.saveTournament(lobbyId, tournament)
-
-        // If tournament is complete, don't wait for ready - just finish
-        if (tournament.isComplete) {
-            completeTournament(lobbyId)
-        }
-        // Otherwise, wait for all players to signal ready before starting next round
-    }
-
-    /**
-     * Handle the full match result flow: report result, notify players, broadcast
-     * active matches, and check for round completion — all under the per-lobby lock.
-     *
-     * This ensures that tournament state mutations from game completion don't race
-     * with handleReadyForNextRound or handleRoundComplete.
-     */
-    fun handleMatchResult(
-        lobbyId: String,
-        gameSessionId: String,
-        winnerId: EntityId?,
-        winnerLifeRemaining: Int
-    ) {
-        val lock = roundLocks.computeIfAbsent(lobbyId) { Any() }
-        synchronized(lock) {
-            val tournament = lobbyRepository.findTournamentById(lobbyId) ?: return
-            tournament.reportMatchResult(gameSessionId, winnerId, winnerLifeRemaining)
-            lobbyRepository.saveTournament(lobbyId, tournament)
-
-            handleMatchComplete(lobbyId, gameSessionId)
-            broadcastActiveMatchesToWaitingPlayers(lobbyId)
-
-            // Auto-ready AI players for the next match
-            val lobby = lobbyRepository.findLobbyById(lobbyId)
-            if (lobby != null) {
-                autoReadyAiPlayers(lobby, tournament)
-                lobbyRepository.saveLobby(lobby)
-            }
-
-            if (tournament.isRoundComplete()) {
-                doHandleRoundComplete(lobbyId)
-            }
-        }
-    }
-
-    /**
-     * Handle an individual match completion. Sends MatchComplete to both players
-     * in the match immediately, allowing them to ready up for their next match
-     * without waiting for the entire round to finish.
-     *
-     * Must be called under the per-lobby lock.
-     */
-    private fun handleMatchComplete(lobbyId: String, gameSessionId: String) {
-        val lobby = lobbyRepository.findLobbyById(lobbyId) ?: return
-        val tournament = lobbyRepository.findTournamentById(lobbyId) ?: return
-
-        val completedRound = tournament.getRoundForMatch(gameSessionId) ?: return
-
-        val connectedIds = lobby.players.values
-            .filter { it.identity.isConnected }
-            .map { it.identity.playerId }
-            .toSet()
-
-        // Find the two players who were in this match
-        val match = completedRound.matches.find { it.gameSessionId == gameSessionId } ?: return
-        val matchPlayerIds = listOfNotNull(match.player1Id, match.player2Id)
-
-        for (playerId in matchPlayerIds) {
-            val playerState = lobby.players[playerId] ?: continue
-            val ws = playerState.identity.webSocketSession ?: continue
-            if (!ws.isOpen) continue
-
-            // Find this player's next match
-            val nextMatch = tournament.getNextMatchForPlayer(playerId)
-            val nextOpponentName: String?
-            val hasBye: Boolean
-
-            if (nextMatch != null) {
-                val (nextRound, nm) = nextMatch
-                // Only show the next opponent if the match is in the current round.
-                // Future-round opponents are not guaranteed with dynamic matchmaking.
-                // BYE status is always shown since it's deterministic.
-                val isCurrentRound = nextRound.roundNumber == (tournament.currentRound?.roundNumber ?: -1)
-                val opponentId = if (nm.player1Id == playerId) nm.player2Id else nm.player1Id
-                nextOpponentName = if (isCurrentRound && !nm.isBye) opponentId?.let { lobby.players[it]?.identity?.playerName } else null
-                hasBye = nm.isBye
-            } else {
-                nextOpponentName = null
-                hasBye = false
-            }
-
-            sender.send(ws, ServerMessage.MatchComplete(
-                lobbyId = lobbyId,
-                round = completedRound.roundNumber,
-                results = tournament.getRoundResults(completedRound),
-                standings = tournament.getStandingsInfo(connectedIds),
-                nextOpponentName = nextOpponentName,
-                nextRoundHasBye = hasBye,
-                isTournamentComplete = tournament.isComplete
-            ))
-        }
-
-        lobbyRepository.saveTournament(lobbyId, tournament)
-    }
-
-    /**
-     * Handle a player signaling they are ready for the next round.
-     * Uses eager match starting: starts a match as soon as both players are ready,
-     * rather than waiting for ALL players to be ready.
-     */
-    fun handleReadyForNextRound(session: WebSocketSession) {
-        val token = sessionRegistry.getTokenByWsId(session.id)
-        val identity = token?.let { sessionRegistry.getIdentityByToken(it) }
-        if (identity == null) {
-            sender.sendError(session, ErrorCode.NOT_CONNECTED, "Not connected")
-            return
-        }
-
-        val lobbyId = identity.currentLobbyId
-        if (lobbyId == null) {
-            sender.sendError(session, ErrorCode.INVALID_ACTION, "Not in a lobby")
-            return
-        }
-
-        val lobby = lobbyRepository.findLobbyById(lobbyId)
-        if (lobby == null) {
-            sender.sendError(session, ErrorCode.INVALID_ACTION, "Lobby not found")
-            return
-        }
-
-        val tournament = lobbyRepository.findTournamentById(lobbyId)
-        if (tournament == null || tournament.isComplete) {
-            sender.sendError(session, ErrorCode.INVALID_ACTION, "Tournament not active")
-            return
-        }
-
-        // Spectators can't ready up
-        if (lobby.isSpectator(identity.playerId)) {
-            sender.sendError(session, ErrorCode.INVALID_ACTION, "Spectators cannot ready up")
-            return
-        }
-
-        // Capture epoch before acquiring lock to detect stale ready requests.
-        // If a round completes (clearing ready state) while we wait for the lock,
-        // the epoch will have changed and this ready request should be discarded.
-        val epochBeforeLock = lobby.readyEpoch
-
-        // Synchronize per-lobby to prevent concurrent round advancement races.
-        // Without this, two players sending ReadyForNextRound simultaneously could both
-        // see needsPrepare==true, double-increment the round index, and clear each other's
-        // ready state.
-        val lock = roundLocks.computeIfAbsent(lobbyId) { Any() }
-        synchronized(lock) {
-            // If the epoch changed, a round completed while we were waiting — discard stale ready
-            if (lobby.readyEpoch != epochBeforeLock) return
-            // Prepare rounds as needed — advance through any rounds that haven't been
-            // initialized yet, auto-completing BYEs along the way. With dynamic matchmaking,
-            // we may need to advance past multiple rounds if BYE-only rounds exist.
-            while (true) {
-                val needsPrepare = tournament.currentRound == null ||
-                        tournament.currentRound?.isComplete == true
-                if (!needsPrepare) break
-
-                val round = tournament.startNextRound()
-                if (round == null) {
-                    completeTournament(lobbyId)
-                    return
-                }
-
-                // Notify BYE players for this newly prepared round
-                for (match in round.matches) {
-                    if (match.isBye && match.isComplete) {
-                        val byePlayerState = lobby.players[match.player1Id]
-                        val byeWs = byePlayerState?.identity?.webSocketSession
-                        if (byeWs != null && byeWs.isOpen) {
-                            sender.send(byeWs, ServerMessage.TournamentBye(
-                                lobbyId = lobbyId,
-                                round = round.roundNumber
-                            ))
-                            sendActiveMatchesToPlayer(byePlayerState.identity, byeWs)
-                        }
-                    }
-                }
-
-                lobbyRepository.saveTournament(lobbyId, tournament)
-                logger.info("Prepared round ${round.roundNumber} for tournament $lobbyId")
-            }
-
-            // Mark player as ready
-            val wasNewlyReady = lobby.markPlayerReady(identity.playerId)
-            if (!wasNewlyReady) {
-                return // Already marked ready
-            }
-
-            logger.info("Player ${identity.playerName} ready for next round in tournament $lobbyId")
-
-            // Broadcast ready status to all players
-            broadcastReadyStatus(lobby, identity)
-            lobbyRepository.saveLobby(lobby)
-
-            // Try to start this player's match eagerly
-            tryStartMatchForPlayer(lobby, tournament, identity)
-        }
-    }
-
-    /**
-     * Broadcast ready status update to all players in the lobby.
-     */
-    private fun broadcastReadyStatus(lobby: TournamentLobby, identity: PlayerIdentity) {
-        val connectedPlayers = lobby.players.values.filter { it.identity.isConnected }
-        val readyPlayerIds = lobby.getReadyPlayerIds().map { it.value }
-
-        val readyMessage = ServerMessage.PlayerReadyForRound(
-            lobbyId = lobby.lobbyId,
-            playerId = identity.playerId.value,
-            playerName = identity.playerName,
-            readyPlayerIds = readyPlayerIds,
-            totalConnectedPlayers = connectedPlayers.size
-        )
-
-        lobby.players.forEach { (_, playerState) ->
-            val ws = playerState.identity.webSocketSession
-            if (ws != null && ws.isOpen) {
-                sender.send(ws, readyMessage)
-            }
-        }
-    }
-
-    /**
-     * Try to start the match for a player who just became ready.
-     * Uses getNextMatchForPlayer to find the next unplayed match across all rounds,
-     * enabling dynamic matchmaking where players don't wait for the whole round.
-     */
-    private fun tryStartMatchForPlayer(
-        lobby: TournamentLobby,
-        tournament: TournamentManager,
-        identity: PlayerIdentity
-    ) {
-        val (round, match) = tournament.getNextMatchForPlayer(identity.playerId) ?: return
-
-        // Handle BYE - player gets notified immediately, auto-complete and look for next match
-        if (match.isBye) {
-            match.isComplete = true
-            val ws = identity.webSocketSession
-            if (ws != null && ws.isOpen) {
-                sender.send(ws, ServerMessage.TournamentBye(
-                    lobbyId = lobby.lobbyId,
-                    round = round.roundNumber
-                ))
-                sendActiveMatchesToPlayer(identity, ws)
-            }
-            lobbyRepository.saveTournament(lobby.lobbyId, tournament)
-            // Recursively check if there's another match after the BYE
-            tryStartMatchForPlayer(lobby, tournament, identity)
-            return
-        }
-
-        // Find opponent
-        val opponentId = if (match.player1Id == identity.playerId) match.player2Id else match.player1Id
-        if (opponentId == null) return
-
-        // Opponent ready?
-        if (opponentId !in lobby.getReadyPlayerIds()) return
-
-        // Prevent cross-round matchmaking from stranding players. If this match is in a
-        // later round, only start it if the opponent has completed all their matches in
-        // earlier rounds. Otherwise we'd "steal" the opponent from a player waiting in
-        // a prior round. Check all rounds up to (but not including) this match's round.
-        if (tournament.hasIncompleteMatchBefore(opponentId, round.roundNumber)) return
-
-        // Both ready - start the match!
-        logger.info("Both players ready, starting match: ${identity.playerName} vs ${lobby.players[opponentId]?.identity?.playerName}")
-        startSingleMatch(lobby, tournament, round, match)
-
-        // Clear ready state for both players after their match starts
-        lobby.clearPlayerReady(identity.playerId)
-        lobby.clearPlayerReady(opponentId)
-    }
-
-    /**
-     * Start a single tournament match between two players.
-     */
-    private fun startSingleMatch(
-        lobby: TournamentLobby,
-        tournament: TournamentManager,
-        round: TournamentRound,
-        match: TournamentMatch
-    ) {
-        val player1State = lobby.players[match.player1Id] ?: return
-        val player2State = lobby.players[match.player2Id ?: return] ?: return
-
-        val deck1 = lobby.getSubmittedDeck(match.player1Id) ?: return
-        val deck2 = lobby.getSubmittedDeck(match.player2Id) ?: return
-
-        val gameSession = GameSession(
-            cardRegistry = cardRegistry,
-            useHandSmoother = gameProperties.handSmoother.enabled
-        )
-        val ps1 = player1State.identity.toPlayerSession()
-        val ps2 = player2State.identity.toPlayerSession()
-
-        gameSession.addPlayer(ps1, deck1)
-        gameSession.addPlayer(ps2, deck2)
-
-        // Store player info for persistence
-        gameSession.setPlayerPersistenceInfo(ps1.playerId, ps1.playerName, player1State.identity.token)
-        gameSession.setPlayerPersistenceInfo(ps2.playerId, ps2.playerName, player2State.identity.token)
-
-        gameRepository.save(gameSession)
-        gameRepository.linkToLobby(gameSession.sessionId, lobby.lobbyId)
-        match.gameSessionId = gameSession.sessionId
-        lobbyRepository.saveTournament(lobby.lobbyId, tournament)
-
-        // Clean up spectating state before starting the match
-        cleanUpSpectatingState(player1State.identity)
-        cleanUpSpectatingState(player2State.identity)
-
-        player1State.identity.currentGameSessionId = gameSession.sessionId
-        player2State.identity.currentGameSessionId = gameSession.sessionId
-
-        val ws1 = player1State.identity.webSocketSession
-        val ws2 = player2State.identity.webSocketSession
-        if (ws1 != null) {
-            sessionRegistry.getPlayerSession(ws1.id)?.currentGameSessionId = gameSession.sessionId
-        }
-        if (ws2 != null) {
-            sessionRegistry.getPlayerSession(ws2.id)?.currentGameSessionId = gameSession.sessionId
-        }
-
-        if (ws1 != null && ws1.isOpen) {
-            sender.send(ws1, ServerMessage.TournamentMatchStarting(
-                lobbyId = lobby.lobbyId,
-                round = round.roundNumber,
-                gameSessionId = gameSession.sessionId,
-                opponentName = player2State.identity.playerName
-            ))
-        }
-        if (ws2 != null && ws2.isOpen) {
-            sender.send(ws2, ServerMessage.TournamentMatchStarting(
-                lobbyId = lobby.lobbyId,
-                round = round.roundNumber,
-                gameSessionId = gameSession.sessionId,
-                opponentName = player1State.identity.playerName
-            ))
-        }
-
-        // Wire AI controllers for any AI players in this match
-        for (ps in listOf(ps1, ps2)) {
-            if (aiGameManager.isAiPlayer(ps.playerId)) {
-                aiGameManager.wireAiForGame(
-                    gameSession = gameSession,
-                    aiPlayerId = ps.playerId,
-                    deckList = lobby.getSubmittedDeck(ps.playerId),
-                    onActionReady = { aiPlayerId, action ->
-                        gamePlayHandler.handleAiAction(gameSession, aiPlayerId, action)
-                    },
-                    onMulliganKeep = { aiPlayerId ->
-                        gamePlayHandler.handleAiMulliganKeep(gameSession, aiPlayerId)
-                    },
-                    onMulliganTake = { aiPlayerId ->
-                        gamePlayHandler.handleAiMulliganTake(gameSession, aiPlayerId)
-                    },
-                    onBottomCards = { aiPlayerId, cardIds ->
-                        gamePlayHandler.handleAiBottomCards(gameSession, aiPlayerId, cardIds)
-                    }
-                )
-                // Update the player session in GameSession to use the new AI session
-                val aiIdentity = lobby.players[ps.playerId]?.identity
-                if (aiIdentity != null) {
-                    val newWs = aiIdentity.webSocketSession
-                    if (newWs != null) {
-                        val newPs = PlayerSession(
-                            webSocketSession = newWs,
-                            playerId = ps.playerId,
-                            playerName = ps.playerName,
-                            currentGameSessionId = gameSession.sessionId
-                        )
-                        gameSession.replacePlayerSession(ps.playerId, newPs)
-                    }
-                }
-            }
-        }
-
-        gamePlayHandler.startGame(gameSession)
-
-        // Broadcast updated active matches to waiting players (bye players, etc.)
-        broadcastActiveMatchesToWaitingPlayers(lobby.lobbyId)
-    }
-
-    /**
-     * Handle a host adding extra rounds to a completed tournament.
-     */
-    fun handleAddExtraRound(session: WebSocketSession) {
-        val token = sessionRegistry.getTokenByWsId(session.id)
-        val identity = token?.let { sessionRegistry.getIdentityByToken(it) }
-        if (identity == null) {
-            sender.sendError(session, ErrorCode.NOT_CONNECTED, "Not connected")
-            return
-        }
-
-        val lobbyId = identity.currentLobbyId
-        if (lobbyId == null) {
-            sender.sendError(session, ErrorCode.INVALID_ACTION, "Not in a lobby")
-            return
-        }
-
-        val lobby = lobbyRepository.findLobbyById(lobbyId)
-        if (lobby == null) {
-            sender.sendError(session, ErrorCode.INVALID_ACTION, "Lobby not found")
-            return
-        }
-
-        if (!lobby.isHost(identity.playerId)) {
-            sender.sendError(session, ErrorCode.INVALID_ACTION, "Only the host can add extra rounds")
-            return
-        }
-
-        if (lobby.state != LobbyState.TOURNAMENT_COMPLETE) {
-            sender.sendError(session, ErrorCode.INVALID_ACTION, "Tournament is not complete")
-            return
-        }
-
-        val tournament = lobbyRepository.findTournamentById(lobbyId)
-        if (tournament == null) {
-            sender.sendError(session, ErrorCode.INVALID_ACTION, "Tournament not found")
-            return
-        }
-
-        // Generate extra rounds and resume
-        tournament.addExtraRound()
-        lobby.resumeTournament()
-
-        logger.info("Host ${identity.playerName} added extra rounds to tournament $lobbyId (now ${tournament.totalRounds} total)")
-
-        val connectedIds = lobby.players.values
-            .filter { it.identity.isConnected }
-            .map { it.identity.playerId }
-            .toSet()
-
-        val standings = tournament.getStandingsInfo(connectedIds)
-        val nextMatchups = tournament.peekNextRoundMatchups()
-
-        // Send per-player TournamentResumed with their next opponent
-        lobby.players.forEach { (playerId, playerState) ->
-            val ws = playerState.identity.webSocketSession
-            if (ws != null && ws.isOpen) {
-                val opponentId = nextMatchups[playerId]
-                val opponentName = opponentId?.let { lobby.players[it]?.identity?.playerName }
-                val hasBye = nextMatchups.containsKey(playerId) && opponentId == null
-
-                sender.send(ws, ServerMessage.TournamentResumed(
-                    lobbyId = lobbyId,
-                    totalRounds = tournament.totalRounds,
-                    standings = standings,
-                    nextOpponentName = opponentName,
-                    nextRoundHasBye = hasBye
-                ))
-            }
-        }
-
-        // Also notify spectators
-        lobby.spectators.forEach { (_, spectatorIdentity) ->
-            val ws = spectatorIdentity.webSocketSession
-            if (ws != null && ws.isOpen) {
-                sender.send(ws, ServerMessage.TournamentResumed(
-                    lobbyId = lobbyId,
-                    totalRounds = tournament.totalRounds,
-                    standings = standings
-                ))
-            }
-        }
-
-        // Auto-ready AI players so they participate in matchmaking
-        autoReadyAiPlayers(lobby, tournament)
-
-        lobbyRepository.saveLobby(lobby)
-        lobbyRepository.saveTournament(lobbyId, tournament)
-    }
-
-    private fun completeTournament(lobbyId: String) {
-        val lobby = lobbyRepository.findLobbyById(lobbyId) ?: return
-        val tournament = lobbyRepository.findTournamentById(lobbyId) ?: return
-
-        logger.info("Tournament complete for lobby $lobbyId")
-        lobby.completeTournament()
-        lobbyRepository.saveLobby(lobby)
-        lobbyRepository.saveTournament(lobbyId, tournament)
-
-        val connectedIds = lobby.players.values
-            .filter { it.identity.isConnected }
-            .map { it.identity.playerId }
-            .toSet()
-
-        val message = ServerMessage.TournamentComplete(
-            lobbyId = lobbyId,
-            finalStandings = tournament.getStandingsInfo(connectedIds)
-        )
-
-        lobby.players.forEach { (_, playerState) ->
-            val ws = playerState.identity.webSocketSession
-            if (ws != null && ws.isOpen) {
-                sender.send(ws, message)
-            }
-        }
-
-        // Also notify tournament spectators
-        lobby.spectators.forEach { (_, spectatorIdentity) ->
-            val ws = spectatorIdentity.webSocketSession
-            if (ws != null && ws.isOpen) {
-                sender.send(ws, message)
-            }
-        }
-    }
-
-    // =========================================================================
-    // Spectating
-    // =========================================================================
-
-    private fun handleSpectateGame(session: WebSocketSession, message: ClientMessage.SpectateGame) {
-        val token = sessionRegistry.getTokenByWsId(session.id)
-        val identity = token?.let { sessionRegistry.getIdentityByToken(it) }
-        if (identity == null) {
-            sender.sendError(session, ErrorCode.NOT_CONNECTED, "Not connected")
-            return
-        }
-
-        val playerSession = sessionRegistry.getPlayerSession(session.id)
-        if (playerSession == null) {
-            sender.sendError(session, ErrorCode.NOT_CONNECTED, "Player session not found")
-            return
-        }
-
-        // Find the game session
-        val gameSession = gameRepository.findById(message.gameSessionId)
-        if (gameSession == null) {
-            sender.sendError(session, ErrorCode.GAME_NOT_FOUND, "Game not found")
-            return
-        }
-
-        // Add as spectator
-        gameSession.addSpectator(playerSession)
-
-        // Track that this player is spectating
-        identity.currentSpectatingGameId = message.gameSessionId
-
-        val playerNames = gameSession.getPlayerNames()
-        if (playerNames != null) {
-            sender.send(session, ServerMessage.SpectatingStarted(
-                gameSessionId = message.gameSessionId,
-                player1Name = playerNames.first,
-                player2Name = playerNames.second
-            ))
-        }
-
-        // Send current game state
-        val spectatorState = gameSession.buildSpectatorState()
-        if (spectatorState != null) {
-            sender.send(session, spectatorState)
-        }
-
-        logger.info("Player ${identity.playerName} started spectating game ${message.gameSessionId}")
-    }
-
-    private fun handleStopSpectating(session: WebSocketSession) {
-        val token = sessionRegistry.getTokenByWsId(session.id)
-        val identity = token?.let { sessionRegistry.getIdentityByToken(it) }
-        if (identity == null) {
-            sender.sendError(session, ErrorCode.NOT_CONNECTED, "Not connected")
-            return
-        }
-
-        val playerSession = sessionRegistry.getPlayerSession(session.id)
-        if (playerSession == null) {
-            return
-        }
-
-        val gameSessionId = identity.currentSpectatingGameId
-        if (gameSessionId != null) {
-            val gameSession = gameRepository.findById(gameSessionId)
-            gameSession?.removeSpectator(playerSession)
-            identity.currentSpectatingGameId = null
-
-            logger.info("Player ${identity.playerName} stopped spectating game $gameSessionId")
-        }
-
-        sender.send(session, ServerMessage.SpectatingStopped)
-
-        // Send active matches again so they can see the overview
-        sendActiveMatchesToPlayer(identity, session)
-    }
-
-    /**
-     * Clean up spectating state for a player (e.g., when they start an active game).
-     * Removes them from the spectated game's spectator list and clears the tracking field.
-     */
-    private fun cleanUpSpectatingState(identity: PlayerIdentity) {
-        val spectatingGameId = identity.currentSpectatingGameId ?: return
-        val gameSession = gameRepository.findById(spectatingGameId)
-        if (gameSession != null) {
-            val playerSession = identity.webSocketSession?.let { sessionRegistry.getPlayerSession(it.id) }
-            if (playerSession != null) {
-                gameSession.removeSpectator(playerSession)
-            }
-        } else {
-            logger.debug("Game session $spectatingGameId already removed during spectator cleanup for ${identity.playerName}")
-        }
-        identity.currentSpectatingGameId = null
-        logger.info("Cleared spectating state for ${identity.playerName} (was spectating $spectatingGameId)")
-    }
-
-    /**
-     * Send active matches info to a player (for bye screen).
-     */
-    fun sendActiveMatchesToPlayer(identity: PlayerIdentity, session: WebSocketSession) {
-        val lobbyId = identity.currentLobbyId ?: return
-        val lobby = lobbyRepository.findLobbyById(lobbyId) ?: return
-        val tournament = lobbyRepository.findTournamentById(lobbyId) ?: return
-
-        val connectedIds = lobby.players.values
-            .filter { it.identity.isConnected }
-            .map { it.identity.playerId }
-            .toSet()
-
-        val activeMatches = buildActiveMatchesList(tournament)
-
-        sender.send(session, ServerMessage.ActiveMatches(
-            lobbyId = lobbyId,
-            round = tournament.currentRound?.roundNumber ?: 0,
-            matches = activeMatches,
-            standings = tournament.getStandingsInfo(connectedIds)
-        ))
-    }
-
-    /**
-     * Broadcast active matches to all players who are waiting (not in an active game).
-     * This includes players with byes and players whose matches haven't started yet.
-     */
-    fun broadcastActiveMatchesToWaitingPlayers(lobbyId: String) {
-        val lobby = lobbyRepository.findLobbyById(lobbyId) ?: return
-        val tournament = lobbyRepository.findTournamentById(lobbyId) ?: return
-
-        val connectedIds = lobby.players.values
-            .filter { it.identity.isConnected }
-            .map { it.identity.playerId }
-            .toSet()
-
-        val activeMatches = buildActiveMatchesList(tournament)
-        val message = ServerMessage.ActiveMatches(
-            lobbyId = lobbyId,
-            round = tournament.currentRound?.roundNumber ?: 0,
-            matches = activeMatches,
-            standings = tournament.getStandingsInfo(connectedIds)
-        )
-
-        // Send to all players who are not currently in an active game
-        for ((playerId, playerState) in lobby.players) {
-            val identity = playerState.identity
-            val ws = identity.webSocketSession ?: continue
-            if (!ws.isOpen) continue
-
-            // Skip players who are currently in a game
-            if (identity.currentGameSessionId != null) continue
-
-            // Skip players who are spectating (they'll get updates through spectating)
-            if (identity.currentSpectatingGameId != null) continue
-
-            sender.send(ws, message)
-        }
-
-        // Also send to tournament-level spectators
-        for ((_, spectatorIdentity) in lobby.spectators) {
-            val ws = spectatorIdentity.webSocketSession ?: continue
-            if (!ws.isOpen) continue
-            if (spectatorIdentity.currentSpectatingGameId != null) continue
-            sender.send(ws, message)
-        }
-    }
-
-    /**
-     * Build a list of active matches for spectating.
-     */
-    private fun buildActiveMatchesList(tournament: TournamentManager): List<ServerMessage.ActiveMatchInfo> {
-        val matches = tournament.getAllInProgressMatches()
-        return matches.mapNotNull { match ->
-            val gameSessionId = match.gameSessionId ?: return@mapNotNull null
-            val gameSession = gameRepository.findById(gameSessionId) ?: return@mapNotNull null
-
-            val playerNames = gameSession.getPlayerNames() ?: return@mapNotNull null
-            val lifeTotals = gameSession.getLifeTotals() ?: return@mapNotNull null
-
-            ServerMessage.ActiveMatchInfo(
-                gameSessionId = gameSessionId,
-                player1Name = playerNames.first,
-                player2Name = playerNames.second,
-                player1Life = lifeTotals.first,
-                player2Life = lifeTotals.second
-            )
-        }
-    }
-
-    /**
-     * Restore spectating state for a player after server restart.
-     * Re-adds them as a spectator and sends the spectating messages.
-     */
-    fun restoreSpectating(
-        identity: PlayerIdentity,
-        playerSession: PlayerSession,
-        session: WebSocketSession,
-        gameSessionId: String
-    ) {
-        val gameSession = gameRepository.findById(gameSessionId)
-        if (gameSession == null || gameSession.isGameOver()) {
-            // Game no longer exists or is over, clear spectating state and send active matches
-            identity.currentSpectatingGameId = null
-            sendActiveMatchesToPlayer(identity, session)
-            return
-        }
-
-        // Re-add as spectator
-        gameSession.addSpectator(playerSession)
-
-        // Send SpectatingStarted
-        val playerNames = gameSession.getPlayerNames()
-        if (playerNames != null) {
-            sender.send(session, ServerMessage.SpectatingStarted(
-                gameSessionId = gameSessionId,
-                player1Name = playerNames.first,
-                player2Name = playerNames.second
-            ))
-        }
-
-        // Send current game state
-        val spectatorState = gameSession.buildSpectatorState()
-        if (spectatorState != null) {
-            sender.send(session, spectatorState)
-        }
-
-        logger.info("Restored spectating for ${identity.playerName} to game $gameSessionId")
-    }
-
-    /**
-     * Broadcast spectator state update to all spectators of a game.
-     */
-    fun broadcastSpectatorUpdate(gameSession: GameSession) {
-        val spectatorState = gameSession.buildSpectatorState() ?: return
-
-        for (spectator in gameSession.getSpectators()) {
-            if (spectator.webSocketSession.isOpen) {
-                sender.send(spectator.webSocketSession, spectatorState)
-            }
-        }
-    }
-
-    /**
-     * Default booster count for grid draft based on player count.
-     * Targets 18 grids per draft (the canonical number).
-     * - 2 players: 11 boosters (11×15=165 cards, 18 grids, ~54 cards/player)
-     * - 3 players: 15 boosters (15×15=225 cards, 18 grids at 12 cards/grid, ~48 cards/player)
-     * - 4 players: 22 boosters (22×15=330 cards, 2×18 grids in parallel, ~54 cards/player)
-     */
-    private fun gridDraftDefaultBoosters(playerCount: Int): Int = when {
-        playerCount >= 4 -> 22
-        playerCount >= 3 -> 15
-        else -> 11
     }
 }
