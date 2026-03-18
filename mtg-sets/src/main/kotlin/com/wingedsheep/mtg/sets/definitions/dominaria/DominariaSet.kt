@@ -26,6 +26,7 @@ object DominariaSet {
         AdventurousImpulse,
         AdelizTheCinderWind,
         AmaranthineWall,
+        AncientAnimus,
         ArcaneFlight,
         ArtificersAssistant,
         AesthirGlider,
