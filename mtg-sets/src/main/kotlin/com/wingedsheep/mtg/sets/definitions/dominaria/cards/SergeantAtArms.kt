@@ -37,7 +37,7 @@ val SergeantAtArms = card("Sergeant-at-Arms") {
                 toughness = 1,
                 colors = setOf(Color.WHITE),
                 creatureTypes = setOf("Soldier"),
-                imageUri = "https://cards.scryfall.io/normal/front/8/c/8c4b0257-2ca5-4015-9d63-d7cf6e87ab9d.jpg?1675456186"
+                imageUri = "https://cards.scryfall.io/normal/front/c/c/cc7d137c-f6c0-44e5-af9f-a8bbd52d3b2a.jpg?1562702338"
             )
         )
     }

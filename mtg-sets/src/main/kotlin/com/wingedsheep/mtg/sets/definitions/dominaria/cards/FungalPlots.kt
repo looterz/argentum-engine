@@ -30,7 +30,7 @@ val FungalPlots = card("Fungal Plots") {
             toughness = 1,
             colors = setOf(Color.GREEN),
             creatureTypes = setOf("Saproling"),
-            imageUri = "https://cards.scryfall.io/normal/front/3/4/34032448-fe31-44c7-845c-37fea0b8e762.jpg?1767955055"
+            imageUri = "https://cards.scryfall.io/normal/front/5/3/5371de1b-db33-4db4-a518-e35c71aa72b7.jpg?1562702067"
         )
     }
 
