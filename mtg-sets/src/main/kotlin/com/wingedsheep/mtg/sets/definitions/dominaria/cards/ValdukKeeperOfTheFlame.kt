@@ -6,8 +6,8 @@ import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
+import com.wingedsheep.sdk.dsl.DynamicAmounts
 import com.wingedsheep.sdk.scripting.effects.CreateTokenEffect
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
  * Valduk, Keeper of the Flame
@@ -28,7 +28,7 @@ val ValdukKeeperOfTheFlame = card("Valduk, Keeper of the Flame") {
     triggeredAbility {
         trigger = Triggers.BeginCombat
         effect = CreateTokenEffect(
-            count = DynamicAmount.AttachmentsOnSelf,
+            count = DynamicAmounts.attachmentsOnSelf(),
             power = 3,
             toughness = 1,
             colors = setOf(Color.RED),

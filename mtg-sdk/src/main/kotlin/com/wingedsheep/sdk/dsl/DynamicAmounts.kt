@@ -6,7 +6,10 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.values.Aggregation
 import com.wingedsheep.sdk.scripting.values.CardNumericProperty
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import com.wingedsheep.sdk.scripting.values.EntityNumericProperty
+import com.wingedsheep.sdk.scripting.values.EntityReference
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 import com.wingedsheep.sdk.scripting.references.Player
 
 /**
@@ -156,16 +159,46 @@ object DynamicAmounts {
         DynamicAmount.DamageDealtToTargetPlayerThisTurn(targetIndex)
 
     // =========================================================================
-    // Combat-based values
-    // =========================================================================
-
-    fun numberOfBlockers(): DynamicAmount =
-        DynamicAmount.NumberOfBlockers
-
-    // =========================================================================
     // Turn-based death tracking
     // =========================================================================
 
     fun nonTokenCreaturesDiedThisTurn(player: Player = Player.You): DynamicAmount =
         DynamicAmount.NonTokenCreaturesDiedThisTurn(player)
+
+    // =========================================================================
+    // Entity property shortcuts (composable entity + property)
+    // =========================================================================
+
+    fun sourcePower(): DynamicAmount =
+        DynamicAmount.EntityProperty(EntityReference.Source, EntityNumericProperty.Power)
+
+    fun sourceToughness(): DynamicAmount =
+        DynamicAmount.EntityProperty(EntityReference.Source, EntityNumericProperty.Toughness)
+
+    fun targetPower(index: Int = 0): DynamicAmount =
+        DynamicAmount.EntityProperty(EntityReference.Target(index), EntityNumericProperty.Power)
+
+    fun targetToughness(index: Int = 0): DynamicAmount =
+        DynamicAmount.EntityProperty(EntityReference.Target(index), EntityNumericProperty.Toughness)
+
+    fun targetManaValue(index: Int = 0): DynamicAmount =
+        DynamicAmount.EntityProperty(EntityReference.Target(index), EntityNumericProperty.ManaValue)
+
+    fun sacrificedPower(index: Int = 0): DynamicAmount =
+        DynamicAmount.EntityProperty(EntityReference.Sacrificed(index), EntityNumericProperty.Power)
+
+    fun sacrificedToughness(index: Int = 0): DynamicAmount =
+        DynamicAmount.EntityProperty(EntityReference.Sacrificed(index), EntityNumericProperty.Toughness)
+
+    fun countersOnSelf(type: CounterTypeFilter): DynamicAmount =
+        DynamicAmount.EntityProperty(EntityReference.Source, EntityNumericProperty.CounterCount(type))
+
+    fun countersOnTarget(type: CounterTypeFilter, index: Int = 0): DynamicAmount =
+        DynamicAmount.EntityProperty(EntityReference.Target(index), EntityNumericProperty.CounterCount(type))
+
+    fun attachmentsOnSelf(): DynamicAmount =
+        DynamicAmount.EntityProperty(EntityReference.Source, EntityNumericProperty.AttachmentCount)
+
+    fun numberOfBlockers(): DynamicAmount =
+        DynamicAmount.EntityProperty(EntityReference.Triggering, EntityNumericProperty.BlockerCount)
 }

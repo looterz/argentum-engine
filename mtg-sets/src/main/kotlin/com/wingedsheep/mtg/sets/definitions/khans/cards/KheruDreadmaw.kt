@@ -6,7 +6,7 @@ import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import com.wingedsheep.sdk.dsl.DynamicAmounts
 
 /**
  * Kheru Dreadmaw
@@ -30,7 +30,7 @@ val KheruDreadmaw = card("Kheru Dreadmaw") {
             Costs.Mana("{1}{G}"),
             Costs.SacrificeAnother(GameObjectFilter.Creature)
         )
-        effect = Effects.GainLife(DynamicAmount.SacrificedPermanentToughness)
+        effect = Effects.GainLife(DynamicAmounts.sacrificedToughness())
     }
 
     metadata {

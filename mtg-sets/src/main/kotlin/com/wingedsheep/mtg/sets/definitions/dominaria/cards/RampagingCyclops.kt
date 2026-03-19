@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.scripting.GrantDynamicStatsEffect
 import com.wingedsheep.sdk.scripting.StaticTarget
 import com.wingedsheep.sdk.scripting.conditions.Compare
 import com.wingedsheep.sdk.scripting.conditions.ComparisonOperator
+import com.wingedsheep.sdk.dsl.DynamicAmounts
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
@@ -31,7 +32,7 @@ val RampagingCyclops = card("Rampaging Cyclops") {
                 toughnessBonus = DynamicAmount.Fixed(0)
             ),
             condition = Compare(
-                DynamicAmount.NumberOfBlockers,
+                DynamicAmounts.numberOfBlockers(),
                 ComparisonOperator.GTE,
                 DynamicAmount.Fixed(2)
             )

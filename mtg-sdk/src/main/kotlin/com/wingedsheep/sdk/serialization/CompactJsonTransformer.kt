@@ -62,7 +62,9 @@ object CompactJsonTransformer {
         // Damage source override (EffectTarget sealed interface)
         "damageSource",
         // Controller override for "under your control" effects (EffectTarget sealed interface)
-        "controllerOverride"
+        "controllerOverride",
+        // EntityProperty fields (EntityReference and EntityNumericProperty sealed interfaces)
+        "entity", "numericProperty"
     )
 
     /**

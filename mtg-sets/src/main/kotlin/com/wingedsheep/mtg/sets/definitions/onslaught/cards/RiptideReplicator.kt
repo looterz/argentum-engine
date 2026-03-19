@@ -5,6 +5,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 import com.wingedsheep.sdk.scripting.effects.CreateChosenTokenEffect
+import com.wingedsheep.sdk.dsl.DynamicAmounts
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.EntersWithColorChoice
 import com.wingedsheep.sdk.scripting.EntersWithCreatureTypeChoice
@@ -37,8 +38,8 @@ val RiptideReplicator = card("Riptide Replicator") {
             Costs.Tap
         )
         effect = CreateChosenTokenEffect(
-            dynamicPower = DynamicAmount.CountersOnSelf(CounterTypeFilter.Named("charge")),
-            dynamicToughness = DynamicAmount.CountersOnSelf(CounterTypeFilter.Named("charge"))
+            dynamicPower = DynamicAmounts.countersOnSelf(CounterTypeFilter.Named("charge")),
+            dynamicToughness = DynamicAmounts.countersOnSelf(CounterTypeFilter.Named("charge"))
         )
     }
 

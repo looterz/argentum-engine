@@ -8,7 +8,7 @@ import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.AmplifyEffect
 import com.wingedsheep.sdk.scripting.effects.DealDamageEffect
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import com.wingedsheep.sdk.dsl.DynamicAmounts
 
 /**
  * Kilnmouth Dragon
@@ -36,7 +36,7 @@ val KilnmouthDragon = card("Kilnmouth Dragon") {
         cost = Costs.Tap
         val t = target("any target", Targets.Any)
         effect = DealDamageEffect(
-            amount = DynamicAmount.CountersOnSelf(CounterTypeFilter.PlusOnePlusOne),
+            amount = DynamicAmounts.countersOnSelf(CounterTypeFilter.PlusOnePlusOne),
             target = t
         )
     }

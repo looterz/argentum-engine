@@ -12,7 +12,7 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.TriggerBinding
 import com.wingedsheep.sdk.scripting.TriggerSpec
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import com.wingedsheep.sdk.dsl.DynamicAmounts
 
 /**
  * Marwyn, the Nurturer
@@ -42,7 +42,7 @@ val MarwynTheNurturer = card("Marwyn, the Nurturer") {
 
     activatedAbility {
         cost = Costs.Tap
-        effect = Effects.AddMana(Color.GREEN, DynamicAmount.SourcePower)
+        effect = Effects.AddMana(Color.GREEN, DynamicAmounts.sourcePower())
         manaAbility = true
     }
 

@@ -7,8 +7,8 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.dsl.DynamicAmounts
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
  * Hallar, the Firefletcher
@@ -32,7 +32,7 @@ val HallarTheFirefletcher = card("Hallar, the Firefletcher") {
         trigger = Triggers.YouCastKickedSpell
         effect = Effects.AddCounters("+1/+1", 1, EffectTarget.Self)
             .then(Effects.DealDamage(
-                DynamicAmount.CountersOnSelf(CounterTypeFilter.PlusOnePlusOne),
+                DynamicAmounts.countersOnSelf(CounterTypeFilter.PlusOnePlusOne),
                 EffectTarget.PlayerRef(Player.EachOpponent)
             ))
     }

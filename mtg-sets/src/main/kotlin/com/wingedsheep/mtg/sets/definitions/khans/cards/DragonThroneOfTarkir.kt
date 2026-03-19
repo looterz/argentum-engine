@@ -14,7 +14,7 @@ import com.wingedsheep.sdk.scripting.effects.GrantKeywordEffect
 import com.wingedsheep.sdk.scripting.effects.ModifyStatsEffect
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import com.wingedsheep.sdk.dsl.DynamicAmounts
 
 /**
  * Dragon Throne of Tarkir
@@ -55,7 +55,7 @@ val DragonThroneOfTarkir = card("Dragon Throne of Tarkir") {
                         ),
                         ForEachInGroupEffect(
                             GroupFilter.OtherCreaturesYouControl,
-                            ModifyStatsEffect(DynamicAmount.SourcePower, DynamicAmount.SourcePower, EffectTarget.Self)
+                            ModifyStatsEffect(DynamicAmounts.sourcePower(), DynamicAmounts.sourcePower(), EffectTarget.Self)
                         )
                     )
                 ),

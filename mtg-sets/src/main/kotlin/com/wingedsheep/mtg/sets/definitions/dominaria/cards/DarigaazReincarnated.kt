@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
 import com.wingedsheep.sdk.scripting.effects.MoveToZoneEffect
 import com.wingedsheep.sdk.scripting.effects.RemoveCountersEffect
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
+import com.wingedsheep.sdk.dsl.DynamicAmounts
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
@@ -58,14 +59,14 @@ val DarigaazReincarnated = card("Darigaaz Reincarnated") {
         trigger = Triggers.YourUpkeep
         triggerZone = Zone.EXILE
         triggerCondition = Compare(
-            DynamicAmount.CountersOnSelf(CounterTypeFilter.Named("egg")),
+            DynamicAmounts.countersOnSelf(CounterTypeFilter.Named("egg")),
             ComparisonOperator.GTE,
             DynamicAmount.Fixed(1)
         )
         effect = RemoveCountersEffect("egg", 1, EffectTarget.Self) then
             ConditionalEffect(
                 condition = Compare(
-                    DynamicAmount.CountersOnSelf(CounterTypeFilter.Named("egg")),
+                    DynamicAmounts.countersOnSelf(CounterTypeFilter.Named("egg")),
                     ComparisonOperator.EQ,
                     DynamicAmount.Fixed(0)
                 ),

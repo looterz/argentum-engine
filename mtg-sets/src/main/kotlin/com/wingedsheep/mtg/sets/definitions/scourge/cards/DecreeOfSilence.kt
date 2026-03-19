@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.scripting.effects.SacrificeSelfEffect
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.dsl.DynamicAmounts
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
@@ -45,7 +46,7 @@ val DecreeOfSilence = card("Decree of Silence") {
             .then(
                 ConditionalEffect(
                     condition = Compare(
-                        DynamicAmount.CountersOnSelf(CounterTypeFilter.Named("depletion")),
+                        DynamicAmounts.countersOnSelf(CounterTypeFilter.Named("depletion")),
                         ComparisonOperator.GTE,
                         DynamicAmount.Fixed(3)
                     ),

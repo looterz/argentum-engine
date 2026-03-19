@@ -5,7 +5,7 @@ import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.effects.DealDamageEffect
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import com.wingedsheep.sdk.dsl.DynamicAmounts
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.targets.AnyTarget
 
@@ -34,7 +34,7 @@ val AirdropCondor = card("Airdrop Condor") {
         )
         val t = target("target", AnyTarget())
         effect = DealDamageEffect(
-            amount = DynamicAmount.SacrificedPermanentPower,
+            amount = DynamicAmounts.sacrificedPower(),
             target = t
         )
     }

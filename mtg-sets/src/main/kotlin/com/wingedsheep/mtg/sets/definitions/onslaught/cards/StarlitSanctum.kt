@@ -4,8 +4,8 @@ import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.AbilityCost
+import com.wingedsheep.sdk.dsl.DynamicAmounts
 import com.wingedsheep.sdk.scripting.effects.AddColorlessManaEffect
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.effects.GainLifeEffect
 import com.wingedsheep.sdk.scripting.GameObjectFilter
@@ -38,7 +38,7 @@ val StarlitSanctum = card("Starlit Sanctum") {
             Costs.Sacrifice(GameObjectFilter.Creature.withSubtype("Cleric"))
         )
         effect = GainLifeEffect(
-            amount = DynamicAmount.SacrificedPermanentToughness,
+            amount = DynamicAmounts.sacrificedToughness(),
             target = EffectTarget.Controller
         )
     }
@@ -51,7 +51,7 @@ val StarlitSanctum = card("Starlit Sanctum") {
         )
         val t = target("target", TargetPlayer())
         effect = LoseLifeEffect(
-            amount = DynamicAmount.SacrificedPermanentPower,
+            amount = DynamicAmounts.sacrificedPower(),
             target = t
         )
     }

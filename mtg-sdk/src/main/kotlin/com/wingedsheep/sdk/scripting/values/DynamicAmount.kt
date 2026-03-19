@@ -261,27 +261,6 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
     // =========================================================================
 
     /**
-     * Power of a creature that was sacrificed as an additional cost.
-     * Used for effects like Final Strike: "Deal damage equal to that creature's power"
-     */
-    @SerialName("SacrificedPermanentPower")
-    @Serializable
-    data object SacrificedPermanentPower : DynamicAmount {
-        override val description: String = "the sacrificed creature's power"
-        override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
-    }
-
-    /**
-     * Toughness of a creature that was sacrificed as an additional cost.
-     */
-    @SerialName("SacrificedPermanentToughness")
-    @Serializable
-    data object SacrificedPermanentToughness : DynamicAmount {
-        override val description: String = "the sacrificed creature's toughness"
-        override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
-    }
-
-    /**
      * The amount of damage dealt, from a trigger context.
      * Used for abilities like "Whenever ~ is dealt damage, create that many tokens."
      */
@@ -325,28 +304,6 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
     @Serializable
     data object AdditionalCostExiledCount : DynamicAmount {
         override val description: String = "the number of cards exiled"
-        override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
-    }
-
-    /**
-     * Power of the source entity (the permanent that has the ability).
-     * Used for effects like "deal damage equal to its power" on triggered abilities.
-     */
-    @SerialName("SourcePower")
-    @Serializable
-    data object SourcePower : DynamicAmount {
-        override val description: String = "its power"
-        override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
-    }
-
-    /**
-     * Toughness of the source entity (the permanent that has the ability).
-     * Used for effects like "double its toughness" on triggered abilities.
-     */
-    @SerialName("SourceToughness")
-    @Serializable
-    data object SourceToughness : DynamicAmount {
-        override val description: String = "its toughness"
         override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
     }
 
@@ -406,17 +363,6 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
                 }
             }
         }
-    }
-
-    /**
-     * Count of a specific counter type on the source entity.
-     * Used for effects like Riptide Replicator: "where X is the number of charge counters on ~"
-     */
-    @SerialName("CountersOnSelf")
-    @Serializable
-    data class CountersOnSelf(val counterType: CounterTypeFilter) : DynamicAmount {
-        override val description: String = "the number of ${counterType.description} counters on it"
-        override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
     }
 
     /**
@@ -505,39 +451,29 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
     }
 
     // =========================================================================
-    // Target-based Values - Values from targets on the stack
+    // Entity Property — unified access to any entity's numeric property
     // =========================================================================
 
     /**
-     * Power of a target creature (read from projected state).
-     * Used for conditions like "if its power is less than or equal to X".
+     * Read a numeric property from a referenced entity.
+     * This is the unified replacement for TargetPower, TargetManaValue, CountersOnTarget,
+     * SourcePower, SacrificedPermanentPower, CountersOnSelf, etc.
+     *
+     * Examples:
+     * ```kotlin
+     * EntityProperty(EntityReference.Source, EntityNumericProperty.Power)        // SourcePower
+     * EntityProperty(EntityReference.Target(0), EntityNumericProperty.ManaValue) // TargetManaValue
+     * EntityProperty(EntityReference.Sacrificed(), EntityNumericProperty.Power)  // SacrificedPermanentPower
+     * EntityProperty(EntityReference.Source, EntityNumericProperty.CounterCount(CounterTypeFilter.PlusOnePlusOne)) // CountersOnSelf
+     * ```
      */
-    @SerialName("TargetPower")
+    @SerialName("EntityProperty")
     @Serializable
-    data class TargetPower(val targetIndex: Int = 0) : DynamicAmount {
-        override val description: String = "target creature's power"
-        override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
-    }
-
-    /**
-     * Mana value of a target spell on the stack.
-     * Used for conditions like "if its mana value is less than or equal to X".
-     */
-    @SerialName("TargetManaValue")
-    @Serializable
-    data class TargetManaValue(val targetIndex: Int = 0) : DynamicAmount {
-        override val description: String = "target spell's mana value"
-        override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
-    }
-
-    /**
-     * Count of a specific counter type on a target permanent.
-     * Used for conditional effects like Bring Low: "If that creature has a +1/+1 counter on it"
-     */
-    @SerialName("CountersOnTarget")
-    @Serializable
-    data class CountersOnTarget(val counterType: CounterTypeFilter, val targetIndex: Int = 0) : DynamicAmount {
-        override val description: String = "the number of ${counterType.description} counters on target"
+    data class EntityProperty(
+        val entity: EntityReference,
+        val numericProperty: EntityNumericProperty
+    ) : DynamicAmount {
+        override val description: String = "${entity.description}'s ${numericProperty.description}"
         override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
     }
 
@@ -580,18 +516,6 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
     }
 
     /**
-     * Number of creatures blocking the triggering entity (or a specified target).
-     * Used for effects like Berserk Murlodont: "+1/+1 for each creature blocking it."
-     * Reads from BlockedComponent.blockerIds on the target creature.
-     */
-    @SerialName("NumberOfBlockers")
-    @Serializable
-    data object NumberOfBlockers : DynamicAmount {
-        override val description: String = "the number of creatures blocking it"
-        override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
-    }
-
-    /**
      * Count creatures the controller controls that share a creature type with the triggering entity.
      * Used for Mana Echoes: "add {C} equal to the number of creatures you control that share a creature type with it."
      */
@@ -599,17 +523,6 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
     @Serializable
     data object CreaturesSharingTypeWithTriggeringEntity : DynamicAmount {
         override val description: String = "the number of creatures you control that share a creature type with it"
-        override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
-    }
-
-    /**
-     * Count of Auras and Equipment attached to the source entity.
-     * Used for effects like Champion of the Flame: "gets +2/+2 for each Aura and Equipment attached to it."
-     */
-    @SerialName("AttachmentsOnSelf")
-    @Serializable
-    data object AttachmentsOnSelf : DynamicAmount {
-        override val description: String = "the number of Auras and Equipment attached to it"
         override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
     }
 

@@ -8,7 +8,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.AmplifyEffect
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import com.wingedsheep.sdk.dsl.DynamicAmounts
 
 /**
  * Canopy Crawler
@@ -35,8 +35,8 @@ val CanopyCrawler = card("Canopy Crawler") {
         cost = Costs.Tap
         val creature = target("creature", Targets.Creature)
         effect = Effects.ModifyStats(
-            DynamicAmount.CountersOnSelf(CounterTypeFilter.PlusOnePlusOne),
-            DynamicAmount.CountersOnSelf(CounterTypeFilter.PlusOnePlusOne),
+            DynamicAmounts.countersOnSelf(CounterTypeFilter.PlusOnePlusOne),
+            DynamicAmounts.countersOnSelf(CounterTypeFilter.PlusOnePlusOne),
             creature
         )
     }

@@ -11,10 +11,13 @@ import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.model.CharacteristicValue
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.values.Aggregation
 import com.wingedsheep.sdk.scripting.values.CardNumericProperty
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import com.wingedsheep.sdk.scripting.values.EntityNumericProperty
+import com.wingedsheep.sdk.scripting.values.EntityReference
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 import com.wingedsheep.sdk.scripting.references.Player
@@ -106,36 +109,11 @@ class DynamicAmountEvaluator(
                 min(evaluate(state, amount.left, context), evaluate(state, amount.right, context))
             }
 
-            // Context-based values
-            is DynamicAmount.SacrificedPermanentPower -> {
-                val sacrificedId = context.sacrificedPermanents.firstOrNull() ?: return 0
-                val card = state.getEntity(sacrificedId)?.get<CardComponent>() ?: return 0
-                when (val power = card.baseStats?.power) {
-                    is com.wingedsheep.sdk.model.CharacteristicValue.Fixed -> power.value
-                    is com.wingedsheep.sdk.model.CharacteristicValue.Dynamic -> evaluate(state, power.source, context)
-                    is com.wingedsheep.sdk.model.CharacteristicValue.DynamicWithOffset -> evaluate(state, power.source, context) + power.offset
-                    null -> 0
-                }
-            }
-
+            // Context-based values (kept — these read from trigger event context, not entity properties)
             is DynamicAmount.TriggerDamageAmount -> context.triggerDamageAmount ?: 0
-
             is DynamicAmount.TriggerLifeGainAmount -> context.triggerDamageAmount ?: 0
-
             is DynamicAmount.TriggerLifeLossAmount -> context.triggerDamageAmount ?: 0
-
             is DynamicAmount.LastKnownCounterCount -> context.triggerCounterCount ?: 0
-
-            is DynamicAmount.SacrificedPermanentToughness -> {
-                val sacrificedId = context.sacrificedPermanents.firstOrNull() ?: return 0
-                val card = state.getEntity(sacrificedId)?.get<CardComponent>() ?: return 0
-                when (val toughness = card.baseStats?.toughness) {
-                    is com.wingedsheep.sdk.model.CharacteristicValue.Fixed -> toughness.value
-                    is com.wingedsheep.sdk.model.CharacteristicValue.Dynamic -> evaluate(state, toughness.source, context)
-                    is com.wingedsheep.sdk.model.CharacteristicValue.DynamicWithOffset -> evaluate(state, toughness.source, context) + toughness.offset
-                    null -> 0
-                }
-            }
 
             // Other types - return 0 for unimplemented
             is DynamicAmount.CardTypesInAllGraveyards -> {
@@ -159,122 +137,18 @@ class DynamicAmountEvaluator(
 
             is DynamicAmount.AdditionalCostExiledCount -> context.exiledCardCount
 
-            is DynamicAmount.SourcePower -> {
-                val sourceId = context.sourceId ?: return 0
-                // Use projected state for accurate power (accounts for continuous effects,
-                // counters, equipment bonuses, etc.)
-                val projected = if (projectForBattlefieldCounting) {
-                    state.projectedState
-                } else null
-                if (projected != null) {
-                    val projectedPower = projected.getPower(sourceId)
-                    if (projectedPower != null) {
-                        projectedPower
-                    } else {
-                        // Source not on battlefield (e.g., left battlefield before resolution) -
-                        // fall back to base stats
-                        val card = state.getEntity(sourceId)?.get<CardComponent>() ?: return 0
-                        when (val power = card.baseStats?.power) {
-                            is com.wingedsheep.sdk.model.CharacteristicValue.Fixed -> power.value
-                            is com.wingedsheep.sdk.model.CharacteristicValue.Dynamic -> evaluate(state, power.source, context)
-                            is com.wingedsheep.sdk.model.CharacteristicValue.DynamicWithOffset -> evaluate(state, power.source, context) + power.offset
-                            null -> 0
-                        }
-                    }
-                } else {
-                    val card = state.getEntity(sourceId)?.get<CardComponent>() ?: return 0
-                    when (val power = card.baseStats?.power) {
-                        is com.wingedsheep.sdk.model.CharacteristicValue.Fixed -> power.value
-                        is com.wingedsheep.sdk.model.CharacteristicValue.Dynamic -> evaluate(state, power.source, context)
-                        is com.wingedsheep.sdk.model.CharacteristicValue.DynamicWithOffset -> evaluate(state, power.source, context) + power.offset
-                        null -> 0
-                    }
-                }
-            }
-
-            is DynamicAmount.SourceToughness -> {
-                val sourceId = context.sourceId ?: return 0
-                val projected = if (projectForBattlefieldCounting) {
-                    state.projectedState
-                } else null
-                if (projected != null) {
-                    val projectedToughness = projected.getToughness(sourceId)
-                    if (projectedToughness != null) {
-                        projectedToughness
-                    } else {
-                        val card = state.getEntity(sourceId)?.get<CardComponent>() ?: return 0
-                        when (val toughness = card.baseStats?.toughness) {
-                            is com.wingedsheep.sdk.model.CharacteristicValue.Fixed -> toughness.value
-                            is com.wingedsheep.sdk.model.CharacteristicValue.Dynamic -> evaluate(state, toughness.source, context)
-                            is com.wingedsheep.sdk.model.CharacteristicValue.DynamicWithOffset -> evaluate(state, toughness.source, context) + toughness.offset
-                            null -> 0
-                        }
-                    }
-                } else {
-                    val card = state.getEntity(sourceId)?.get<CardComponent>() ?: return 0
-                    when (val toughness = card.baseStats?.toughness) {
-                        is com.wingedsheep.sdk.model.CharacteristicValue.Fixed -> toughness.value
-                        is com.wingedsheep.sdk.model.CharacteristicValue.Dynamic -> evaluate(state, toughness.source, context)
-                        is com.wingedsheep.sdk.model.CharacteristicValue.DynamicWithOffset -> evaluate(state, toughness.source, context) + toughness.offset
-                        null -> 0
-                    }
-                }
-            }
-
-            is DynamicAmount.CountersOnSelf -> {
-                val sourceId = context.sourceId ?: return 0
-                val countersComponent = state.getEntity(sourceId)?.get<CountersComponent>() ?: return 0
-                val counterType = resolveCounterType(amount.counterType)
-                countersComponent.getCount(counterType)
-            }
-
             is DynamicAmount.Conditional -> {
                 val eval = conditionEvaluator ?: ConditionEvaluator()
                 val met = eval.evaluate(state, amount.condition, context)
                 if (met) evaluate(state, amount.ifTrue, context) else evaluate(state, amount.ifFalse, context)
             }
 
-            is DynamicAmount.TargetPower -> {
-                val target = context.targets.getOrNull(amount.targetIndex) ?: return 0
-                val targetEntityId = when (target) {
-                    is com.wingedsheep.engine.state.components.stack.ChosenTarget.Permanent -> target.entityId
-                    else -> return 0
-                }
-                // Use projected state for accurate power (accounts for continuous effects)
-                val projected = if (projectForBattlefieldCounting) {
-                    state.projectedState
-                } else null
-                if (projected != null) {
-                    projected.getPower(targetEntityId) ?: 0
-                } else {
-                    val card = state.getEntity(targetEntityId)?.get<CardComponent>() ?: return 0
-                    when (val power = card.baseStats?.power) {
-                        is com.wingedsheep.sdk.model.CharacteristicValue.Fixed -> power.value
-                        is com.wingedsheep.sdk.model.CharacteristicValue.Dynamic -> evaluate(state, power.source, context)
-                        is com.wingedsheep.sdk.model.CharacteristicValue.DynamicWithOffset -> evaluate(state, power.source, context) + power.offset
-                        null -> 0
-                    }
-                }
-            }
-
-            is DynamicAmount.CountersOnTarget -> {
-                val target = context.targets.getOrNull(amount.targetIndex) ?: return 0
-                val targetEntityId = when (target) {
-                    is com.wingedsheep.engine.state.components.stack.ChosenTarget.Permanent -> target.entityId
-                    else -> return 0
-                }
-                val countersComponent = state.getEntity(targetEntityId)?.get<CountersComponent>() ?: return 0
-                val counterType = resolveCounterType(amount.counterType)
-                countersComponent.getCount(counterType)
-            }
-
-            is DynamicAmount.TargetManaValue -> {
-                val target = context.targets.getOrNull(amount.targetIndex) ?: return 0
-                val spellEntityId = when (target) {
-                    is com.wingedsheep.engine.state.components.stack.ChosenTarget.Spell -> target.spellEntityId
-                    else -> return 0
-                }
-                state.getEntity(spellEntityId)?.get<CardComponent>()?.manaValue ?: 0
+            // Composable entity property — replaces SourcePower, TargetPower, CountersOnSelf, etc.
+            is DynamicAmount.EntityProperty -> {
+                val entityId = resolveEntityId(amount.entity, context) ?: return 0
+                // Sacrificed entities already left battlefield — don't try projected state
+                val useProjected = amount.entity !is EntityReference.Sacrificed
+                resolveNumericProperty(state, entityId, amount.numericProperty, context, useProjected)
             }
 
             is DynamicAmount.Divide -> {
@@ -299,15 +173,6 @@ class DynamicAmountEvaluator(
                     ?.amount ?: 0
             }
 
-            is DynamicAmount.NumberOfBlockers -> {
-                // Count how many creatures are blocking the triggering entity
-                val triggeringId = context.triggeringEntityId ?: return 0
-                val blockedComponent = state.getEntity(triggeringId)
-                    ?.get<com.wingedsheep.engine.state.components.combat.BlockedComponent>()
-                    ?: return 0
-                blockedComponent.blockerIds.size
-            }
-
             is DynamicAmount.NonTokenCreaturesDiedThisTurn -> {
                 val playerIds = resolveUnifiedPlayerIds(state, amount.player, context)
                 playerIds.sumOf { playerId ->
@@ -315,11 +180,6 @@ class DynamicAmountEvaluator(
                         ?.get<com.wingedsheep.engine.state.components.player.NonTokenCreaturesDiedThisTurnComponent>()
                         ?.count ?: 0
                 }
-            }
-
-            is DynamicAmount.AttachmentsOnSelf -> {
-                val sourceId = context.sourceId ?: return 0
-                state.getEntity(sourceId)?.get<AttachmentsComponent>()?.attachedIds?.size ?: 0
             }
 
             is DynamicAmount.CreaturesSharingTypeWithTriggeringEntity -> {
@@ -522,6 +382,108 @@ class DynamicAmountEvaluator(
                     ?: state.getEntity(entityId)?.get<CardComponent>()?.baseStats?.baseToughness
                     ?: 0
             }
+        }
+    }
+
+    // =========================================================================
+    // Entity Reference Resolution
+    // =========================================================================
+
+    /**
+     * Resolve an [EntityReference] to an [EntityId] using the current effect context.
+     */
+    private fun resolveEntityId(ref: EntityReference, context: EffectContext): EntityId? =
+        when (ref) {
+            is EntityReference.Source -> context.sourceId
+            is EntityReference.Target -> {
+                val target = context.targets.getOrNull(ref.index)
+                when (target) {
+                    is com.wingedsheep.engine.state.components.stack.ChosenTarget.Permanent -> target.entityId
+                    is com.wingedsheep.engine.state.components.stack.ChosenTarget.Spell -> target.spellEntityId
+                    is com.wingedsheep.engine.state.components.stack.ChosenTarget.Player -> target.playerId
+                    else -> null
+                }
+            }
+            is EntityReference.Sacrificed -> context.sacrificedPermanents.getOrNull(ref.index)
+            is EntityReference.Triggering -> context.triggeringEntityId
+        }
+
+    // =========================================================================
+    // Entity Numeric Property Resolution
+    // =========================================================================
+
+    /**
+     * Resolve a numeric property from an entity. Unified handler for [DynamicAmount.EntityProperty].
+     */
+    private fun resolveNumericProperty(
+        state: GameState,
+        entityId: EntityId,
+        property: EntityNumericProperty,
+        context: EffectContext,
+        useProjected: Boolean
+    ): Int {
+        return when (property) {
+            is EntityNumericProperty.Power ->
+                resolvePowerOrToughness(state, entityId, isPower = true, context, useProjected)
+
+            is EntityNumericProperty.Toughness ->
+                resolvePowerOrToughness(state, entityId, isPower = false, context, useProjected)
+
+            is EntityNumericProperty.ManaValue ->
+                state.getEntity(entityId)?.get<CardComponent>()?.manaValue ?: 0
+
+            is EntityNumericProperty.CounterCount -> {
+                val countersComponent = state.getEntity(entityId)?.get<CountersComponent>() ?: return 0
+                countersComponent.getCount(resolveCounterType(property.counterType))
+            }
+
+            is EntityNumericProperty.AttachmentCount ->
+                state.getEntity(entityId)?.get<AttachmentsComponent>()?.attachedIds?.size ?: 0
+
+            is EntityNumericProperty.BlockerCount ->
+                state.getEntity(entityId)
+                    ?.get<com.wingedsheep.engine.state.components.combat.BlockedComponent>()
+                    ?.blockerIds?.size ?: 0
+        }
+    }
+
+    /**
+     * Resolve power or toughness for an entity, using projected state when available
+     * and falling back to base characteristic values.
+     */
+    private fun resolvePowerOrToughness(
+        state: GameState,
+        entityId: EntityId,
+        isPower: Boolean,
+        context: EffectContext,
+        useProjected: Boolean
+    ): Int {
+        val projected = if (useProjected && projectForBattlefieldCounting) state.projectedState else null
+        if (projected != null) {
+            val projectedValue = if (isPower) projected.getPower(entityId) else projected.getToughness(entityId)
+            if (projectedValue != null) return projectedValue
+        }
+        // Fall back to base stats (entity not on battlefield or projection disabled)
+        return resolveCharacteristicValue(state, entityId, isPower, context)
+    }
+
+    /**
+     * Resolve a characteristic value (power or toughness) from base stats.
+     * Handles Fixed, Dynamic, and DynamicWithOffset characteristic values.
+     */
+    private fun resolveCharacteristicValue(
+        state: GameState,
+        entityId: EntityId,
+        isPower: Boolean,
+        context: EffectContext
+    ): Int {
+        val card = state.getEntity(entityId)?.get<CardComponent>() ?: return 0
+        val value = if (isPower) card.baseStats?.power else card.baseStats?.toughness
+        return when (value) {
+            is CharacteristicValue.Fixed -> value.value
+            is CharacteristicValue.Dynamic -> evaluate(state, value.source, context)
+            is CharacteristicValue.DynamicWithOffset -> evaluate(state, value.source, context) + value.offset
+            null -> 0
         }
     }
 

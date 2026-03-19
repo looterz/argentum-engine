@@ -6,7 +6,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import com.wingedsheep.sdk.dsl.DynamicAmounts
 
 /**
  * Berserk Murlodont
@@ -25,8 +25,8 @@ val BerserkMurlodont = card("Berserk Murlodont") {
     triggeredAbility {
         trigger = Triggers.FilteredBecomesBlocked(GameObjectFilter.Creature.withSubtype("Beast"))
         effect = Effects.ModifyStats(
-            DynamicAmount.NumberOfBlockers,
-            DynamicAmount.NumberOfBlockers,
+            DynamicAmounts.numberOfBlockers(),
+            DynamicAmounts.numberOfBlockers(),
             EffectTarget.TriggeringEntity
         )
     }

@@ -5,6 +5,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GrantDynamicStatsEffect
 import com.wingedsheep.sdk.scripting.StaticTarget
+import com.wingedsheep.sdk.dsl.DynamicAmounts
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
@@ -28,8 +29,8 @@ val ChampionOfTheFlame = card("Champion of the Flame") {
     staticAbility {
         ability = GrantDynamicStatsEffect(
             target = StaticTarget.SourceCreature,
-            powerBonus = DynamicAmount.Multiply(DynamicAmount.AttachmentsOnSelf, 2),
-            toughnessBonus = DynamicAmount.Multiply(DynamicAmount.AttachmentsOnSelf, 2)
+            powerBonus = DynamicAmount.Multiply(DynamicAmounts.attachmentsOnSelf(), 2),
+            toughnessBonus = DynamicAmount.Multiply(DynamicAmounts.attachmentsOnSelf(), 2)
         )
     }
 

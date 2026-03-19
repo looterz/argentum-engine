@@ -9,7 +9,7 @@ import com.wingedsheep.sdk.scripting.effects.DealDamageEffect
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
 import com.wingedsheep.sdk.scripting.targets.TargetCreature
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import com.wingedsheep.sdk.dsl.DynamicAmounts
 
 /**
  * Daru Stinger
@@ -36,7 +36,7 @@ val DaruStinger = card("Daru Stinger") {
         cost = Costs.Tap
         val t = target("target", TargetCreature(filter = TargetFilter.AttackingOrBlockingCreature))
         effect = DealDamageEffect(
-            amount = DynamicAmount.CountersOnSelf(CounterTypeFilter.PlusOnePlusOne),
+            amount = DynamicAmounts.countersOnSelf(CounterTypeFilter.PlusOnePlusOne),
             target = t
         )
     }

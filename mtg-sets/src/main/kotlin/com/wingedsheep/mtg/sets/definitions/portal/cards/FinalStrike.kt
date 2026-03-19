@@ -3,8 +3,8 @@ package com.wingedsheep.mtg.sets.definitions.portal.cards
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.AdditionalCost
+import com.wingedsheep.sdk.dsl.DynamicAmounts
 import com.wingedsheep.sdk.scripting.effects.DealDamageEffect
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.targets.TargetOpponent
 
@@ -25,7 +25,7 @@ val FinalStrike = card("Final Strike") {
     spell {
         val t = target("target", TargetOpponent())
         effect = DealDamageEffect(
-            amount = DynamicAmount.SacrificedPermanentPower,
+            amount = DynamicAmounts.sacrificedPower(),
             target = t
         )
     }

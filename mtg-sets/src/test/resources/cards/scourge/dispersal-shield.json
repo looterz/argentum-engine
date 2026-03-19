@@ -8,7 +8,11 @@
             "type": "Conditional",
             "condition": {
                 "type": "Compare",
-                "left": "TargetManaValue",
+                "left": {
+                    "type": "EntityProperty",
+                    "entity": "Target",
+                    "numericProperty": "ManaValue"
+                },
                 "operator": "LTE",
                 "right": {
                     "type": "AggregateBattlefield",

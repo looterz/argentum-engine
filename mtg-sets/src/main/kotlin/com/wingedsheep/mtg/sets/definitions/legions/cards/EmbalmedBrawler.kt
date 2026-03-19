@@ -8,7 +8,7 @@ import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.AmplifyEffect
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import com.wingedsheep.sdk.dsl.DynamicAmounts
 
 /**
  * Embalmed Brawler
@@ -35,7 +35,7 @@ val EmbalmedBrawler = card("Embalmed Brawler") {
     triggeredAbility {
         trigger = Triggers.Attacks
         effect = Effects.LoseLife(
-            amount = DynamicAmount.CountersOnSelf(CounterTypeFilter.PlusOnePlusOne),
+            amount = DynamicAmounts.countersOnSelf(CounterTypeFilter.PlusOnePlusOne),
             target = EffectTarget.Controller
         )
     }
@@ -43,7 +43,7 @@ val EmbalmedBrawler = card("Embalmed Brawler") {
     triggeredAbility {
         trigger = Triggers.Blocks
         effect = Effects.LoseLife(
-            amount = DynamicAmount.CountersOnSelf(CounterTypeFilter.PlusOnePlusOne),
+            amount = DynamicAmounts.countersOnSelf(CounterTypeFilter.PlusOnePlusOne),
             target = EffectTarget.Controller
         )
     }

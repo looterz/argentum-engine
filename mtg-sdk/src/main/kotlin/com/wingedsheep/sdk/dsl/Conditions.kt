@@ -21,6 +21,8 @@ import com.wingedsheep.sdk.scripting.conditions.IsYourTurn as IsYourTurnConditio
 import com.wingedsheep.sdk.scripting.conditions.IsNotYourTurn as IsNotYourTurnCondition
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import com.wingedsheep.sdk.scripting.values.EntityNumericProperty
+import com.wingedsheep.sdk.scripting.values.EntityReference
 import com.wingedsheep.sdk.scripting.conditions.Condition as ConditionInterface
 
 /**
@@ -133,21 +135,21 @@ object Conditions {
      * Used for cards like Unified Strike.
      */
     fun TargetPowerAtMost(amount: DynamicAmount, targetIndex: Int = 0): ConditionInterface =
-        Compare(DynamicAmount.TargetPower(targetIndex), ComparisonOperator.LTE, amount)
+        Compare(DynamicAmount.EntityProperty(EntityReference.Target(targetIndex), EntityNumericProperty.Power), ComparisonOperator.LTE, amount)
 
     /**
      * If the target spell's mana value is at most the given dynamic amount.
      * Used for conditional counterspells like Dispersal Shield.
      */
     fun TargetSpellManaValueAtMost(amount: DynamicAmount, targetIndex: Int = 0): ConditionInterface =
-        Compare(DynamicAmount.TargetManaValue(targetIndex), ComparisonOperator.LTE, amount)
+        Compare(DynamicAmount.EntityProperty(EntityReference.Target(targetIndex), EntityNumericProperty.ManaValue), ComparisonOperator.LTE, amount)
 
     /**
      * If the target permanent has at least one counter of the given type.
      * Used for cards like Bring Low: "If that creature has a +1/+1 counter on it"
      */
     fun TargetHasCounter(counterType: CounterTypeFilter, targetIndex: Int = 0): ConditionInterface =
-        Compare(DynamicAmount.CountersOnTarget(counterType, targetIndex), ComparisonOperator.GTE, DynamicAmount.Fixed(1))
+        Compare(DynamicAmount.EntityProperty(EntityReference.Target(targetIndex), EntityNumericProperty.CounterCount(counterType)), ComparisonOperator.GTE, DynamicAmount.Fixed(1))
 
     /**
      * If the target matches a GameObjectFilter.

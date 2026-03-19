@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.conditions.Compare
 import com.wingedsheep.sdk.scripting.conditions.ComparisonOperator
 import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
+import com.wingedsheep.sdk.dsl.DynamicAmounts
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
@@ -54,7 +55,7 @@ val AryelKnightOfWindgrace = card("Aryel, Knight of Windgrace") {
         // At resolution, destroy the target only if its power <= X
         effect = ConditionalEffect(
             condition = Compare(
-                left = DynamicAmount.TargetPower(0),
+                left = DynamicAmounts.targetPower(0),
                 operator = ComparisonOperator.LTE,
                 right = DynamicAmount.XValue
             ),

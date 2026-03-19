@@ -17,7 +17,7 @@ import kotlinx.serialization.Serializable
  * Examples:
  * - Lightning Bolt: DealDamageEffect(3, target)
  * - Blaze: DealDamageEffect(DynamicAmount.XValue, target)
- * - Final Strike: DealDamageEffect(DynamicAmount.SacrificedPermanentPower, target)
+ * - Final Strike: DealDamageEffect(DynamicAmounts.sacrificedPower(), target)
  */
 @SerialName("DealDamage")
 @Serializable

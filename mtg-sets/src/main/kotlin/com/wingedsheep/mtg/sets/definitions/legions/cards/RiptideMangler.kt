@@ -7,7 +7,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import com.wingedsheep.sdk.dsl.DynamicAmounts
 
 /**
  * Riptide Mangler
@@ -29,7 +29,7 @@ val RiptideMangler = card("Riptide Mangler") {
         target("target creature", Targets.Creature)
         effect = Effects.SetBasePower(
             target = EffectTarget.Self,
-            power = DynamicAmount.TargetPower(0)
+            power = DynamicAmounts.targetPower(0)
         )
     }
 
