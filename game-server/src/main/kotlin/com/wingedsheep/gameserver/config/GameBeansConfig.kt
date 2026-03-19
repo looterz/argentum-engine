@@ -3,6 +3,7 @@ package com.wingedsheep.gameserver.config
 import com.wingedsheep.gameserver.deck.RandomDeckGenerator
 import com.wingedsheep.gameserver.sealed.BoosterGenerator
 import com.wingedsheep.engine.registry.CardRegistry
+import com.wingedsheep.mtg.sets.definitions.bloomburrow.BloomburrowSet
 import com.wingedsheep.mtg.sets.definitions.dominaria.DominariaSet
 import com.wingedsheep.mtg.sets.definitions.khans.KhansOfTarkirSet
 import com.wingedsheep.mtg.sets.definitions.legions.LegionsSet
@@ -35,6 +36,9 @@ class GameBeansConfig(
         }
         if (gameProperties.sets.dominariaEnabled) {
             register(DominariaSet.allCards)
+        }
+        if (gameProperties.sets.bloomburrowEnabled) {
+            register(BloomburrowSet.allCards)
         }
     }
 

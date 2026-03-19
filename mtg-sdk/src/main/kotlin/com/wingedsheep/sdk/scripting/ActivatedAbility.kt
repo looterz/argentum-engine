@@ -25,7 +25,8 @@ data class ActivatedAbility(
     val isPlaneswalkerAbility: Boolean = false,
     val activateFromZone: Zone = Zone.BATTLEFIELD,
     val promptOnDraw: Boolean = false,
-    val descriptionOverride: String? = null
+    val descriptionOverride: String? = null,
+    val hasConvoke: Boolean = false
 ) : TextReplaceable<ActivatedAbility> {
     /** Backward-compatible secondary constructor for single-target abilities. */
     constructor(

@@ -126,7 +126,8 @@ data class ActivateAbility(
     val manaColorChoice: Color? = null,
     val xValue: Int? = null,
     val repeatCount: Int = 1,
-    val paymentStrategy: PaymentStrategy = PaymentStrategy.AutoPay
+    val paymentStrategy: PaymentStrategy = PaymentStrategy.AutoPay,
+    val alternativePayment: AlternativePaymentChoice? = null
 ) : GameAction
 
 // =============================================================================

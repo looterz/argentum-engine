@@ -26,6 +26,7 @@ import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.ActivationRestriction
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.engine.legalactions.ConvokeCreatureData
 
 /**
  * Enumerates non-mana activated abilities on battlefield permanents.
@@ -129,7 +130,17 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                         }
                     }
                     is AbilityCost.Mana -> {
-                        if (!context.manaSolver.canPay(state, playerId, effectiveCost.cost)) costAffordable = false
+                        if (!context.manaSolver.canPay(state, playerId, effectiveCost.cost)) {
+                            // If the ability has convoke, check if affordable with convoke creatures
+                            if (ability.hasConvoke) {
+                                val creatures = context.costUtils.findConvokeCreatures(state, playerId)
+                                if (!context.costUtils.canAffordWithConvoke(state, playerId, effectiveCost.cost, creatures)) {
+                                    costAffordable = false
+                                }
+                            } else {
+                                costAffordable = false
+                            }
+                        }
                     }
                     is AbilityCost.Sacrifice -> {
                         sacrificeCost = effectiveCost
@@ -184,8 +195,17 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                 }
                                 is AbilityCost.Mana -> {
                                     if (!context.manaSolver.canPay(state, playerId, subCost.cost, excludeSources = excludeFromMana)) {
-                                        costCanBePaid = false
-                                        break
+                                        // If the ability has convoke, check with convoke creatures
+                                        if (ability.hasConvoke) {
+                                            val creatures = context.costUtils.findConvokeCreatures(state, playerId)
+                                            if (!context.costUtils.canAffordWithConvoke(state, playerId, subCost.cost, creatures)) {
+                                                costCanBePaid = false
+                                                break
+                                            }
+                                        } else {
+                                            costCanBePaid = false
+                                            break
+                                        }
                                     }
                                 }
                                 is AbilityCost.Sacrifice -> {
@@ -289,6 +309,11 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                     }
                 }
                 if (!restrictionsMet) continue
+
+                // Compute convoke creature data for abilities with hasConvoke
+                val abilityConvokeCreatures = if (ability.hasConvoke) {
+                    context.costUtils.findConvokeCreatures(state, playerId)
+                } else null
 
                 // If cost is unaffordable, add as greyed-out option and skip expensive computations
                 if (!costAffordable) {
@@ -403,7 +428,9 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                             hasXCost = abilityHasXCost,
                             maxAffordableX = abilityMaxAffordableX,
                             autoTapPreview = abilityAutoTapPreview,
-                            manaCostString = abilityManaCostString
+                            manaCostString = abilityManaCostString,
+                            hasConvoke = ability.hasConvoke,
+                            convokeCreatures = abilityConvokeCreatures
                         ))
                     } else if (targetReqs.size == 1 && firstReqInfo.validTargets.size == 1 && firstReqInfo.validTargets.first() == entityId) {
                         // Self-targeting: only valid target is the source itself — auto-select and offer repeat
@@ -417,7 +444,9 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                             maxAffordableX = abilityMaxAffordableX,
                             autoTapPreview = abilityAutoTapPreview,
                             maxRepeatableActivations = maxRepeatableActivations,
-                            manaCostString = abilityManaCostString
+                            manaCostString = abilityManaCostString,
+                            hasConvoke = ability.hasConvoke,
+                            convokeCreatures = abilityConvokeCreatures
                         ))
                     } else {
                         result.add(LegalAction(
@@ -434,7 +463,9 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                             hasXCost = abilityHasXCost,
                             maxAffordableX = abilityMaxAffordableX,
                             autoTapPreview = abilityAutoTapPreview,
-                            manaCostString = abilityManaCostString
+                            manaCostString = abilityManaCostString,
+                            hasConvoke = ability.hasConvoke,
+                            convokeCreatures = abilityConvokeCreatures
                         ))
                     }
                 } else {
@@ -447,7 +478,9 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                         maxAffordableX = abilityMaxAffordableX,
                         autoTapPreview = abilityAutoTapPreview,
                         maxRepeatableActivations = maxRepeatableActivations,
-                        manaCostString = abilityManaCostString
+                        manaCostString = abilityManaCostString,
+                        hasConvoke = ability.hasConvoke,
+                        convokeCreatures = abilityConvokeCreatures
                     ))
                 }
             }

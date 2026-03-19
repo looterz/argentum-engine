@@ -17,6 +17,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.actions.ActionContext
 import com.wingedsheep.engine.handlers.actions.ActionHandler
 import com.wingedsheep.engine.handlers.effects.EffectExecutorRegistry
+import com.wingedsheep.engine.mechanics.mana.AlternativePaymentHandler
 import com.wingedsheep.engine.mechanics.mana.ManaPool
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
 import com.wingedsheep.engine.mechanics.stack.StackResolver
@@ -69,6 +70,7 @@ class ActivateAbilityHandler(
     private val turnManager: TurnManager,
     private val costHandler: CostHandler,
     private val manaSolver: ManaSolver,
+    private val alternativePaymentHandler: AlternativePaymentHandler,
     private val effectExecutorRegistry: EffectExecutorRegistry,
     private val stackResolver: StackResolver,
     private val targetValidator: TargetValidator,
@@ -207,7 +209,26 @@ class ActivateAbilityHandler(
         }
 
         // Check cost requirements (using ManaSolver for mana costs to consider untapped sources)
-        if (action.paymentStrategy !is PaymentStrategy.Explicit && !canPayAbilityCostWithSources(state, effectiveCost, action.sourceId, action.playerId)) {
+        // If the ability has convoke and the player provided alternative payment, account for the reduced cost
+        val costAfterConvokeReduction = if (ability.hasConvoke && action.alternativePayment != null && !action.alternativePayment.isEmpty) {
+            val mc = extractManaCost(effectiveCost) ?: effectiveCost
+            if (mc is ManaCost || effectiveCost is AbilityCost.Mana || effectiveCost is AbilityCost.Composite) {
+                val reducedManaCost = extractManaCost(effectiveCost)?.let {
+                    alternativePaymentHandler.calculateReducedCostForAbility(it, action.alternativePayment)
+                }
+                if (reducedManaCost != null) {
+                    when (effectiveCost) {
+                        is AbilityCost.Mana -> AbilityCost.Mana(reducedManaCost)
+                        is AbilityCost.Composite -> AbilityCost.Composite(effectiveCost.costs.map { subCost ->
+                            if (subCost is AbilityCost.Mana) AbilityCost.Mana(reducedManaCost) else subCost
+                        })
+                        else -> effectiveCost
+                    }
+                } else effectiveCost
+            } else effectiveCost
+        } else effectiveCost
+
+        if (action.paymentStrategy !is PaymentStrategy.Explicit && !canPayAbilityCostWithSources(state, costAfterConvokeReduction, action.sourceId, action.playerId)) {
             return when (effectiveCost) {
                 is AbilityCost.Tap -> "This permanent is already tapped"
                 is AbilityCost.TapAttachedCreature -> "Enchanted creature is tapped"
@@ -307,8 +328,20 @@ class ActivateAbilityHandler(
         )
 
         // Pay mana costs before paying other costs
-        val manaCost = extractManaCost(effectiveCost)
+        var effectiveManaCost = extractManaCost(effectiveCost)
         val xValue = action.xValue ?: 0
+
+        // Apply convoke payment for abilities with hasConvoke (e.g., Heirloom Epic)
+        if (effectiveManaCost != null && ability.hasConvoke && action.alternativePayment != null && !action.alternativePayment.isEmpty) {
+            val convokeResult = alternativePaymentHandler.applyConvokeForAbility(
+                currentState, effectiveManaCost, action.alternativePayment, action.playerId
+            )
+            effectiveManaCost = convokeResult.reducedCost
+            currentState = convokeResult.newState
+            events.addAll(convokeResult.events)
+        }
+
+        val manaCost = effectiveManaCost
         // Only pass xValue to auto-tap when X is in the mana cost itself (not in a non-mana cost like counter removal)
         val manaXValue = if (manaCost?.hasX == true) xValue else 0
         if (manaCost != null) {
@@ -361,8 +394,19 @@ class ActivateAbilityHandler(
 
         // When using Explicit payment, mana sources were already tapped above —
         // strip the Mana portion so payAbilityCost doesn't try to deduct from the pool.
+        // When convoke was applied, replace the mana portion with the reduced cost.
         val costForPayment = if (action.paymentStrategy is PaymentStrategy.Explicit) {
             stripManaCost(effectiveCost)
+        } else if (ability.hasConvoke && action.alternativePayment != null && !action.alternativePayment.isEmpty && manaCost != null) {
+            // Convoke reduced the mana cost — update the cost structure so payAbilityCost
+            // deducts the reduced amount from the pool instead of the original full amount
+            when (effectiveCost) {
+                is AbilityCost.Mana -> AbilityCost.Mana(manaCost)
+                is AbilityCost.Composite -> AbilityCost.Composite(effectiveCost.costs.map { subCost ->
+                    if (subCost is AbilityCost.Mana) AbilityCost.Mana(manaCost) else subCost
+                })
+                else -> effectiveCost
+            }
         } else {
             effectiveCost
         }
@@ -1108,6 +1152,7 @@ class ActivateAbilityHandler(
                 context.turnManager,
                 context.costHandler,
                 context.manaSolver,
+                context.alternativePaymentHandler,
                 context.effectExecutorRegistry,
                 context.stackResolver,
                 context.targetValidator,

@@ -248,6 +248,51 @@ class AlternativePaymentHandler {
         return reducedCost
     }
 
+    /**
+     * Apply convoke payment for an activated ability that has its own convoke mechanic.
+     * Unlike spell-level convoke (which checks the CONVOKE keyword on the card), this is used
+     * when the ability itself grants convoke-like behavior (e.g., Heirloom Epic).
+     *
+     * @param state The current game state
+     * @param cost The mana cost to pay
+     * @param payment The player's convoke choices
+     * @param playerId The player making the payment
+     * @return Result containing reduced cost, updated state, and generated events
+     */
+    fun applyConvokeForAbility(
+        state: GameState,
+        cost: ManaCost,
+        payment: AlternativePaymentChoice,
+        playerId: EntityId
+    ): AlternativePaymentResult {
+        if (payment.convokedCreatures.isEmpty()) {
+            return AlternativePaymentResult(cost, state, emptyList())
+        }
+        return applyConvoke(state, cost, payment.convokedCreatures, playerId)
+    }
+
+    /**
+     * Calculate the reduced cost after convoke payment for an activated ability,
+     * without mutating state. Used during validation.
+     */
+    fun calculateReducedCostForAbility(
+        cost: ManaCost,
+        payment: AlternativePaymentChoice
+    ): ManaCost {
+        var reducedCost = cost
+        if (payment.convokedCreatures.isNotEmpty()) {
+            for ((_, convokePayment) in payment.convokedCreatures) {
+                val paymentColor = convokePayment.color
+                reducedCost = if (paymentColor != null) {
+                    reduceColoredCost(reducedCost, paymentColor)
+                } else {
+                    reduceGenericCost(reducedCost, 1)
+                }
+            }
+        }
+        return reducedCost
+    }
+
     companion object {
         /**
          * Check if a card definition supports alternative payment.

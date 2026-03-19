@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 0 / 266
+**Implemented:** 1 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -12,7 +12,7 @@
 | Red        | 41    | 0    |
 | Green      | 41    | 0    |
 | Multicolor | 39    | 0    |
-| Colorless  | 9     | 0    |
+| Colorless  | 9     | 1    |
 | Land       | 15    | 0    |
 
 ---
@@ -109,7 +109,7 @@
 - [ ] Heaped Harvest
 - [ ] Heartfire Hero
 - [ ] Hearthborn Battler
-- [ ] Heirloom Epic
+- [x] Heirloom Epic
 - [ ] Helga, Skittish Seer
 - [ ] Hidden Grotto
 - [ ] High Stride

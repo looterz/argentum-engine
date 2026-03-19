@@ -53,6 +53,7 @@ abstract class ScenarioTestBase : FunSpec() {
         register(LegionsSet.allCards)
         register(KhansOfTarkirSet.allCards)
         register(DominariaSet.allCards)
+        register(com.wingedsheep.mtg.sets.definitions.bloomburrow.BloomburrowSet.allCards)
     }
     protected val actionProcessor = ActionProcessor(cardRegistry)
     protected val stateTransformer = ClientStateTransformer(cardRegistry)
