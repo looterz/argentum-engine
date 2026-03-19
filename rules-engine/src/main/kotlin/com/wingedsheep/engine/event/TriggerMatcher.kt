@@ -494,8 +494,7 @@ class TriggerMatcher(
             SpellTypeFilter.INSTANT_OR_SORCERY ->
                 cardComponent.typeLine.isInstant || cardComponent.typeLine.isSorcery
             SpellTypeFilter.ENCHANTMENT -> cardComponent.typeLine.isEnchantment
-            SpellTypeFilter.HISTORIC ->
-                cardComponent.typeLine.isArtifact || cardComponent.typeLine.isLegendary
+            SpellTypeFilter.HISTORIC -> cardComponent.typeLine.isHistoric
         }
         if (!typeMatches) return false
 
