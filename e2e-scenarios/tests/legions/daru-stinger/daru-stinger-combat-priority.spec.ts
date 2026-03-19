@@ -80,6 +80,9 @@ test.describe('Daru Stinger — combat priority after activated ability', () => 
     // 2. Daru Stinger's ability resolves — deals 3 damage to Needleshot Gourna
     await p2.resolveStack('Daru Stinger ability')
 
+    // Resolve combat damage
+    await p1.page.locator('button:has-text("Resolve combat damage")').click()
+
     // Combat damage: Dive Bomber (2/2) vs Needleshot Gourna (3/6 with 3 damage)
     // Gourna takes 2 more (total 5 of 6 toughness — survives)
     // Dive Bomber takes 3 damage (2 toughness — dies)

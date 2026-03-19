@@ -57,7 +57,9 @@ test.describe('Combat — instant-speed actions after declare attackers', () => 
     // Spitfire Handler is now 3/1 — can block Hill Giant (power 3 >= 3)
     await p2.expectStats('Spitfire Handler', '3/1')
 
-    // Both players auto-pass (P2 has no more mana for responses) → advance to declare blockers
+    // P2 passes priority (no more mana for responses) → advance to declare blockers
+    await p2.pass()
+
     // P2 declares Spitfire Handler as blocker of Hill Giant
     await p2.declareBlocker('Spitfire Handler', 'Hill Giant')
     await p2.confirmBlockers()
