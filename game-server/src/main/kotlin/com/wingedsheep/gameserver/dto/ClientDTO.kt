@@ -175,6 +175,9 @@ data class ClientCard(
     /** Official rulings for this card (for card details view) */
     val rulings: List<ClientRuling> = emptyList(),
 
+    /** Whether this spell was kicked (only present on stack) */
+    val wasKicked: Boolean = false,
+
     /** Chosen X value for spells with X in their cost (only present on stack) */
     val chosenX: Int? = null,
 

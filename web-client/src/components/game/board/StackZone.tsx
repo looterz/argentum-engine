@@ -153,6 +153,12 @@ export function StackDisplay() {
                       X={card.chosenX}
                     </div>
                   )}
+                  {/* Show kicked badge */}
+                  {card.wasKicked && (
+                    <div style={styles.stackKickedBadge}>
+                      Kicked
+                    </div>
+                  )}
                   {/* Show chosen creature type for spells like Aphetto Dredging */}
                   {card.chosenCreatureType && (
                     <div style={{

@@ -154,6 +154,9 @@ export interface ClientCard {
   /** Official rulings for this card (for card details view) */
   readonly rulings?: readonly ClientRuling[]
 
+  /** Whether this spell was kicked (only present on stack) */
+  readonly wasKicked?: boolean
+
   /** Chosen X value for spells with X in their cost (only present on stack) */
   readonly chosenX?: number | null
 

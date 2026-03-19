@@ -673,6 +673,9 @@ class ClientStateTransformer(
             }
         } ?: emptyList()
 
+        // Get kicker status for spells on the stack
+        val wasKicked = spellOnStack?.wasKicked ?: false
+
         // Get chosen X value for spells on the stack
         val chosenX = spellOnStack?.xValue
 
@@ -762,6 +765,7 @@ class ClientStateTransformer(
             rulings = cardDef?.metadata?.rulings?.map {
                 ClientRuling(date = it.date, text = it.text)
             } ?: emptyList(),
+            wasKicked = wasKicked,
             chosenX = chosenX,
             chosenCreatureType = chosenCreatureType,
             chosenColor = chosenColor,
