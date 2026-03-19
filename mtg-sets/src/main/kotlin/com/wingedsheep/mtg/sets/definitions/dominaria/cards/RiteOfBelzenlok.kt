@@ -67,7 +67,8 @@ val RiteOfBelzenlok = card("Rite of Belzenlok") {
                         suffer = Effects.DealDamage(6, EffectTarget.Controller)
                     )
                 )
-            )
+            ),
+            imageUri = "https://cards.scryfall.io/normal/front/7/3/73b858b5-803b-4bcf-99d6-8c20c8b37f07.jpg?1562702129"
         )
     }
 

@@ -113,7 +113,8 @@ val KarnScionOfUrza = card("Karn, Scion of Urza") {
                         GameObjectFilter.Artifact
                     )
                 )
-            )
+            ),
+            imageUri = "https://cards.scryfall.io/normal/front/c/5/c5eafa38-5333-4ef2-9661-08074c580a32.jpg?1562702317"
         )
     }
 

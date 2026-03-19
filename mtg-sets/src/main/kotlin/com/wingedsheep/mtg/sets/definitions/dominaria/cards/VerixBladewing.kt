@@ -44,7 +44,8 @@ val VerixBladewing = card("Verix Bladewing") {
                 creatureTypes = setOf("Dragon"),
                 keywords = setOf(Keyword.FLYING),
                 name = "Karox Bladewing",
-                legendary = true
+                legendary = true,
+                imageUri = "https://cards.scryfall.io/normal/front/7/c/7c0cdb0d-f720-4ed2-af08-ced9b54f6702.jpg?1562702146"
             )
         )
     }
