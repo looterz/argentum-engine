@@ -28,7 +28,8 @@ export const createPipelineSlice: SliceCreator<PipelineSlice> = (set, get) => ({
   pipelineState: null,
 
   startPipeline: (actionInfo) => {
-    const phases = computePhases(actionInfo)
+    const { autoTapEnabled } = get()
+    const phases = computePhases(actionInfo, { autoTapEnabled })
 
     if (phases.length === 0) {
       // No interaction needed — submit directly

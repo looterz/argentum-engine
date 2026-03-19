@@ -37,7 +37,12 @@ export interface PipelineStoreMethods {
 // computePhases — determines the ordered phase list
 // ---------------------------------------------------------------------------
 
-export function computePhases(actionInfo: LegalActionInfo): PipelinePhase[] {
+export interface ComputePhasesOptions {
+  /** When true, skip the manaSource phase (server will auto-tap). */
+  autoTapEnabled?: boolean
+}
+
+export function computePhases(actionInfo: LegalActionInfo, options?: ComputePhasesOptions): PipelinePhase[] {
   const phases: PipelinePhase[] = []
 
   // 1. Counter distribution (X cost with counter removal creatures)
@@ -84,8 +89,11 @@ export function computePhases(actionInfo: LegalActionInfo): PipelinePhase[] {
     phases.push({ type: 'convoke' })
   }
 
-  // 4. Mana source selection
-  if (actionInfo.availableManaSources && actionInfo.availableManaSources.length > 0) {
+  // 4. Mana source selection (skipped when auto-tap is enabled)
+  if (
+    actionInfo.availableManaSources && actionInfo.availableManaSources.length > 0 &&
+    !options?.autoTapEnabled
+  ) {
     phases.push({ type: 'manaSource' })
   }
 

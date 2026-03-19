@@ -594,6 +594,7 @@ export type GameStore = {
   undoAvailable: boolean
   /** Seconds remaining on opponent's disconnect countdown (null = connected) */
   opponentDisconnectCountdown: number | null
+  autoTapEnabled: boolean
   createGame: (deckList: Record<string, number>) => void
   createAiGame: (deckList: Record<string, number>) => void
   joinGame: (sessionId: string, deckList: Record<string, number>) => void
@@ -616,6 +617,7 @@ export type GameStore = {
   toggleMulliganCard: (cardId: EntityId) => void
   concede: () => void
   requestUndo: () => void
+  toggleAutoTap: () => void
   cancelGame: () => void
   setFullControl: (enabled: boolean) => void
   cyclePriorityMode: () => void

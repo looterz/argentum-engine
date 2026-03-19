@@ -63,6 +63,8 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
   const cancelCounterDistribution = useGameStore((state) => state.cancelCounterDistribution)
   const undoAvailable = useGameStore((state) => state.undoAvailable)
   const requestUndo = useGameStore((state) => state.requestUndo)
+  const autoTapEnabled = useGameStore((state) => state.autoTapEnabled)
+  const toggleAutoTap = useGameStore((state) => state.toggleAutoTap)
   const delveSelectionState = useGameStore((state) => state.delveSelectionState)
   const crewSelectionState = useGameStore((state) => state.crewSelectionState)
   const manaSelectionState = useGameStore((state) => state.manaSelectionState)
@@ -524,6 +526,24 @@ export function GameBoard({ spectatorMode = false, topOffset = 0 }: GameBoardPro
             }}
           >
             <i className="ms ms-untap" style={{ fontSize: 14 }} />
+          </button>
+          <button
+            onClick={toggleAutoTap}
+            title={
+              autoTapEnabled
+                ? 'Auto Tap: Lands are tapped automatically. Click to switch to manual mana selection.'
+                : 'Manual Tap: You choose which lands to tap. Click to switch to auto tap.'
+            }
+            style={{
+              ...styles.floatingBarButton,
+              backgroundColor: autoTapEnabled ? 'rgba(40, 40, 40, 0.8)' : 'rgba(245, 158, 11, 0.9)',
+              color: autoTapEnabled ? '#999' : '#000',
+              border: autoTapEnabled ? '1px solid #555' : '1px solid #f59e0b',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+          >
+            <i className="ms ms-land" style={{ fontSize: 14 }} />
           </button>
           <button
             onClick={cyclePriorityMode}

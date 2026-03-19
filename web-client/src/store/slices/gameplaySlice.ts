@@ -40,6 +40,7 @@ export interface GameplaySliceState {
   opponentName: string | null
   undoAvailable: boolean
   opponentDisconnectCountdown: number | null
+  autoTapEnabled: boolean
 }
 
 export interface GameplaySliceActions {
@@ -69,6 +70,7 @@ export interface GameplaySliceActions {
   cyclePriorityMode: () => void
   toggleStopOverride: (step: Step, isMyTurn: boolean) => void
   requestUndo: () => void
+  toggleAutoTap: () => void
   returnToMenu: () => void
   clearError: () => void
   consumeEvent: () => ClientEvent | undefined
@@ -95,6 +97,7 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
   opponentName: null,
   undoAvailable: false,
   opponentDisconnectCountdown: null,
+  autoTapEnabled: localStorage.getItem('argentum-auto-tap') !== 'false',
 
   // Actions
   createGame: (deckList) => {
@@ -345,6 +348,13 @@ export const createGameplaySlice: SliceCreator<GameplaySlice> = (set, get) => ({
 
   requestUndo: () => {
     getWebSocket()?.send(createRequestUndoMessage())
+  },
+
+  toggleAutoTap: () => {
+    const { autoTapEnabled } = get()
+    const newValue = !autoTapEnabled
+    set({ autoTapEnabled: newValue })
+    localStorage.setItem('argentum-auto-tap', String(newValue))
   },
 
   cancelGame: () => {

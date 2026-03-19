@@ -8,6 +8,7 @@
 import type { EntityId, LegalActionInfo } from '@/types'
 import type { CrewSelectionState } from '@/store/slices/types'
 import { computePhases } from '@/store/slices/ui/pipelinePhases'
+import { useGameStore } from '@/store/gameStore'
 
 export interface ActionContext {
   selectCard: (id: EntityId | null) => void
@@ -66,5 +67,6 @@ export function resolveAction(actionInfo: LegalActionInfo, ctx: ActionContext): 
  */
 export function needsInteraction(actionInfo: LegalActionInfo): boolean {
   if (isCrewAction(actionInfo)) return true
-  return computePhases(actionInfo).length > 0
+  const { autoTapEnabled } = useGameStore.getState()
+  return computePhases(actionInfo, { autoTapEnabled }).length > 0
 }
