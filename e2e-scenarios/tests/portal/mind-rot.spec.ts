@@ -20,6 +20,7 @@ test.describe('Mind Rot', () => {
           { name: 'Swamp' },
           { name: 'Swamp' },
         ],
+        library: ['Swamp'],
       },
       player2: {
         hand: ['Grizzly Bears', 'Hill Giant', 'Mountain'],

@@ -69,12 +69,16 @@ test.describe('Walking Desecration — creature type must attack', () => {
     await p2.expectBadge('Vengeful Dead', 'Must Attack')
     await p2.expectNoBadge('Glory Seeker', 'Must Attack')
 
-    // P1 auto-passes (no legal actions — Walking Desecration and Swamp both tapped)
+    // P1 still has priority due to opponent-turn stop at PRECOMBAT_MAIN — must pass explicitly
+    await p1.pass()
     // P2 advances to combat — must attack with Vengeful Dead (Zombie)
     await p2.pass()
     await p2.attackWith('Vengeful Dead')
 
-    // P1 has no untapped blockers (Walking Desecration is tapped) — auto-passes
+    // P1 passes priority at declare attackers, then resolves combat damage at blockers step
+    await p1.pass()
+    await p1.pass()
+
     // Combat resolves — Vengeful Dead (3/2) deals 3 damage
     await p2.expectLifeTotal(player1.playerId, 17)
 
