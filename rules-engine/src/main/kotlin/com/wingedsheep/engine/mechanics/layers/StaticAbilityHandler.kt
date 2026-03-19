@@ -21,6 +21,7 @@ import com.wingedsheep.sdk.scripting.CanBlockAdditionalForCreatureGroup
 import com.wingedsheep.sdk.scripting.CantBlockForCreatureGroup
 import com.wingedsheep.sdk.scripting.MustAttack
 import com.wingedsheep.sdk.scripting.ConditionalStaticAbility
+import com.wingedsheep.sdk.scripting.conditions.Compare
 import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.ControlEnchantedPermanent
 import com.wingedsheep.sdk.scripting.SetEnchantedLandType
@@ -478,6 +479,7 @@ class StaticAbilityHandler(
             }
             is Exists -> mapExistsToSourceProjectionCondition(condition)
             is IsYourTurn -> SourceProjectionCondition.IsYourTurn
+            is Compare -> SourceProjectionCondition.Compare(condition.left, condition.operator, condition.right)
             else -> null
         }
     }

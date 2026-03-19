@@ -10,6 +10,7 @@ import com.wingedsheep.engine.state.components.identity.ChosenColorComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.conditions.ComparisonOperator
 
 /**
  * Applies continuous effects and counters to mutable projected values.
@@ -245,6 +246,21 @@ internal class EffectApplicator(
             }
         }
         is SourceProjectionCondition.Not -> !evaluateSourceCondition(condition.condition, effect, state, projectedValues, sourceValues)
+        is SourceProjectionCondition.Compare -> {
+            val controllerId = sourceValues?.controllerId ?: effect.sourceId
+            val opponentId = state.getOpponent(controllerId)
+            val context = EffectContext(sourceId = effect.sourceId, controllerId = controllerId, opponentId = opponentId)
+            val left = dynamicAmountEvaluator.evaluate(state, condition.left, context)
+            val right = dynamicAmountEvaluator.evaluate(state, condition.right, context)
+            when (condition.operator) {
+                ComparisonOperator.LT -> left < right
+                ComparisonOperator.LTE -> left <= right
+                ComparisonOperator.EQ -> left == right
+                ComparisonOperator.NEQ -> left != right
+                ComparisonOperator.GT -> left > right
+                ComparisonOperator.GTE -> left >= right
+            }
+        }
     }
 
     fun applyCounters(

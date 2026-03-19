@@ -4,6 +4,7 @@ import com.wingedsheep.engine.state.Component
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.conditions.ComparisonOperator
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.text.TextReplacer
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
@@ -245,6 +246,17 @@ sealed interface SourceProjectionCondition {
      */
     @Serializable
     data class Not(val condition: SourceProjectionCondition) : SourceProjectionCondition
+
+    /**
+     * Compare two DynamicAmount values using a comparison operator.
+     * Used for "as long as there are two or more instant and/or sorcery cards in your graveyard."
+     */
+    @Serializable
+    data class Compare(
+        val left: DynamicAmount,
+        val operator: ComparisonOperator,
+        val right: DynamicAmount
+    ) : SourceProjectionCondition
 }
 
 /**
