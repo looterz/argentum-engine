@@ -2,6 +2,7 @@ package com.wingedsheep.engine.handlers.continuations
 
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.effects.removal.ForceExileMultiZoneExecutor
+import com.wingedsheep.engine.handlers.effects.removal.ForceSacrificeExecutor
 import com.wingedsheep.engine.handlers.DecisionHandler
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PredicateContext
@@ -80,6 +81,22 @@ class SacrificeAndPayContinuationResumer(
                     ownerId = ownerId
                 )
             )
+        }
+
+        // If there are remaining players (from "each opponent" effects), process them
+        if (continuation.remainingPlayers.isNotEmpty() && continuation.filter != null) {
+            val executor = ForceSacrificeExecutor()
+            val result = executor.processPlayers(
+                newState, continuation.remainingPlayers, continuation.filter,
+                continuation.count, continuation.sourceId
+            )
+            val allEvents = events + result.events
+            return if (result.isPaused) {
+                // Another player needs a decision — return paused with combined events
+                ExecutionResult.paused(result.state, result.pendingDecision!!, allEvents)
+            } else {
+                checkForMore(result.state, allEvents)
+            }
         }
 
         return checkForMore(newState, events)

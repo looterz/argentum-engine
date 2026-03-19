@@ -205,13 +205,19 @@ data class ResolveSpellContinuation(
  * @property playerId The player who is sacrificing
  * @property sourceId The spell/ability that caused the sacrifice
  * @property sourceName Name of the source for event messages
+ * @property remainingPlayers Players still to process for "each opponent" sacrifice effects
+ * @property filter Filter for valid sacrifice targets (needed to chain remaining players)
+ * @property count Number of permanents each player must sacrifice
  */
 @Serializable
 data class SacrificeContinuation(
     override val decisionId: String,
     val playerId: EntityId,
     val sourceId: EntityId?,
-    val sourceName: String?
+    val sourceName: String?,
+    val remainingPlayers: List<EntityId> = emptyList(),
+    val filter: GameObjectFilter? = null,
+    val count: Int = 1
 ) : ContinuationFrame
 
 /**

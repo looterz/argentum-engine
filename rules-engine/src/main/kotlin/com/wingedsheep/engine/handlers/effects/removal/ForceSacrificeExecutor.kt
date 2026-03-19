@@ -6,12 +6,13 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.BattlefieldFilterUtils
-import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils.resolvePlayerTarget
+import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils.resolvePlayerTargets
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.ForceSacrificeEffect
 import kotlin.reflect.KClass
 
@@ -19,11 +20,13 @@ import kotlin.reflect.KClass
  * Executor for ForceSacrificeEffect.
  *
  * Handles "target player sacrifices a creature" (edict effects) where an opponent
- * is forced to sacrifice permanents of their choice.
+ * is forced to sacrifice permanents of their choice. Supports multi-player targets
+ * like Player.EachOpponent.
  *
  * Examples:
  * - Cabal Executioner: "Whenever ~ deals combat damage to a player, that player sacrifices a creature."
  * - Chainer's Edict: "Target player sacrifices a creature."
+ * - The Eldest Reborn: "Each opponent sacrifices a creature or planeswalker."
  */
 class ForceSacrificeExecutor(
     private val decisionHandler: DecisionHandler = DecisionHandler()
@@ -36,43 +39,70 @@ class ForceSacrificeExecutor(
         effect: ForceSacrificeEffect,
         context: EffectContext
     ): ExecutionResult {
-        val targetPlayerId = resolvePlayerTarget(effect.target, context)
-            ?: return ExecutionResult.error(state, "No valid player for force sacrifice")
+        val playerIds = resolvePlayerTargets(effect.target, state, context)
+        if (playerIds.isEmpty()) {
+            return ExecutionResult.error(state, "No valid player for force sacrifice")
+        }
 
-        val sourceId = context.sourceId
+        return processPlayers(state, playerIds, effect.filter, effect.count, context.sourceId)
+    }
+
+    /**
+     * Process sacrifice for a list of players in order. Auto-sacrifices when possible,
+     * pauses for a decision when a player must choose, storing remaining players
+     * in the continuation.
+     */
+    fun processPlayers(
+        state: GameState,
+        playerIds: List<EntityId>,
+        filter: GameObjectFilter,
+        count: Int,
+        sourceId: EntityId?
+    ): ExecutionResult {
         val sourceName = if (sourceId != null) {
             state.getEntity(sourceId)?.get<CardComponent>()?.name ?: "Unknown"
         } else {
             "Unknown"
         }
 
-        // Find valid permanents on the target player's battlefield
-        val validPermanents = findValidPermanents(state, targetPlayerId, effect)
+        var currentState = state
+        val allEvents = mutableListOf<GameEvent>()
 
-        if (validPermanents.isEmpty()) {
-            // No valid permanents - effect does nothing
-            return ExecutionResult.success(state)
+        for ((index, playerId) in playerIds.withIndex()) {
+            val validPermanents = findValidPermanents(currentState, playerId, filter)
+
+            if (validPermanents.isEmpty()) {
+                continue
+            }
+
+            if (validPermanents.size <= count) {
+                // Auto-sacrifice without prompting
+                val result = sacrificePermanents(currentState, playerId, validPermanents)
+                currentState = result.state
+                allEvents.addAll(result.events)
+                continue
+            }
+
+            // Player must choose — pause and store remaining players in continuation
+            val remainingPlayers = playerIds.drop(index + 1)
+            return presentSacrificeDecision(
+                currentState, playerId, sourceId, sourceName,
+                validPermanents, minSelections = count, maxSelections = count,
+                remainingPlayers = remainingPlayers, filter = filter, count = count,
+                priorEvents = allEvents
+            )
         }
 
-        if (validPermanents.size <= effect.count) {
-            // Exactly enough or fewer - auto-sacrifice without prompting
-            return sacrificePermanents(state, targetPlayerId, validPermanents)
-        }
-
-        // More than enough - target player must choose which to sacrifice
-        return presentSacrificeDecision(
-            state, targetPlayerId, sourceId, sourceName,
-            validPermanents, minSelections = effect.count, maxSelections = effect.count
-        )
+        return ExecutionResult.success(currentState, allEvents)
     }
 
     private fun findValidPermanents(
         state: GameState,
         playerId: EntityId,
-        effect: ForceSacrificeEffect
+        filter: GameObjectFilter
     ): List<EntityId> {
         return BattlefieldFilterUtils.findMatchingOnBattlefield(
-            state, effect.filter.youControl(), PredicateContext(controllerId = playerId)
+            state, filter.youControl(), PredicateContext(controllerId = playerId)
         )
     }
 
@@ -83,7 +113,11 @@ class ForceSacrificeExecutor(
         sourceName: String,
         validPermanents: List<EntityId>,
         minSelections: Int,
-        maxSelections: Int
+        maxSelections: Int,
+        remainingPlayers: List<EntityId>,
+        filter: GameObjectFilter,
+        count: Int,
+        priorEvents: List<GameEvent>
     ): ExecutionResult {
         val prompt = buildString {
             append("Choose ")
@@ -109,7 +143,10 @@ class ForceSacrificeExecutor(
             decisionId = decisionResult.pendingDecision!!.id,
             playerId = playerId,
             sourceId = sourceId,
-            sourceName = sourceName
+            sourceName = sourceName,
+            remainingPlayers = remainingPlayers,
+            filter = filter,
+            count = count
         )
 
         val stateWithContinuation = decisionResult.state.pushContinuation(continuation)
@@ -117,11 +154,11 @@ class ForceSacrificeExecutor(
         return ExecutionResult.paused(
             stateWithContinuation,
             decisionResult.pendingDecision,
-            decisionResult.events
+            priorEvents + decisionResult.events
         )
     }
 
-    private fun sacrificePermanents(
+    internal fun sacrificePermanents(
         state: GameState,
         playerId: EntityId,
         permanentIds: List<EntityId>

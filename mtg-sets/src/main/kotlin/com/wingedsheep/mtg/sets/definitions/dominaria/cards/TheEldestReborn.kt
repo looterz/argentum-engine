@@ -31,7 +31,7 @@ val TheEldestReborn = card("The Eldest Reborn") {
     sagaChapter(1) {
         effect = Effects.Sacrifice(
             GameObjectFilter.CreatureOrPlaneswalker,
-            target = EffectTarget.PlayerRef(Player.Opponent)
+            target = EffectTarget.PlayerRef(Player.EachOpponent)
         )
     }
 
