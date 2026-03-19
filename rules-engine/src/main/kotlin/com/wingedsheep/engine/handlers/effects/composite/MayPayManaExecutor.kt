@@ -62,15 +62,10 @@ class MayPayManaExecutor(
         val continuation = MayPayManaContinuation(
             decisionId = decisionId,
             playerId = playerId,
-            sourceId = context.sourceId,
             sourceName = sourceName,
             manaCost = effect.cost,
             effect = effect.effect,
-            controllerId = context.controllerId,
-            opponentId = context.opponentId,
-            xValue = context.xValue,
-            targets = context.targets,
-            triggeringEntityId = context.triggeringEntityId
+            effectContext = context
         )
 
         // Push continuation and return paused state

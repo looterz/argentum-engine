@@ -9,6 +9,7 @@ import kotlinx.serialization.Serializable
 /**
  * Context for effect execution.
  */
+@Serializable
 data class EffectContext(
     val sourceId: EntityId?,
     val controllerId: EntityId,

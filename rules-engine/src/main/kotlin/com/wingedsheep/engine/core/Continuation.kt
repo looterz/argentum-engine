@@ -49,37 +49,8 @@ sealed interface ContinuationFrame {
 data class EffectContinuation(
     override val decisionId: String,
     val remainingEffects: List<Effect>,
-    val sourceId: EntityId?,
-    val controllerId: EntityId,
-    val opponentId: EntityId?,
-    val xValue: Int?,
-    val targets: List<ChosenTarget> = emptyList(),
-    val storedCollections: Map<String, List<EntityId>> = emptyMap(),
-    val chosenCreatureType: String? = null,
-    val triggeringEntityId: EntityId? = null,
-    val namedTargets: Map<String, ChosenTarget> = emptyMap(),
-    val chosenValues: Map<String, String> = emptyMap(),
-    val storedNumbers: Map<String, Int> = emptyMap(),
-    val storedStringLists: Map<String, List<String>> = emptyMap()
-) : ContinuationFrame {
-    /**
-     * Reconstruct the EffectContext from serialized fields.
-     */
-    fun toEffectContext(): EffectContext = EffectContext(
-        sourceId = sourceId,
-        controllerId = controllerId,
-        opponentId = opponentId,
-        xValue = xValue,
-        targets = targets,
-        storedCollections = storedCollections,
-        chosenCreatureType = chosenCreatureType,
-        triggeringEntityId = triggeringEntityId,
-        namedTargets = namedTargets,
-        chosenValues = chosenValues,
-        storedNumbers = storedNumbers,
-        storedStringLists = storedStringLists
-    )
-}
+    val effectContext: EffectContext
+) : ContinuationFrame
 
 /**
  * Resume placing a triggered ability on the stack after targets have been selected.
@@ -272,31 +243,11 @@ data class ExileMultiZoneContinuation(
 data class MayAbilityContinuation(
     override val decisionId: String,
     val playerId: EntityId,
-    val sourceId: EntityId?,
     val sourceName: String?,
     val effectIfYes: Effect?,
     val effectIfNo: Effect?,
-    val controllerId: EntityId,
-    val opponentId: EntityId?,
-    val xValue: Int?,
-    val targets: List<ChosenTarget> = emptyList(),
-    val triggeringEntityId: EntityId? = null,
-    val triggerDamageAmount: Int? = null,
-    val namedTargets: Map<String, ChosenTarget> = emptyMap(),
-    val triggerCounterCount: Int? = null
-) : ContinuationFrame {
-    fun toEffectContext(): EffectContext = EffectContext(
-        sourceId = sourceId,
-        controllerId = controllerId,
-        opponentId = opponentId,
-        xValue = xValue,
-        targets = targets,
-        triggeringEntityId = triggeringEntityId,
-        triggerDamageAmount = triggerDamageAmount,
-        triggerCounterCount = triggerCounterCount,
-        namedTargets = namedTargets
-    )
-}
+    val effectContext: EffectContext
+) : ContinuationFrame
 
 /**
  * Resume after player selects cards to discard for hand size (cleanup step).
@@ -881,27 +832,11 @@ data class AnyPlayerMayPayContinuation(
 data class MayPayManaContinuation(
     override val decisionId: String,
     val playerId: EntityId,
-    val sourceId: EntityId?,
     val sourceName: String?,
     val manaCost: ManaCost,
     val effect: Effect,
-    val controllerId: EntityId,
-    val opponentId: EntityId?,
-    val xValue: Int?,
-    val targets: List<ChosenTarget> = emptyList(),
-    val triggeringEntityId: EntityId? = null,
-    val namedTargets: Map<String, ChosenTarget> = emptyMap()
-) : ContinuationFrame {
-    fun toEffectContext(): EffectContext = EffectContext(
-        sourceId = sourceId,
-        controllerId = controllerId,
-        opponentId = opponentId,
-        xValue = xValue,
-        targets = targets,
-        triggeringEntityId = triggeringEntityId,
-        namedTargets = namedTargets
-    )
-}
+    val effectContext: EffectContext
+) : ContinuationFrame
 
 /**
  * Resume after the controller chooses an X value for "you may pay {X}" effects.
@@ -915,15 +850,10 @@ data class MayPayManaContinuation(
 data class MayPayXContinuation(
     override val decisionId: String,
     val playerId: EntityId,
-    val sourceId: EntityId?,
     val sourceName: String?,
     val effect: Effect,
-    val controllerId: EntityId,
-    val opponentId: EntityId?,
-    val targets: List<ChosenTarget> = emptyList(),
-    val triggeringEntityId: EntityId? = null,
-    val namedTargets: Map<String, ChosenTarget> = emptyMap(),
-    val maxX: Int
+    val maxX: Int,
+    val effectContext: EffectContext
 ) : ContinuationFrame
 
 /**
@@ -1480,11 +1410,7 @@ data class ForEachTargetContinuation(
     override val decisionId: String,
     val remainingTargets: List<ChosenTarget>,
     val effects: List<Effect>,
-    val sourceId: EntityId?,
-    val controllerId: EntityId,
-    val opponentId: EntityId?,
-    val xValue: Int?,
-    val namedTargets: Map<String, ChosenTarget> = emptyMap()
+    val effectContext: EffectContext
 ) : ContinuationFrame
 
 /**
@@ -1506,11 +1432,7 @@ data class ForEachPlayerContinuation(
     override val decisionId: String,
     val remainingPlayers: List<EntityId>,
     val effects: List<Effect>,
-    val sourceId: EntityId?,
-    val controllerId: EntityId,
-    val opponentId: EntityId?,
-    val xValue: Int?,
-    val storedStringLists: Map<String, List<String>> = emptyMap()
+    val effectContext: EffectContext
 ) : ContinuationFrame
 
 /**
@@ -1561,24 +1483,10 @@ data class RepeatWhileContinuation(
     val body: Effect,
     val repeatCondition: com.wingedsheep.sdk.scripting.effects.RepeatCondition,
     val resolvedDeciderId: EntityId? = null,
-    val sourceId: EntityId?,
     val sourceName: String?,
-    val controllerId: EntityId,
-    val opponentId: EntityId?,
-    val xValue: Int?,
-    val targets: List<ChosenTarget> = emptyList(),
     val phase: RepeatWhilePhase,
-    val namedTargets: Map<String, ChosenTarget> = emptyMap()
-) : ContinuationFrame {
-    fun toEffectContext(): EffectContext = EffectContext(
-        sourceId = sourceId,
-        controllerId = controllerId,
-        opponentId = opponentId,
-        xValue = xValue,
-        targets = targets,
-        namedTargets = namedTargets
-    )
-}
+    val effectContext: EffectContext
+) : ContinuationFrame
 
 /**
  * Phase discriminator for RepeatWhileContinuation.

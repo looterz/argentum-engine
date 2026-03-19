@@ -73,14 +73,10 @@ class ReflexiveTriggerEffectExecutor(
         val continuation = MayAbilityContinuation(
             decisionId = decisionId,
             playerId = playerId,
-            sourceId = context.sourceId,
             sourceName = sourceName,
             effectIfYes = compositeEffect,
             effectIfNo = null,
-            controllerId = context.controllerId,
-            opponentId = context.opponentId,
-            xValue = context.xValue,
-            targets = context.targets
+            effectContext = context
         )
 
         val stateWithDecision = state.withPendingDecision(decision)

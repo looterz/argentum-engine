@@ -414,7 +414,7 @@ class LibraryAndZoneContinuationResumer(
         val newState = if (nextFrame is EffectContinuation) {
             val (_, stateAfterPop) = state.popContinuation()
             stateAfterPop.pushContinuation(
-                nextFrame.copy(storedCollections = updatedCollections)
+                nextFrame.copy(effectContext = nextFrame.effectContext.copy(storedCollections = updatedCollections))
             )
         } else {
             state
@@ -451,7 +451,7 @@ class LibraryAndZoneContinuationResumer(
         val newState = if (nextFrame is EffectContinuation) {
             val (_, stateAfterPop) = state.popContinuation()
             stateAfterPop.pushContinuation(
-                nextFrame.copy(storedCollections = updatedCollections)
+                nextFrame.copy(effectContext = nextFrame.effectContext.copy(storedCollections = updatedCollections))
             )
         } else {
             state

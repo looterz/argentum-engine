@@ -62,15 +62,10 @@ class MayPayXForEffectExecutor(
         val continuation = MayPayXContinuation(
             decisionId = decisionId,
             playerId = playerId,
-            sourceId = context.sourceId,
             sourceName = sourceName,
             effect = effect.effect,
-            controllerId = context.controllerId,
-            opponentId = context.opponentId,
-            targets = context.targets,
-            triggeringEntityId = context.triggeringEntityId,
-            namedTargets = context.namedTargets,
-            maxX = maxAffordable
+            maxX = maxAffordable,
+            effectContext = context
         )
 
         val stateWithDecision = state.withPendingDecision(decision)

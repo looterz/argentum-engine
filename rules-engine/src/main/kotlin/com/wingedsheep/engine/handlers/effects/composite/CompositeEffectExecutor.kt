@@ -46,16 +46,7 @@ class CompositeEffectExecutor(
                 val continuation = EffectContinuation(
                     decisionId = "pending", // Will be found by checkForMoreContinuations
                     remainingEffects = remainingEffects,
-                    sourceId = currentContext.sourceId,
-                    controllerId = currentContext.controllerId,
-                    opponentId = currentContext.opponentId,
-                    xValue = currentContext.xValue,
-                    targets = currentContext.targets,
-                    storedCollections = currentContext.storedCollections,
-                    chosenCreatureType = currentContext.chosenCreatureType,
-                    triggeringEntityId = currentContext.triggeringEntityId,
-                    namedTargets = currentContext.namedTargets,
-                    chosenValues = currentContext.chosenValues
+                    effectContext = currentContext
                 )
                 currentState.pushContinuation(continuation)
             } else {

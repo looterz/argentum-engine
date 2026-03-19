@@ -68,11 +68,7 @@ class ForEachTargetExecutor(
                     decisionId = "pending",
                     remainingTargets = remainingTargets,
                     effects = effects,
-                    sourceId = outerContext.sourceId,
-                    controllerId = outerContext.controllerId,
-                    opponentId = outerContext.opponentId,
-                    xValue = outerContext.xValue,
-                    namedTargets = outerContext.namedTargets
+                    effectContext = outerContext
                 )
                 currentState.pushContinuation(continuation)
             } else {
@@ -125,13 +121,7 @@ class ForEachTargetExecutor(
                 val continuation = EffectContinuation(
                     decisionId = "pending",
                     remainingEffects = remainingEffects,
-                    sourceId = currentContext.sourceId,
-                    controllerId = currentContext.controllerId,
-                    opponentId = currentContext.opponentId,
-                    xValue = currentContext.xValue,
-                    targets = currentContext.targets,
-                    storedCollections = currentContext.storedCollections,
-                    namedTargets = currentContext.namedTargets
+                    effectContext = currentContext
                 )
                 currentState.pushContinuation(continuation)
             } else {

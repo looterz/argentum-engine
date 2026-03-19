@@ -65,17 +65,10 @@ class MayEffectExecutor(
         val continuation = MayAbilityContinuation(
             decisionId = decisionId,
             playerId = playerId,
-            sourceId = context.sourceId,
             sourceName = sourceName,
             effectIfYes = effect.effect,
             effectIfNo = null,
-            controllerId = context.controllerId,
-            opponentId = context.opponentId,
-            xValue = context.xValue,
-            targets = context.targets,
-            triggeringEntityId = context.triggeringEntityId,
-            triggerDamageAmount = context.triggerDamageAmount,
-            triggerCounterCount = context.triggerCounterCount
+            effectContext = context
         )
 
         // Push continuation and return paused state

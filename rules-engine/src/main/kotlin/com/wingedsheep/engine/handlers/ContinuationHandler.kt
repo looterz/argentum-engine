@@ -124,7 +124,7 @@ class ContinuationHandler(
         response: DecisionResponse,
         checkForMore: CheckForMore
     ): ExecutionResult {
-        var currentContext = continuation.toEffectContext()
+        var currentContext = continuation.effectContext
         var currentState = state
         val allEvents = mutableListOf<GameEvent>()
 
@@ -135,16 +135,7 @@ class ContinuationHandler(
                 val remainingContinuation = EffectContinuation(
                     decisionId = "pending",
                     remainingEffects = stillRemaining,
-                    sourceId = continuation.sourceId,
-                    controllerId = continuation.controllerId,
-                    opponentId = continuation.opponentId,
-                    xValue = continuation.xValue,
-                    targets = continuation.targets,
-                    storedCollections = currentContext.storedCollections,
-                    chosenCreatureType = continuation.chosenCreatureType,
-                    namedTargets = continuation.namedTargets,
-                    chosenValues = continuation.chosenValues,
-                    storedStringLists = currentContext.storedStringLists
+                    effectContext = currentContext
                 )
                 currentState.pushContinuation(remainingContinuation)
             } else {
@@ -294,7 +285,7 @@ class ContinuationHandler(
             return ExecutionResult.error(state, "Expected yes/no response for may ability")
         }
 
-        val context = continuation.toEffectContext()
+        val context = continuation.effectContext
         val effectToExecute = if (response.choice) {
             continuation.effectIfYes
         } else {
@@ -350,13 +341,8 @@ class ContinuationHandler(
             val forEachTargetExecutor = com.wingedsheep.engine.handlers.effects.composite.ForEachTargetExecutor { s, e, c ->
                 effectExecutorRegistry.execute(s, e, c)
             }
-            val outerContext = EffectContext(
-                sourceId = nextContinuation.sourceId,
-                controllerId = nextContinuation.controllerId,
-                opponentId = nextContinuation.opponentId,
-                xValue = nextContinuation.xValue,
-                targets = nextContinuation.remainingTargets,
-                namedTargets = nextContinuation.namedTargets
+            val outerContext = nextContinuation.effectContext.copy(
+                targets = nextContinuation.remainingTargets
             )
             val result = forEachTargetExecutor.processTargets(
                 stateAfterPop,
@@ -382,13 +368,7 @@ class ContinuationHandler(
             val forEachPlayerExecutor = com.wingedsheep.engine.handlers.effects.composite.ForEachPlayerExecutor { s, e, c ->
                 effectExecutorRegistry.execute(s, e, c)
             }
-            val outerContext = EffectContext(
-                sourceId = nextContinuation.sourceId,
-                controllerId = nextContinuation.controllerId,
-                opponentId = nextContinuation.opponentId,
-                xValue = nextContinuation.xValue,
-                storedStringLists = nextContinuation.storedStringLists
-            )
+            val outerContext = nextContinuation.effectContext
             val result = forEachPlayerExecutor.processPlayers(
                 stateAfterPop,
                 nextContinuation.effects,
@@ -478,7 +458,7 @@ class ContinuationHandler(
 
         if (nextContinuation is EffectContinuation && nextContinuation.remainingEffects.isNotEmpty()) {
             val (_, stateAfterPop) = state.popContinuation()
-            var currentContext = nextContinuation.toEffectContext()
+            var currentContext = nextContinuation.effectContext
             var currentState = stateAfterPop
             val allEvents = events.toMutableList()
 
@@ -489,17 +469,7 @@ class ContinuationHandler(
                     val remainingContinuation = EffectContinuation(
                         decisionId = "pending",
                         remainingEffects = stillRemaining,
-                        sourceId = nextContinuation.sourceId,
-                        controllerId = nextContinuation.controllerId,
-                        opponentId = nextContinuation.opponentId,
-                        xValue = nextContinuation.xValue,
-                        targets = nextContinuation.targets,
-                        storedCollections = currentContext.storedCollections,
-                        chosenCreatureType = nextContinuation.chosenCreatureType,
-                        namedTargets = nextContinuation.namedTargets,
-                        chosenValues = nextContinuation.chosenValues,
-                        storedNumbers = currentContext.storedNumbers,
-                        storedStringLists = currentContext.storedStringLists
+                        effectContext = currentContext
                     )
                     currentState.pushContinuation(remainingContinuation)
                 } else {
@@ -548,7 +518,7 @@ class ContinuationHandler(
 
         if (nextContinuation is RepeatWhileContinuation && nextContinuation.phase == RepeatWhilePhase.AFTER_BODY) {
             val (_, stateAfterPop) = state.popContinuation()
-            val context = nextContinuation.toEffectContext()
+            val context = nextContinuation.effectContext
 
             val result = com.wingedsheep.engine.handlers.effects.composite.RepeatWhileExecutor.askCondition(
                 state = stateAfterPop,
@@ -637,7 +607,7 @@ class ContinuationHandler(
                 }
 
                 // Player chose to repeat — execute another iteration
-                val context = continuation.toEffectContext()
+                val context = continuation.effectContext
                 val result = com.wingedsheep.engine.handlers.effects.composite.RepeatWhileExecutor.executeIteration(
                     state = state,
                     body = continuation.body,

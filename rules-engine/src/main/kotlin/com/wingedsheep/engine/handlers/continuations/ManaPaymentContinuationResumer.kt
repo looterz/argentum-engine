@@ -237,7 +237,7 @@ class ManaPaymentContinuationResumer(
         }
 
         // Execute the inner effect
-        val context = continuation.toEffectContext()
+        val context = continuation.effectContext
         val effectResult = ctx.effectExecutorRegistry.execute(currentState, continuation.effect, context)
 
         if (effectResult.error != null) {
@@ -418,15 +418,7 @@ class ManaPaymentContinuationResumer(
         }
 
         // Execute the inner effect with the chosen X value
-        val context = com.wingedsheep.engine.handlers.EffectContext(
-            sourceId = continuation.sourceId,
-            controllerId = continuation.controllerId,
-            opponentId = continuation.opponentId,
-            xValue = chosenX,
-            targets = continuation.targets,
-            triggeringEntityId = continuation.triggeringEntityId,
-            namedTargets = continuation.namedTargets
-        )
+        val context = continuation.effectContext.copy(xValue = chosenX)
         val effectResult = ctx.effectExecutorRegistry.execute(currentState, continuation.effect, context)
 
         if (effectResult.error != null) {
