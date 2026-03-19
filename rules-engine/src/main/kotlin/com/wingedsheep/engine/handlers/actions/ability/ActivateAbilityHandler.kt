@@ -314,7 +314,8 @@ class ActivateAbilityHandler(
         if (manaCost != null) {
             when (action.paymentStrategy) {
                 is PaymentStrategy.Explicit -> {
-                    // Tap specified sources explicitly
+                    // Tap specified sources explicitly — mana pool deduction is skipped
+                    // by stripping the Mana cost below (same as CastSpellHandler.explicitPay)
                     for (sourceId in action.paymentStrategy.manaAbilitiesToActivate) {
                         val sourceName = currentState.getEntity(sourceId)
                             ?.get<CardComponent>()?.name ?: "Unknown"
@@ -358,10 +359,18 @@ class ActivateAbilityHandler(
             }
         }
 
+        // When using Explicit payment, mana sources were already tapped above —
+        // strip the Mana portion so payAbilityCost doesn't try to deduct from the pool.
+        val costForPayment = if (action.paymentStrategy is PaymentStrategy.Explicit) {
+            stripManaCost(effectiveCost)
+        } else {
+            effectiveCost
+        }
+
         // Pay the cost (using effective cost with text replacements applied)
         val costResult = costHandler.payAbilityCost(
             currentState,
-            effectiveCost,
+            costForPayment,
             action.sourceId,
             action.playerId,
             manaPool,
@@ -380,7 +389,8 @@ class ActivateAbilityHandler(
 
         // Deduct X mana from the pool. ManaPool.pay() skips X symbols ("handled by caller"),
         // so we must explicitly spend the X portion here (same pattern as CastSpellHandler.autoPay).
-        if (manaCost != null && manaCost.hasX && xValue > 0) {
+        // Skip for Explicit payment — sources were already tapped to cover the full cost including X.
+        if (action.paymentStrategy !is PaymentStrategy.Explicit && manaCost != null && manaCost.hasX && xValue > 0) {
             val xSymbolCount = manaCost.xCount.coerceAtLeast(1)
             var xRemainingToPay = xValue * xSymbolCount
 
@@ -855,6 +865,23 @@ class ActivateAbilityHandler(
         }
 
         return AutoTapResult(currentState, currentPool, events)
+    }
+
+    /**
+     * Strip the Mana portion from an ability cost — used when Explicit payment already
+     * tapped the required sources, so the mana pool deduction should be skipped.
+     */
+    private fun stripManaCost(cost: AbilityCost): AbilityCost = when (cost) {
+        is AbilityCost.Mana -> AbilityCost.Free
+        is AbilityCost.Composite -> {
+            val nonManaCosts = cost.costs.filter { it !is AbilityCost.Mana }
+            when (nonManaCosts.size) {
+                0 -> AbilityCost.Free
+                1 -> nonManaCosts.single()
+                else -> AbilityCost.Composite(nonManaCosts)
+            }
+        }
+        else -> cost
     }
 
     private fun checkActivationRestriction(

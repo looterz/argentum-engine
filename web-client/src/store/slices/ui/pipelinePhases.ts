@@ -89,10 +89,12 @@ export function computePhases(actionInfo: LegalActionInfo, options?: ComputePhas
     phases.push({ type: 'convoke' })
   }
 
-  // 4. Mana source selection (skipped when auto-tap is enabled)
+  // 4. Mana source selection (skipped when auto-tap is enabled, except for delve/convoke
+  //    spells where the player should always confirm land selection after alternative payment)
+  const hasAlternativePaymentPhase = phases.some((p) => p.type === 'delve' || p.type === 'convoke')
   if (
     actionInfo.availableManaSources && actionInfo.availableManaSources.length > 0 &&
-    !options?.autoTapEnabled
+    (hasAlternativePaymentPhase || !options?.autoTapEnabled)
   ) {
     phases.push({ type: 'manaSource' })
   }
