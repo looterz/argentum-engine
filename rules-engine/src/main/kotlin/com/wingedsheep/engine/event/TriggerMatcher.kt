@@ -487,19 +487,20 @@ class TriggerMatcher(
         val cardComponent = state.getEntity(event.spellEntityId)?.get<CardComponent>()
             ?: return trigger.spellType == SpellTypeFilter.ANY
 
+        // Face-down spells have no characteristics (CR 707.2) — they don't match any type filter
+        val isFaceDown = state.getEntity(event.spellEntityId)?.get<SpellOnStackComponent>()?.castFaceDown == true
+
         val typeMatches = when (trigger.spellType) {
             SpellTypeFilter.ANY -> true
-            SpellTypeFilter.CREATURE -> cardComponent.typeLine.isCreature
-            SpellTypeFilter.NONCREATURE -> !cardComponent.typeLine.isCreature
+            SpellTypeFilter.CREATURE -> !isFaceDown && cardComponent.typeLine.isCreature
+            SpellTypeFilter.NONCREATURE -> !isFaceDown && !cardComponent.typeLine.isCreature
             SpellTypeFilter.INSTANT_OR_SORCERY ->
-                cardComponent.typeLine.isInstant || cardComponent.typeLine.isSorcery
-            SpellTypeFilter.ENCHANTMENT -> cardComponent.typeLine.isEnchantment
-            SpellTypeFilter.HISTORIC -> cardComponent.typeLine.isHistoric
+                !isFaceDown && (cardComponent.typeLine.isInstant || cardComponent.typeLine.isSorcery)
+            SpellTypeFilter.ENCHANTMENT -> !isFaceDown && cardComponent.typeLine.isEnchantment
+            SpellTypeFilter.HISTORIC -> !isFaceDown && cardComponent.typeLine.isHistoric
         }
         if (!typeMatches) return false
 
-        // Face-down spells have mana value 0 (CR 707.2)
-        val isFaceDown = state.getEntity(event.spellEntityId)?.get<SpellOnStackComponent>()?.castFaceDown == true
         val mv = if (isFaceDown) 0 else cardComponent.manaValue
         if (trigger.manaValueAtLeast != null && mv < trigger.manaValueAtLeast!!) return false
         if (trigger.manaValueAtMost != null && mv > trigger.manaValueAtMost!!) return false
