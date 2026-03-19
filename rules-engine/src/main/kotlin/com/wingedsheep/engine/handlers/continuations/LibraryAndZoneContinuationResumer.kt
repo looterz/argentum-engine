@@ -50,38 +50,20 @@ class LibraryAndZoneContinuationResumer(
             return checkForMore(state, emptyList())
         }
 
-        val cardName = state.getEntity(cardId)?.get<CardComponent>()?.name ?: "Unknown"
-        var newState = state.removeFromZone(graveyardZone, cardId)
-
-        val toZone = when (continuation.destination) {
-            SearchDestination.HAND -> {
-                val handZone = ZoneKey(playerId, Zone.HAND)
-                newState = newState.addToZone(handZone, cardId)
-                Zone.HAND
-            }
-            SearchDestination.BATTLEFIELD -> {
-                val battlefieldZone = ZoneKey(playerId, Zone.BATTLEFIELD)
-                newState = newState.addToZone(battlefieldZone, cardId)
-                newState = newState.updateEntity(cardId) { c ->
-                    c.with(com.wingedsheep.engine.state.components.identity.ControllerComponent(playerId))
-                        .with(com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent)
-                }
-                Zone.BATTLEFIELD
-            }
+        val destZone = when (continuation.destination) {
+            SearchDestination.HAND -> Zone.HAND
+            SearchDestination.BATTLEFIELD -> Zone.BATTLEFIELD
             else -> return ExecutionResult.error(state, "Unsupported destination: ${continuation.destination}")
         }
 
-        val events = listOf(
-            ZoneChangeEvent(
-                entityId = cardId,
-                entityName = cardName,
-                fromZone = Zone.GRAVEYARD,
-                toZone = toZone,
-                ownerId = playerId
-            )
+        // Delegate zone movement to ZoneTransitionService for full cleanup + entry setup
+        val transitionResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+            state, cardId, destZone,
+            com.wingedsheep.engine.handlers.effects.ZoneEntryOptions(controllerId = playerId),
+            ZoneKey(playerId, Zone.GRAVEYARD)
         )
 
-        return checkForMore(newState, events)
+        return checkForMore(transitionResult.state, transitionResult.events)
     }
 
     /**
@@ -215,53 +197,17 @@ class LibraryAndZoneContinuationResumer(
             return checkForMore(state, emptyList())
         }
 
-        var newState = state
-
-        // Remove from hand
-        newState = newState.removeFromZone(handZone, cardId)
-
-        // Add to battlefield
-        val battlefieldZone = ZoneKey(playerId, Zone.BATTLEFIELD)
-        newState = newState.addToZone(battlefieldZone, cardId)
-
-        // Apply battlefield components
-        val container = newState.getEntity(cardId)
-        if (container != null) {
-            var newContainer = container
-                .with(com.wingedsheep.engine.state.components.identity.ControllerComponent(playerId))
-
-            // Creatures enter with summoning sickness
-            val cardComponent = container.get<CardComponent>()
-            if (cardComponent?.typeLine?.isCreature == true) {
-                newContainer = newContainer.with(
-                    com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
-                )
-            }
-
-            // Apply tapped status if entersTapped
-            if (continuation.entersTapped) {
-                newContainer = newContainer.with(TappedComponent)
-            }
-
-            newState = newState.copy(
-                entities = newState.entities + (cardId to newContainer)
-            )
-        }
-
-        // Emit zone change event
-        val cardComponent = newState.getEntity(cardId)?.get<CardComponent>()
-        val cardName = cardComponent?.name ?: "Unknown"
-        val events = listOf(
-            ZoneChangeEvent(
-                entityId = cardId,
-                entityName = cardName,
-                fromZone = Zone.HAND,
-                toZone = Zone.BATTLEFIELD,
-                ownerId = playerId
-            )
+        // Delegate zone movement to ZoneTransitionService for full entry setup (including Saga entry)
+        val transitionResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+            state, cardId, Zone.BATTLEFIELD,
+            com.wingedsheep.engine.handlers.effects.ZoneEntryOptions(
+                controllerId = playerId,
+                tapped = continuation.entersTapped
+            ),
+            ZoneKey(playerId, Zone.HAND)
         )
 
-        return checkForMore(newState, events)
+        return checkForMore(transitionResult.state, transitionResult.events)
     }
 
     /**

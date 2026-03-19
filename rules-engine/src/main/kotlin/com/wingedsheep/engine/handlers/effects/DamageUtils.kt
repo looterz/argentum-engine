@@ -724,32 +724,19 @@ object DamageUtils {
                 val totalCounters = updatedCounters.getCount(counterType)
                 val threshold = effect.sacrificeThreshold
                 if (threshold != null && totalCounters >= threshold) {
-                    val ownerId = container.get<CardComponent>()?.ownerId ?: sourceControllerId
-                    val zoneKey = state.zones.entries.find { (_, cards) -> entityId in cards }?.key
-                    if (zoneKey != null) {
-                        newState = newState.removeFromZone(zoneKey, entityId)
-                        val graveyardKey = ZoneKey(ownerId, Zone.GRAVEYARD)
-                        newState = newState.addToZone(graveyardKey, entityId)
-                        newState = newState.updateEntity(entityId) { c -> ZoneMovementUtils.stripBattlefieldComponents(c) }
-                        newState = ZoneMovementUtils.removeFloatingEffectsTargeting(newState, entityId)
-                        events.add(
-                            PermanentsSacrificedEvent(
-                                sourceControllerId,
-                                listOf(entityId),
-                                listOf(entityName)
-                            )
+                    // Delegate zone movement to ZoneTransitionService for full cleanup
+                    val transitionResult = ZoneTransitionService.moveToZone(
+                        newState, entityId, Zone.GRAVEYARD
+                    )
+                    newState = transitionResult.state
+                    events.add(
+                        PermanentsSacrificedEvent(
+                            sourceControllerId,
+                            listOf(entityId),
+                            listOf(entityName)
                         )
-                        events.add(
-                            ZoneChangeEvent(
-                                entityId,
-                                entityName,
-                                Zone.BATTLEFIELD,
-                                Zone.GRAVEYARD,
-                                ownerId,
-                                lastKnownTypeLine = container.get<CardComponent>()?.typeLine
-                            )
-                        )
-                    }
+                    )
+                    events.addAll(transitionResult.events)
                 }
 
                 return ExecutionResult.success(newState, events)

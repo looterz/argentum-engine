@@ -1,16 +1,13 @@
 package com.wingedsheep.engine.handlers.effects.removal
 
 import com.wingedsheep.engine.core.ExecutionResult
-import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
+import com.wingedsheep.engine.handlers.effects.ZoneEntryOptions
 import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils.resolveTarget
-import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.stripBattlefieldComponents
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.state.GameState
-import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent
-import com.wingedsheep.engine.state.components.identity.CardComponent
-import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.effects.ExileUntilLeavesEffect
 import kotlin.reflect.KClass
@@ -24,6 +21,10 @@ import kotlin.reflect.KClass
  *
  * If the source is no longer on the battlefield when this effect resolves
  * (modern template safety), the target is not exiled.
+ *
+ * Delegates zone movement to [ZoneTransitionService] for consistent cleanup
+ * (now includes cleanupCombatReferences, cleanupReverseAttachmentLink, and
+ * removeFloatingEffectsTargeting which were previously missing).
  */
 class ExileUntilLeavesExecutor : EffectExecutor<ExileUntilLeavesEffect> {
 
@@ -50,35 +51,13 @@ class ExileUntilLeavesExecutor : EffectExecutor<ExileUntilLeavesEffect> {
             return ExecutionResult.success(state)
         }
 
-        val container = state.getEntity(targetId)
-            ?: return ExecutionResult.success(state)
-        val cardComponent = container.get<CardComponent>()
-            ?: return ExecutionResult.success(state)
-
-        val ownerId = container.get<OwnerComponent>()?.playerId
-            ?: cardComponent.ownerId
-            ?: context.controllerId
-
-        // Find the zone the target is currently in
-        val currentZone = state.zones.entries.find { (_, cards) -> targetId in cards }?.key
-            ?: return ExecutionResult.success(state)
-
-        val exileZone = ZoneKey(ownerId, Zone.EXILE)
-
-        // Strip battlefield components and move to exile
-        var newState = state.updateEntity(targetId) { c -> stripBattlefieldComponents(c) }
-        newState = newState.removeFromZone(currentZone, targetId)
-        newState = newState.addToZone(exileZone, targetId)
-
-        val events = listOf(
-            ZoneChangeEvent(
-                entityId = targetId,
-                entityName = cardComponent.name,
-                fromZone = Zone.BATTLEFIELD,
-                toZone = Zone.EXILE,
-                ownerId = ownerId
-            )
+        // Delegate zone movement to ZoneTransitionService
+        val transitionResult = ZoneTransitionService.moveToZone(
+            state, targetId, Zone.EXILE,
+            ZoneEntryOptions(skipZoneChangeRedirect = true)
         )
+
+        var newState = transitionResult.state
 
         // Store exiled ID on the source permanent as LinkedExileComponent
         val sourceContainer = newState.getEntity(sourceId)
@@ -92,7 +71,7 @@ class ExileUntilLeavesExecutor : EffectExecutor<ExileUntilLeavesEffect> {
 
         return ExecutionResult(
             state = newState,
-            events = events
+            events = transitionResult.events
         )
     }
 }

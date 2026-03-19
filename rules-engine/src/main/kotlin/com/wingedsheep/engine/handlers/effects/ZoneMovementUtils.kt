@@ -262,12 +262,11 @@ object ZoneMovementUtils {
         val container = state.getEntity(entityId)
             ?: return ExecutionResult.error(state, "Entity not found: $entityId")
 
-        val cardComponent = container.get<CardComponent>()
+        container.get<CardComponent>()
             ?: return ExecutionResult.error(state, "Not a card: $entityId")
 
         // Check for indestructible - indestructible permanents can't be destroyed
         if (state.projectedState.hasKeyword(entityId, Keyword.INDESTRUCTIBLE)) {
-            // Indestructible - the destroy effect has no effect (not an error)
             return ExecutionResult.success(state)
         }
 
@@ -279,70 +278,9 @@ object ZoneMovementUtils {
             }
         }
 
-        // Find which player's battlefield it's on
-        val controllerId = container.get<ControllerComponent>()?.playerId
-            ?: cardComponent.ownerId
-            ?: return ExecutionResult.error(state, "Cannot determine owner")
-
-        val ownerId = cardComponent.ownerId ?: controllerId
-
-        // Check for zone change redirect (e.g., Anafenza exiling instead of graveyard)
-        val redirectResult = checkZoneChangeRedirect(state, entityId, Zone.BATTLEFIELD, Zone.GRAVEYARD)
-        val destinationZone = redirectResult.destinationZone
-
-        // Move to destination zone
-        val battlefieldZone = ZoneKey(controllerId, Zone.BATTLEFIELD)
-        val destinationZoneKey = ZoneKey(ownerId, destinationZone)
-
-        // Capture last-known counter count before stripping components (for death triggers)
-        val lastKnownCounterCount = container.get<CountersComponent>()
-            ?.getCount(CounterType.PLUS_ONE_PLUS_ONE) ?: 0
-
-        // Capture last-known projected power/toughness before stripping (for trigger filters)
-        val projected = state.projectedState
-        val lastKnownPower = projected.getPower(entityId)
-        val lastKnownToughness = projected.getToughness(entityId)
-
-        var newState = state
-
-        // Clean up reverse attachment link before moving
-        newState = cleanupReverseAttachmentLink(newState, entityId)
-
-        newState = newState.removeFromZone(battlefieldZone, entityId)
-        newState = newState.addToZone(destinationZoneKey, entityId)
-
-        // Clean up combat references before stripping components
-        newState = cleanupCombatReferences(newState, entityId)
-
-        // Remove permanent-only components
-        newState = newState.updateEntity(entityId) { c -> stripBattlefieldComponents(c) }
-
-        // Remove floating effects targeting this entity (Rule 400.7)
-        newState = removeFloatingEffectsTargeting(newState, entityId)
-
-        // Apply additional replacement effect (e.g., Ugin's Nexus extra turn, Darigaaz egg counters)
-        if (redirectResult.additionalEffect != null) {
-            newState = applyReplacementAdditionalEffect(
-                newState, redirectResult.additionalEffect, redirectResult.effectControllerId, entityId
-            )
-        }
-
-        return ExecutionResult.success(
-            newState,
-            listOf(
-                ZoneChangeEvent(
-                    entityId,
-                    cardComponent.name,
-                    Zone.BATTLEFIELD,
-                    destinationZone,
-                    ownerId,
-                    lastKnownCounterCount = lastKnownCounterCount,
-                    lastKnownPower = lastKnownPower,
-                    lastKnownToughness = lastKnownToughness,
-                    lastKnownTypeLine = cardComponent.typeLine
-                )
-            )
-        )
+        // Delegate to ZoneTransitionService
+        val result = ZoneTransitionService.moveToZone(state, entityId, Zone.GRAVEYARD)
+        return ExecutionResult.success(result.state, result.events)
     }
 
     /**
@@ -358,67 +296,11 @@ object ZoneMovementUtils {
         val container = state.getEntity(entityId)
             ?: return ExecutionResult.error(state, "Entity not found")
 
-        val cardComponent = container.get<CardComponent>()
+        container.get<CardComponent>()
             ?: return ExecutionResult.error(state, "Not a card")
 
-        val ownerId = cardComponent.ownerId
-            ?: return ExecutionResult.error(state, "Cannot determine owner")
-
-        // Find the current zone of the card
-        val currentZone = state.zones.entries.find { (_, cards) -> entityId in cards }?.key
-            ?: return ExecutionResult.error(state, "Card not in any zone")
-
-        // Check for zone change redirect (e.g., Anafenza exiling instead of graveyard)
-        val redirectResult = checkZoneChangeRedirect(state, entityId, currentZone.zoneType, targetZone)
-        val actualTargetZone = redirectResult.destinationZone
-
-        // Move to target zone
-        val targetZoneKey = ZoneKey(ownerId, actualTargetZone)
-
-        var newState = state.removeFromZone(currentZone, entityId)
-        newState = newState.addToZone(targetZoneKey, entityId)
-
-        // Clean up combat references and remove permanent-only components if moving from battlefield
-        if (currentZone.zoneType == Zone.BATTLEFIELD) {
-            newState = cleanupReverseAttachmentLink(newState, entityId)
-            newState = cleanupCombatReferences(newState, entityId)
-            newState = newState.updateEntity(entityId) { c -> stripBattlefieldComponents(c) }
-            newState = removeFloatingEffectsTargeting(newState, entityId)
-        }
-
-        // Add controller component when moving to battlefield
-        val extraEvents = mutableListOf<EngineGameEvent>()
-        if (actualTargetZone == Zone.BATTLEFIELD) {
-            newState = newState.updateEntity(entityId) { c ->
-                c.with(ControllerComponent(ownerId))
-                    .with(SummoningSicknessComponent)
-            }
-
-            // Handle Saga entering the battlefield (Rule 714.3a)
-            val (sagaState, sagaEvents) = applySagaEntryIfNeeded(newState, entityId)
-            newState = sagaState
-            extraEvents.addAll(sagaEvents)
-        }
-
-        // Apply additional replacement effect (e.g., Ugin's Nexus extra turn)
-        if (redirectResult.additionalEffect != null) {
-            newState = applyReplacementAdditionalEffect(
-                newState, redirectResult.additionalEffect, redirectResult.effectControllerId
-            )
-        }
-
-        return ExecutionResult.success(
-            newState,
-            listOf(
-                ZoneChangeEvent(
-                    entityId,
-                    cardComponent.name,
-                    currentZone.zoneType,
-                    actualTargetZone,
-                    ownerId
-                )
-            ) + extraEvents
-        )
+        val result = ZoneTransitionService.moveToZone(state, entityId, targetZone)
+        return ExecutionResult.success(result.state, result.events)
     }
 
     /**
@@ -705,52 +587,10 @@ object ZoneMovementUtils {
         val container = state.getEntity(entityId)
             ?: return ExecutionResult.error(state, "Entity not found")
 
-        val cardComponent = container.get<CardComponent>()
+        container.get<CardComponent>()
             ?: return ExecutionResult.error(state, "Not a card")
 
-        val controllerId = container.get<ControllerComponent>()?.playerId
-            ?: cardComponent.ownerId
-            ?: return ExecutionResult.error(state, "Cannot determine owner")
-
-        val ownerId = cardComponent.ownerId ?: controllerId
-
-        // Capture counter count before stripping (for last-known-information in death triggers)
-        val lastKnownCounterCount = container.get<CountersComponent>()
-            ?.getCount(com.wingedsheep.sdk.core.CounterType.PLUS_ONE_PLUS_ONE) ?: 0
-
-        // Capture last-known projected power/toughness before stripping (for trigger filters)
-        val projected = state.projectedState
-        val lastKnownPower = projected.getPower(entityId)
-        val lastKnownToughness = projected.getToughness(entityId)
-
-        // Move to target zone
-        val battlefieldZone = ZoneKey(controllerId, Zone.BATTLEFIELD)
-        val targetZoneKey = ZoneKey(ownerId, targetZone)
-
-        var newState = state.removeFromZone(battlefieldZone, entityId)
-        newState = newState.addToZone(targetZoneKey, entityId)
-
-        // Remove permanent-only components
-        newState = newState.updateEntity(entityId) { c -> stripBattlefieldComponents(c) }
-
-        // Remove floating effects targeting this entity (Rule 400.7)
-        newState = removeFloatingEffectsTargeting(newState, entityId)
-
-        return ExecutionResult.success(
-            newState,
-            listOf(
-                ZoneChangeEvent(
-                    entityId,
-                    cardComponent.name,
-                    Zone.BATTLEFIELD,
-                    targetZone,
-                    ownerId,
-                    lastKnownCounterCount = lastKnownCounterCount,
-                    lastKnownPower = lastKnownPower,
-                    lastKnownToughness = lastKnownToughness,
-                    lastKnownTypeLine = cardComponent.typeLine
-                )
-            )
-        )
+        val result = ZoneTransitionService.moveToZone(state, entityId, targetZone)
+        return ExecutionResult.success(result.state, result.events)
     }
 }

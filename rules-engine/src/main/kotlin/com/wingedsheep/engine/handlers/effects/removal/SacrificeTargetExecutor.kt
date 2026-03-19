@@ -4,8 +4,8 @@ import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils.resolveTarget
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.state.GameState
-import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
@@ -19,6 +19,10 @@ import kotlin.reflect.KClass
  * Sacrifices a specific permanent identified by its target reference.
  * Used in delayed triggers where the exact permanent to sacrifice was
  * determined at ability resolution time (e.g., Skirk Alarmist).
+ *
+ * Delegates zone movement to [ZoneTransitionService] for consistent cleanup
+ * (stripBattlefieldComponents, cleanupCombatReferences, cleanupReverseAttachmentLink,
+ * removeFloatingEffectsTargeting).
  */
 class SacrificeTargetExecutor : EffectExecutor<SacrificeTargetEffect> {
 
@@ -51,26 +55,16 @@ class SacrificeTargetExecutor : EffectExecutor<SacrificeTargetEffect> {
         val ownerId = container.get<OwnerComponent>()?.playerId
             ?: cardComponent.ownerId
             ?: controllerId
-        val graveyardZone = ZoneKey(ownerId, Zone.GRAVEYARD)
 
-        var newState = state.removeFromZone(currentZone, targetId)
-        newState = newState.addToZone(graveyardZone, targetId)
-
-        // Remove floating effects targeting this permanent
-        newState = com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
-            .removeFloatingEffectsTargeting(newState, targetId)
-
-        val events = listOf(
-            PermanentsSacrificedEvent(controllerId, listOf(targetId), listOf(cardComponent.name)),
-            ZoneChangeEvent(
-                entityId = targetId,
-                entityName = cardComponent.name,
-                fromZone = Zone.BATTLEFIELD,
-                toZone = Zone.GRAVEYARD,
-                ownerId = ownerId
-            )
+        // Delegate zone movement to ZoneTransitionService
+        val transitionResult = ZoneTransitionService.moveToZone(
+            state, targetId, Zone.GRAVEYARD, fromZoneKey = currentZone
         )
 
-        return ExecutionResult.success(newState, events)
+        val events = mutableListOf<GameEvent>()
+        events.add(PermanentsSacrificedEvent(controllerId, listOf(targetId), listOf(cardComponent.name)))
+        events.addAll(transitionResult.events)
+
+        return ExecutionResult.success(transitionResult.state, events)
     }
 }

@@ -5,15 +5,11 @@ import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils
-import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.cleanupReverseAttachmentLink
-import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.stripBattlefieldComponents
 import com.wingedsheep.engine.mechanics.layers.SerializableModification
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
-import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
-import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 
@@ -52,14 +48,6 @@ object SbaZoneMovementHelper {
         val controllerId = container.get<ControllerComponent>()?.playerId
             ?: cardComponent.ownerId
             ?: return ExecutionResult.success(state)
-        val ownerId = cardComponent.ownerId ?: controllerId
-
-        // Capture last-known information before stripping
-        val lastKnownCounterCount = container.get<CountersComponent>()
-            ?.getCount(CounterType.PLUS_ONE_PLUS_ONE) ?: 0
-        val projected = state.projectedState
-        val lastKnownPower = projected.getPower(entityId)
-        val lastKnownToughness = projected.getToughness(entityId)
 
         // Check for ExileOnDeath replacement effect
         val exileOnDeathIndex = state.floatingEffects.indexOfFirst { effect ->
@@ -73,9 +61,6 @@ object SbaZoneMovementHelper {
             state, entityId, Zone.BATTLEFIELD, Zone.GRAVEYARD
         )
         val destinationZone = if (exileInstead) Zone.EXILE else redirectResult.destinationZone
-
-        val battlefieldZone = ZoneKey(controllerId, Zone.BATTLEFIELD)
-        val destinationZoneKey = ZoneKey(ownerId, destinationZone)
 
         var newState = state
 
@@ -106,35 +91,17 @@ object SbaZoneMovementHelper {
             }
         }
 
-        // Clean up reverse attachment link before moving
-        newState = cleanupReverseAttachmentLink(newState, entityId)
-
-        newState = newState.removeFromZone(battlefieldZone, entityId)
-        newState = newState.addToZone(destinationZoneKey, entityId)
-
-        // Clean up combat references before stripping components
-        newState = ZoneMovementUtils.cleanupCombatReferences(newState, entityId)
-
-        // Remove permanent components
-        newState = newState.updateEntity(entityId) { c -> stripBattlefieldComponents(c) }
-
-        // Remove floating effects targeting this entity (Rule 400.7)
-        newState = ZoneMovementUtils.removeFloatingEffectsTargeting(newState, entityId)
+        // Delegate zone movement to ZoneTransitionService for full cleanup
+        val transitionResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+            newState, entityId, destinationZone,
+            com.wingedsheep.engine.handlers.effects.ZoneEntryOptions(skipZoneChangeRedirect = true)
+        )
+        newState = transitionResult.state
 
         val events = mutableListOf<GameEvent>(
-            CreatureDestroyedEvent(entityId, cardComponent.name, reason, controllerId),
-            ZoneChangeEvent(
-                entityId,
-                cardComponent.name,
-                Zone.BATTLEFIELD,
-                destinationZone,
-                ownerId,
-                lastKnownCounterCount = lastKnownCounterCount,
-                lastKnownPower = lastKnownPower,
-                lastKnownToughness = lastKnownToughness,
-                lastKnownTypeLine = cardComponent.typeLine
-            )
+            CreatureDestroyedEvent(entityId, cardComponent.name, reason, controllerId)
         )
+        events.addAll(transitionResult.events)
 
         // If ExileControllerGraveyardOnDeath was triggered, exile the controller's graveyard
         if (exileGraveyard) {
@@ -180,67 +147,12 @@ object SbaZoneMovementHelper {
         cardComponent: CardComponent,
         lastKnownAttachedTo: EntityId? = null
     ): ExecutionResult {
-        val container = state.getEntity(entityId) ?: return ExecutionResult.success(state)
-        val controllerId = container.get<ControllerComponent>()?.playerId
-            ?: cardComponent.ownerId
-            ?: return ExecutionResult.success(state)
-        val ownerId = cardComponent.ownerId ?: controllerId
-
-        // Capture last-known information before stripping
-        val lastKnownCounterCount = container.get<CountersComponent>()
-            ?.getCount(CounterType.PLUS_ONE_PLUS_ONE) ?: 0
-        val projected = state.projectedState
-        val lastKnownPower = projected.getPower(entityId)
-        val lastKnownToughness = projected.getToughness(entityId)
-
-        // Check for zone change replacement effects
-        val redirectResult = ZoneMovementUtils.checkZoneChangeRedirect(
-            state, entityId, Zone.BATTLEFIELD, Zone.GRAVEYARD
-        )
-        val destinationZone = redirectResult.destinationZone
-
-        val battlefieldZone = ZoneKey(controllerId, Zone.BATTLEFIELD)
-        val destinationZoneKey = ZoneKey(ownerId, destinationZone)
-
-        var newState = state
-
-        // Clean up reverse attachment link before moving
-        newState = cleanupReverseAttachmentLink(newState, entityId)
-
-        newState = newState.removeFromZone(battlefieldZone, entityId)
-        newState = newState.addToZone(destinationZoneKey, entityId)
-
-        // Clean up combat references
-        newState = ZoneMovementUtils.cleanupCombatReferences(newState, entityId)
-
-        // Remove permanent components
-        newState = newState.updateEntity(entityId) { c -> stripBattlefieldComponents(c) }
-
-        // Remove floating effects targeting this entity (Rule 400.7)
-        newState = ZoneMovementUtils.removeFloatingEffectsTargeting(newState, entityId)
-
-        val events = mutableListOf<GameEvent>(
-            ZoneChangeEvent(
-                entityId,
-                cardComponent.name,
-                Zone.BATTLEFIELD,
-                destinationZone,
-                ownerId,
-                lastKnownCounterCount = lastKnownCounterCount,
-                lastKnownPower = lastKnownPower,
-                lastKnownToughness = lastKnownToughness,
-                lastKnownTypeLine = cardComponent.typeLine,
-                lastKnownAttachedTo = lastKnownAttachedTo
-            )
+        // Delegate zone movement to ZoneTransitionService for full cleanup
+        val transitionResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+            state, entityId, Zone.GRAVEYARD,
+            com.wingedsheep.engine.handlers.effects.ZoneEntryOptions(lastKnownAttachedTo = lastKnownAttachedTo)
         )
 
-        // Apply additional replacement effect if any
-        if (redirectResult.additionalEffect != null) {
-            newState = ZoneMovementUtils.applyReplacementAdditionalEffect(
-                newState, redirectResult.additionalEffect, redirectResult.effectControllerId, entityId
-            )
-        }
-
-        return ExecutionResult.success(newState, events)
+        return ExecutionResult.success(transitionResult.state, transitionResult.events)
     }
 }

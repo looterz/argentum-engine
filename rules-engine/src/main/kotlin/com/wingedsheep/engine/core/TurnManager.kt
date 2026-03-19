@@ -347,21 +347,14 @@ class TurnManager(
                             val controllerId = container.get<ControllerComponent>()?.playerId
                                 ?: cardComponent.ownerId
                             if (controllerId != null) {
-                                val ownerId = cardComponent.ownerId ?: controllerId
-                                val battlefieldZone = ZoneKey(controllerId, Zone.BATTLEFIELD)
-                                val graveyardZone = ZoneKey(ownerId, Zone.GRAVEYARD)
-
-                                newState = newState.removeFromZone(battlefieldZone, entityId)
-                                newState = newState.addToZone(graveyardZone, entityId)
-
-                                newState = ZoneMovementUtils.cleanupCombatReferences(newState, entityId)
-                                newState = newState.updateEntity(entityId) { c ->
-                                    ZoneMovementUtils.stripBattlefieldComponents(c)
-                                }
-                                newState = ZoneMovementUtils.removeFloatingEffectsTargeting(newState, entityId)
+                                // Delegate zone movement to ZoneTransitionService for full cleanup
+                                val transitionResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+                                    newState, entityId, Zone.GRAVEYARD
+                                )
+                                newState = transitionResult.state
 
                                 events.add(PermanentsSacrificedEvent(controllerId, listOf(entityId), listOf(cardComponent.name)))
-                                events.add(ZoneChangeEvent(entityId, cardComponent.name, Zone.BATTLEFIELD, Zone.GRAVEYARD, ownerId))
+                                events.addAll(transitionResult.events)
                             }
                         }
                     }

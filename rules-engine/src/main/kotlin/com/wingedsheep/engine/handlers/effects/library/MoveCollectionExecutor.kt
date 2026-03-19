@@ -10,16 +10,10 @@ import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
-import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
-import com.wingedsheep.engine.state.components.combat.AttackingComponent
-import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
-import com.wingedsheep.engine.state.components.battlefield.SagaComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
-import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.OwnerComponent
-import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
@@ -490,22 +484,24 @@ class MoveCollectionExecutor(
         val events = mutableListOf<GameEvent>()
         var newState = state
 
-        val destroyedIds = mutableListOf<EntityId>()
         val movedIds = mutableListOf<EntityId>()
 
-        // Determine where each card currently lives (for removal)
+        // Determine library placement for ZoneTransitionService
+        val libraryPlacement = when (destination.placement) {
+            ZonePlacement.Top, ZonePlacement.Default -> com.wingedsheep.engine.handlers.effects.LibraryPlacement.Top
+            ZonePlacement.Bottom -> com.wingedsheep.engine.handlers.effects.LibraryPlacement.Bottom
+            ZonePlacement.Shuffled -> com.wingedsheep.engine.handlers.effects.LibraryPlacement.Bottom // shuffle at end
+            else -> com.wingedsheep.engine.handlers.effects.LibraryPlacement.Top
+        }
+
         for (cardId in cards) {
             val ownerId = newState.getEntity(cardId)?.get<OwnerComponent>()?.playerId ?: destPlayerId
-            val cardName = newState.getEntity(cardId)?.get<CardComponent>()?.name ?: "Unknown"
 
             // For MoveType.Destroy, check indestructible and regeneration before moving
             if (moveType == MoveType.Destroy) {
-                // Indestructible permanents can't be destroyed — skip entirely
                 if (newState.projectedState.hasKeyword(cardId, Keyword.INDESTRUCTIBLE)) {
                     continue
                 }
-
-                // Check for regeneration shields (unless noRegenerate is set)
                 if (!noRegenerate) {
                     val (shieldState, wasRegenerated) = ZoneMovementUtils.applyRegenerationShields(newState, cardId)
                     if (wasRegenerated) {
@@ -515,41 +511,10 @@ class MoveCollectionExecutor(
                 }
             }
 
-            // Find and remove from current zone
+            // Find current zone for controller override logic
             val fromZone = findCurrentZone(newState, cardId, ownerId)
-            if (fromZone != null) {
-                newState = newState.removeFromZone(ZoneKey(ownerId, fromZone), cardId)
 
-                // Strip battlefield-specific components when leaving the battlefield
-                // (face-down status, tapped, damage, counters, combat state, etc.)
-                if (fromZone == Zone.BATTLEFIELD) {
-                    newState = ZoneMovementUtils.cleanupCombatReferences(newState, cardId)
-                    newState = newState.updateEntity(cardId) { c ->
-                        ZoneMovementUtils.stripBattlefieldComponents(c)
-                    }
-                    // Remove floating effects targeting this entity (Rule 400.7)
-                    if (moveType == MoveType.Destroy) {
-                        newState = ZoneMovementUtils.removeFloatingEffectsTargeting(newState, cardId)
-                    }
-                }
-
-                // Strip face-down status when leaving exile (card becomes visible in new zone)
-                if (fromZone == Zone.EXILE) {
-                    val container = newState.getEntity(cardId)
-                    if (container != null && container.has<FaceDownComponent>()) {
-                        newState = newState.updateEntity(cardId) { c -> c.without<FaceDownComponent>() }
-                    }
-                }
-            }
-
-            if (moveType == MoveType.Destroy) {
-                destroyedIds.add(cardId)
-            }
-
-            // For sacrifice/destroy, cards always go to their owner's graveyard,
-            // regardless of who controlled them. For return-to-hand, cards go to their
-            // owner's hand (Rule 400.3). For underOwnersControl, cards enter the
-            // battlefield under their owner's control. For all other moves, use the specified player.
+            // Determine actual destination player based on moveType and zones
             val actualDestPlayerId = when {
                 (moveType == MoveType.Sacrifice || moveType == MoveType.Destroy) && destZone == Zone.GRAVEYARD -> ownerId
                 destZone == Zone.HAND && fromZone == Zone.BATTLEFIELD -> ownerId
@@ -558,110 +523,26 @@ class MoveCollectionExecutor(
                 else -> destPlayerId
             }
 
-            // Check for zone change redirect (e.g., Anafenza exiling instead of graveyard)
-            val redirectResult = ZoneMovementUtils.checkZoneChangeRedirect(
-                newState, cardId, fromZone, destZone
+            val entryOptions = com.wingedsheep.engine.handlers.effects.ZoneEntryOptions(
+                controllerId = actualDestPlayerId,
+                libraryPlacement = libraryPlacement,
+                tapped = destination.placement == ZonePlacement.Tapped || destination.placement == ZonePlacement.TappedAndAttacking,
+                tappedAndAttacking = destination.placement == ZonePlacement.TappedAndAttacking,
+                faceDownExile = faceDown && destZone == Zone.EXILE
             )
-            val actualDestZone = redirectResult.destinationZone
 
-            // Add to destination zone based on placement
-            val destZoneKey = ZoneKey(actualDestPlayerId, actualDestZone)
-            newState = when (destination.placement) {
-                ZonePlacement.Top, ZonePlacement.Default -> {
-                    if (actualDestZone == Zone.LIBRARY) {
-                        // Prepend to library (top)
-                        val currentLibrary = newState.getZone(destZoneKey)
-                        newState.copy(zones = newState.zones + (destZoneKey to listOf(cardId) + currentLibrary))
-                    } else {
-                        newState.addToZone(destZoneKey, cardId)
-                    }
-                }
-                ZonePlacement.Bottom -> {
-                    if (actualDestZone == Zone.LIBRARY) {
-                        // Append to library (bottom)
-                        val currentLibrary = newState.getZone(destZoneKey)
-                        newState.copy(zones = newState.zones + (destZoneKey to currentLibrary + cardId))
-                    } else {
-                        newState.addToZone(destZoneKey, cardId)
-                    }
-                }
-                ZonePlacement.Shuffled -> {
-                    newState.addToZone(destZoneKey, cardId)
-                    // Shuffle will happen after all cards are added
-                }
-                ZonePlacement.Tapped, ZonePlacement.TappedAndAttacking -> {
-                    newState.addToZone(destZoneKey, cardId)
-                }
-            }
-
-            // Apply battlefield-specific components
-            if (actualDestZone == Zone.BATTLEFIELD) {
-                val container = newState.getEntity(cardId)
-                if (container != null) {
-                    val controllerId = if (underOwnersControl) ownerId else destPlayerId
-                    var newContainer = container.with(ControllerComponent(controllerId))
-
-                    // Creatures enter with summoning sickness
-                    val cardComp = container.get<CardComponent>()
-                    if (cardComp?.typeLine?.isCreature == true) {
-                        newContainer = newContainer.with(SummoningSicknessComponent)
-                    }
-
-                    // Apply tapped status if entering tapped
-                    if (destination.placement == ZonePlacement.Tapped || destination.placement == ZonePlacement.TappedAndAttacking) {
-                        newContainer = newContainer.with(TappedComponent)
-                    }
-
-                    // Apply attacking status if entering tapped and attacking
-                    if (destination.placement == ZonePlacement.TappedAndAttacking) {
-                        val attackerController = if (underOwnersControl) ownerId else destPlayerId
-                        val defenderId = newState.turnOrder.firstOrNull { it != attackerController }
-                        if (defenderId != null) {
-                            newContainer = newContainer.with(AttackingComponent(defenderId))
-                        }
-                    }
-
-                    // Handle Saga entering the battlefield (Rule 714.3a)
-                    if (cardComp?.typeLine?.isSaga == true) {
-                        val current = newContainer.get<CountersComponent>() ?: CountersComponent()
-                        newContainer = newContainer
-                            .with(SagaComponent(triggeredChapters = setOf(1)))
-                            .with(current.withAdded(CounterType.LORE, 1))
-                        events.add(CountersAddedEvent(cardId, "LORE", 1, cardComp.name))
-                    }
-
-                    newState = newState.copy(entities = newState.entities + (cardId to newContainer))
-                }
-            }
-
-            // Apply face-down status when exiling face-down
-            if (faceDown && actualDestZone == Zone.EXILE) {
-                newState = newState.updateEntity(cardId) { c -> c.with(FaceDownComponent) }
-            }
+            // Delegate to ZoneTransitionService for full cleanup + entry
+            val fromZoneKey = if (fromZone != null) ZoneKey(ownerId, fromZone) else null
+            val transitionResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+                newState, cardId, destZone, entryOptions, fromZoneKey
+            )
+            newState = transitionResult.state
+            events.addAll(transitionResult.events)
 
             movedIds.add(cardId)
-
-            if (fromZone != null) {
-                events.add(
-                    ZoneChangeEvent(
-                        entityId = cardId,
-                        entityName = cardName,
-                        fromZone = fromZone,
-                        toZone = actualDestZone,
-                        ownerId = ownerId
-                    )
-                )
-            }
-
-            // Apply additional replacement effect (e.g., Ugin's Nexus extra turn)
-            if (redirectResult.additionalEffect != null) {
-                newState = ZoneMovementUtils.applyReplacementAdditionalEffect(
-                    newState, redirectResult.additionalEffect, redirectResult.effectControllerId, cardId
-                )
-            }
         }
 
-        // Handle shuffled placement
+        // Handle shuffled placement — shuffle once after all cards are placed
         if (destination.placement == ZonePlacement.Shuffled && destZone == Zone.LIBRARY) {
             val destZoneKey = ZoneKey(destPlayerId, Zone.LIBRARY)
             val library = newState.getZone(destZoneKey)

@@ -6,12 +6,11 @@ import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
-import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.cleanupReverseAttachmentLink
-import com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.stripBattlefieldComponents
+import com.wingedsheep.engine.handlers.effects.ZoneEntryOptions
+import com.wingedsheep.engine.handlers.effects.ZoneTransitionService
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.CardComponent
-import com.wingedsheep.engine.state.components.identity.OwnerComponent
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.ForceExileMultiZoneEffect
@@ -23,9 +22,9 @@ import kotlin.reflect.KClass
  * Handles "for each 1 life you lost, exile a permanent you control or a card
  * from your hand or graveyard" (Lich's Mastery).
  *
- * Gathers all valid options from battlefield (permanents you control), hand,
- * and graveyard, then presents a single selection decision. If total available
- * is less than count, exiles everything automatically.
+ * Delegates zone movement to [ZoneTransitionService] for consistent cleanup
+ * (now includes cleanupCombatReferences and removeFloatingEffectsTargeting
+ * which were previously missing for battlefield permanents).
  */
 class ForceExileMultiZoneExecutor(
     private val decisionHandler: DecisionHandler = DecisionHandler()
@@ -127,50 +126,26 @@ class ForceExileMultiZoneExecutor(
 
         /**
          * Exile a list of entities from wherever they currently are.
+         * Delegates to [ZoneTransitionService] for consistent cleanup.
          */
         fun exileEntities(
             state: GameState,
             playerId: EntityId,
             entityIds: List<EntityId>
         ): ExecutionResult {
-            var newState = state
-            val events = mutableListOf<GameEvent>()
+            var currentState = state
+            val allEvents = mutableListOf<GameEvent>()
 
             for (entityId in entityIds) {
-                val container = newState.getEntity(entityId) ?: continue
-                val cardComponent = container.get<CardComponent>() ?: continue
-
-                // Find the current zone of this entity
-                val currentZoneEntry = newState.zones.entries.find { (_, cards) -> entityId in cards }
-                    ?: continue
-
-                val fromZone = currentZoneEntry.key
-                val ownerId = container.get<OwnerComponent>()?.playerId
-                    ?: cardComponent.ownerId
-                    ?: playerId
-                val exileZone = ZoneKey(ownerId, Zone.EXILE)
-
-                // Strip battlefield components if leaving the battlefield
-                if (fromZone.zoneType == Zone.BATTLEFIELD) {
-                    newState = cleanupReverseAttachmentLink(newState, entityId)
-                    newState = newState.updateEntity(entityId) { c -> stripBattlefieldComponents(c) }
-                }
-
-                newState = newState.removeFromZone(fromZone, entityId)
-                newState = newState.addToZone(exileZone, entityId)
-
-                events.add(
-                    ZoneChangeEvent(
-                        entityId = entityId,
-                        entityName = cardComponent.name,
-                        fromZone = fromZone.zoneType,
-                        toZone = Zone.EXILE,
-                        ownerId = ownerId
-                    )
+                val transitionResult = ZoneTransitionService.moveToZone(
+                    currentState, entityId, Zone.EXILE,
+                    ZoneEntryOptions(skipZoneChangeRedirect = true)
                 )
+                currentState = transitionResult.state
+                allEvents.addAll(transitionResult.events)
             }
 
-            return ExecutionResult.success(newState, events)
+            return ExecutionResult.success(currentState, allEvents)
         }
     }
 }

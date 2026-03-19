@@ -249,21 +249,23 @@ class CostHandler(
                         return CostPaymentResult.failure("Sacrifice target does not match the required filter")
                     }
 
-                    // Move from battlefield to graveyard
-                    val battlefieldZone = ZoneKey(sacrificeController, Zone.BATTLEFIELD)
-                    val graveyardZone = ZoneKey(sacrificeController, Zone.GRAVEYARD)
+                    // Capture AttachedToComponent before zone transition — needed by effects that
+                    // read the enchanted creature from the sacrificed aura at resolution time.
+                    val attachedTo = sacrificeContainer.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()
 
-                    newState = newState.removeFromZone(battlefieldZone, toSacrifice)
-                    newState = newState.addToZone(graveyardZone, toSacrifice)
+                    // Delegate zone movement to ZoneTransitionService for full cleanup
+                    val transitionResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+                        newState, toSacrifice, Zone.GRAVEYARD
+                    )
+                    newState = transitionResult.state
+
+                    // Restore AttachedToComponent for effects that need it at resolution time
+                    if (attachedTo != null) {
+                        newState = newState.updateEntity(toSacrifice) { c -> c.with(attachedTo) }
+                    }
 
                     events.add(PermanentsSacrificedEvent(sacrificeController, listOf(toSacrifice), listOf(sacrificeName)))
-                    events.add(ZoneChangeEvent(
-                        entityId = toSacrifice,
-                        entityName = sacrificeName,
-                        fromZone = Zone.BATTLEFIELD,
-                        toZone = Zone.GRAVEYARD,
-                        ownerId = sacrificeController
-                    ))
+                    events.addAll(transitionResult.events)
                 }
 
                 CostPaymentResult.success(newState, manaPool, events)
@@ -360,54 +362,39 @@ class CostHandler(
                     ?: return CostPaymentResult.failure("Source permanent has no controller")
                 val sourceName = sourceContainer.get<CardComponent>()?.name ?: "Unknown"
 
-                val battlefieldZone = ZoneKey(sourceController, Zone.BATTLEFIELD)
-                val graveyardZone = ZoneKey(sourceController, Zone.GRAVEYARD)
+                // Capture AttachedToComponent before zone transition — needed by effects like
+                // GrantToEnchantedCreatureTypeGroupEffect (Crown cycle) that read the enchanted
+                // creature from the source at resolution time.
+                val attachedTo = sourceContainer.get<com.wingedsheep.engine.state.components.battlefield.AttachedToComponent>()
 
-                var newState = state.removeFromZone(battlefieldZone, sourceId)
-                newState = newState.addToZone(graveyardZone, sourceId)
-
-                val events = listOf(
-                    PermanentsSacrificedEvent(sourceController, listOf(sourceId)),
-                    ZoneChangeEvent(
-                        entityId = sourceId,
-                        entityName = sourceName,
-                        fromZone = Zone.BATTLEFIELD,
-                        toZone = Zone.GRAVEYARD,
-                        ownerId = sourceController
-                    )
+                // Delegate zone movement to ZoneTransitionService for full cleanup
+                val transitionResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+                    state, sourceId, Zone.GRAVEYARD
                 )
+
+                // Restore AttachedToComponent on the entity in graveyard for effects that need it
+                var newState = transitionResult.state
+                if (attachedTo != null) {
+                    newState = newState.updateEntity(sourceId) { c -> c.with(attachedTo) }
+                }
+
+                val events = mutableListOf<GameEvent>()
+                events.add(PermanentsSacrificedEvent(sourceController, listOf(sourceId)))
+                events.addAll(transitionResult.events)
 
                 CostPaymentResult.success(newState, manaPool, events)
             }
             is AbilityCost.ExileSelf -> {
                 // Exile the source permanent
-                val sourceContainer = state.getEntity(sourceId)
+                state.getEntity(sourceId)
                     ?: return CostPaymentResult.failure("Source permanent not found")
-                val sourceController = sourceContainer.get<ControllerComponent>()?.playerId
-                    ?: return CostPaymentResult.failure("Source permanent has no controller")
-                val sourceOwner = sourceContainer.get<OwnerComponent>()?.playerId ?: sourceController
-                val sourceName = sourceContainer.get<CardComponent>()?.name ?: "Unknown"
 
-                val battlefieldZone = ZoneKey(sourceController, Zone.BATTLEFIELD)
-                val exileZone = ZoneKey(sourceOwner, Zone.EXILE)
-
-                var newState = state.updateEntity(sourceId) { c ->
-                    com.wingedsheep.engine.handlers.effects.ZoneMovementUtils.stripBattlefieldComponents(c)
-                }
-                newState = newState.removeFromZone(battlefieldZone, sourceId)
-                newState = newState.addToZone(exileZone, sourceId)
-
-                val events = listOf(
-                    ZoneChangeEvent(
-                        entityId = sourceId,
-                        entityName = sourceName,
-                        fromZone = Zone.BATTLEFIELD,
-                        toZone = Zone.EXILE,
-                        ownerId = sourceOwner
-                    )
+                // Delegate zone movement to ZoneTransitionService for full cleanup
+                val transitionResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+                    state, sourceId, Zone.EXILE
                 )
 
-                CostPaymentResult.success(newState, manaPool, events)
+                CostPaymentResult.success(transitionResult.state, manaPool, transitionResult.events)
             }
             is AbilityCost.ReturnToHand -> {
                 if (choices.bounceChoices.size < cost.count) {
@@ -420,35 +407,20 @@ class CostHandler(
                 val allEvents = mutableListOf<GameEvent>()
 
                 for (toBounce in toBounceList) {
-                    val bounceContainer = newState.getEntity(toBounce)
+                    newState.getEntity(toBounce)
                         ?: return CostPaymentResult.failure("Bounce target not found")
-                    val bounceController = bounceContainer.get<ControllerComponent>()?.playerId
-                        ?: return CostPaymentResult.failure("Bounce target has no controller")
-                    val bounceOwner = bounceContainer.get<OwnerComponent>()?.playerId
-                        ?: bounceController
-                    val bounceName = bounceContainer.get<CardComponent>()?.name ?: "Unknown"
 
                     // Validate the chosen bounce target matches the required filter
                     if (!predicateEvaluator.matches(newState, toBounce, cost.filter, context)) {
                         return CostPaymentResult.failure("Bounce target does not match the required filter")
                     }
 
-                    // Move from battlefield to owner's hand
-                    val battlefieldZone = ZoneKey(bounceController, Zone.BATTLEFIELD)
-                    val handZone = ZoneKey(bounceOwner, Zone.HAND)
-
-                    newState = newState.removeFromZone(battlefieldZone, toBounce)
-                    newState = newState.addToZone(handZone, toBounce)
-
-                    allEvents.add(
-                        ZoneChangeEvent(
-                            entityId = toBounce,
-                            entityName = bounceName,
-                            fromZone = Zone.BATTLEFIELD,
-                            toZone = Zone.HAND,
-                            ownerId = bounceOwner
-                        )
+                    // Delegate zone movement to ZoneTransitionService for full cleanup
+                    val transitionResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+                        newState, toBounce, Zone.HAND
                     )
+                    newState = transitionResult.state
+                    allEvents.addAll(transitionResult.events)
                 }
 
                 CostPaymentResult.success(newState, manaPool, allEvents)
