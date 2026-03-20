@@ -25,6 +25,7 @@ object BloomburrowSet {
         DawnsTruce,
         HeirloomEpic,
         HiredClaw,
+        JackdawSavior,
         HuntersTalent,
         QuaketuskBoar,
         SeasonedWarrenguard,

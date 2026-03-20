@@ -2,11 +2,11 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 9 / 266
+**Implemented:** 10 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
-| White      | 40    | 2    |
+| White      | 40    | 3    |
 | Blue       | 41    | 1    |
 | Black      | 40    | 1    |
 | Red        | 41    | 2    |
@@ -126,7 +126,7 @@
 - [ ] Intrepid Rabbit
 - [ ] Iridescent Vinelasher
 - [ ] Island
-- [ ] Jackdaw Savior
+- [x] Jackdaw Savior
 - [ ] Jolly Gerbils
 - [ ] Junkblade Bruiser
 - [ ] Kastral, the Windcrested
