@@ -80,9 +80,10 @@ Copy `.env.example` to `.env` to configure:
 | `CACHE_REDIS_ENABLED` | `false` | Enable Redis for session persistence |
 | `REDIS_HOST` | `localhost` | Redis host |
 | `REDIS_PORT` | `6379` | Redis port |
-| `GAME_AI_ENABLED` | `false` | Enable AI opponent |
-| `OPENROUTER_API_KEY` | | OpenRouter API key for AI opponent |
-| `GAME_AI_MODEL` | `google/gemini-3.1-flash-lite-preview` | LLM model for AI opponent |
+| `GAME_AI_ENABLED` | `true` | Enable AI opponent |
+| `GAME_AI_MODE` | `engine` | AI mode: `engine` (built-in) or `llm` (requires API key) |
+| `OPENROUTER_API_KEY` | | OpenRouter API key (only needed for `llm` mode) |
+| `GAME_AI_MODEL` | `google/gemini-3.1-flash-lite-preview` | LLM model (only for `llm` mode) |
 
 ## Tech Stack
 
@@ -108,30 +109,50 @@ Play Magic against friends with fully implemented MTG rules. The engine automati
 
 ### AI Opponent
 
-Play against an LLM-powered AI opponent. The AI uses the [OpenRouter](https://openrouter.ai/) API to make strategic decisions.
+Play against an AI opponent. Two modes are available:
+
+#### Engine AI (default)
+
+The built-in rules-engine AI runs locally with no external dependencies. It uses multi-ply game tree search with alpha-beta pruning, a composite board evaluator, and a specialized combat advisor.
+
+**Works out of the box** — no API key or configuration needed:
+
+```bash
+# AI is enabled by default in engine mode
+GAME_AI_ENABLED=true
+GAME_AI_MODE=engine
+```
+
+Start the server and client, then click **"Play vs AI"** on the main menu.
+
+#### LLM AI (optional)
+
+Alternatively, you can use an LLM-powered AI that sends game state to an OpenAI-compatible API for decisions.
 
 **Setup:**
 
-1. Get an API key from [openrouter.ai](https://openrouter.ai/)
-2. Configure the environment variables:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `GAME_AI_ENABLED` | `false` | Enable the AI opponent feature |
-| `OPENROUTER_API_KEY` | | Your OpenRouter API key |
-| `GAME_AI_MODEL` | `google/gemini-3.1-flash-lite-preview` | LLM model to use (any OpenRouter-compatible model) |
-
-Add these to your `.env` file:
+1. Get an API key from [openrouter.ai](https://openrouter.ai/) (or any OpenAI-compatible provider)
+2. Add to your `.env` file:
 
 ```bash
 GAME_AI_ENABLED=true
+GAME_AI_MODE=llm
 OPENROUTER_API_KEY=sk-or-v1-your-key-here
+# GAME_AI_MODEL=google/gemini-3.1-flash-lite-preview  # optional, change model
 ```
 
-3. Start the server and client as usual
-4. Click **"Play vs AI"** on the main menu to start a game against the AI
+The LLM AI receives the same masked game state as a human player and responds through the standard game protocol. When the LLM fails to respond or returns an unparseable answer, it falls back to heuristic play.
 
-The AI receives the same masked game state as a human player and responds through the standard game protocol. It handles mulligans, spells, combat, and all decision types. When the LLM fails to respond or returns an unparseable answer, the AI falls back to heuristic play (pass priority, keep reasonable hands, use default combat assignments).
+#### Configuration reference
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `GAME_AI_ENABLED` | `true` | Enable the AI opponent feature |
+| `GAME_AI_MODE` | `engine` | `engine` — built-in AI (no API key needed); `llm` — LLM-powered AI |
+| `GAME_AI_BASE_URL` | `https://openrouter.ai/api/v1` | LLM API endpoint (LLM mode only) |
+| `GAME_AI_API_KEY` | | API key for LLM provider (LLM mode only) |
+| `GAME_AI_MODEL` | `google/gemini-3.1-flash-lite-preview` | LLM model name (LLM mode only) |
+| `GAME_AI_DECKBUILDING_MODEL` | | Separate model for AI deckbuilding; falls back to `GAME_AI_MODEL` if not set (LLM mode only) |
 
 ## Architecture
 
