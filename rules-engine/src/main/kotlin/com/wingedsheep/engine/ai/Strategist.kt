@@ -8,13 +8,17 @@ import com.wingedsheep.sdk.model.EntityId
 /**
  * Chooses which [LegalAction] to take when the AI has priority.
  *
- * Uses 1-ply lookahead: simulate each affordable action, evaluate the
- * resulting board state, and pick the best. Combat decisions are delegated
- * to [CombatAdvisor] for MTG-specific attack/block heuristics.
+ * Two-phase evaluation:
+ * 1. **Quick pass**: Score all candidates with 1-ply lookahead.
+ * 2. **Deep pass**: If the top candidates are close, re-score them with
+ *    multi-ply [Searcher] to break the tie considering opponent responses.
+ *
+ * Combat decisions are delegated to [CombatAdvisor].
  */
 class Strategist(
     private val simulator: GameSimulator,
     private val evaluator: BoardEvaluator,
+    private val searcher: Searcher = Searcher(simulator, evaluator),
     private val combatAdvisor: CombatAdvisor = CombatAdvisor(simulator, evaluator)
 ) {
     fun chooseAction(
@@ -24,43 +28,74 @@ class Strategist(
     ): LegalAction {
         if (legalActions.size == 1) return legalActions.first()
 
-        // Combat declaration steps are exclusive — only one action type available
+        // Combat declaration steps are exclusive
         val combatAction = legalActions.find { it.actionType == "DeclareAttackers" || it.actionType == "DeclareBlockers" }
         if (combatAction != null && legalActions.all { it.actionType == combatAction.actionType }) {
             return handleCombatDeclaration(state, combatAction, playerId)
         }
 
-        // Split into affordable non-mana actions vs pass/mana
         val pass = legalActions.find { it.actionType == "PassPriority" }
         val affordable = legalActions.filter { it.affordable && !it.isManaAbility && it.actionType != "PassPriority" }
 
         if (affordable.isEmpty()) return pass ?: legalActions.first()
 
-        val candidates = prune(affordable, state, playerId)
-
-        // Score the current state as baseline (what happens if we just pass)
+        // ── Phase 1: Quick 1-ply scoring of all candidates ──
         val passScore = if (pass != null) {
-            evaluateAction(state, pass, playerId)
+            evaluate1Ply(state, pass, playerId)
         } else {
             evaluator.evaluate(state, state.projectedState, playerId)
         }
 
-        val scored = candidates.map { action ->
-            ScoredAction(action, evaluateAction(state, action, playerId))
+        val scored = affordable.map { action ->
+            action to evaluate1Ply(state, action, playerId)
         }
 
-        val best = scored.maxByOrNull { it.score }
-        return if (best != null && best.score > passScore) {
-            best.action
+        // ── Phase 2: Adaptive deep search on close contenders ──
+        val depth = searcher.recommendDepth(state, scored, playerId)
+
+        val finalScored = if (depth > 1) {
+            deepSearch(state, scored, playerId, depth, passScore)
+        } else {
+            scored
+        }
+
+        val best = finalScored.maxByOrNull { it.second }
+        return if (best != null && best.second > passScore) {
+            best.first
         } else {
             pass ?: legalActions.first()
         }
     }
 
     /**
-     * Handle combat declaration steps by delegating to [CombatAdvisor].
-     * Returns a new [LegalAction] with the combat advisor's chosen attackers/blockers.
+     * Re-score top candidates with multi-ply search.
+     * Only the top N contenders get deep search — the rest keep their 1-ply scores.
      */
+    private fun deepSearch(
+        state: GameState,
+        scored: List<Pair<LegalAction, Double>>,
+        playerId: EntityId,
+        depth: Int,
+        passScore: Double
+    ): List<Pair<LegalAction, Double>> {
+        val sorted = scored.sortedByDescending { it.second }
+        val bestScore = sorted.first().second
+
+        // Only deep-search actions within striking distance of the best
+        val threshold = (bestScore - passScore).coerceAtLeast(1.0) * 0.5
+        val contenders = sorted.takeWhile { it.second >= bestScore - threshold }
+            .take(6) // hard cap
+        val contenderSet = contenders.map { it.first }.toSet()
+
+        return scored.map { (action, quickScore) ->
+            if (action in contenderSet) {
+                action to searcher.searchAction(state, action, playerId, depth)
+            } else {
+                action to quickScore
+            }
+        }
+    }
+
     private fun handleCombatDeclaration(
         state: GameState,
         legalAction: LegalAction,
@@ -74,20 +109,8 @@ class Strategist(
         return legalAction.copy(action = action)
     }
 
-    private fun evaluateAction(state: GameState, action: LegalAction, playerId: EntityId): Double {
+    private fun evaluate1Ply(state: GameState, action: LegalAction, playerId: EntityId): Double {
         val result = simulator.simulate(state, action.action)
         return evaluator.evaluate(result.state, result.state.projectedState, playerId)
     }
-
-    /**
-     * Remove obviously suboptimal actions to reduce the simulation space.
-     */
-    private fun prune(actions: List<LegalAction>, state: GameState, playerId: EntityId): List<LegalAction> {
-        return actions // For now, include everything — pruning heuristics can be added later
-    }
 }
-
-private data class ScoredAction(
-    val action: LegalAction,
-    val score: Double
-)
