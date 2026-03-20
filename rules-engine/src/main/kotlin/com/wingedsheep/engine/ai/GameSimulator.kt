@@ -19,12 +19,16 @@ class GameSimulator(
     private val enumerator: LegalActionEnumerator = LegalActionEnumerator.create(cardRegistry)
 ) {
     /**
-     * Simulate an action, returning the resulting state.
-     * Trivial decisions (single legal choice) are auto-resolved.
+     * Simulate an action and resolve the stack to completion.
+     *
+     * After executing the action, both players auto-pass priority until
+     * the stack is empty (spells resolve) or a non-trivial decision is needed.
+     * This ensures the evaluator sees the actual effect of casting a spell,
+     * not just "spell on stack, lands tapped".
      */
     fun simulate(state: GameState, action: GameAction): SimulationResult {
         val result = processor.process(state, action)
-        return resolveTrivia(result)
+        return resolveToQuietState(result)
     }
 
     /**
@@ -35,7 +39,7 @@ class GameSimulator(
             ?: return SimulationResult.Illegal(state, emptyList(), "No pending decision")
         val action = SubmitDecision(pending.playerId, response)
         val result = processor.process(state, action)
-        return resolveTrivia(result)
+        return resolveToQuietState(result)
     }
 
     /**
@@ -60,22 +64,50 @@ class GameSimulator(
     }
 
     /**
-     * Auto-resolve trivial decisions (only one legal choice).
+     * Resolve to a "quiet" state: auto-pass priority for both players and
+     * auto-resolve trivial decisions until the stack is empty or a real
+     * decision is needed.
+     *
+     * Without this, simulating CastSpell would leave the spell on the stack
+     * (lands tapped, creature not yet on battlefield), making every spell
+     * look worse than passing.
      */
-    private fun resolveTrivia(result: ExecutionResult): SimulationResult {
+    private fun resolveToQuietState(result: ExecutionResult): SimulationResult {
         var current = result
         var allEvents = result.events
-
-        // Auto-resolve decisions with exactly one legal response, up to a depth limit
         var iterations = 0
-        while (current.isPaused && iterations < 50) {
-            val decision = current.pendingDecision!!
-            val trivialResponse = trivialResponseFor(decision) ?: break
+        val maxIterations = 100
 
-            val submitAction = SubmitDecision(decision.playerId, trivialResponse)
-            current = processor.process(current.state, submitAction)
-            allEvents = allEvents + current.events
-            iterations++
+        while (iterations < maxIterations) {
+            if (current.error != null) {
+                return SimulationResult.Illegal(current.state, allEvents, current.error!!)
+            }
+
+            // Auto-resolve trivial decisions
+            if (current.isPaused) {
+                val decision = current.pendingDecision!!
+                val trivialResponse = trivialResponseFor(decision) ?: break
+                val submitAction = SubmitDecision(decision.playerId, trivialResponse)
+                current = processor.process(current.state, submitAction)
+                allEvents = allEvents + current.events
+                iterations++
+                continue
+            }
+
+            // Stack is non-empty — auto-pass priority for whoever has it
+            // to let spells resolve. This simulates both players choosing not
+            // to respond, which is the most common outcome.
+            val state = current.state
+            if (state.stack.isNotEmpty() && state.priorityPlayerId != null && !state.gameOver) {
+                val passAction = PassPriority(state.priorityPlayerId!!)
+                current = processor.process(state, passAction)
+                allEvents = allEvents + current.events
+                iterations++
+                continue
+            }
+
+            // Stack empty, no pending decision — we've reached a quiet state
+            break
         }
 
         return when {
