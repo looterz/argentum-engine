@@ -579,6 +579,26 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
     }
 
     /**
+     * When you expend N — i.e., you spend your Nth total mana to cast spells
+     * during a turn. Triggers at most once per turn per threshold.
+     *
+     * Used by Bloomburrow cards like Junkblade Bruiser.
+     *
+     * @param threshold The mana threshold that triggers this (e.g., 4 for "expend 4")
+     * @param player Which player's spending to track
+     */
+    @SerialName("ExpendEvent")
+    @Serializable
+    data class ExpendEvent(
+        val threshold: Int,
+        val player: Player = Player.You
+    ) : GameEvent {
+        override val description: String = "${player.description} expends $threshold"
+
+        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
+    }
+
+    /**
      * When a card is cycled.
      */
     @SerialName("CycleEvent")

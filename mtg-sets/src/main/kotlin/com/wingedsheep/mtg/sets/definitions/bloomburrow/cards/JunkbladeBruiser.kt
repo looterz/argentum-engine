@@ -1,8 +1,11 @@
 package com.wingedsheep.mtg.sets.definitions.bloomburrow.cards
 
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
 
 /**
  * Junkblade Bruiser
@@ -14,10 +17,6 @@ import com.wingedsheep.sdk.model.Rarity
  *
  * Whenever you expend 4, this creature gets +2/+1 until end of turn.
  * (You expend 4 as you spend your fourth total mana to cast spells during a turn.)
- *
- * Note: The "expend" trigger mechanic is not yet implemented in the engine.
- * The trample keyword and base stats are correct. The expend-triggered
- * +2/+1 buff is not modeled.
  */
 val JunkbladeBruiser = card("Junkblade Bruiser") {
     manaCost = "{3}{R/G}{R/G}"
@@ -28,12 +27,10 @@ val JunkbladeBruiser = card("Junkblade Bruiser") {
 
     keywords(Keyword.TRAMPLE)
 
-    // TODO: Expend 4 trigger not yet supported by the engine.
-    // When implemented, add:
-    // triggeredAbility {
-    //     trigger = Triggers.Expend(4)
-    //     effect = Effects.ModifyStats(2, 1, EffectTarget.Self)
-    // }
+    triggeredAbility {
+        trigger = Triggers.Expend(4)
+        effect = Effects.ModifyStats(2, 1, EffectTarget.Self)
+    }
 
     metadata {
         rarity = Rarity.COMMON

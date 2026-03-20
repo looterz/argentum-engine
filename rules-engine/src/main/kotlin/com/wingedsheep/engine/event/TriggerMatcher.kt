@@ -11,6 +11,7 @@ import com.wingedsheep.engine.core.CardsDrawnEvent
 import com.wingedsheep.engine.core.DamageDealtEvent
 import com.wingedsheep.engine.core.LifeChangedEvent
 import com.wingedsheep.engine.core.SpellCastEvent
+import com.wingedsheep.engine.state.components.player.ManaSpentOnSpellsThisTurnComponent
 import com.wingedsheep.engine.core.TappedEvent
 import com.wingedsheep.engine.core.TurnFaceUpEvent
 import com.wingedsheep.engine.core.UntappedEvent
@@ -132,6 +133,22 @@ class TriggerMatcher(
                     matchesPlayer(trigger.player, event.casterId, controllerId) &&
                     matchesSpellTypeFilter(trigger, event, state) &&
                     (trigger.kicked == null || trigger.kicked == event.wasKicked)
+            }
+            is GameEvent.ExpendEvent -> {
+                // Expend triggers when cumulative mana spent on spells this turn
+                // crosses the threshold. Fires on SpellCastEvent only.
+                // Detects the "crossing": previous total < threshold <= new total.
+                if (event !is SpellCastEvent) return false
+                if (!matchesPlayer(trigger.player, event.casterId, controllerId)) return false
+
+                val playerEntity = state.getEntity(event.casterId) ?: return false
+                val manaComponent = playerEntity.get<ManaSpentOnSpellsThisTurnComponent>()
+                    ?: return false
+                val currentTotal = manaComponent.totalSpent
+                val spentThisCast = event.totalManaSpent
+                val previousTotal = currentTotal - spentThisCast
+                // Trigger if we just crossed the threshold with this cast
+                previousTotal < trigger.threshold && currentTotal >= trigger.threshold
             }
             is GameEvent.SpellOrAbilityOnStackEvent -> {
                 // Intervening-if: only trigger if the spell/ability has a single target

@@ -152,7 +152,9 @@ data class SpellCastEvent(
     val casterId: EntityId,
     val targetNames: List<String> = emptyList(),
     val xValue: Int? = null,
-    val wasKicked: Boolean = false
+    val wasKicked: Boolean = false,
+    /** Total mana spent to cast this spell (for Expend trigger detection) */
+    val totalManaSpent: Int = 0
 ) : GameEvent
 
 /**

@@ -90,7 +90,8 @@ class StackResolver(
         chosenCreatureType: String? = null,
         exiledCardCount: Int = 0,
         wasKicked: Boolean = false,
-        chosenModes: List<Int> = emptyList()
+        chosenModes: List<Int> = emptyList(),
+        totalManaSpent: Int = 0
     ): ExecutionResult {
         val container = state.getEntity(cardId)
             ?: return ExecutionResult.error(state, "Card not found: $cardId")
@@ -154,7 +155,7 @@ class StackResolver(
             }
         }
 
-        val events = mutableListOf<GameEvent>(SpellCastEvent(cardId, eventName, casterId, targetNames, xValue, wasKicked))
+        val events = mutableListOf<GameEvent>(SpellCastEvent(cardId, eventName, casterId, targetNames, xValue, wasKicked, totalManaSpent))
 
         // Emit BecomesTargetEvent for each permanent target (Rule 601.2c)
         for (target in targets) {

@@ -803,4 +803,17 @@ object Triggers {
         event = LifeLossEvent(Player.Each),
         binding = TriggerBinding.ANY
     )
+
+    // =========================================================================
+    // Expend Triggers (Bloomburrow)
+    // =========================================================================
+
+    /**
+     * Whenever you expend N (spend your Nth total mana on spells this turn).
+     * Triggers at most once per turn.
+     */
+    fun Expend(threshold: Int): TriggerSpec = TriggerSpec(
+        event = ExpendEvent(threshold),
+        binding = TriggerBinding.ANY
+    )
 }

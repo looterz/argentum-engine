@@ -317,6 +317,23 @@ data class DamageReceivedThisTurnComponent(
 ) : Component
 
 /**
+ * Tracks the total mana spent on casting spells during the current turn.
+ *
+ * Used by the Expend mechanic (Bloomburrow): "Whenever you expend N" triggers
+ * when the player's cumulative mana spent on spells crosses the N threshold.
+ * The trigger detects the "crossing" by comparing previous vs current total,
+ * ensuring each threshold fires at most once per turn.
+ *
+ * Reset at turn start by TurnManager.
+ *
+ * @param totalSpent Cumulative mana spent on casting spells this turn
+ */
+@Serializable
+data class ManaSpentOnSpellsThisTurnComponent(
+    val totalSpent: Int = 0
+) : Component
+
+/**
  * Tracks the number of nontoken creatures put into this player's graveyard
  * from the battlefield during the current turn.
  * Cleared at end of turn by TurnManager.

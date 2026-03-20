@@ -41,6 +41,7 @@ import com.wingedsheep.engine.state.components.identity.MayPlayFromExileComponen
 import com.wingedsheep.engine.state.components.identity.PlayWithoutPayingCostComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
+import com.wingedsheep.engine.state.components.player.ManaSpentOnSpellsThisTurnComponent
 import com.wingedsheep.sdk.core.CardType
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.ManaCost
@@ -790,6 +791,18 @@ class CastSpellHandler(
         currentState = paymentResult.state
         events.addAll(paymentResult.events)
 
+        // Track total mana spent on spells this turn (for Expend triggers)
+        val manaSpentThisCast = paymentResult.events
+            .filterIsInstance<ManaSpentEvent>()
+            .sumOf { it.total }
+        if (manaSpentThisCast > 0) {
+            currentState = currentState.updateEntity(action.playerId) { container ->
+                val existing = container.get<ManaSpentOnSpellsThisTurnComponent>()
+                    ?: ManaSpentOnSpellsThisTurnComponent()
+                container.with(existing.copy(totalSpent = existing.totalSpent + manaSpentThisCast))
+            }
+        }
+
         // Compute target requirements for resolution-time re-validation (Rule 608.2b)
         // Use mode-specific target requirements when a modal mode was chosen at cast time,
         // or kickerTargetRequirements when spell is kicked and alternate targets are defined
@@ -867,7 +880,8 @@ class CastSpellHandler(
             spellTargetRequirements,
             exiledCardCount = exiledCardCount,
             wasKicked = action.wasKicked,
-            chosenModes = if (action.chosenMode != null) listOf(action.chosenMode) else emptyList()
+            chosenModes = if (action.chosenMode != null) listOf(action.chosenMode) else emptyList(),
+            totalManaSpent = manaSpentThisCast
         )
 
         if (!castResult.isSuccess) {
