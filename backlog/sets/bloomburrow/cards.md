@@ -2,14 +2,14 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 6 / 266
+**Implemented:** 7 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 1    |
 | Blue       | 41    | 1    |
 | Black      | 40    | 1    |
-| Red        | 41    | 1    |
+| Red        | 41    | 2    |
 | Green      | 41    | 0    |
 | Multicolor | 39    | 0    |
 | Colorless  | 9     | 1    |
@@ -237,7 +237,7 @@
 - [ ] Stormsplitter
 - [ ] Sugar Coat
 - [ ] Sunshower Druid
-- [ ] Sunspine Lynx
+- [x] Sunspine Lynx
 - [ ] Swamp
 - [ ] Take Out the Trash
 - [ ] Tangle Tumbler

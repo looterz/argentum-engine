@@ -779,13 +779,14 @@ internal class CombatDamageManager(
                         incomingDamage.getOrPut(targetId) { mutableMapOf() }
                             .merge(attackerId, amplified) { a, b -> a + b }
                     } else {
+                        val damageCantBePrevented = DamageUtils.isDamagePreventionDisabled(state)
                         val attackerColors = projected.getColors(attackerId)
                         val attackerSubtypes = projected.getSubtypes(attackerId)
-                        val blockerProtected = attackerColors.any {
+                        val blockerProtected = !damageCantBePrevented && (attackerColors.any {
                             projected.hasKeyword(targetId, "PROTECTION_FROM_$it")
                         } || attackerSubtypes.any {
                             projected.hasKeyword(targetId, "PROTECTION_FROM_SUBTYPE_${it.uppercase()}")
-                        }
+                        })
                         if (!blockerProtected) {
                             incomingDamage.getOrPut(targetId) { mutableMapOf() }
                                 .merge(attackerId, amplified) { a, b -> a + b }

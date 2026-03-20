@@ -94,6 +94,8 @@ internal class PreventDamageFromAttackingCreaturesModifier : CombatDamageModifie
 /** Prevents damage blocked by protection from color/subtype (Rule 702.16). */
 internal class ProtectionModifier : CombatDamageModifier {
     override fun modify(state: GameState, projected: ProjectedState, assignments: List<CombatDamageAssignment>): List<CombatDamageAssignment> {
+        // If damage can't be prevented globally (Sunspine Lynx), skip protection checks
+        if (DamageUtils.isDamagePreventionDisabled(state)) return assignments
         return assignments.filter { assignment ->
             val sourceColors = projected.getColors(assignment.sourceId)
             val sourceSubtypes = projected.getSubtypes(assignment.sourceId)

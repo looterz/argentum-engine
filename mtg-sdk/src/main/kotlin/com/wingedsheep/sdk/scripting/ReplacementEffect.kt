@@ -441,6 +441,27 @@ data class PreventLifeGain(
 }
 
 /**
+ * Damage can't be prevented.
+ * Example: Sunspine Lynx, Leyline of Punishment
+ *
+ * While a permanent with this replacement effect is on the battlefield,
+ * all damage is treated as though it can't be prevented (protection,
+ * prevention shields, etc. are ignored).
+ */
+@SerialName("DamageCantBePrevented")
+@Serializable
+data class DamageCantBePrevented(
+    override val appliesTo: GameEvent = GameEvent.DamageEvent()
+) : ReplacementEffect {
+    override val description: String = "Damage can't be prevented"
+
+    override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
+        val newAppliesTo = appliesTo.applyTextReplacement(replacer)
+        return if (newAppliesTo !== appliesTo) copy(appliesTo = newAppliesTo) else this
+    }
+}
+
+/**
  * Replace life gain with another effect.
  * Example: Tainted Remedy (life gain becomes life loss)
  */

@@ -28,5 +28,6 @@ object BloomburrowSet {
         SeasonedWarrenguard,
         ShorelineLooter,
         SinisterMonolith,
+        SunspineLynx,
     )
 }

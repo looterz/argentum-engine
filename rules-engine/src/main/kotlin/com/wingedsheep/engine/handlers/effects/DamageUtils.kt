@@ -28,6 +28,7 @@ import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.DamageCantBePrevented
 import com.wingedsheep.sdk.scripting.DoubleDamage
 import com.wingedsheep.sdk.scripting.PreventDamage
 import com.wingedsheep.sdk.scripting.PreventLifeGain
@@ -63,6 +64,10 @@ object DamageUtils {
         cantBePrevented: Boolean = false
     ): ExecutionResult {
         if (amount <= 0) return ExecutionResult.success(state)
+
+        // Check for global "damage can't be prevented" effects (Sunspine Lynx, Leyline of Punishment)
+        @Suppress("NAME_SHADOWING")
+        val cantBePrevented = cantBePrevented || isDamagePreventionDisabled(state)
 
         // Check for damage redirection (Glarecaster, Zealous Inquisitor)
         val (redirectState, redirectTargetId, redirectAmount) = checkDamageRedirection(state, targetId, amount)
@@ -265,6 +270,22 @@ object DamageUtils {
                     }
                     else -> {}
                 }
+            }
+        }
+        return false
+    }
+
+    /**
+     * Check if damage prevention is globally disabled by any DamageCantBePrevented replacement effect
+     * on the battlefield (e.g., Sunspine Lynx, Leyline of Punishment).
+     */
+    fun isDamagePreventionDisabled(state: GameState): Boolean {
+        for (entityId in state.getBattlefield()) {
+            val container = state.getEntity(entityId) ?: continue
+            val replacementComponent = container.get<ReplacementEffectSourceComponent>() ?: continue
+
+            for (effect in replacementComponent.replacementEffects) {
+                if (effect is DamageCantBePrevented) return true
             }
         }
         return false

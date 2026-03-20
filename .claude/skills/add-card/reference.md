@@ -1053,6 +1053,7 @@ Used in card definitions for effects that intercept events before they happen:
 - `RedirectDamage(redirectTo, appliesTo)` — Pariah
 - `DoubleDamage(appliesTo)` — Furnace of Rath
 - `ReplaceDamageWithCounters(counterType, sacrificeThreshold?, appliesTo)` — Force Bubble (damage → counters on this permanent, sacrifice at threshold)
+- `DamageCantBePrevented(appliesTo)` — Sunspine Lynx, Leyline of Punishment. All damage is treated as though it can't be prevented (protection, prevention shields, etc. are ignored).
 
 ### Draw
 
