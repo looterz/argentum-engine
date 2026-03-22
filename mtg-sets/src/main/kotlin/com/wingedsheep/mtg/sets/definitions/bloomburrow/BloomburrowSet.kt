@@ -36,6 +36,7 @@ object BloomburrowSet {
         HuntersTalent,
         MindSpiral,
         MouseTrapper,
+        NocturnalHunger,
         NightwhorlHermit,
         OsteomancerAdept,
         PlayfulShove,

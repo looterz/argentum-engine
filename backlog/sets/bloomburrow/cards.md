@@ -2,13 +2,13 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 25 / 266
+**Implemented:** 26 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 6    |
 | Blue       | 41    | 4    |
-| Black      | 40    | 2    |
+| Black      | 40    | 3    |
 | Red        | 41    | 4    |
 | Green      | 41    | 4    |
 | Multicolor | 39    | 2    |
@@ -163,7 +163,7 @@
 - [ ] Muerra, Trash Tactician
 - [ ] Nettle Guard
 - [x] Nightwhorl Hermit
-- [ ] Nocturnal Hunger
+- [x] Nocturnal Hunger
 - [ ] Oakhollow Village
 - [x] Osteomancer Adept
 - [ ] Otterball Antics
