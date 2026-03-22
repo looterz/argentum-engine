@@ -177,6 +177,21 @@ data class AbilityActivatedThisTurnComponent(
 }
 
 /**
+ * Tracks which controllers have targeted this permanent with spells or abilities this turn.
+ * Used for Valiant triggers: "for the first time each turn".
+ * Cleared at end of turn by CleanupPhaseManager.
+ */
+@Serializable
+data class TargetedByControllerThisTurnComponent(
+    val controllerIds: Set<EntityId> = emptySet()
+) : Component {
+    fun withController(controllerId: EntityId): TargetedByControllerThisTurnComponent =
+        copy(controllerIds = controllerIds + controllerId)
+
+    fun hasBeenTargetedBy(controllerId: EntityId): Boolean = controllerId in controllerIds
+}
+
+/**
  * Tracks which creatures this entity dealt damage to this turn.
  * Used for triggers like Soul Collector: "Whenever a creature dealt damage by Soul Collector this turn dies..."
  * Cleared at end of turn by TurnManager.

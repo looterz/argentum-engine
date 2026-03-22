@@ -620,15 +620,22 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
      *
      * The [targetFilter] restricts what type of permanent can trigger this
      * (e.g., Cleric creatures you control).
+     *
+     * [byYou] restricts to spells or abilities controlled by the trigger's controller.
+     * [firstTimeEachTurn] restricts to the first time each turn (used by Valiant).
      */
     @SerialName("BecomesTargetEvent")
     @Serializable
     data class BecomesTargetEvent(
-        val targetFilter: GameObjectFilter = GameObjectFilter.Any
+        val targetFilter: GameObjectFilter = GameObjectFilter.Any,
+        val byYou: Boolean = false,
+        val firstTimeEachTurn: Boolean = false
     ) : GameEvent {
         override val description: String = buildString {
             append(describeObjectForEvent(targetFilter))
             append(" becomes the target of a spell or ability")
+            if (byYou) append(" you control")
+            if (firstTimeEachTurn) append(" for the first time each turn")
         }
 
         override fun applyTextReplacement(replacer: TextReplacer): GameEvent {

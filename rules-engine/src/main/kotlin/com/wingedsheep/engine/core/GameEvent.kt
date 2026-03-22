@@ -728,6 +728,9 @@ data class ControlChangedEvent(
 
 /**
  * A permanent became the target of a spell or ability.
+ * [firstTimeByThisController] indicates whether this is the first time this turn
+ * the target was targeted by a spell/ability controlled by [controllerId].
+ * Used for Valiant triggers ("for the first time each turn").
  */
 @Serializable
 @SerialName("BecomesTargetEvent")
@@ -735,7 +738,8 @@ data class BecomesTargetEvent(
     val targetEntityId: EntityId,
     val targetName: String,
     val sourceEntityId: EntityId,
-    val controllerId: EntityId
+    val controllerId: EntityId,
+    val firstTimeByThisController: Boolean = true
 ) : GameEvent
 
 // =============================================================================

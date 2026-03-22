@@ -448,6 +448,12 @@ class TriggerMatcher(
             TriggerBinding.ATTACHED -> return false // handled by AttachmentTriggerDetector
         }
 
+        // Valiant: check if the targeting spell/ability is controlled by "you" (the trigger's controller)
+        if (trigger.byYou && event.controllerId != controllerId) return false
+
+        // Valiant: check if this is the first time this turn
+        if (trigger.firstTimeEachTurn && !event.firstTimeByThisController) return false
+
         // Check targetFilter against the targeted entity
         if (trigger.targetFilter != GameObjectFilter.Any) {
             val projected = state.projectedState

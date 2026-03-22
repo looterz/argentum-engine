@@ -9,6 +9,7 @@ import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
+import com.wingedsheep.engine.state.components.battlefield.TargetedByControllerThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.ClassLevelComponent
 import com.wingedsheep.engine.state.components.battlefield.SagaComponent
 import com.wingedsheep.engine.state.components.battlefield.CastFromHandComponent
@@ -158,10 +159,13 @@ class StackResolver(
         val events = mutableListOf<GameEvent>(SpellCastEvent(cardId, eventName, casterId, targetNames, xValue, wasKicked, totalManaSpent))
 
         // Emit BecomesTargetEvent for each permanent target (Rule 601.2c)
+        // Also track targeting for Valiant ("first time each turn")
         for (target in targets) {
             if (target is ChosenTarget.Permanent) {
                 val targetName = newState.getEntity(target.entityId)?.get<CardComponent>()?.name ?: "Unknown"
-                events.add(BecomesTargetEvent(target.entityId, targetName, cardId, casterId))
+                val firstTime = !hasBeenTargetedByController(newState, target.entityId, casterId)
+                events.add(BecomesTargetEvent(target.entityId, targetName, cardId, casterId, firstTime))
+                newState = markTargetedByController(newState, target.entityId, casterId)
             }
         }
 
@@ -206,7 +210,9 @@ class StackResolver(
         for (target in targets) {
             if (target is ChosenTarget.Permanent) {
                 val targetName = newState.getEntity(target.entityId)?.get<CardComponent>()?.name ?: "Unknown"
-                events.add(BecomesTargetEvent(target.entityId, targetName, ability.sourceId, ability.controllerId))
+                val firstTime = !hasBeenTargetedByController(newState, target.entityId, ability.controllerId)
+                events.add(BecomesTargetEvent(target.entityId, targetName, ability.sourceId, ability.controllerId, firstTime))
+                newState = markTargetedByController(newState, target.entityId, ability.controllerId)
             }
         }
 
@@ -249,7 +255,9 @@ class StackResolver(
         for (target in targets) {
             if (target is ChosenTarget.Permanent) {
                 val targetName = newState.getEntity(target.entityId)?.get<CardComponent>()?.name ?: "Unknown"
-                events.add(BecomesTargetEvent(target.entityId, targetName, ability.sourceId, ability.controllerId))
+                val firstTime = !hasBeenTargetedByController(newState, target.entityId, ability.controllerId)
+                events.add(BecomesTargetEvent(target.entityId, targetName, ability.sourceId, ability.controllerId, firstTime))
+                newState = markTargetedByController(newState, target.entityId, ability.controllerId)
             }
         }
 
@@ -1493,5 +1501,28 @@ class StackResolver(
             }
         }
         return false
+    }
+
+    // =========================================================================
+    // Valiant / "first time targeted" tracking
+    // =========================================================================
+
+    /**
+     * Check if the target entity has already been targeted by the given controller this turn.
+     */
+    private fun hasBeenTargetedByController(state: GameState, targetId: EntityId, controllerId: EntityId): Boolean {
+        val component = state.getEntity(targetId)?.get<TargetedByControllerThisTurnComponent>()
+        return component?.hasBeenTargetedBy(controllerId) == true
+    }
+
+    /**
+     * Mark the target entity as having been targeted by the given controller this turn.
+     */
+    private fun markTargetedByController(state: GameState, targetId: EntityId, controllerId: EntityId): GameState {
+        return state.updateEntity(targetId) { container ->
+            val existing = container.get<TargetedByControllerThisTurnComponent>()
+                ?: TargetedByControllerThisTurnComponent()
+            container.with(existing.withController(controllerId))
+        }
     }
 }

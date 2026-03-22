@@ -527,6 +527,7 @@ constructors.
 - `AttackEvent(filter: GameObjectFilter?, alone: Boolean = false)` — filter restricts which attackers trigger; `alone = true` requires the creature to be the only declared attacker
 - `Triggers.Blocks` / `Triggers.BecomesBlocked` / `Triggers.CreatureYouControlBecomesBlocked` / `Triggers.FilteredBecomesBlocked(filter: GameObjectFilter)` — any creature matching filter becomes blocked (any controller)
 - `Triggers.BecomesTarget` / `Triggers.BecomesTarget(filter: GameObjectFilter)` — when a permanent becomes target of spell/ability
+- `Triggers.Valiant` — Valiant: whenever this creature becomes the target of a spell or ability you control for the first time each turn
 - `Triggers.DealsDamage` / `Triggers.DealsCombatDamage`
 - `Triggers.DealsCombatDamageToPlayer` / `Triggers.DealsCombatDamageToCreature`
 - `Triggers.CreatureDealtDamageByThisDies` — whenever a creature dealt damage by this creature this turn dies
@@ -1171,7 +1172,7 @@ Used in `OptionalCostEffect`, `MayPayManaEffect`, `AnyPlayerMayPayEffect`, `PayO
 - `DiscardEvent(player, cardFilter?)` / `SearchLibraryEvent(player)`
 - `ExtraTurnEvent(player)` — used by PreventExtraTurns replacement effect filter
 - `AttackEvent` / `YouAttackEvent(minAttackers, attackerFilter: GameObjectFilter? = null)` / `BlockEvent` / `BecomesBlockedEvent(filter: GameObjectFilter? = null)`
-- `BecomesTargetEvent(targetFilter)` — when a permanent becomes the target of a spell or ability
+- `BecomesTargetEvent(targetFilter, byYou: Boolean = false, firstTimeEachTurn: Boolean = false)` — when a permanent becomes the target of a spell or ability; `byYou` restricts to spells/abilities controlled by trigger's controller; `firstTimeEachTurn` restricts to first time each turn (Valiant)
 - `StepEvent(step, player)`
 - `SpellCastEvent(spellType, manaValueAtLeast?, manaValueAtMost?, manaValueEquals?, player)`
 - `CycleEvent(player)` / `TapEvent` / `UntapEvent`

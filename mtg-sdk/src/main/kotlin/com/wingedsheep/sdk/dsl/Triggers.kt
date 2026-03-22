@@ -764,6 +764,15 @@ object Triggers {
         binding = TriggerBinding.ANY
     )
 
+    /**
+     * Valiant — Whenever this creature becomes the target of a spell or ability
+     * you control for the first time each turn.
+     */
+    val Valiant: TriggerSpec = TriggerSpec(
+        event = BecomesTargetEvent(byYou = true, firstTimeEachTurn = true),
+        binding = TriggerBinding.SELF
+    )
+
     // =========================================================================
     // Life Triggers
     // =========================================================================

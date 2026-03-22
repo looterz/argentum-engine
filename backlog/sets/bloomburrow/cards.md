@@ -2,11 +2,11 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 18 / 266
+**Implemented:** 19 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
-| White      | 40    | 3    |
+| White      | 40    | 4    |
 | Blue       | 41    | 2    |
 | Black      | 40    | 2    |
 | Red        | 41    | 3    |
@@ -158,7 +158,7 @@
 - [ ] Moonrise Cleric
 - [ ] Moonstone Harbinger
 - [ ] Mountain
-- [ ] Mouse Trapper
+- [x] Mouse Trapper
 - [ ] Mudflat Village
 - [ ] Muerra, Trash Tactician
 - [ ] Nettle Guard
