@@ -1198,6 +1198,16 @@ class ClientStateTransformer(
                         )
                     )
                 }
+                is SerializableModification.MustBeBlockedIfAble -> {
+                    effects.add(
+                        ClientCardEffect(
+                            effectId = "must_be_blocked",
+                            name = "Must Be Blocked",
+                            description = "Must be blocked if able",
+                            icon = "lure"
+                        )
+                    )
+                }
                 is SerializableModification.SetCantBlock -> {
                     effects.add(
                         ClientCardEffect(
@@ -1568,11 +1578,15 @@ class ClientStateTransformer(
     }
 
     /**
-     * Find all creatures that have "must be blocked by all" requirement from floating effects.
+     * Find all creatures that have any "must be blocked" requirement from floating effects.
+     * Includes both "must be blocked by all" (Lure) and "must be blocked if able" (Gaea's Protector).
      */
     private fun findMustBeBlockedCreatures(state: GameState): Set<EntityId> {
         return state.floatingEffects
-            .filter { it.effect.modification is SerializableModification.MustBeBlockedByAll }
+            .filter {
+                it.effect.modification is SerializableModification.MustBeBlockedByAll ||
+                    it.effect.modification is SerializableModification.MustBeBlockedIfAble
+            }
             .flatMap { it.effect.affectedEntities }
             .toSet()
     }

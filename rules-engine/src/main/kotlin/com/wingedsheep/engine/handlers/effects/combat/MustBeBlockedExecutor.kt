@@ -45,13 +45,18 @@ class MustBeBlockedExecutor : EffectExecutor<MustBeBlockedEffect> {
             return ExecutionResult.error(state, "Target is not a creature")
         }
 
-        // Create a floating effect marking this creature as "must be blocked by all"
+        // Create a floating effect marking this creature as "must be blocked"
+        val modification = if (effect.allCreatures) {
+            SerializableModification.MustBeBlockedByAll
+        } else {
+            SerializableModification.MustBeBlockedIfAble
+        }
         val floatingEffect = ActiveFloatingEffect(
             id = EntityId.generate(),
             effect = FloatingEffectData(
                 layer = Layer.ABILITY,  // Layer doesn't matter for this effect
                 sublayer = null,
-                modification = SerializableModification.MustBeBlockedByAll,
+                modification = modification,
                 affectedEntities = setOf(targetId)
             ),
             duration = Duration.EndOfTurn,

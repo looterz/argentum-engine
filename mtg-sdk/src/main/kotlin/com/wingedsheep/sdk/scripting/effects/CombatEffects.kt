@@ -32,15 +32,23 @@ data class ProvokeEffect(
 }
 
 /**
- * All creatures that can block target creature must do so.
- * "All creatures able to block target creature this turn do so."
+ * Target creature must be blocked this turn.
+ *
+ * @property target The creature that must be blocked
+ * @property allCreatures If true, ALL creatures able to block it must do so (Lure/Alluring Scent).
+ *   If false, at least one creature must block it if able (Gaea's Protector).
  */
 @SerialName("MustBeBlocked")
 @Serializable
 data class MustBeBlockedEffect(
-    val target: EffectTarget
+    val target: EffectTarget,
+    val allCreatures: Boolean = true
 ) : Effect {
-    override val description: String = "All creatures able to block ${target.description} this turn do so"
+    override val description: String = if (allCreatures) {
+        "All creatures able to block ${target.description} this turn do so"
+    } else {
+        "${target.description} must be blocked this turn if able"
+    }
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
 }

@@ -124,10 +124,18 @@ sealed interface SerializableModification {
 
     /**
      * Combat restriction: this creature must be blocked by all creatures able to block it.
-     * Used by Alluring Scent and similar effects.
+     * Used by Alluring Scent, Taunting Elf, and similar Lure effects.
      */
     @Serializable
     data object MustBeBlockedByAll : SerializableModification
+
+    /**
+     * Combat restriction: at least one creature must block this creature if able.
+     * Used by Gaea's Protector and similar "must be blocked if able" effects.
+     * Unlike MustBeBlockedByAll, only one blocker is required, not all.
+     */
+    @Serializable
+    data object MustBeBlockedIfAble : SerializableModification
 
     /**
      * Combat restriction: a specific creature must block a specific attacker if able.
@@ -373,8 +381,9 @@ fun SerializableModification.toModification(): Modification = when (this) {
     is SerializableModification.AddType -> Modification.AddType(type)
     is SerializableModification.RemoveType -> Modification.RemoveType(type)
     is SerializableModification.ChangeController -> Modification.ChangeController(newControllerId)
-    // MustBeBlockedByAll doesn't map to a layer modification - it's checked by CombatManager directly
+    // MustBeBlockedByAll / MustBeBlockedIfAble don't map to a layer modification - checked by CombatManager directly
     is SerializableModification.MustBeBlockedByAll -> Modification.NoOp
+    is SerializableModification.MustBeBlockedIfAble -> Modification.NoOp
     is SerializableModification.MustBlockSpecificAttacker -> Modification.NoOp
     // PreventDamageFromAttackingCreatures doesn't map to a layer modification - it's checked by CombatManager directly
     is SerializableModification.PreventDamageFromAttackingCreatures -> Modification.NoOp

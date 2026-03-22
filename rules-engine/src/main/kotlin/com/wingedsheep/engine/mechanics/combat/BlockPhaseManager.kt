@@ -431,47 +431,72 @@ internal class BlockPhaseManager(
 
     /**
      * Validate "must be blocked" requirements.
+     * Handles both "must be blocked by all" (Lure) and "must be blocked if able" (Gaea's Protector).
      */
     private fun validateMustBeBlockedRequirements(
         state: GameState,
         blockingPlayer: EntityId,
         blockers: Map<EntityId, List<EntityId>>
     ): String? {
-        val mustBeBlockedAttackers = findMustBeBlockedAttackers(state)
-        if (mustBeBlockedAttackers.isEmpty()) {
-            return null
-        }
-
         val projected = state.projectedState
         val potentialBlockers = findPotentialBlockers(state, blockingPlayer)
-        val blockerToAttackers = blockers.mapValues { it.value.toSet() }
 
-        for (blockerId in potentialBlockers) {
-            val canBlockThese = mustBeBlockedAttackers.filter { attackerId ->
+        // Build reverse map: attacker → set of blockers assigned to it
+        val attackerToBlockers = mutableMapOf<EntityId, MutableSet<EntityId>>()
+        for ((blockerId, attackerIds) in blockers) {
+            for (attackerId in attackerIds) {
+                attackerToBlockers.getOrPut(attackerId) { mutableSetOf() }.add(blockerId)
+            }
+        }
+
+        // 1. "Must be blocked by all" (Lure/Taunting Elf): every blocker that CAN block it MUST block it
+        val mustBeBlockedByAllAttackers = findMustBeBlockedAttackers(state)
+        if (mustBeBlockedByAllAttackers.isNotEmpty()) {
+            val blockerToAttackers = blockers.mapValues { it.value.toSet() }
+
+            for (blockerId in potentialBlockers) {
+                val canBlockThese = mustBeBlockedByAllAttackers.filter { attackerId ->
+                    canCreatureBlockAttacker(state, blockerId, attackerId, blockingPlayer, projected)
+                }
+
+                if (canBlockThese.isEmpty()) {
+                    continue
+                }
+
+                val actuallyBlocking = blockerToAttackers[blockerId] ?: emptySet()
+                val blockingMustBeBlocked = actuallyBlocking.intersect(mustBeBlockedByAllAttackers.toSet())
+
+                if (blockingMustBeBlocked.isEmpty()) {
+                    val blockerCard = state.getEntity(blockerId)?.get<CardComponent>()
+                    val blockerName = blockerCard?.name ?: "Creature"
+
+                    val attackerNames = canBlockThese.mapNotNull { attackerId ->
+                        state.getEntity(attackerId)?.get<CardComponent>()?.name
+                    }
+
+                    return if (canBlockThese.size == 1) {
+                        "$blockerName must block ${attackerNames.first()}"
+                    } else {
+                        "$blockerName must block one of: ${attackerNames.joinToString(", ")}"
+                    }
+                }
+            }
+        }
+
+        // 2. "Must be blocked if able" (Gaea's Protector): at least one creature must block it
+        val mustBeBlockedIfAbleAttackers = findMustBeBlockedIfAbleAttackers(state)
+        for (attackerId in mustBeBlockedIfAbleAttackers) {
+            val blockersAssigned = attackerToBlockers[attackerId] ?: emptySet()
+            if (blockersAssigned.isNotEmpty()) continue
+
+            // Check if any potential blocker can actually block this attacker
+            val canBeBlocked = potentialBlockers.any { blockerId ->
                 canCreatureBlockAttacker(state, blockerId, attackerId, blockingPlayer, projected)
             }
+            if (!canBeBlocked) continue
 
-            if (canBlockThese.isEmpty()) {
-                continue
-            }
-
-            val actuallyBlocking = blockerToAttackers[blockerId] ?: emptySet()
-            val blockingMustBeBlocked = actuallyBlocking.intersect(mustBeBlockedAttackers.toSet())
-
-            if (blockingMustBeBlocked.isEmpty()) {
-                val blockerCard = state.getEntity(blockerId)?.get<CardComponent>()
-                val blockerName = blockerCard?.name ?: "Creature"
-
-                val attackerNames = canBlockThese.mapNotNull { attackerId ->
-                    state.getEntity(attackerId)?.get<CardComponent>()?.name
-                }
-
-                return if (canBlockThese.size == 1) {
-                    "$blockerName must block ${attackerNames.first()}"
-                } else {
-                    "$blockerName must block one of: ${attackerNames.joinToString(", ")}"
-                }
-            }
+            val attackerName = state.getEntity(attackerId)?.get<CardComponent>()?.name ?: "Creature"
+            return "$attackerName must be blocked if able"
         }
 
         return null
@@ -734,7 +759,7 @@ internal class BlockPhaseManager(
     // =========================================================================
 
     /**
-     * Find all attackers that have "must be blocked by all" requirement active.
+     * Find all attackers that have "must be blocked by all" requirement active (Lure effects).
      */
     private fun findMustBeBlockedAttackers(state: GameState): List<EntityId> {
         val attackers = state.findEntitiesWith<AttackingComponent>().map { it.first }.toSet()
@@ -742,6 +767,23 @@ internal class BlockPhaseManager(
         return state.floatingEffects
             .filter { floatingEffect ->
                 floatingEffect.effect.modification is SerializableModification.MustBeBlockedByAll
+            }
+            .flatMap { floatingEffect ->
+                floatingEffect.effect.affectedEntities.filter { it in attackers }
+            }
+            .distinct()
+    }
+
+    /**
+     * Find all attackers that have "must be blocked if able" requirement active.
+     * These only require at least one blocker, not all.
+     */
+    private fun findMustBeBlockedIfAbleAttackers(state: GameState): List<EntityId> {
+        val attackers = state.findEntitiesWith<AttackingComponent>().map { it.first }.toSet()
+
+        return state.floatingEffects
+            .filter { floatingEffect ->
+                floatingEffect.effect.modification is SerializableModification.MustBeBlockedIfAble
             }
             .flatMap { floatingEffect ->
                 floatingEffect.effect.affectedEntities.filter { it in attackers }

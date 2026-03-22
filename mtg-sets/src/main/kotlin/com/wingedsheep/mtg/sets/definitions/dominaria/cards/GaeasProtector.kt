@@ -22,7 +22,7 @@ val GaeasProtector = card("Gaea's Protector") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        effect = MustBeBlockedEffect(EffectTarget.Self)
+        effect = MustBeBlockedEffect(EffectTarget.Self, allCreatures = false)
     }
 
     metadata {
