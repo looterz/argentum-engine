@@ -49,6 +49,6 @@ val NightwhorlHermit = card("Nightwhorl Hermit") {
         collectorNumber = "62"
         artist = "Valera Lutfullina"
         flavorText = "\"He etches his secrets onto the shimmering shells of mussels, saving them to share with the Great Snail.\""
-        imageUri = "https://cards.scsyopryfall.io/normal/front/0/9/0928e04f-2568-41e8-b603-7a25cf5f94d0.jpg?1721426168"
+        imageUri = "https://cards.scryfall.io/normal/front/0/9/0928e04f-2568-41e8-b603-7a25cf5f94d0.jpg?1721426168"
     }
 }
