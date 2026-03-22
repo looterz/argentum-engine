@@ -9,6 +9,19 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
+ * This creature can't be blocked.
+ * Used for cards with unconditional unblockability or conditional via ConditionalStaticAbility.
+ */
+@SerialName("CantBeBlocked")
+@Serializable
+data class CantBeBlocked(
+    val target: StaticTarget = StaticTarget.SourceCreature
+) : StaticAbility {
+    override val description: String = "This creature can't be blocked."
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
+}
+
+/**
  * This creature can't be blocked by creatures of the specified color(s).
  * Used for cards like Sacred Knight: "can't be blocked by black creatures"
  * or "can't be blocked by black and/or red creatures."

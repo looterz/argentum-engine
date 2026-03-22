@@ -33,6 +33,7 @@ object BloomburrowSet {
         JunkbladeBruiser,
         HuntersTalent,
         MouseTrapper,
+        NightwhorlHermit,
         OsteomancerAdept,
         PlayfulShove,
         QuaketuskBoar,

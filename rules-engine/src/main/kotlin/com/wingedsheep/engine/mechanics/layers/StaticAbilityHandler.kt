@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.scripting.PreventDamage
 import com.wingedsheep.sdk.scripting.ReplaceDamageWithCounters
 import com.wingedsheep.sdk.scripting.PreventLifeGain
 import com.wingedsheep.sdk.scripting.AddCreatureTypeByCounter
+import com.wingedsheep.sdk.scripting.CantBeBlocked
 import com.wingedsheep.sdk.scripting.CantAttack
 import com.wingedsheep.sdk.scripting.CantBlock
 import com.wingedsheep.sdk.scripting.CanBlockAdditionalForCreatureGroup
@@ -286,6 +287,14 @@ class StaticAbilityHandler(
                     layer = Layer.ABILITY,
                     sublayer = null,
                     modification = Modification.GrantKeyword(ability.keyword),
+                    affectsFilter = convertStaticTarget(ability.target)
+                )
+            }
+            is CantBeBlocked -> {
+                ContinuousEffectData(
+                    layer = Layer.ABILITY,
+                    sublayer = null,
+                    modification = Modification.GrantKeyword(com.wingedsheep.sdk.core.AbilityFlag.CANT_BE_BLOCKED.name),
                     affectsFilter = convertStaticTarget(ability.target)
                 )
             }

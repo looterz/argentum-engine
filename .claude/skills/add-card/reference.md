@@ -951,6 +951,7 @@ Set via `staticAbility { ability = ... }`:
 
 ### Evasion
 
+- `CantBeBlocked(target)` — this creature can't be blocked (use with ConditionalStaticAbility for conditional unblockability)
 - `CantBeBlockedByColor(colors, target)` / `CantBeBlockedByPower(minPower, target)` / `CantBeBlockedByPowerOrLess(maxPower, target)`
 - `CantBeBlockedExceptByKeyword(requiredKeyword, target)` / `CantBeBlockedByMoreThan(maxBlockers, target)`
 - `CantBeBlockedUnlessDefenderSharesCreatureType(minSharedCount, target)`

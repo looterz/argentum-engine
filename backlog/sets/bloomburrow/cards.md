@@ -2,12 +2,12 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 21 / 266
+**Implemented:** 22 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 5    |
-| Blue       | 41    | 2    |
+| Blue       | 41    | 3    |
 | Black      | 40    | 2    |
 | Red        | 41    | 3    |
 | Green      | 41    | 4    |
@@ -162,7 +162,7 @@
 - [ ] Mudflat Village
 - [ ] Muerra, Trash Tactician
 - [ ] Nettle Guard
-- [ ] Nightwhorl Hermit
+- [x] Nightwhorl Hermit
 - [ ] Nocturnal Hunger
 - [ ] Oakhollow Village
 - [x] Osteomancer Adept
