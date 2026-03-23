@@ -111,7 +111,9 @@ class CastSpellHandler(
             zoneResolver.hasMayCastSelfFromZonePermission(state, action.playerId, action.cardId)
         val mayCastFromGraveyard = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone &&
             zoneResolver.hasMayPlayPermanentFromGraveyardPermission(state, action.playerId, action.cardId, cardComponent)
-        if (!inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard) {
+        val hasFlashback = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard &&
+            zoneResolver.hasFlashbackPermission(state, action.playerId, action.cardId)
+        if (!inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback) {
             return "Card is not in your hand"
         }
 
@@ -184,16 +186,22 @@ class CastSpellHandler(
         var effectiveCost = if (playForFree) {
             ManaCost.ZERO
         } else if (action.useAlternativeCost && cardDef != null) {
-            // Check self-alternative cost first (e.g., Zahid's {3}{U} + tap artifact)
-            val selfAltCost = cardDef.script.selfAlternativeCost
-            if (selfAltCost != null) {
-                val altMana = ManaCost.parse(selfAltCost.manaCost)
-                costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, altMana, action.playerId)
+            // Check flashback cost first (card in graveyard with Flashback keyword)
+            val flashbackAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Flashback>().firstOrNull()
+            if (flashbackAbility != null && zoneResolver.hasFlashbackPermission(state, action.playerId, action.cardId)) {
+                costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, flashbackAbility.cost, action.playerId)
             } else {
-                // Fall back to battlefield-granted alternative cost (e.g., Jodah's {W}{U}{B}{R}{G})
-                val altCosts = costCalculator.findAlternativeCastingCosts(state, action.playerId)
-                if (altCosts.isEmpty()) return "No alternative casting cost available"
-                costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, altCosts.first())
+                // Check self-alternative cost (e.g., Zahid's {3}{U} + tap artifact)
+                val selfAltCost = cardDef.script.selfAlternativeCost
+                if (selfAltCost != null) {
+                    val altMana = ManaCost.parse(selfAltCost.manaCost)
+                    costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, altMana, action.playerId)
+                } else {
+                    // Fall back to battlefield-granted alternative cost (e.g., Jodah's {W}{U}{B}{R}{G})
+                    val altCosts = costCalculator.findAlternativeCastingCosts(state, action.playerId)
+                    if (altCosts.isEmpty()) return "No alternative casting cost available"
+                    costCalculator.calculateEffectiveCostWithAlternativeBase(state, cardDef, altCosts.first())
+                }
             }
         } else if (cardDef != null) {
             costCalculator.calculateEffectiveCost(state, cardDef, action.playerId)
@@ -573,16 +581,22 @@ class CastSpellHandler(
         var effectiveCost = if (playForFreeInExecute) {
             ManaCost.ZERO
         } else if (action.useAlternativeCost && cardDef != null) {
-            val selfAltCost = cardDef.script.selfAlternativeCost
-            if (selfAltCost != null) {
-                val altMana = ManaCost.parse(selfAltCost.manaCost)
-                costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, altMana, action.playerId)
+            // Check flashback cost first
+            val flashbackAbility = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Flashback>().firstOrNull()
+            if (flashbackAbility != null && zoneResolver.hasFlashbackPermission(currentState, action.playerId, action.cardId)) {
+                costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, flashbackAbility.cost, action.playerId)
             } else {
-                val altCosts = costCalculator.findAlternativeCastingCosts(currentState, action.playerId)
-                if (altCosts.isNotEmpty()) {
-                    costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, altCosts.first())
+                val selfAltCost = cardDef.script.selfAlternativeCost
+                if (selfAltCost != null) {
+                    val altMana = ManaCost.parse(selfAltCost.manaCost)
+                    costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, altMana, action.playerId)
                 } else {
-                    cardComponent.manaCost
+                    val altCosts = costCalculator.findAlternativeCastingCosts(currentState, action.playerId)
+                    if (altCosts.isNotEmpty()) {
+                        costCalculator.calculateEffectiveCostWithAlternativeBase(currentState, cardDef, altCosts.first())
+                    } else {
+                        cardComponent.manaCost
+                    }
                 }
             }
         } else if (action.castFaceDown) {

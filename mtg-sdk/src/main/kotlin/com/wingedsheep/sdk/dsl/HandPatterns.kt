@@ -275,6 +275,34 @@ object HandPatterns {
         )
     )
 
+    /**
+     * Target player exiles cards from their hand.
+     * "Target opponent exiles a card from their hand."
+     */
+    fun exileFromHand(count: Int = 1, target: EffectTarget = EffectTarget.ContextTarget(0)): CompositeEffect {
+        val player = effectTargetToPlayer(target)
+        val chooser = effectTargetToChooser(target)
+        return CompositeEffect(
+            listOf(
+                GatherCardsEffect(
+                    source = CardSource.FromZone(Zone.HAND, player),
+                    storeAs = "hand"
+                ),
+                SelectFromCollectionEffect(
+                    from = "hand",
+                    selection = SelectionMode.ChooseExactly(DynamicAmount.Fixed(count)),
+                    chooser = chooser,
+                    storeSelected = "exiled",
+                    prompt = "Choose ${if (count == 1) "a card" else "$count cards"} to exile"
+                ),
+                MoveCollectionEffect(
+                    from = "exiled",
+                    destination = CardDestination.ToZone(Zone.EXILE, player)
+                )
+            )
+        )
+    }
+
     fun headGames(target: EffectTarget = EffectTarget.ContextTarget(0)): CompositeEffect = CompositeEffect(
         listOf(
             GatherCardsEffect(

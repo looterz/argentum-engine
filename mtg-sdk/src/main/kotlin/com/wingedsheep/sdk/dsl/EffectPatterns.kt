@@ -101,6 +101,9 @@ object EffectPatterns {
     fun discardHand(target: EffectTarget = EffectTarget.Controller): CompositeEffect =
         HandPatterns.discardHand(target)
 
+    fun exileFromHand(count: Int = 1, target: EffectTarget = EffectTarget.ContextTarget(0)): CompositeEffect =
+        HandPatterns.exileFromHand(count, target)
+
     // =========================================================================
     // Hand-to-Zone Patterns (HandPatterns)
     // =========================================================================

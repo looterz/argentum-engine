@@ -687,6 +687,8 @@ constructors.
 ### Source State
 
 - `Conditions.WasCastFromHand` — source permanent was cast from hand
+- `Conditions.WasCastFromZone(zone)` — spell was cast from specified zone (e.g., `Zone.GRAVEYARD` for flashback)
+- `Conditions.WasCastFromGraveyard` — shorthand for `WasCastFromZone(Zone.GRAVEYARD)`
 - `Conditions.SourceIsAttacking` / `.SourceIsBlocking`
 - `Conditions.SourceIsTapped` / `.SourceIsUntapped`
 - `Conditions.SourceHasSubtype(subtype)` — source has specific subtype

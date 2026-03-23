@@ -2,6 +2,7 @@ package com.wingedsheep.sdk.scripting.conditions
 
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Subtype
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.text.TextReplacer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -95,6 +96,18 @@ data object SourceEnteredThisTurn : Condition {
 @Serializable
 data object WasCastFromHand : Condition {
     override val description: String = "you cast it from your hand"
+    override fun applyTextReplacement(replacer: TextReplacer): Condition = this
+}
+
+/**
+ * Condition: "If this spell was cast from [zone]"
+ * Used for flashback spells and other zone-dependent effects.
+ * Checks whether the spell was cast from the specified zone.
+ */
+@SerialName("WasCastFromZone")
+@Serializable
+data class WasCastFromZone(val zone: Zone) : Condition {
+    override val description: String = "this spell was cast from a ${zone.displayName.lowercase()}"
     override fun applyTextReplacement(replacer: TextReplacer): Condition = this
 }
 

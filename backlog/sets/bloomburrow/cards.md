@@ -2,13 +2,13 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 26 / 266
+**Implemented:** 27 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 6    |
 | Blue       | 41    | 4    |
-| Black      | 40    | 3    |
+| Black      | 40    | 4    |
 | Red        | 41    | 4    |
 | Green      | 41    | 4    |
 | Multicolor | 39    | 2    |
@@ -197,7 +197,7 @@
 - [ ] Roughshod Duo
 - [ ] Run Away Together
 - [ ] Rust-Shield Rampager
-- [ ] Ruthless Negotiation
+- [x] Ruthless Negotiation
 - [ ] Salvation Swan
 - [ ] Savor
 - [ ] Sazacap's Brew

@@ -19,6 +19,7 @@ import com.wingedsheep.sdk.scripting.CastSpellTypesFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.GrantFlashToSpellType
 import com.wingedsheep.sdk.scripting.GrantMayCastFromLinkedExile
+import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.MayCastSelfFromZones
 import com.wingedsheep.sdk.scripting.MayPlayPermanentsFromGraveyard
 import com.wingedsheep.sdk.scripting.PlayFromTopOfLibrary
@@ -131,6 +132,32 @@ class CastZoneResolver(
             }
         }
         return false
+    }
+
+    /**
+     * Check if a card in the graveyard has a Flashback keyword ability,
+     * allowing it to be cast from the graveyard for its flashback cost.
+     */
+    fun hasFlashbackPermission(
+        state: GameState,
+        playerId: EntityId,
+        cardId: EntityId
+    ): Boolean {
+        val graveyardZone = ZoneKey(playerId, Zone.GRAVEYARD)
+        if (cardId !in state.getZone(graveyardZone)) return false
+        val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: return false
+        val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId) ?: return false
+        return cardDef.keywordAbilities.any { it is KeywordAbility.Flashback }
+    }
+
+    /**
+     * Get the flashback cost for a card, or null if it doesn't have flashback.
+     */
+    fun getFlashbackCost(cardId: EntityId, state: GameState): com.wingedsheep.sdk.core.ManaCost? {
+        val cardComponent = state.getEntity(cardId)?.get<CardComponent>() ?: return null
+        val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId) ?: return null
+        val flashback = cardDef.keywordAbilities.filterIsInstance<KeywordAbility.Flashback>().firstOrNull()
+        return flashback?.cost
     }
 
     /**

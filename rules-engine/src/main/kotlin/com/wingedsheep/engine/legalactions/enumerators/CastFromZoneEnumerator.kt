@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.GrantMayCastFromLinkedExile
+import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.MayCastSelfFromZones
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
@@ -42,6 +43,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
         enumerateIntrinsicZoneCast(context, result, linkedExileCardIds)
         enumerateGraveyardPermanents(context, result)
         enumerateGraveyardCreaturesWithForage(context, result)
+        enumerateFlashback(context, result)
 
         return result
     }
@@ -658,6 +660,120 @@ class CastFromZoneEnumerator : ActionEnumerator {
                         )
                     )
                 }
+            }
+        }
+    }
+
+    // =========================================================================
+    // Graveyard creatures with forage (Osteomancer Adept-style)
+    // =========================================================================
+
+    // =========================================================================
+    // Flashback (cards in graveyard with Flashback keyword)
+    // =========================================================================
+
+    private fun enumerateFlashback(
+        context: EnumerationContext,
+        result: MutableList<LegalAction>
+    ) {
+        val state = context.state
+        val playerId = context.playerId
+        val graveyardCards = state.getZone(ZoneKey(playerId, Zone.GRAVEYARD))
+
+        for (cardId in graveyardCards) {
+            val container = state.getEntity(cardId) ?: continue
+            val cardComponent = container.get<CardComponent>() ?: continue
+            val cardDef = context.cardRegistry.getCard(cardComponent.cardDefinitionId) ?: continue
+
+            val flashback = cardDef.keywordAbilities
+                .filterIsInstance<KeywordAbility.Flashback>()
+                .firstOrNull() ?: continue
+
+            // Check timing: instants at instant speed, sorceries at sorcery speed
+            val isInstant = cardComponent.typeLine.isInstant
+            if (!isInstant && !context.canPlaySorcerySpeed) continue
+
+            if (context.cantCastSpells) {
+                result.add(
+                    LegalAction(
+                        actionType = "CastWithFlashback",
+                        description = "Cast ${cardComponent.name} (Flashback)",
+                        action = CastSpell(playerId, cardId, useAlternativeCost = true),
+                        affordable = false,
+                        manaCostString = flashback.cost.toString(),
+                        sourceZone = "GRAVEYARD"
+                    )
+                )
+                continue
+            }
+
+            // Check cast restrictions
+            val castRestrictions = cardDef.script.castRestrictions
+            if (!context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)) continue
+
+            // Calculate effective flashback cost (applying cost reductions/increases)
+            val effectiveCost = context.costCalculator.calculateEffectiveCostWithAlternativeBase(
+                state, cardDef, flashback.cost, playerId
+            )
+            val costString = effectiveCost.toString()
+            val canAfford = context.manaSolver.canPay(state, playerId, effectiveCost)
+
+            if (!canAfford) {
+                result.add(
+                    LegalAction(
+                        actionType = "CastWithFlashback",
+                        description = "Cast ${cardComponent.name} (Flashback)",
+                        action = CastSpell(playerId, cardId, useAlternativeCost = true),
+                        affordable = false,
+                        manaCostString = costString,
+                        sourceZone = "GRAVEYARD"
+                    )
+                )
+                continue
+            }
+
+            val targetReqs = buildList {
+                addAll(cardDef.script.targetRequirements)
+                cardDef.script.auraTarget?.let { add(it) }
+            }
+
+            val autoTapSolution = context.manaSolver.solve(state, playerId, effectiveCost)
+            val autoTapPreview = autoTapSolution?.sources?.map { it.entityId }
+
+            if (targetReqs.isNotEmpty()) {
+                val targetInfos = context.targetUtils.buildTargetInfos(state, playerId, targetReqs)
+                val allSatisfied = context.targetUtils.allRequirementsSatisfied(targetInfos)
+                if (allSatisfied) {
+                    val firstReq = targetReqs.first()
+                    val firstInfo = targetInfos.first()
+                    result.add(
+                        LegalAction(
+                            actionType = "CastWithFlashback",
+                            description = "Cast ${cardComponent.name} (Flashback)",
+                            action = CastSpell(playerId, cardId, useAlternativeCost = true),
+                            validTargets = firstInfo.validTargets,
+                            requiresTargets = true,
+                            targetCount = firstReq.count,
+                            minTargets = firstReq.effectiveMinCount,
+                            targetDescription = firstReq.description,
+                            targetRequirements = if (targetInfos.size > 1) targetInfos else null,
+                            manaCostString = costString,
+                            autoTapPreview = autoTapPreview,
+                            sourceZone = "GRAVEYARD"
+                        )
+                    )
+                }
+            } else {
+                result.add(
+                    LegalAction(
+                        actionType = "CastWithFlashback",
+                        description = "Cast ${cardComponent.name} (Flashback)",
+                        action = CastSpell(playerId, cardId, useAlternativeCost = true),
+                        manaCostString = costString,
+                        autoTapPreview = autoTapPreview,
+                        sourceZone = "GRAVEYARD"
+                    )
+                )
             }
         }
     }

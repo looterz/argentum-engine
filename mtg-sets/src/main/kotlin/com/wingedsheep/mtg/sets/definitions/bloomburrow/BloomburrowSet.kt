@@ -40,6 +40,7 @@ object BloomburrowSet {
         NightwhorlHermit,
         OsteomancerAdept,
         PlayfulShove,
+        RuthlessNegotiation,
         QuaketuskBoar,
         SeasonedWarrenguard,
         ShorelineLooter,

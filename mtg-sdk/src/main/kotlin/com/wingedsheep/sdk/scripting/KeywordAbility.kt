@@ -409,6 +409,21 @@ sealed interface KeywordAbility {
     }
 
     // =========================================================================
+    // Flashback
+    // =========================================================================
+
+    /**
+     * Flashback with a mana cost.
+     * "Flashback {4}{B}" - You may cast this card from your graveyard for its
+     * flashback cost. Then exile it.
+     */
+    @SerialName("Flashback")
+    @Serializable
+    data class Flashback(val cost: ManaCost) : KeywordAbility {
+        override val description: String = "Flashback $cost"
+    }
+
+    // =========================================================================
     // Companion Methods
     // =========================================================================
 
@@ -470,5 +485,10 @@ sealed interface KeywordAbility {
          * Create Morph with life payment cost.
          */
         fun morphPayLife(amount: Int): KeywordAbility = Morph(PayCost.PayLife(amount))
+
+        /**
+         * Create Flashback with mana cost from string.
+         */
+        fun flashback(cost: String): KeywordAbility = Flashback(ManaCost.parse(cost))
     }
 }

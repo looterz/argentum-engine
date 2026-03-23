@@ -2,6 +2,7 @@ package com.wingedsheep.engine.handlers
 
 import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.sdk.core.Color
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.targets.TargetRequirement
 import kotlinx.serialization.Serializable
@@ -47,6 +48,9 @@ data class EffectContext(
     val manaColorChoice: Color? = null,
     /** Creature type chosen during casting (e.g., Aphetto Dredging) */
     val chosenCreatureType: String? = null,
+    // --- Zone state ---
+    /** Zone the spell was cast from (e.g., HAND, GRAVEYARD for flashback) */
+    val castFromZone: Zone? = null,
     // --- Pipeline state ---
     val pipeline: PipelineState = PipelineState.EMPTY
 ) {

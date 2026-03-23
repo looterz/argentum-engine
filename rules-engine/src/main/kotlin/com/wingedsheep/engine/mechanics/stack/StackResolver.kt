@@ -802,6 +802,7 @@ class StackResolver(
                 damageDistribution = spellComponent.damageDistribution,
                 chosenCreatureType = spellComponent.chosenCreatureType,
                 exiledCardCount = spellComponent.exiledCardCount,
+                castFromZone = spellComponent.castFromZone,
                 pipeline = PipelineState(namedTargets = EffectContext.buildNamedTargets(targetRequirements, targets))
             )
 
@@ -814,7 +815,9 @@ class StackResolver(
                 val ownerId = cardComponent?.ownerId ?: spellComponent.casterId
                 val pausedCardDef = cardComponent?.let { cardRegistry.getCard(it.name) }
                 val pausedSelfExile = pausedCardDef?.script?.selfExileOnResolve == true
-                val pausedDestZone = if (pausedSelfExile) Zone.EXILE else Zone.GRAVEYARD
+                val pausedFlashbackExile = spellComponent.castFromZone == Zone.GRAVEYARD &&
+                    pausedCardDef?.keywordAbilities?.any { it is KeywordAbility.Flashback } == true
+                val pausedDestZone = if (pausedSelfExile || pausedFlashbackExile) Zone.EXILE else Zone.GRAVEYARD
                 val pausedDestZoneKey = ZoneKey(ownerId, pausedDestZone)
 
                 // Move spell to graveyard/exile even though effect is paused
@@ -847,11 +850,13 @@ class StackResolver(
             events.addAll(effectResult.events)
         }
 
-        // Move to graveyard (or exile if selfExileOnResolve)
+        // Move to graveyard (or exile if selfExileOnResolve or flashback)
         val ownerId = cardComponent?.ownerId ?: spellComponent.casterId
         val cardDef = cardComponent?.let { cardRegistry.getCard(it.name) }
         val selfExile = cardDef?.script?.selfExileOnResolve == true
-        val destinationZone = if (selfExile) Zone.EXILE else Zone.GRAVEYARD
+        val flashbackExile = spellComponent.castFromZone == Zone.GRAVEYARD &&
+            cardDef?.keywordAbilities?.any { it is KeywordAbility.Flashback } == true
+        val destinationZone = if (selfExile || flashbackExile) Zone.EXILE else Zone.GRAVEYARD
         val destZoneKey = ZoneKey(ownerId, destinationZone)
 
         newState = newState.updateEntity(spellId) { c ->
@@ -882,12 +887,16 @@ class StackResolver(
         spellComponent: SpellOnStackComponent
     ): ExecutionResult {
         val ownerId = cardComponent?.ownerId ?: spellComponent.casterId
-        val graveyardZone = ZoneKey(ownerId, Zone.GRAVEYARD)
+        val cardDef = cardComponent?.let { cardRegistry.getCard(it.name) }
+        val flashbackExile = spellComponent.castFromZone == Zone.GRAVEYARD &&
+            cardDef?.keywordAbilities?.any { it is KeywordAbility.Flashback } == true
+        val destZone = if (flashbackExile) Zone.EXILE else Zone.GRAVEYARD
+        val destZoneKey = ZoneKey(ownerId, destZone)
 
         var newState = state.updateEntity(spellId) { c ->
             c.without<SpellOnStackComponent>().without<TargetsComponent>()
         }
-        newState = newState.addToZone(graveyardZone, spellId)
+        newState = newState.addToZone(destZoneKey, spellId)
 
         return ExecutionResult.success(
             newState,
@@ -897,7 +906,7 @@ class StackResolver(
                     spellId,
                     cardComponent?.name ?: "Unknown",
                     null,
-                    Zone.GRAVEYARD,
+                    destZone,
                     ownerId
                 )
             )

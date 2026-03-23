@@ -25,10 +25,11 @@ export function useResponsiveContext(): ResponsiveSizes {
 export function hasMultipleCastingOptions(cardLegalActions: LegalActionInfo[]): boolean {
   // Count distinct casting method types
   const hasNormalCast = cardLegalActions.some(
-    (a) => a.action.type === 'CastSpell' && a.actionType !== 'CastFaceDown' && a.actionType !== 'CastWithKicker'
+    (a) => a.action.type === 'CastSpell' && a.actionType !== 'CastFaceDown' && a.actionType !== 'CastWithKicker' && a.actionType !== 'CastWithFlashback'
   )
   const hasMorphCast = cardLegalActions.some((a) => a.actionType === 'CastFaceDown')
   const hasKickerCast = cardLegalActions.some((a) => a.actionType === 'CastWithKicker')
+  const hasFlashbackCast = cardLegalActions.some((a) => a.actionType === 'CastWithFlashback')
   const hasCycling = cardLegalActions.some((a) => a.action.type === 'CycleCard')
   const hasPlayLand = cardLegalActions.some((a) => a.action.type === 'PlayLand')
 
@@ -36,6 +37,7 @@ export function hasMultipleCastingOptions(cardLegalActions: LegalActionInfo[]): 
   if (hasNormalCast) options++
   if (hasMorphCast) options++
   if (hasKickerCast) options++
+  if (hasFlashbackCast) options++
   if (hasCycling) options++
   if (hasPlayLand) options++
 

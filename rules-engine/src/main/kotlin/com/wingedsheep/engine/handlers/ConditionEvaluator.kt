@@ -41,6 +41,7 @@ import com.wingedsheep.sdk.scripting.conditions.SourceIsBlocking
 import com.wingedsheep.sdk.scripting.conditions.SourceIsTapped
 import com.wingedsheep.sdk.scripting.conditions.SourceIsUntapped
 import com.wingedsheep.sdk.scripting.conditions.WasCastFromHand
+import com.wingedsheep.sdk.scripting.conditions.WasCastFromZone
 import com.wingedsheep.sdk.scripting.conditions.SacrificedPermanentHadSubtype
 import com.wingedsheep.sdk.scripting.conditions.TargetMatchesFilter
 import com.wingedsheep.sdk.scripting.conditions.TriggeringEntityWasHistoric
@@ -77,6 +78,7 @@ class ConditionEvaluator {
 
             // Source conditions
             is WasCastFromHand -> evaluateWasCastFromHand(state, context)
+            is WasCastFromZone -> evaluateWasCastFromZone(state, condition, context)
             is WasKicked -> evaluateWasKicked(state, context)
             is SourceIsAttacking -> evaluateSourceAttacking(state, context)
             is SourceIsBlocking -> evaluateSourceBlocking(state, context)
@@ -160,6 +162,17 @@ class ConditionEvaluator {
     private fun evaluateWasCastFromHand(state: GameState, context: EffectContext): Boolean {
         val sourceId = context.sourceId ?: return false
         return state.getEntity(sourceId)?.has<CastFromHandComponent>() == true
+    }
+
+    private fun evaluateWasCastFromZone(state: GameState, condition: WasCastFromZone, context: EffectContext): Boolean {
+        // For spells resolving, check context.castFromZone (set from SpellOnStackComponent)
+        if (context.castFromZone == condition.zone) return true
+        // For permanents (triggered abilities), fall back to battlefield components
+        val sourceId = context.sourceId ?: return false
+        if (condition.zone == Zone.HAND) {
+            return state.getEntity(sourceId)?.has<CastFromHandComponent>() == true
+        }
+        return false
     }
 
     private fun evaluateWasKicked(state: GameState, context: EffectContext): Boolean {

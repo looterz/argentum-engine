@@ -12,6 +12,7 @@ import com.wingedsheep.sdk.scripting.conditions.ComparisonOperator
 import com.wingedsheep.sdk.scripting.conditions.Exists
 import com.wingedsheep.sdk.scripting.conditions.NotCondition
 import com.wingedsheep.sdk.scripting.conditions.WasCastFromHand as WasCastFromHandCondition
+import com.wingedsheep.sdk.scripting.conditions.WasCastFromZone as WasCastFromZoneCondition
 import com.wingedsheep.sdk.scripting.conditions.WasKicked as WasKickedCondition
 import com.wingedsheep.sdk.scripting.conditions.SourceIsAttacking as SourceIsAttackingCondition
 import com.wingedsheep.sdk.scripting.conditions.SourceIsBlocking as SourceIsBlockingCondition
@@ -250,6 +251,20 @@ object Conditions {
      */
     val WasCastFromHand: ConditionInterface =
         WasCastFromHandCondition
+
+    /**
+     * If this spell was cast from the specified zone.
+     * Used for flashback spells and other zone-dependent effects.
+     */
+    fun WasCastFromZone(zone: Zone): ConditionInterface =
+        WasCastFromZoneCondition(zone)
+
+    /**
+     * If this spell was cast from a graveyard.
+     * Used for flashback bonus effects.
+     */
+    val WasCastFromGraveyard: ConditionInterface =
+        WasCastFromZoneCondition(Zone.GRAVEYARD)
 
     /**
      * If this spell was kicked.
