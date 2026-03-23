@@ -34,6 +34,7 @@ import com.wingedsheep.sdk.scripting.GrantProtectionFromChosenColorToGroup
 import com.wingedsheep.sdk.scripting.ModifyStatsByCounterOnSource
 import com.wingedsheep.sdk.scripting.ModifyStatsPerSharedCreatureType
 import com.wingedsheep.sdk.scripting.AnimateLandGroup
+import com.wingedsheep.sdk.scripting.GrantAdditionalTypesToGroup
 import com.wingedsheep.sdk.scripting.GrantColor
 import com.wingedsheep.sdk.scripting.LoseAllAbilities
 import com.wingedsheep.sdk.scripting.SetBasePowerToughnessStatic
@@ -167,6 +168,7 @@ class StaticAbilityHandler(
     private fun convertStaticAbilities(ability: StaticAbility): List<ContinuousEffectData> {
         return when (ability) {
             is AnimateLandGroup -> convertAnimateLandGroup(ability)
+            is GrantAdditionalTypesToGroup -> convertGrantAdditionalTypesToGroup(ability)
             else -> listOfNotNull(convertStaticAbility(ability))
         }
     }
@@ -214,6 +216,35 @@ class StaticAbilityHandler(
             modification = Modification.SetPowerToughness(ability.power, ability.toughness),
             affectsFilter = filter
         ))
+
+        return effects
+    }
+
+    /**
+     * Convert GrantAdditionalTypesToGroup to multiple Layer 4 continuous effects.
+     * "Other creatures are Food artifacts in addition to their other types."
+     */
+    private fun convertGrantAdditionalTypesToGroup(ability: GrantAdditionalTypesToGroup): List<ContinuousEffectData> {
+        val filter = convertGroupFilter(ability.filter)
+        val effects = mutableListOf<ContinuousEffectData>()
+
+        for (cardType in ability.addCardTypes) {
+            effects.add(ContinuousEffectData(
+                layer = Layer.TYPE,
+                sublayer = null,
+                modification = Modification.AddType(cardType),
+                affectsFilter = filter
+            ))
+        }
+
+        for (subtype in ability.addSubtypes) {
+            effects.add(ContinuousEffectData(
+                layer = Layer.TYPE,
+                sublayer = null,
+                modification = Modification.AddSubtype(subtype),
+                affectsFilter = filter
+            ))
+        }
 
         return effects
     }

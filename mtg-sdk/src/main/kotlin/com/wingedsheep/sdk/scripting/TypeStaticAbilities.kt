@@ -125,6 +125,39 @@ data class SetEnchantedLandType(
 }
 
 /**
+ * Adds card types and subtypes to a group of permanents, in addition to their existing types.
+ * Used for Ygra: "Other creatures are Food artifacts in addition to their other types."
+ *
+ * This generates Layer 4 (TYPE) continuous effects:
+ * - AddType for each card type (e.g., "ARTIFACT")
+ * - AddSubtype for each subtype (e.g., "Food")
+ *
+ * @property filter Which permanents are affected (e.g., other creatures)
+ * @property addCardTypes Card types to add (e.g., ["ARTIFACT"])
+ * @property addSubtypes Subtypes to add (e.g., ["Food"])
+ */
+@SerialName("GrantAdditionalTypesToGroup")
+@Serializable
+data class GrantAdditionalTypesToGroup(
+    val filter: GroupFilter,
+    val addCardTypes: List<String> = emptyList(),
+    val addSubtypes: List<String> = emptyList()
+) : StaticAbility {
+    override val description: String = buildString {
+        append("${filter.description} are ")
+        val parts = mutableListOf<String>()
+        parts.addAll(addSubtypes)
+        parts.addAll(addCardTypes.map { it.lowercase() + "s" })
+        append(parts.joinToString(" "))
+        append(" in addition to their other types")
+    }
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newFilter = filter.applyTextReplacement(replacer)
+        return if (newFilter !== filter) copy(filter = newFilter) else this
+    }
+}
+
+/**
  * Animates a group of lands into creatures while keeping them as lands.
  * Used for Ambush Commander: "Forests you control are 1/1 green Elf creatures that are still lands."
  *

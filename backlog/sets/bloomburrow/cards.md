@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 28 / 266
+**Implemented:** 29 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -11,7 +11,7 @@
 | Black      | 40    | 5    |
 | Red        | 41    | 4    |
 | Green      | 41    | 4    |
-| Multicolor | 39    | 2    |
+| Multicolor | 39    | 3    |
 | Colorless  | 9     | 1    |
 | Land       | 15    | 0    |
 
@@ -281,5 +281,5 @@
 - [ ] Wick, the Whorled Mind
 - [ ] Wildfire Howl
 - [ ] Wishing Well
-- [ ] Ygra, Eater of All
+- [x] Ygra, Eater of All
 - [ ] Zoraline, Cosmos Caller

@@ -50,5 +50,6 @@ object BloomburrowSet {
         SunspineLynx,
         TenderWildguide,
         ValleyQuestcaller,
+        YgraEaterOfAll,
     )
 }
