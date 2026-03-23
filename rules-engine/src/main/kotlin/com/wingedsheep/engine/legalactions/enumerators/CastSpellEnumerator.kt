@@ -533,7 +533,10 @@ class CastSpellEnumerator : ActionEnumerator {
             val additionalCostKicker = cardDef.keywordAbilities
                 .filterIsInstance<KeywordAbility.KickerWithAdditionalCost>()
                 .firstOrNull()
-            if (manaKicker == null && additionalCostKicker == null) continue
+            val offspringAbility = cardDef.keywordAbilities
+                .filterIsInstance<KeywordAbility.Offspring>()
+                .firstOrNull()
+            if (manaKicker == null && additionalCostKicker == null && offspringAbility == null) continue
 
             // Check timing (same rules as normal cast)
             val isInstant = cardComponent.typeLine.isInstant
@@ -545,10 +548,12 @@ class CastSpellEnumerator : ActionEnumerator {
             val castRestrictions = cardDef.script.castRestrictions
             if (castRestrictions.isNotEmpty() && !context.castPermissionUtils.checkCastRestrictions(state, playerId, castRestrictions)) continue
 
-            // Calculate kicked cost
+            // Calculate kicked/offspring cost
             val baseCost = context.costCalculator.calculateEffectiveCost(state, cardDef, playerId)
             val kickedCost = if (manaKicker != null) {
                 baseCost + manaKicker.cost
+            } else if (offspringAbility != null) {
+                baseCost + offspringAbility.cost
             } else {
                 baseCost // No extra mana for additional-cost kicker
             }
@@ -592,6 +597,8 @@ class CastSpellEnumerator : ActionEnumerator {
                 cardDef.script.auraTarget?.let { add(it) }
             }
 
+            val kickLabel = if (offspringAbility != null) "Offspring" else "Kicked"
+
             // Check for DividedDamageEffect in the kicked spell effect
             val kickerSpellEffect = cardDef.script.kickerSpellEffect ?: cardDef.script.spellEffect
             val kickerDividedDamage = kickerSpellEffect as? DividedDamageEffect
@@ -613,7 +620,7 @@ class CastSpellEnumerator : ActionEnumerator {
                         val autoSelectedTarget = ChosenTarget.Player(firstReqInfo.validTargets.first())
                         result.add(LegalAction(
                             actionType = "CastWithKicker",
-                            description = "Cast ${cardComponent.name} (Kicked)",
+                            description = "Cast ${cardComponent.name} ($kickLabel)",
                             action = CastSpell(playerId, cardId, targets = listOf(autoSelectedTarget), wasKicked = true),
                             affordable = canAffordKicked,
                             manaCostString = kickedCostString,
@@ -626,7 +633,7 @@ class CastSpellEnumerator : ActionEnumerator {
                     } else {
                         result.add(LegalAction(
                             actionType = "CastWithKicker",
-                            description = "Cast ${cardComponent.name} (Kicked)",
+                            description = "Cast ${cardComponent.name} ($kickLabel)",
                             action = CastSpell(playerId, cardId, wasKicked = true),
                             validTargets = firstReqInfo.validTargets,
                             requiresTargets = true,
@@ -647,7 +654,7 @@ class CastSpellEnumerator : ActionEnumerator {
             } else {
                 result.add(LegalAction(
                     actionType = "CastWithKicker",
-                    description = "Cast ${cardComponent.name} (Kicked)",
+                    description = "Cast ${cardComponent.name} ($kickLabel)",
                     action = CastSpell(playerId, cardId, wasKicked = true),
                     affordable = canAffordKicked,
                     manaCostString = kickedCostString,

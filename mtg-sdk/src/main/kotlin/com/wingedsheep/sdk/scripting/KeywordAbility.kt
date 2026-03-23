@@ -424,6 +424,24 @@ sealed interface KeywordAbility {
     }
 
     // =========================================================================
+    // Offspring
+    // =========================================================================
+
+    /**
+     * Offspring with a mana cost.
+     * "Offspring {2}" - You may pay an additional {2} as you cast this spell.
+     * If you do, when this creature enters, create a 1/1 token copy of it.
+     *
+     * Mechanically identical to Kicker in terms of cost payment. The engine
+     * reuses the kicker infrastructure (wasKicked flag) for Offspring.
+     */
+    @SerialName("Offspring")
+    @Serializable
+    data class Offspring(val cost: ManaCost) : KeywordAbility {
+        override val description: String = "Offspring $cost"
+    }
+
+    // =========================================================================
     // Companion Methods
     // =========================================================================
 
@@ -490,5 +508,10 @@ sealed interface KeywordAbility {
          * Create Flashback with mana cost from string.
          */
         fun flashback(cost: String): KeywordAbility = Flashback(ManaCost.parse(cost))
+
+        /**
+         * Create Offspring with mana cost from string.
+         */
+        fun offspring(cost: String): KeywordAbility = Offspring(ManaCost.parse(cost))
     }
 }

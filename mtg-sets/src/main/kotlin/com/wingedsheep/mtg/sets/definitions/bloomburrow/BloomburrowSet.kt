@@ -31,6 +31,7 @@ object BloomburrowSet {
         HeirloomEpic,
         HiredClaw,
         HonoredDreyleader,
+        IridescentVinelasher,
         JackdawSavior,
         JunkbladeBruiser,
         HuntersTalent,

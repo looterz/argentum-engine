@@ -95,6 +95,17 @@ object Triggers {
     )
 
     /**
+     * Landfall — Whenever a land you control enters the battlefield.
+     */
+    val LandYouControlEnters: TriggerSpec = TriggerSpec(
+        event = ZoneChangeEvent(
+            filter = GameObjectFilter.Land.youControl(),
+            to = Zone.BATTLEFIELD
+        ),
+        binding = TriggerBinding.OTHER
+    )
+
+    /**
      * When this permanent leaves the battlefield.
      */
     val LeavesBattlefield: TriggerSpec = TriggerSpec(

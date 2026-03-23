@@ -188,12 +188,19 @@ data class CreateFoodTokensEffect(
 @SerialName("CreateTokenCopyOfSource")
 @Serializable
 data class CreateTokenCopyOfSourceEffect(
-    val count: Int = 1
+    val count: Int = 1,
+    /** Override the token's base power (null = copy source's power) */
+    val overridePower: Int? = null,
+    /** Override the token's base toughness (null = copy source's toughness) */
+    val overrideToughness: Int? = null
 ) : Effect {
-    override val description: String = if (count == 1) {
-        "Create a token that's a copy of this creature"
-    } else {
-        "Create $count tokens that are copies of this creature"
+    override val description: String = buildString {
+        append("Create ")
+        if (count == 1) append("a token that's a copy of this creature")
+        else append("$count tokens that are copies of this creature")
+        if (overridePower != null && overrideToughness != null) {
+            append(", except it's $overridePower/$overrideToughness")
+        }
     }
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this

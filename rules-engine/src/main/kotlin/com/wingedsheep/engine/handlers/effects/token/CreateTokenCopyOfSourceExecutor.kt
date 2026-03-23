@@ -15,6 +15,7 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.TokenComponent
 import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.model.CreatureStats
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.CreateTokenCopyOfSourceEffect
 import kotlin.reflect.KClass
@@ -57,7 +58,16 @@ class CreateTokenCopyOfSourceExecutor(
             createdTokens.add(tokenId)
 
             // Copy the source's CardComponent, setting the token's owner to the controller
-            val tokenCard = sourceCard.copy(ownerId = controllerId)
+            // Apply P/T overrides if specified (e.g., Offspring creates 1/1 copies)
+            val op = effect.overridePower
+            val ot = effect.overrideToughness
+            val overrideStats = if (op != null && ot != null) {
+                CreatureStats(op, ot)
+            } else null
+            val tokenCard = sourceCard.copy(
+                ownerId = controllerId,
+                baseStats = overrideStats ?: sourceCard.baseStats
+            )
 
             val components = mutableListOf<Component>(
                 tokenCard,

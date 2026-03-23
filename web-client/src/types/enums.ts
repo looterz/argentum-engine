@@ -183,6 +183,8 @@ export enum Keyword {
   // Spell mechanics
   STORM = 'STORM',
   FLASHBACK = 'FLASHBACK',
+  // Creature mechanics
+  OFFSPRING = 'OFFSPRING',
 }
 
 export const KeywordDisplayNames: Record<Keyword, string> = {
@@ -221,6 +223,7 @@ export const KeywordDisplayNames: Record<Keyword, string> = {
   [Keyword.AFFINITY]: 'Affinity',
   [Keyword.STORM]: 'Storm',
   [Keyword.FLASHBACK]: 'Flashback',
+  [Keyword.OFFSPRING]: 'Offspring',
 }
 
 /**

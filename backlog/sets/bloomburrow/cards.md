@@ -2,13 +2,13 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 27 / 266
+**Implemented:** 28 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 6    |
 | Blue       | 41    | 4    |
-| Black      | 40    | 4    |
+| Black      | 40    | 5    |
 | Red        | 41    | 4    |
 | Green      | 41    | 4    |
 | Multicolor | 39    | 2    |
@@ -124,7 +124,7 @@
 - [ ] Innkeeper's Talent
 - [ ] Into the Flood Maw
 - [ ] Intrepid Rabbit
-- [ ] Iridescent Vinelasher
+- [x] Iridescent Vinelasher
 - [ ] Island
 - [x] Jackdaw Savior
 - [ ] Jolly Gerbils
