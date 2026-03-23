@@ -51,7 +51,8 @@ class CreateFoodTokenExecutor : EffectExecutor<CreateFoodTokensEffect> {
                 name = "Food",
                 manaCost = ManaCost.ZERO,
                 typeLine = TypeLine.parse("Artifact - Food"),
-                ownerId = tokenControllerId
+                ownerId = tokenControllerId,
+                imageUri = "https://cards.scryfall.io/normal/front/0/d/0dce2241-e58b-41d4-b57c-9794fc8ee004.jpg?1721425221"
             )
 
             val container = ComponentContainer.of(
