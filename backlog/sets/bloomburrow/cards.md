@@ -2,11 +2,11 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 31 / 266
+**Implemented:** 32 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
-| White      | 40    | 6    |
+| White      | 40    | 7    |
 | Blue       | 41    | 5    |
 | Black      | 40    | 5    |
 | Red        | 41    | 4    |
@@ -73,7 +73,7 @@
 - [ ] Downwind Ambusher
 - [ ] Dragonhawk, Fate's Tempest
 - [x] Dreamdew Entrancer
-- [ ] Driftgloom Coyote
+- [x] Driftgloom Coyote
 - [ ] Druid of the Spade
 - [x] Early Winter
 - [x] Eddymurk Crab

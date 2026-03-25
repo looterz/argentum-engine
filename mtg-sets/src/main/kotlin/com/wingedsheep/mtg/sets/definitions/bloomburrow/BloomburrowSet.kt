@@ -25,6 +25,7 @@ object BloomburrowSet {
         CrumbAndGetIt,
         DawnsTruce,
         DreamdewEntrancer,
+        DriftgloomCoyote,
         EarlyWinter,
         EddymurkCrab,
         FecundGreenshell,
