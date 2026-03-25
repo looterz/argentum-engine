@@ -2,11 +2,11 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 32 / 266
+**Implemented:** 33 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
-| White      | 40    | 7    |
+| White      | 40    | 8    |
 | Blue       | 41    | 5    |
 | Black      | 40    | 5    |
 | Red        | 41    | 4    |
@@ -161,7 +161,7 @@
 - [x] Mouse Trapper
 - [ ] Mudflat Village
 - [ ] Muerra, Trash Tactician
-- [ ] Nettle Guard
+- [x] Nettle Guard
 - [x] Nightwhorl Hermit
 - [x] Nocturnal Hunger
 - [ ] Oakhollow Village
