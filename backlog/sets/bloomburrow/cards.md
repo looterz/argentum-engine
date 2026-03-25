@@ -2,12 +2,12 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 34 / 266
+**Implemented:** 35 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 8    |
-| Blue       | 41    | 6    |
+| Blue       | 41    | 7    |
 | Black      | 40    | 5    |
 | Red        | 41    | 4    |
 | Green      | 41    | 4    |
@@ -212,7 +212,7 @@
 - [x] Seasoned Warrenguard
 - [ ] Seedglaive Mentor
 - [ ] Seedpod Squire
-- [ ] Shore Up
+- [x] Shore Up
 - [x] Shoreline Looter
 - [ ] Short Bow
 - [ ] Shrike Force

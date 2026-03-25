@@ -48,6 +48,7 @@ object BloomburrowSet {
         RuthlessNegotiation,
         QuaketuskBoar,
         SeasonedWarrenguard,
+        ShoreUp,
         ShorelineLooter,
         SinisterMonolith,
         SplashLasher,
