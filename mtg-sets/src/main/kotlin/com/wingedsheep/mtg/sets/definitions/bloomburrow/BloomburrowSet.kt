@@ -23,6 +23,7 @@ object BloomburrowSet {
      */
     val allCards = listOf(
         BraveKinDuo,
+        BywayBarterer,
         CrumbAndGetIt,
         DawnsTruce,
         DreamdewEntrancer,

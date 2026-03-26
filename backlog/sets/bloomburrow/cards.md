@@ -2,14 +2,14 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 39 / 266
+**Implemented:** 40 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 10   |
 | Blue       | 41    | 8    |
 | Black      | 40    | 6    |
-| Red        | 41    | 4    |
+| Red        | 41    | 5    |
 | Green      | 41    | 4    |
 | Multicolor | 39    | 4    |
 | Colorless  | 9     | 1    |
@@ -44,7 +44,7 @@
 - [ ] Bumbleflower's Sharepot
 - [ ] Burrowguard Mentor
 - [ ] Bushy Bodyguard
-- [ ] Byway Barterer
+- [x] Byway Barterer
 - [ ] Cache Grab
 - [ ] Calamitous Tide
 - [ ] Camellia, the Seedmiser
