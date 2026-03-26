@@ -354,7 +354,10 @@ data class GameObjectFilter(
     infix fun or(other: GameObjectFilter) = GameObjectFilter(
         cardPredicates = listOf(
             CardPredicate.Or(
-                cardPredicates + other.cardPredicates
+                listOf(
+                    cardPredicates.toConjunction(),
+                    other.cardPredicates.toConjunction()
+                )
             )
         ),
         statePredicates = statePredicates + other.statePredicates,
@@ -372,3 +375,7 @@ data class GameObjectFilter(
         return if (changed) copy(cardPredicates = newPredicates) else this
     }
 }
+
+/** Wraps a list of predicates into a single conjunction; returns the single element if only one. */
+private fun List<CardPredicate>.toConjunction(): CardPredicate =
+    if (size == 1) first() else CardPredicate.And(this)
