@@ -2,12 +2,12 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 35 / 266
+**Implemented:** 36 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 8    |
-| Blue       | 41    | 7    |
+| Blue       | 41    | 8    |
 | Black      | 40    | 5    |
 | Red        | 41    | 4    |
 | Green      | 41    | 4    |
@@ -233,7 +233,7 @@
 - [ ] Stickytongue Sentinel
 - [ ] Stocking the Pantry
 - [ ] Stormcatch Mentor
-- [ ] Stormchaser's Talent
+- [x] Stormchaser's Talent
 - [ ] Stormsplitter
 - [ ] Sugar Coat
 - [ ] Sunshower Druid

@@ -52,6 +52,7 @@ object BloomburrowSet {
         ShorelineLooter,
         SinisterMonolith,
         SplashLasher,
+        StormchasersTalent,
         SunspineLynx,
         TenderWildguide,
         ThundertrapTrainer,
