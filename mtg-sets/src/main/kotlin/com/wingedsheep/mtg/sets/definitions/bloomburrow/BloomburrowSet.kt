@@ -59,6 +59,7 @@ object BloomburrowSet {
         StormchasersTalent,
         SunspineLynx,
         TenderWildguide,
+        TidecallerMentor,
         ThundertrapTrainer,
         ValleyQuestcaller,
         YgraEaterOfAll,

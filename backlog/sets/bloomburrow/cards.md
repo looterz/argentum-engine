@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 40 / 266
+**Implemented:** 41 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -11,7 +11,7 @@
 | Black      | 40    | 6    |
 | Red        | 41    | 5    |
 | Green      | 41    | 4    |
-| Multicolor | 39    | 4    |
+| Multicolor | 39    | 5    |
 | Colorless  | 9     | 1    |
 | Land       | 15    | 0    |
 
@@ -255,7 +255,7 @@
 - [ ] Three Tree Rootweaver
 - [ ] Three Tree Scribe
 - [x] Thundertrap Trainer
-- [ ] Tidecaller Mentor
+- [x] Tidecaller Mentor
 - [ ] Treeguard Duo
 - [ ] Treetop Sentries
 - [ ] Uncharted Haven
