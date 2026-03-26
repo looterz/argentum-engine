@@ -2,14 +2,14 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 43 / 266
+**Implemented:** 44 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 10   |
 | Blue       | 41    | 8    |
 | Black      | 40    | 7    |
-| Red        | 41    | 5    |
+| Red        | 41    | 6    |
 | Green      | 41    | 5    |
 | Multicolor | 39    | 5    |
 | Colorless  | 9     | 1    |
@@ -78,7 +78,7 @@
 - [x] Early Winter
 - [x] Eddymurk Crab
 - [ ] Eluge, the Shoreless Sea
-- [ ] Emberheart Challenger
+- [x] Emberheart Challenger
 - [ ] Essence Channeler
 - [ ] Fabled Passage
 - [ ] Feather of Flight

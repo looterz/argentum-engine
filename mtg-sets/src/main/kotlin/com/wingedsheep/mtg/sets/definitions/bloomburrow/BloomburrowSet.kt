@@ -30,6 +30,7 @@ object BloomburrowSet {
         DreamdewEntrancer,
         DriftgloomCoyote,
         EarlyWinter,
+        EmberheartChallenger,
         EddymurkCrab,
         FecundGreenshell,
         FlamecacheGecko,
