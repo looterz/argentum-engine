@@ -56,6 +56,7 @@ object BloomburrowSet {
         QuaketuskBoar,
         RavineRaider,
         RepelCalamity,
+        ReptilianRecruiter,
         SeasonedWarrenguard,
         ShoreUp,
         ShorelineLooter,

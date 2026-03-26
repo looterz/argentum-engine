@@ -2,14 +2,14 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 46 / 266
+**Implemented:** 47 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 11   |
 | Blue       | 41    | 8    |
 | Black      | 40    | 7    |
-| Red        | 41    | 7    |
+| Red        | 41    | 8    |
 | Green      | 41    | 5    |
 | Multicolor | 39    | 5    |
 | Colorless  | 9     | 1    |
@@ -191,7 +191,7 @@
 - [ ] Ral, Crackling Wit
 - [x] Ravine Raider
 - [x] Repel Calamity
-- [ ] Reptilian Recruiter
+- [x] Reptilian Recruiter
 - [ ] Rockface Village
 - [ ] Rottenmouth Viper
 - [ ] Roughshod Duo
