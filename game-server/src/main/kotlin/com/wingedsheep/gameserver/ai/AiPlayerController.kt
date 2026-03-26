@@ -119,12 +119,12 @@ class AiPlayerController(
             val queryPrompt = if (attempt == 0) {
                 prompt
             } else {
-                "Invalid response. Reply with ONLY your choice inside <answer> tags. Example: <answer>B</answer>"
+                "Invalid response. Reply with ONLY your choice. Example: B"
             }
             val response = queryLlm(queryPrompt)
 
             if (response != null) {
-                logger.info("AI LLM response (attempt {}): {}", attempt, response.take(500))
+                logger.info("AI LLM response (attempt {}): {}", attempt, response)
                 val parsed = if (pendingDecision != null) {
                     parseDecisionResponse(response, pendingDecision, state)
                 } else {
@@ -181,7 +181,8 @@ class AiPlayerController(
                 manaCost = info?.manaCost,
                 typeLine = info?.typeLine,
                 power = info?.power,
-                toughness = info?.toughness
+                toughness = info?.toughness,
+                oracleText = info?.oracleText
             )
         }
         val prompt = formatter.formatMulligan(cardDisplays, mulliganMessage.mulliganCount, mulliganMessage.isOnThePlay)
@@ -192,6 +193,7 @@ class AiPlayerController(
             return true
         }
 
+        logger.info("AI mulligan prompt ({} chars):\n{}", prompt.length, prompt)
         val response = queryLlmEphemeral(prompt)
         if (response != null) {
             val cleaned = extractAnswer(response) ?: response
@@ -231,6 +233,7 @@ class AiPlayerController(
                 )
             }
             val prompt = formatter.formatChooseBottomCards(cardDisplays, hand, cardCount)
+            logger.info("AI bottom cards prompt ({} chars):\n{}", prompt.length, prompt)
             val response = queryLlmEphemeral(prompt)
             if (response != null) {
                 val indices = parser.parseMultipleSelections(response, hand.size - 1)
@@ -571,7 +574,7 @@ class AiPlayerController(
                     val keywordStr = if (keywords.isNotEmpty()) " [$keywords]" else ""
                     val abilityFlags = card.abilityFlags.takeIf { it.isNotEmpty() }?.joinToString(", ") { it.displayName } ?: ""
                     val flagStr = if (abilityFlags.isNotEmpty()) " [$abilityFlags]" else ""
-                    val oracle = card.oracleText.takeIf { it.isNotBlank() }?.let { " — \"$it\"" } ?: ""
+                    val oracle = card.oracleText.takeIf { it.isNotBlank() }?.let { " — \"${it.flattenOracle()}\"" } ?: ""
                     appendLine("  [${GameStateFormatter.actionLetter(i)}] ${card.name} ${card.power}/${card.toughness}$keywordStr$flagStr$oracle")
                 }
                 val opponentCreatures = state.cards.values.filter {
@@ -583,7 +586,7 @@ class AiPlayerController(
                     for (card in opponentCreatures) {
                         val keywords = card.keywords.takeIf { it.isNotEmpty() }?.joinToString(", ") { it.name.lowercase() } ?: ""
                         val keywordStr = if (keywords.isNotEmpty()) " [$keywords]" else ""
-                        val oracle = card.oracleText.takeIf { it.isNotBlank() }?.let { " — \"$it\"" } ?: ""
+                        val oracle = card.oracleText.takeIf { it.isNotBlank() }?.let { " — \"${it.flattenOracle()}\"" } ?: ""
                         appendLine("  ${card.name} ${card.power}/${card.toughness}$keywordStr$oracle")
                     }
                 } else {
@@ -591,29 +594,21 @@ class AiPlayerController(
                     appendLine("Opponent has NO untapped creatures to block.")
                 }
                 appendLine()
-                appendLine("Reply using this EXACT format:")
-                appendLine()
-                appendLine("<reasoning>")
-                appendLine("Analyze the board: lethality, trades, risk of crackback. Think about what blocks the opponent can make.")
-                appendLine("</reasoning>")
+                appendLine("Reply with ONLY the creature letters to attack with, or NONE.")
                 if (planeswalkerTargets.isNotEmpty()) {
-                    appendLine("<answer>A, C->1</answer>")
-                    appendLine()
-                    appendLine("Put creature letters inside <answer> tags. By default creatures attack the opponent.")
-                    appendLine("To attack a planeswalker, use \"letter->number\" (e.g., \"C->1\" means creature C attacks planeswalker 1).")
-                    appendLine("Use \"NONE\" to not attack.")
+                    appendLine("By default creatures attack the opponent. To attack a planeswalker, use \"letter->number\" (e.g., \"C->1\" means creature C attacks planeswalker 1).")
+                    appendLine("Example: A, C->1")
                 } else {
-                    appendLine("<answer>A, C</answer>")
-                    appendLine()
-                    appendLine("Put ONLY the creature letters (e.g., \"A, C\") or \"NONE\" inside <answer> tags.")
+                    appendLine("Example: A, C")
                 }
             }
 
+            logger.info("AI attack prompt ({} chars):\n{}", prompt.length, prompt)
             val response = queryLlmEphemeral(prompt)
             val attackerMap = mutableMapOf<EntityId, EntityId>()
 
             if (response != null) {
-                logger.info("AI combat LLM response: {}", response.take(500))
+                logger.info("AI combat LLM response: {}", response)
                 val answerText = extractAnswer(response) ?: response
                 val upper = answerText.trim().uppercase()
                 if (upper != "NONE" && upper != "PASS" && upper != "NO") {
@@ -701,7 +696,7 @@ class AiPlayerController(
                     val keywordStr = if (keywords.isNotEmpty()) " [$keywords]" else ""
                     val abilityFlags = card?.abilityFlags?.takeIf { it.isNotEmpty() }?.joinToString(", ") { it.displayName } ?: ""
                     val flagStr = if (abilityFlags.isNotEmpty()) " [$abilityFlags]" else ""
-                    val oracle = card?.oracleText?.takeIf { it.isNotBlank() }?.let { " — \"$it\"" } ?: ""
+                    val oracle = card?.oracleText?.takeIf { it.isNotBlank() }?.let { " — \"${it.flattenOracle()}\"" } ?: ""
                     appendLine("  Attacker ${i + 1}: ${attacker.creatureName} $stats$keywordStr$flagStr$oracle")
                 }
                 appendLine()
@@ -710,28 +705,22 @@ class AiPlayerController(
                     val card = state.cards[blockerId] ?: continue
                     val keywords = card.keywords.takeIf { it.isNotEmpty() }?.joinToString(", ") { it.name.lowercase() } ?: ""
                     val keywordStr = if (keywords.isNotEmpty()) " [$keywords]" else ""
-                    val oracle = card.oracleText.takeIf { it.isNotBlank() }?.let { " — \"$it\"" } ?: ""
+                    val oracle = card.oracleText.takeIf { it.isNotBlank() }?.let { " — \"${it.flattenOracle()}\"" } ?: ""
                     appendLine("  [${GameStateFormatter.actionLetter(i)}] ${card.name} ${card.power}/${card.toughness}$keywordStr$oracle")
                 }
                 appendLine()
-                appendLine("Reply using this EXACT format:")
-                appendLine()
-                appendLine("<reasoning>")
-                appendLine("Analyze the board: is this lethal? What trades are available? Is it better to take damage and keep creatures?")
-                appendLine("Consider gang-blocking: multiple blockers on one large attacker can trade favorably.")
-                appendLine("</reasoning>")
-                appendLine("<answer>A blocks 1, B blocks 1, C blocks 2</answer>")
-                appendLine()
-                appendLine("Put blocking assignments inside <answer> tags, or \"NONE\" to not block.")
+                appendLine("Reply with ONLY the blocking assignments, or NONE to not block.")
                 appendLine("Format: <blocker letter> blocks <attacker number>")
                 appendLine("Multiple blockers CAN block the same attacker (gang-block): \"A blocks 1, B blocks 1\"")
+                appendLine("Example: A blocks 1, B blocks 1, C blocks 2")
             }
 
+            logger.info("AI block prompt ({} chars):\n{}", prompt.length, prompt)
             val response = queryLlmEphemeral(prompt)
             val blockerMap = mutableMapOf<EntityId, List<EntityId>>()
 
             if (response != null) {
-                logger.info("AI combat LLM response: {}", response.take(500))
+                logger.info("AI combat LLM response: {}", response)
                 val answerText = extractAnswer(response) ?: response
                 val upper = answerText.trim().uppercase()
                 if (upper != "NONE" && upper != "PASS" && upper != "NO") {
@@ -850,12 +839,11 @@ class AiPlayerController(
             You are an expert Magic: The Gathering player. You will be shown the game state and asked to choose ONE action at a time.
 
             RESPONSE FORMAT — CRITICAL:
-            - Always wrap your final answer in <answer> tags.
-            - You may think briefly before answering, but the <answer> must contain ONLY your choice.
-            - For actions: <answer>B</answer> or <answer>C2</answer> (action C, target 2)
-            - For selections: <answer>A, C</answer>
-            - For yes/no: <answer>Yes</answer> or <answer>No</answer>
-            - For numbers: <answer>3</answer>
+            - Reply with ONLY your choice. No explanation, no reasoning, no tags.
+            - For actions: B or C2 (action C, target 2)
+            - For selections: A, C
+            - For yes/no: Yes or No
+            - For numbers: 3
             - Do NOT chain multiple actions. You can only take ONE action per prompt.
             - Actions marked "(can't afford)" cannot be chosen — pick something else.
 

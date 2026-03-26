@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger(AiDeckBuilder::class.java)
 
+
 /**
  * Result of AI deck building — the deck list plus the chosen archetype for gameplay context.
  */
@@ -74,15 +75,11 @@ class AiDeckBuilder(
     }
 
     private fun tryLlmDeckbuild(archetype: Archetype): Map<String, Int>? {
-        val archetypeColors = archetype.colors.toSet()
+        // Show the full card pool so the LLM can evaluate splashes
+        val allSpells = cardPool.filter { !it.isLand }
 
-        // Filter spells to matching colors + colorless
-        val matchingSpells = cardPool.filter { card ->
-            !card.isLand && (card.colors.isEmpty() || card.colors.all { it in archetypeColors })
-        }
-
-        if (matchingSpells.isEmpty()) {
-            logger.warn("AI deckbuilder: no cards match archetype colors")
+        if (allSpells.isEmpty()) {
+            logger.warn("AI deckbuilder: no spells in card pool")
             return null
         }
 
@@ -90,10 +87,10 @@ class AiDeckBuilder(
         val nonbasicLands = cardPool.filter { it.isLand && it.name !in BASIC_LAND_NAMES }
 
         // Step 1: Evaluate the card pool and find synergies
-        val evaluation = stepEvaluate(archetype, matchingSpells, nonbasicLands) ?: return null
+        val evaluation = stepEvaluate(archetype, allSpells, nonbasicLands) ?: return null
 
         // Step 2: Build the deck using the evaluation
-        return stepBuild(archetype, matchingSpells, nonbasicLands, evaluation)
+        return stepBuild(archetype, allSpells, nonbasicLands, evaluation)
     }
 
     // =========================================================================
@@ -123,45 +120,55 @@ class AiDeckBuilder(
         val colorNames = archetype.colors.joinToString("/") { it.name }
 
         return buildString {
-            appendLine("You are evaluating a card pool for a ${archetype.name} ($colorNames) deck.")
+            appendLine("You are evaluating a sealed card pool. Suggested archetype: ${archetype.name} ($colorNames).")
             appendLine("Archetype guidance: ${archetype.description}")
             if (archetype.creatureTypes.isNotEmpty()) {
                 appendLine("Suggested creature types: ${archetype.creatureTypes.joinToString(", ")}")
             }
             appendLine()
-            appendLine("The archetype is a starting point, not a constraint. If you see stronger synergies or a better strategy in the card pool, pursue that instead.")
+            appendLine("The archetype is a suggestion, not a constraint. If you see stronger synergies, a better color pair, or a powerful splash, pursue that instead.")
             appendLine()
             appendLine("CARD POOL:")
+            appendLine()
+            appendCardPool(matchingCards, nonbasicLands)
+        }
+    }
 
-            val byType = matchingCards.groupBy { card ->
-                when {
-                    card.typeLine.isCreature -> "Creatures"
-                    card.typeLine.isInstant -> "Instants"
-                    card.typeLine.isSorcery -> "Sorceries"
-                    card.typeLine.isEnchantment -> "Enchantments"
-                    card.typeLine.isArtifact -> "Artifacts"
-                    else -> "Other"
-                }
+    private fun StringBuilder.appendCardPool(matchingCards: List<CardDefinition>, nonbasicLands: List<CardDefinition>) {
+        val byType = matchingCards.groupBy { card ->
+            when {
+                card.typeLine.isCreature -> "Creatures"
+                card.typeLine.isInstant -> "Instants"
+                card.typeLine.isSorcery -> "Sorceries"
+                card.typeLine.isEnchantment -> "Enchantments"
+                card.typeLine.isArtifact -> "Artifacts"
+                else -> "Other"
             }
+        }
 
-            for ((type, cards) in byType.entries.sortedBy { it.key }) {
-                appendLine()
-                appendLine("$type:")
-                for (card in cards.sortedBy { it.cmc }) {
-                    val stats = if (card.creatureStats != null) " ${card.creatureStats}" else ""
-                    val oracle = if (card.oracleText.isNotBlank()) " — ${card.oracleText}" else ""
-                    appendLine("  ${card.name} ${card.manaCost} — ${card.typeLine}$stats$oracle")
-                }
+        for ((type, cards) in byType.entries.sortedBy { it.key }) {
+            appendLine("$type:")
+            // Group duplicates and show count
+            val grouped = cards.groupBy { it.name }
+            for ((_, dupes) in grouped.entries.sortedBy { it.value.first().cmc }) {
+                val card = dupes.first()
+                val count = dupes.size
+                val prefix = if (count > 1) "${count}x " else "  "
+                val stats = if (card.creatureStats != null) " ${card.creatureStats}" else ""
+                val rarity = card.metadata.rarity.name.lowercase().replaceFirstChar { it.uppercase() }
+                val oracle = if (card.oracleText.isNotBlank()) " — ${card.oracleText.flattenOracle()}" else ""
+                appendLine("$prefix${card.name} ${card.manaCost} — ${card.typeLine}$stats [$rarity]$oracle")
             }
+            appendLine()
+        }
 
-            if (nonbasicLands.isNotEmpty()) {
-                appendLine()
-                appendLine("Nonbasic Lands:")
-                for (land in nonbasicLands.distinctBy { it.name }.sortedBy { it.name }) {
-                    val oracle = if (land.oracleText.isNotBlank()) " — ${land.oracleText}" else ""
-                    appendLine("  ${land.name} — ${land.typeLine}$oracle")
-                }
+        if (nonbasicLands.isNotEmpty()) {
+            appendLine("Non-basic Lands:")
+            for (land in nonbasicLands.distinctBy { it.name }.sortedBy { it.name }) {
+                val oracle = if (land.oracleText.isNotBlank()) " — ${land.oracleText.flattenOracle()}" else ""
+                appendLine("  ${land.name} — ${land.typeLine}$oracle")
             }
+            appendLine()
         }
     }
 
@@ -200,25 +207,37 @@ class AiDeckBuilder(
         evaluation: String
     ): String {
         val colorNames = archetype.colors.joinToString("/") { it.name }
-        val spellNames = matchingCards.map { it.name }.toSet()
-        val landNames = nonbasicLands.map { it.name }.toSet()
+
+        // Count available copies per card
+        val availableCounts = matchingCards.groupingBy { it.name }.eachCount()
+        val landCounts = nonbasicLands.groupingBy { it.name }.eachCount()
 
         return buildString {
-            appendLine("Build a deck based on your evaluation below.")
+            appendLine("You are building a sealed deck from this card pool.")
             appendLine()
-            appendLine("Archetype: ${archetype.name} ($colorNames)")
+            appendLine("Suggested archetype: ${archetype.name} ($colorNames)")
+            appendLine("The archetype is a suggestion — if you see stronger synergies or a better strategy, pursue that instead.")
+            appendLine()
+            appendLine("GUIDELINES:")
+            appendLine("- At least 40 cards (40 is ideal, going slightly over is fine)")
+            appendLine("- ~23 non-land cards (creatures + spells) and ~17 lands")
+            appendLine("- Pick 2 colors (sometimes splash a 3rd for a bomb). Do NOT play all 5 colors.")
+            appendLine("- Only include cards you can actually cast with your lands")
+            appendLine("- You may add any number of basic lands: Plains, Island, Swamp, Mountain, Forest")
+            appendLine("- Prioritize creatures, removal, synergy, and a good mana curve")
+            appendLine("- Include non-basic lands from your pool if they fit your colors")
+            appendLine("- Do NOT include more copies than available in the pool")
             appendLine()
             appendLine("YOUR EVALUATION:")
             appendLine(evaluation)
             appendLine()
-            appendLine("CONSTRAINTS:")
-            appendLine("- At least 40 cards (spells + lands)")
-            appendLine("- Maximum 4 copies of any non-basic card")
-            appendLine("- Available basic lands: Plains, Island, Swamp, Mountain, Forest")
+            appendLine("CARD POOL (available copies):")
             appendLine()
-            appendLine("Available spells: ${spellNames.sorted().joinToString(", ")}")
-            if (landNames.isNotEmpty()) {
-                appendLine("Available nonbasic lands: ${landNames.sorted().joinToString(", ")}")
+            appendCardPool(matchingCards, nonbasicLands)
+            appendLine()
+            appendLine("AVAILABLE COPIES:")
+            for ((name, count) in (availableCounts + landCounts).entries.sortedBy { it.key }) {
+                if (count > 1) appendLine("  ${name}: ${count}x")
             }
         }
     }
@@ -229,6 +248,7 @@ class AiDeckBuilder(
 
     private fun parseDeckList(response: String, availableCards: List<CardDefinition>): Map<String, Int>? {
         val cardNames = availableCards.map { it.name }.toSet() + BASIC_LAND_NAMES
+        val poolCounts = availableCards.groupingBy { it.name }.eachCount()
 
         // Extract from <answer> tags if present, otherwise use full response
         val answerMatch = Regex("""<answer>(.*?)</answer>""", RegexOption.DOT_MATCHES_ALL).find(response)
@@ -243,7 +263,7 @@ class AiDeckBuilder(
             val name = match.groupValues[2].trim()
 
             val exactMatch = cardNames.find { it.equals(name, ignoreCase = true) }
-            if (exactMatch != null && count in 1..4) {
+            if (exactMatch != null && count >= 1) {
                 deckMap[exactMatch] = (deckMap[exactMatch] ?: 0) + count
             }
         }
@@ -254,10 +274,14 @@ class AiDeckBuilder(
             return null
         }
 
-        // Enforce max 4 copies for non-basics
+        // Enforce pool limits: non-basics can't exceed available copies
         for ((name, count) in deckMap.toMap()) {
-            if (name !in BASIC_LAND_NAMES && count > 4) {
-                deckMap[name] = 4
+            if (name !in BASIC_LAND_NAMES) {
+                val maxCopies = poolCounts[name] ?: 4
+                if (count > maxCopies) {
+                    logger.info("AI deckbuilder: clamping {} from {} to {} (pool limit)", name, count, maxCopies)
+                    deckMap[name] = maxCopies
+                }
             }
         }
 
@@ -280,35 +304,40 @@ class AiDeckBuilder(
         }
 
         private val EVALUATE_SYSTEM_PROMPT = """
-            You are an expert Magic: The Gathering deckbuilder evaluating a card pool.
+            You are an expert Magic: The Gathering sealed deckbuilder evaluating a card pool.
 
             Look at the cards available and think about:
-            - What are the strongest individual cards?
+            - What are the strongest individual cards? Prioritize rares/uncommons and efficient removal.
             - What synergies exist between cards? Which cards make other cards better?
             - Is the suggested archetype the best use of this pool, or do you see a stronger strategy?
             - What is a realistic game plan — how does this deck win?
             - What removal and interaction is available?
-            - Are there enough cheap plays for the early game?
+            - Is the mana curve good? You need enough 2-drops and 3-drops to not fall behind.
+            - Are there any bombs (high-impact rares) that pull you toward specific colors?
 
             Write your analysis. Be specific — name the cards and explain what makes them good together.
         """.trimIndent()
 
         private val BUILD_SYSTEM_PROMPT = """
-            You are an expert Magic: The Gathering deckbuilder constructing a final deck list.
+            You are an expert Magic: The Gathering sealed deckbuilder constructing a final deck list.
 
             You've already evaluated the card pool. Now build the deck.
 
-            Reply using this EXACT format:
+            Reply with ONLY the deck list, one entry per line. No explanation, no reasoning.
 
-            <answer>
-            4x Card Name
-            3x Another Card
-            24x Forest
-            </answer>
+            Example format:
+            1x Heir of the Wilds
+            2x Alpine Grizzly
+            1x Opulent Palace
+            9x Forest
+            8x Island
 
-            The <answer> section must contain ONLY the deck list, one entry per line.
-            Use only cards from the available card names list and basic lands.
-            The deck must have at least 40 cards. Use about 40% lands.
+            Guidelines:
+            - At least 40 cards (~23 spells + ~17 lands). 40 is ideal, slightly over is fine.
+            - Only use cards from the pool and basic lands (Plains, Island, Swamp, Mountain, Forest)
+            - Do not exceed the available copies of each card
+            - Match your land base to your spell colors
+            - Build for synergy — cards that work well together beat individually strong cards
         """.trimIndent()
     }
 }

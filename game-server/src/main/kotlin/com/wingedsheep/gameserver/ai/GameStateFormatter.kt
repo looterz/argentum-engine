@@ -8,6 +8,9 @@ import com.wingedsheep.engine.core.*
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 
+/** Flatten newlines in oracle text so it stays on a single line in prompts/logs. */
+fun String.flattenOracle(): String = replace("\n", " / ")
+
 /**
  * Converts game state, legal actions, and pending decisions into concise text
  * that an LLM can reason about.
@@ -76,7 +79,7 @@ class GameStateFormatter(
                 val label = entityLabels[cardId] ?: cardId.value
                 val cost = card.manaCost.takeIf { it.isNotBlank() }?.let { " $it" } ?: ""
                 val typeLine = " — ${card.typeLine}"
-                val description = card.stackText ?: card.oracleText.takeIf { it.isNotBlank() }
+                val description = card.stackText?.flattenOracle() ?: card.oracleText.takeIf { it.isNotBlank() }?.flattenOracle()
                 val xValue = card.chosenX?.let { " (X=$it)" } ?: ""
                 val targets = if (card.targets.isNotEmpty()) {
                     val targetNames = card.targets.mapNotNull { t ->
@@ -123,15 +126,34 @@ class GameStateFormatter(
         sb.appendLine("=== MULLIGAN DECISION ===")
         sb.appendLine("You are on the ${if (isOnThePlay) "play" else "draw"}.")
         sb.appendLine("Mulligan count: $mulliganCount (keeping ${7 - mulliganCount} cards)")
+        if (mulliganCount > 0) {
+            sb.appendLine("If you keep, you must put $mulliganCount card(s) on the bottom of your library.")
+        }
         sb.appendLine()
+
+        // Categorize cards for quick overview
+        val lands = cards.filter { it.typeLine?.contains("Land") == true }
+        val nonLands = cards.filter { it.typeLine?.contains("Land") != true }
+        val manaCosts = nonLands.mapNotNull { it.manaCost }
+
+        sb.appendLine("Hand summary: ${lands.size} lands, ${nonLands.size} spells")
+        sb.appendLine()
+
         sb.appendLine("Your hand:")
         for ((i, card) in cards.withIndex()) {
             sb.append("  [${i + 1}] ${card.name}")
             if (card.manaCost != null) sb.append(" ${card.manaCost}")
             if (card.typeLine != null) sb.append(" — ${card.typeLine}")
             if (card.power != null && card.toughness != null) sb.append(" ${card.power}/${card.toughness}")
+            if (card.oracleText != null) sb.append(" — ${card.oracleText.flattenOracle()}")
             sb.appendLine()
         }
+        sb.appendLine()
+        sb.appendLine("MULLIGAN GUIDELINES:")
+        sb.appendLine("- A good hand has 2-4 lands and a mix of early and late plays")
+        sb.appendLine("- Hands with 0-1 lands or 6+ lands are almost always mulligans")
+        sb.appendLine("- Consider whether you can cast your spells with the lands you have (color match)")
+        sb.appendLine("- Each mulligan costs a card — a mediocre 7 is often better than a risky 6")
         sb.appendLine()
         sb.appendLine("Choose: [A] Keep hand, [B] Mulligan")
         return sb.toString()
@@ -148,6 +170,7 @@ class GameStateFormatter(
         val sb = StringBuilder()
         sb.appendLine("=== CHOOSE CARDS TO PUT ON BOTTOM ===")
         sb.appendLine("You must put $count card(s) on the bottom of your library.")
+        sb.appendLine("Keep the cards that give you the best curve and color access.")
         sb.appendLine()
         sb.appendLine("Your hand:")
         for ((i, card) in cards.withIndex()) {
@@ -155,6 +178,7 @@ class GameStateFormatter(
             if (card.manaCost != null) sb.append(" ${card.manaCost}")
             if (card.typeLine != null) sb.append(" — ${card.typeLine}")
             if (card.power != null && card.toughness != null) sb.append(" ${card.power}/${card.toughness}")
+            if (card.oracleText != null) sb.append(" — ${card.oracleText.flattenOracle()}")
             sb.appendLine()
         }
         sb.appendLine()
@@ -250,7 +274,7 @@ class GameStateFormatter(
                     if (card.power != null && card.toughness != null) sb.append(" ${card.power}/${card.toughness}")
                     if (card.keywords.isNotEmpty()) sb.append(" [${card.keywords.joinToString(", ") { it.name.lowercase() }}]")
                     if (card.abilityFlags.isNotEmpty()) sb.append(" [${card.abilityFlags.joinToString(", ") { it.displayName }}]")
-                    if (card.oracleText.isNotBlank()) sb.append(" — \"${card.oracleText}\"")
+                    if (card.oracleText.isNotBlank()) sb.append(" — \"${card.oracleText.flattenOracle()}\"")
                     sb.appendLine()
                 }
             }
@@ -366,7 +390,7 @@ class GameStateFormatter(
 
         // Oracle text (skip for face-down cards and basic lands with no rules text beyond mana)
         if (!card.isFaceDown && card.oracleText.isNotBlank()) {
-            sb.append(" — \"${card.oracleText}\"")
+            sb.append(" — \"${card.oracleText.flattenOracle()}\"")
         }
     }
 
@@ -493,7 +517,7 @@ class GameStateFormatter(
             if (action.requiresTargets) {
                 // Show oracle text so the LLM knows what the spell does when picking targets
                 val oracleText = (action.action as? CastSpell)?.cardId?.let { cardId ->
-                    state.cards[cardId]?.oracleText?.takeIf { it.isNotBlank() }
+                    state.cards[cardId]?.oracleText?.takeIf { it.isNotBlank() }?.flattenOracle()
                 }
                 if (oracleText != null && oracleText !in action.description) {
                     sb.append(" — \"$oracleText\"")
@@ -597,5 +621,6 @@ data class MulliganCardDisplay(
     val manaCost: String? = null,
     val typeLine: String? = null,
     val power: Int? = null,
-    val toughness: Int? = null
+    val toughness: Int? = null,
+    val oracleText: String? = null
 )

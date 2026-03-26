@@ -411,7 +411,8 @@ class GameSession(
                     manaCost = cardComponent?.manaCost?.toString(),
                     typeLine = cardComponent?.typeLine?.toString(),
                     power = cardComponent?.baseStats?.basePower,
-                    toughness = cardComponent?.baseStats?.baseToughness
+                    toughness = cardComponent?.baseStats?.baseToughness,
+                    oracleText = cardComponent?.oracleText?.takeIf { it.isNotBlank() }
                 )
             }
         } else {
@@ -447,7 +448,8 @@ class GameSession(
                     manaCost = cardComponent?.manaCost?.toString(),
                     typeLine = cardComponent?.typeLine?.toString(),
                     power = cardComponent?.baseStats?.basePower,
-                    toughness = cardComponent?.baseStats?.baseToughness
+                    toughness = cardComponent?.baseStats?.baseToughness,
+                    oracleText = cardComponent?.oracleText?.takeIf { it.isNotBlank() }
                 )
             }
         } else {

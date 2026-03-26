@@ -214,7 +214,8 @@ sealed interface ServerMessage {
         val manaCost: String? = null,
         val typeLine: String? = null,
         val power: Int? = null,
-        val toughness: Int? = null
+        val toughness: Int? = null,
+        val oracleText: String? = null
     )
 
     /**

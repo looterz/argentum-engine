@@ -37,8 +37,9 @@ data class AiProperties(
     val openRouterApiKey: String = "",
     val model: String = "qwen/qwen3.5-flash-02-23",
     val deckbuildingModel: String = "",
+    val reasoningEffort: String = "low",
     val maxRetries: Int = 2,
-    val timeoutMs: Long = 10000,
+    val timeoutMs: Long = 300000,
     val thinkingDelayMs: Long = 500
 ) {
     /** Returns the model to use for deckbuilding — falls back to the gameplay model if not set. */

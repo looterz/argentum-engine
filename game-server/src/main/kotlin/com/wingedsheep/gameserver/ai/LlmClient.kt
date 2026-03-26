@@ -25,6 +25,7 @@ class LlmClient(
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
+        explicitNulls = false
     }
 
     private val httpClient = HttpClient.newBuilder()
@@ -46,17 +47,21 @@ class LlmClient(
      */
     fun chatCompletion(messages: List<ChatMessage>, modelOverride: String? = null): String? {
         val effectiveModel = modelOverride ?: properties.model
+        val reasoningEffort = properties.reasoningEffort.ifBlank { null }
         val request = ChatCompletionRequest(
             model = effectiveModel,
             messages = messages,
-            temperature = 0.3
+            temperature = 0.8,
+            reasoningEffort = reasoningEffort
         )
 
         val requestBody = json.encodeToString(request)
 
-        logger.info("LLM request: url={}, model={}, messages={}, lastUserMsg={}chars",
-            properties.baseUrl, effectiveModel, messages.size,
-            messages.lastOrNull { it.role == "user" }?.content?.length ?: 0)
+        val lastUserMsg = messages.lastOrNull { it.role == "user" }?.content
+        logger.info("LLM request: url={}, model={}, messages={}", properties.baseUrl, effectiveModel, messages.size)
+        if (lastUserMsg != null) {
+            logger.debug("LLM prompt:\n{}", lastUserMsg)
+        }
 
         var lastException: Exception? = null
         for (attempt in 0..properties.maxRetries) {
@@ -64,14 +69,21 @@ class LlmClient(
                 val responseBody = restClient.post()
                     .uri("/chat/completions")
                     .body(requestBody)
-                    .retrieve()
-                    .body(String::class.java)
+                    .exchange { _, response ->
+                        val body = response.body.bufferedReader().readText()
+                        if (response.statusCode.isError) {
+                            logger.warn("LLM API error (attempt {}, status {}): {}", attempt, response.statusCode.value(), body)
+                            null
+                        } else {
+                            body
+                        }
+                    }
 
                 if (responseBody != null) {
                     val response = json.decodeFromString<ChatCompletionResponse>(responseBody)
                     val content = response.choices.firstOrNull()?.message?.content
                     if (content != null) {
-                        logger.info("LLM response (attempt {}): {}", attempt, content.take(500))
+                        logger.info("LLM response (attempt {}):\n{}", attempt, content)
                         return content
                     }
                 }
@@ -109,7 +121,9 @@ data class ChatMessage(
 data class ChatCompletionRequest(
     val model: String,
     val messages: List<ChatMessage>,
-    val temperature: Double = 0.3
+    val temperature: Double = 0.3,
+    @SerialName("reasoning_effort")
+    val reasoningEffort: String? = null
 )
 
 @Serializable

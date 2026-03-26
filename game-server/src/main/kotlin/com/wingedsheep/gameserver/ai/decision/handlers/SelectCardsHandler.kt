@@ -5,6 +5,7 @@ import com.wingedsheep.engine.core.DecisionResponse
 import com.wingedsheep.engine.core.SelectCardsDecision
 import com.wingedsheep.gameserver.ai.AiResponseParser
 import com.wingedsheep.gameserver.ai.GameStateFormatter
+import com.wingedsheep.gameserver.ai.flattenOracle
 import com.wingedsheep.gameserver.ai.decision.AiDecisionHandler
 import com.wingedsheep.gameserver.dto.ClientGameState
 import com.wingedsheep.sdk.model.EntityId
@@ -36,7 +37,7 @@ class SelectCardsHandler : AiDecisionHandler<SelectCardsDecision> {
                 if (!type.isNullOrBlank()) append(" — $type")
                 if (card?.power != null && card.toughness != null) append(" ${card.power}/${card.toughness}")
                 val oracle = card?.oracleText
-                if (!oracle.isNullOrBlank()) append(" — \"$oracle\"")
+                if (!oracle.isNullOrBlank()) append(" — \"${oracle.flattenOracle()}\"")
             }
             sb.appendLine("  [$letter] $name$details")
         }
