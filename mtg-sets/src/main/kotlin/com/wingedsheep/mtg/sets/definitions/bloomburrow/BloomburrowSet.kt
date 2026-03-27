@@ -49,6 +49,7 @@ object BloomburrowSet {
         HuntersTalent,
         MindSpiral,
         MabelsMettle,
+        ManifoldMouse,
         MouseTrapper,
         NocturnalHunger,
         NettleGuard,

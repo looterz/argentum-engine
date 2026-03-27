@@ -2,14 +2,14 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 54 / 266
+**Implemented:** 55 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 12   |
 | Blue       | 41    | 9    |
 | Black      | 40    | 8    |
-| Red        | 41    | 9    |
+| Red        | 41    | 10   |
 | Green      | 41    | 5    |
 | Multicolor | 39    | 6    |
 | Colorless  | 9     | 2    |
@@ -148,7 +148,7 @@
 - [x] Mabel's Mettle
 - [ ] Mabel, Heir to Cragflame
 - [ ] Maha, Its Feathers Night
-- [ ] Manifold Mouse
+- [x] Manifold Mouse
 - [ ] Might of the Meek
 - [ ] Mind Drill Assailant
 - [x] Mind Spiral

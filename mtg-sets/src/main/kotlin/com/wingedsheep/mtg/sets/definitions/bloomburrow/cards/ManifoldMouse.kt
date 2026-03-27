@@ -1,0 +1,74 @@
+package com.wingedsheep.mtg.sets.definitions.bloomburrow.cards
+
+import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.core.ManaCost
+import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.dsl.Triggers
+import com.wingedsheep.sdk.dsl.card
+import com.wingedsheep.sdk.model.Rarity
+import com.wingedsheep.sdk.scripting.Duration
+import com.wingedsheep.sdk.scripting.KeywordAbility
+import com.wingedsheep.sdk.scripting.conditions.WasKicked
+import com.wingedsheep.sdk.scripting.effects.GrantKeywordEffect
+import com.wingedsheep.sdk.scripting.effects.ModalEffect
+import com.wingedsheep.sdk.scripting.effects.Mode
+import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.scripting.targets.TargetCreature
+
+/**
+ * Manifold Mouse
+ * {1}{R}
+ * Creature — Mouse Soldier
+ * 1/2
+ *
+ * Offspring {2} (You may pay an additional {2} as you cast this spell. If you do,
+ * when this creature enters, create a 1/1 token copy of it.)
+ *
+ * At the beginning of combat on your turn, target Mouse you control gains your
+ * choice of double strike or trample until end of turn.
+ */
+val ManifoldMouse = card("Manifold Mouse") {
+    manaCost = "{1}{R}"
+    typeLine = "Creature — Mouse Soldier"
+    power = 1
+    toughness = 2
+    oracleText = "Offspring {2} (You may pay an additional {2} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\nAt the beginning of combat on your turn, target Mouse you control gains your choice of double strike or trample until end of turn."
+
+    // Offspring modeled as Kicker
+    keywordAbility(KeywordAbility.Kicker(ManaCost.parse("{2}")))
+
+    // Offspring ETB: create token copy when kicked
+    triggeredAbility {
+        trigger = Triggers.EntersBattlefield
+        triggerCondition = WasKicked
+        effect = Effects.CreateTokenCopyOfSelf()
+    }
+
+    // At the beginning of combat on your turn, target Mouse you control gains
+    // your choice of double strike or trample until end of turn.
+    triggeredAbility {
+        trigger = Triggers.BeginCombat
+        target = TargetCreature(
+            filter = TargetFilter(GameObjectFilter.Creature.withSubtype("Mouse").youControl())
+        )
+        effect = ModalEffect.chooseOne(
+            Mode.noTarget(
+                GrantKeywordEffect(Keyword.DOUBLE_STRIKE, EffectTarget.ContextTarget(0), Duration.EndOfTurn),
+                "Double strike"
+            ),
+            Mode.noTarget(
+                GrantKeywordEffect(Keyword.TRAMPLE, EffectTarget.ContextTarget(0), Duration.EndOfTurn),
+                "Trample"
+            )
+        )
+    }
+
+    metadata {
+        rarity = Rarity.RARE
+        collectorNumber = "143"
+        artist = "Randy Vargas"
+        imageUri = "https://cards.scryfall.io/normal/front/d/b/db3832b5-e83f-4569-bd49-fb7b86fa2d47.jpg?1721426663"
+    }
+}
