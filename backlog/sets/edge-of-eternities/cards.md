@@ -2,7 +2,7 @@
 
 **Set Size:** 261 booster cards (excluding basic lands)
 **Release Date:** August 1, 2025
-**Implemented:** 0 / 261
+**Implemented:** 1 / 261
 
 ---
 
@@ -44,7 +44,7 @@
 - [ ] Cosmogoyf
 - [ ] Cosmogrand Zenith
 - [ ] Cryogen Relic
-- [ ] Cryoshatter
+- [x] Cryoshatter
 - [ ] Cut Propulsion
 - [ ] Dark Endurance
 - [ ] Dauntless Scrapbot

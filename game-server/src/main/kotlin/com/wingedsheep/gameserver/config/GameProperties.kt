@@ -21,7 +21,8 @@ data class SetsProperties(
     val legionsEnabled: Boolean = true,
     val khansEnabled: Boolean = true,
     val dominariaEnabled: Boolean = false,
-    val bloomburrowEnabled: Boolean = false
+    val bloomburrowEnabled: Boolean = false,
+    val edgeOfEternitiesEnabled: Boolean = false
 )
 
 data class AdminProperties(

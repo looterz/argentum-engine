@@ -4,6 +4,7 @@ import com.wingedsheep.gameserver.deck.RandomDeckGenerator
 import com.wingedsheep.gameserver.sealed.BoosterGenerator
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.mtg.sets.definitions.bloomburrow.BloomburrowSet
+import com.wingedsheep.mtg.sets.definitions.edgeofeternities.EdgeOfEternitiesSet
 import com.wingedsheep.mtg.sets.definitions.dominaria.DominariaSet
 import com.wingedsheep.mtg.sets.definitions.khans.KhansOfTarkirSet
 import com.wingedsheep.mtg.sets.definitions.legions.LegionsSet
@@ -42,6 +43,9 @@ class GameBeansConfig(
         if (gameProperties.sets.bloomburrowEnabled) {
             register(BloomburrowSet.allCards)
         }
+        if (gameProperties.sets.edgeOfEternitiesEnabled) {
+            register(EdgeOfEternitiesSet.allCards)
+        }
     }
 
     @Bean
@@ -66,6 +70,9 @@ class GameBeansConfig(
             if (gameProperties.sets.bloomburrowEnabled) {
                 put(BloomburrowSet.SET_CODE, BoosterGenerator.bloomburrowSetConfig)
             }
+            if (gameProperties.sets.edgeOfEternitiesEnabled) {
+                put(EdgeOfEternitiesSet.SET_CODE, BoosterGenerator.edgeOfEternitiesSetConfig)
+            }
         }
         return BoosterGenerator(sets)
     }
@@ -79,6 +86,7 @@ class GameBeansConfig(
             if (gameProperties.sets.khansEnabled) addAll(KhansOfTarkirSet.allCards)
             if (gameProperties.sets.dominariaEnabled) addAll(DominariaSet.allCards)
             if (gameProperties.sets.bloomburrowEnabled) addAll(BloomburrowSet.allCards)
+            if (gameProperties.sets.edgeOfEternitiesEnabled) addAll(EdgeOfEternitiesSet.allCards)
         },
         basicLandVariants = PortalSet.basicLands,
         setCodes = buildList {
@@ -88,6 +96,7 @@ class GameBeansConfig(
             if (gameProperties.sets.khansEnabled) add("KTK")
             if (gameProperties.sets.dominariaEnabled) add("DOM")
             if (gameProperties.sets.bloomburrowEnabled) add("BLB")
+            if (gameProperties.sets.edgeOfEternitiesEnabled) add("EOE")
         }
     )
 }

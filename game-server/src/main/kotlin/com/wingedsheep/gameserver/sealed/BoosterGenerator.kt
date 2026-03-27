@@ -8,6 +8,7 @@ import com.wingedsheep.mtg.sets.definitions.legions.LegionsSet
 import com.wingedsheep.mtg.sets.definitions.scourge.ScourgeSet
 import com.wingedsheep.mtg.sets.definitions.khans.KhansOfTarkirSet
 import com.wingedsheep.mtg.sets.definitions.bloomburrow.BloomburrowSet
+import com.wingedsheep.mtg.sets.definitions.edgeofeternities.EdgeOfEternitiesSet
 import com.wingedsheep.mtg.sets.definitions.dominaria.DominariaSet
 import kotlin.random.Random
 
@@ -115,6 +116,17 @@ class BoosterGenerator(
             setName = BloomburrowSet.SET_NAME,
             cards = BloomburrowSet.allCards,
             basicLands = PortalSet.basicLands,  // Bloomburrow has no basic lands implemented; use Portal lands
+            incomplete = true
+        )
+
+        /**
+         * Edge of Eternities set configuration.
+         */
+        val edgeOfEternitiesSetConfig = SetConfig(
+            setCode = EdgeOfEternitiesSet.SET_CODE,
+            setName = EdgeOfEternitiesSet.SET_NAME,
+            cards = EdgeOfEternitiesSet.allCards,
+            basicLands = PortalSet.basicLands,
             incomplete = true
         )
     }
