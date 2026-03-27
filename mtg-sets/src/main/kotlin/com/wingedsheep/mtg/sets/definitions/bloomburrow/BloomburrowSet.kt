@@ -75,6 +75,7 @@ object BloomburrowSet {
         OsteomancerAdept,
         PondProphet,
         PlayfulShove,
+        SalvationSwan,
         RuthlessNegotiation,
         QuaketuskBoar,
         RavineRaider,

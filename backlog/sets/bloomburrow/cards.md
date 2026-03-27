@@ -2,11 +2,11 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 80 / 266
+**Implemented:** 81 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
-| White      | 40    | 17   |
+| White      | 40    | 18   |
 | Blue       | 41    | 10   |
 | Black      | 40    | 12   |
 | Red        | 41    | 15   |
@@ -198,7 +198,7 @@
 - [ ] Run Away Together
 - [ ] Rust-Shield Rampager
 - [x] Ruthless Negotiation
-- [ ] Salvation Swan
+- [x] Salvation Swan
 - [ ] Savor
 - [x] Sazacap's Brew
 - [ ] Scales of Shale
