@@ -40,6 +40,7 @@ object BloomburrowSet {
         EddymurkCrab,
         FecundGreenshell,
         FlamecacheGecko,
+        FlowerfootSwordmaster,
         HeirloomEpic,
         HelgaSkittishSeer,
         HiredClaw,

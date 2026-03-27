@@ -2,11 +2,11 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 61 / 266
+**Implemented:** 62 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
-| White      | 40    | 12   |
+| White      | 40    | 13   |
 | Blue       | 41    | 9    |
 | Black      | 40    | 9    |
 | Red        | 41    | 11   |
@@ -90,7 +90,7 @@
 - [ ] Finneas, Ace Archer
 - [ ] Fireglass Mentor
 - [x] Flamecache Gecko
-- [ ] Flowerfoot Swordmaster
+- [x] Flowerfoot Swordmaster
 - [ ] For the Common Good
 - [ ] Forest
 - [ ] Fountainport
