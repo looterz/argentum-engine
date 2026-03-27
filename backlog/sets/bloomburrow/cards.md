@@ -2,14 +2,14 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 76 / 266
+**Implemented:** 77 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 15   |
 | Blue       | 41    | 10   |
 | Black      | 40    | 12   |
-| Red        | 41    | 14   |
+| Red        | 41    | 15   |
 | Green      | 41    | 8    |
 | Multicolor | 39    | 11   |
 | Colorless  | 9     | 2    |
@@ -95,7 +95,7 @@
 - [ ] Forest
 - [ ] Fountainport
 - [ ] Fountainport Bell
-- [ ] Frilled Sparkshooter
+- [x] Frilled Sparkshooter
 - [ ] Galewind Moose
 - [ ] Gev, Scaled Scorch
 - [ ] Glarb, Calamity's Augur

@@ -48,6 +48,7 @@ object BloomburrowSet {
         FeatherOfFlight,
         FecundGreenshell,
         FlamecacheGecko,
+        FrilledSparkshooter,
         FlowerfootSwordmaster,
         HeirloomEpic,
         HelgaSkittishSeer,
