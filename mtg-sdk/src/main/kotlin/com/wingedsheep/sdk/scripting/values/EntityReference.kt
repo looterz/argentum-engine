@@ -41,4 +41,11 @@ sealed interface EntityReference {
     data object Triggering : EntityReference {
         override val description: String = "the triggering creature"
     }
+
+    /** A permanent tapped as cost, by index. */
+    @SerialName("TappedAsCost")
+    @Serializable
+    data class TappedAsCost(val index: Int = 0) : EntityReference {
+        override val description: String = "the tapped creature"
+    }
 }

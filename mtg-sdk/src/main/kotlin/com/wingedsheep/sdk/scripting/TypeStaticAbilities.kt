@@ -29,6 +29,27 @@ data class GrantSubtype(
 }
 
 /**
+ * Adds a card type (e.g., "CREATURE") to the target permanent, in addition to its other types.
+ * Used for Spacecraft Station mechanic: "It's an artifact creature at 7+."
+ *
+ * This is a Layer 4 (type-changing) continuous effect that adds a card type.
+ *
+ * @property cardType The card type to add (e.g., "CREATURE", "ARTIFACT")
+ * @property target What this ability applies to
+ */
+@SerialName("GrantCardType")
+@Serializable
+data class GrantCardType(
+    val cardType: String,
+    val target: StaticTarget = StaticTarget.SourceCreature
+) : StaticAbility {
+    override val description: String = "is also ${
+        if (cardType.first().lowercaseChar() in "aeiou") "an" else "a"
+    } ${cardType.lowercase()}"
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
+}
+
+/**
  * Grants a supertype (e.g., Legendary) to the target permanent.
  * Used for On Serra's Wings: "Enchanted creature is legendary."
  *

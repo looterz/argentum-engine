@@ -19,5 +19,6 @@ object EdgeOfEternitiesSet {
      */
     val allCards = listOf(
         Cryoshatter,
+        SledgeClassSeedship,
     )
 }

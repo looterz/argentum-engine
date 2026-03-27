@@ -183,6 +183,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                     is AbilityCost.TapPermanents -> {
                         tapCost = effectiveCost
                         tapTargets = context.costUtils.findAbilityTapTargets(state, playerId, tapCost.filter)
+                            .let { targets -> if (tapCost.excludeSelf) targets.filter { it != entityId } else targets }
                         if (tapTargets.size < tapCost.count) continue
                     }
                     is AbilityCost.SacrificeSelf -> {
@@ -278,6 +279,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                 is AbilityCost.TapPermanents -> {
                                     tapCost = subCost
                                     tapTargets = context.costUtils.findAbilityTapTargets(state, playerId, subCost.filter)
+                                        .let { targets -> if (subCost.excludeSelf) targets.filter { it != entityId } else targets }
                                     if (tapTargets!!.size < subCost.count) {
                                         costCanBePaid = false
                                         break

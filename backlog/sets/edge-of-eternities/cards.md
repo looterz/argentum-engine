@@ -2,7 +2,7 @@
 
 **Set Size:** 261 booster cards (excluding basic lands)
 **Release Date:** August 1, 2025
-**Implemented:** 1 / 261
+**Implemented:** 2 / 261
 
 ---
 
@@ -199,7 +199,7 @@
 - [ ] Sinister Cryologist
 - [ ] Skystinger
 - [ ] Slagdrill Scrapper
-- [ ] Sledge-Class Seedship
+- [x] Sledge-Class Seedship
 - [ ] Sothera, the Supervoid
 - [ ] Space-Time Anomaly
 - [ ] Specimen Freighter

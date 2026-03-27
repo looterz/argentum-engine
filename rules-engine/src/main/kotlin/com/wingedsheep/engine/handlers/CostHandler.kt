@@ -119,7 +119,9 @@ class CostHandler(
                 state.getZone(battlefieldZone).contains(sourceId)
             }
             is AbilityCost.TapPermanents -> {
-                findUntappedMatchingPermanentsUnified(state, controllerId, cost.filter).size >= cost.count
+                val candidates = findUntappedMatchingPermanentsUnified(state, controllerId, cost.filter)
+                    .let { targets -> if (cost.excludeSelf) targets.filter { it != sourceId } else targets }
+                candidates.size >= cost.count
             }
             is AbilityCost.TapXPermanents -> {
                 // X can be 0, so this is always payable
@@ -448,6 +450,9 @@ class CostHandler(
                 val toTap = choices.tapChoices
                 if (toTap.size < cost.count) {
                     return CostPaymentResult.failure("Not enough permanents chosen to tap (need ${cost.count}, got ${toTap.size})")
+                }
+                if (cost.excludeSelf && sourceId in toTap) {
+                    return CostPaymentResult.failure("Cannot tap self for this cost")
                 }
 
                 var newState = state

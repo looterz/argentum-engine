@@ -267,12 +267,13 @@ sealed interface AbilityCost : TextReplaceable<AbilityCost> {
     @Serializable
     data class TapPermanents(
         val count: Int,
-        val filter: GameObjectFilter = GameObjectFilter.Creature
+        val filter: GameObjectFilter = GameObjectFilter.Creature,
+        val excludeSelf: Boolean = false
     ) : AbilityCost {
         override val description: String = buildString {
             append("Tap ")
             if (count == 1) {
-                append("an untapped ")
+                append(if (excludeSelf) "another untapped " else "an untapped ")
             } else {
                 append("$count untapped ")
             }
