@@ -34,6 +34,7 @@ object BloomburrowSet {
         CamelliaTheSeedmiser,
         CorpseberryCultivator,
         CrumbAndGetIt,
+        DaggerfangDuo,
         DarkstarAugur,
         DawnsTruce,
         DireDowndraft,
