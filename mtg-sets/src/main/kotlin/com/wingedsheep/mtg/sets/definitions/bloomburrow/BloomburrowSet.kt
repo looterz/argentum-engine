@@ -73,6 +73,7 @@ object BloomburrowSet {
         ThundertrapTrainer,
         ValleyQuestcaller,
         WarrenWarleader,
+        WildfireHowl,
         WickTheWhorledMind,
         YgraEaterOfAll,
     )
