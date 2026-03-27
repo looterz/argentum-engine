@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 55 / 266
+**Implemented:** 56 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -11,7 +11,7 @@
 | Black      | 40    | 8    |
 | Red        | 41    | 10   |
 | Green      | 41    | 5    |
-| Multicolor | 39    | 6    |
+| Multicolor | 39    | 7    |
 | Colorless  | 9     | 2    |
 | Land       | 15    | 0    |
 
@@ -181,7 +181,7 @@
 - [ ] Plumecreed Escort
 - [ ] Plumecreed Mentor
 - [ ] Polliwallop
-- [ ] Pond Prophet
+- [x] Pond Prophet
 - [ ] Portent of Calamity
 - [ ] Psychic Whorl
 - [x] Quaketusk Boar

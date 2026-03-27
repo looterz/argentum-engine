@@ -56,6 +56,7 @@ object BloomburrowSet {
         NightwhorlHermit,
         Overprotect,
         OsteomancerAdept,
+        PondProphet,
         PlayfulShove,
         RuthlessNegotiation,
         QuaketuskBoar,
