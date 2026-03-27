@@ -3,6 +3,7 @@ package com.wingedsheep.engine.state.components.player
 import com.wingedsheep.engine.state.Component
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.effects.ManaRestriction
 import com.wingedsheep.sdk.scripting.events.SourceFilter
 import kotlinx.serialization.Serializable
 
@@ -16,7 +17,8 @@ data class ManaPoolComponent(
     val black: Int = 0,
     val red: Int = 0,
     val green: Int = 0,
-    val colorless: Int = 0
+    val colorless: Int = 0,
+    val restrictedMana: List<RestrictedManaEntry> = emptyList()
 ) : Component {
     /**
      * Add mana of a specific color.
@@ -71,7 +73,7 @@ data class ManaPoolComponent(
     /**
      * Total mana available.
      */
-    val total: Int get() = white + blue + black + red + green + colorless
+    val total: Int get() = white + blue + black + red + green + colorless + restrictedMana.size
 
     /**
      * Check if pool is empty.
@@ -79,10 +81,30 @@ data class ManaPoolComponent(
     val isEmpty: Boolean get() = total == 0
 
     /**
+     * Add restricted mana to the pool.
+     * Each unit of restricted mana is tracked individually with its restriction.
+     */
+    fun addRestricted(color: Color?, amount: Int, restriction: ManaRestriction): ManaPoolComponent {
+        val entries = (1..amount).map { RestrictedManaEntry(color, restriction) }
+        return copy(restrictedMana = restrictedMana + entries)
+    }
+
+    /**
      * Empty the mana pool.
      */
     fun empty(): ManaPoolComponent = ManaPoolComponent()
 }
+
+/**
+ * A single unit of mana with a spending restriction.
+ * @param color The color of the mana, or null for colorless.
+ * @param restriction The restriction on how this mana can be spent.
+ */
+@Serializable
+data class RestrictedManaEntry(
+    val color: Color?,
+    val restriction: ManaRestriction
+)
 
 /**
  * Tracks land drops for the turn.

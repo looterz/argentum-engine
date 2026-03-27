@@ -6,6 +6,7 @@ import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.Effect
+import com.wingedsheep.sdk.scripting.effects.ManaRestriction
 import com.wingedsheep.sdk.scripting.targets.TargetRequirement
 import kotlinx.serialization.Serializable
 
@@ -150,5 +151,6 @@ data class AddDynamicManaContinuation(
     val sourceName: String?,
     val totalAmount: Int,
     val firstColor: Color,
-    val secondColor: Color
+    val secondColor: Color,
+    val restriction: ManaRestriction? = null
 ) : ContinuationFrame

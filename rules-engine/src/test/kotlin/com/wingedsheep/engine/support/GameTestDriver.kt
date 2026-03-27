@@ -525,6 +525,22 @@ class GameTestDriver {
     }
 
     /**
+     * Give a player restricted mana directly (test helper).
+     */
+    fun giveRestrictedMana(
+        playerId: EntityId,
+        color: com.wingedsheep.sdk.core.Color?,
+        amount: Int,
+        restriction: com.wingedsheep.sdk.scripting.effects.ManaRestriction
+    ) {
+        _state = _state.updateEntity(playerId) { container ->
+            val pool = container.get<com.wingedsheep.engine.state.components.player.ManaPoolComponent>()
+                ?: com.wingedsheep.engine.state.components.player.ManaPoolComponent()
+            container.with(pool.addRestricted(color, amount, restriction))
+        }
+    }
+
+    /**
      * Put a specific card directly into a player's hand (test helper).
      * Creates a new card entity from the registry and adds it to hand.
      * This is deterministic - always succeeds if the card is registered.

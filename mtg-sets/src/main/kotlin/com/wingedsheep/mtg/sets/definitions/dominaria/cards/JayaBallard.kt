@@ -5,6 +5,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
+import com.wingedsheep.sdk.scripting.effects.ManaRestriction
 import com.wingedsheep.sdk.scripting.effects.CardDestination
 import com.wingedsheep.sdk.scripting.effects.CardSource
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
@@ -28,9 +29,6 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * −8: You get an emblem with "You may cast instant and sorcery spells from your graveyard.
  *     If a spell cast this way would be put into your graveyard, exile it instead."
  *
- * Note: The "spend this mana only to cast instant or sorcery spells" restriction on the first
- * ability is not yet enforced — the engine does not support mana spending restrictions.
- *
  * Note: The −8 emblem ability is not yet implemented — it requires engine support for graveyard
  * casting permission as a static emblem ability and a replacement effect to exile spells cast
  * from graveyard instead of returning them there.
@@ -41,11 +39,10 @@ val JayaBallard = card("Jaya Ballard") {
     startingLoyalty = 5
     oracleText = "+1: Add {R}{R}{R}. Spend this mana only to cast instant or sorcery spells.\n+1: Discard up to three cards, then draw that many cards.\n\u22128: You get an emblem with \"You may cast instant and sorcery spells from your graveyard. If a spell cast this way would be put into your graveyard, exile it instead.\""
 
-    // +1: Add {R}{R}{R}
-    // TODO: "Spend this mana only to cast instant or sorcery spells" restriction not yet enforced
+    // +1: Add {R}{R}{R}. Spend this mana only to cast instant or sorcery spells.
     loyaltyAbility(+1) {
         description = "+1: Add {R}{R}{R}. Spend this mana only to cast instant or sorcery spells."
-        effect = AddManaEffect(Color.RED, 3)
+        effect = AddManaEffect(Color.RED, 3, ManaRestriction.InstantOrSorceryOnly)
     }
 
     // +1: Discard up to three cards, then draw that many cards

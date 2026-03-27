@@ -17,6 +17,7 @@ import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.values.EntityNumericProperty
+import com.wingedsheep.sdk.scripting.effects.ManaRestriction
 import com.wingedsheep.sdk.scripting.values.EntityReference
 
 /**
@@ -32,8 +33,6 @@ import com.wingedsheep.sdk.scripting.values.EntityReference
  * to cast creature spells with mana value 4 or greater or creature spells with {X}
  * in their mana costs.
  *
- * Note: The mana spending restriction is not yet enforced — the engine does not
- * support mana spending restrictions. The mana is produced as unrestricted.
  */
 val HelgaSkittishSeer = card("Helga, Skittish Seer") {
     manaCost = "{G}{W}{U}"
@@ -72,12 +71,11 @@ val HelgaSkittishSeer = card("Helga, Skittish Seer") {
             DynamicAmount.EntityProperty(
                 EntityReference.Source,
                 EntityNumericProperty.Power
-            )
+            ),
+            ManaRestriction.CreatureMV4OrXCost
         )
         manaAbility = true
         timing = TimingRule.ManaAbility
-        // TODO: "Spend this mana only to cast creature spells with mana value 4 or greater
-        //  or creature spells with {X} in their mana costs" restriction not yet enforced
     }
 
     metadata {

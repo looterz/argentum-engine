@@ -31,7 +31,12 @@ class AddManaExecutor(
 
         val newState = state.updateEntity(context.controllerId) { container ->
             val manaPool = container.get<ManaPoolComponent>() ?: ManaPoolComponent()
-            container.with(manaPool.add(effect.color, amount))
+            val updatedPool = if (effect.restriction != null) {
+                manaPool.addRestricted(effect.color, amount, effect.restriction!!)
+            } else {
+                manaPool.add(effect.color, amount)
+            }
+            container.with(updatedPool)
         }
 
         return ExecutionResult.success(newState)

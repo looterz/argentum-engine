@@ -21,13 +21,17 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class AddManaEffect(
     val color: Color,
-    val amount: DynamicAmount = DynamicAmount.Fixed(1)
+    val amount: DynamicAmount = DynamicAmount.Fixed(1),
+    val restriction: ManaRestriction? = null
 ) : Effect {
-    constructor(color: Color, amount: Int) : this(color, DynamicAmount.Fixed(amount))
+    constructor(color: Color, amount: Int, restriction: ManaRestriction? = null) : this(color, DynamicAmount.Fixed(amount), restriction)
 
-    override val description: String = when (val a = amount) {
-        is DynamicAmount.Fixed -> "Add ${"{${color.symbol}}".repeat(a.amount)}"
-        else -> "Add {${color.symbol}} for each ${a.description}"
+    override val description: String = buildString {
+        append(when (val a = amount) {
+            is DynamicAmount.Fixed -> "Add ${"{${color.symbol}}".repeat(a.amount)}"
+            else -> "Add {${color.symbol}} for each ${a.description}"
+        })
+        if (restriction != null) append(". ${restriction.description}")
     }
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
@@ -42,13 +46,17 @@ data class AddManaEffect(
 @SerialName("AddColorlessMana")
 @Serializable
 data class AddColorlessManaEffect(
-    val amount: DynamicAmount
+    val amount: DynamicAmount,
+    val restriction: ManaRestriction? = null
 ) : Effect {
-    constructor(amount: Int) : this(DynamicAmount.Fixed(amount))
+    constructor(amount: Int, restriction: ManaRestriction? = null) : this(DynamicAmount.Fixed(amount), restriction)
 
-    override val description: String = when (val a = amount) {
-        is DynamicAmount.Fixed -> "Add ${"{C}".repeat(a.amount)}"
-        else -> "Add an amount of {C} equal to ${a.description}"
+    override val description: String = buildString {
+        append(when (val a = amount) {
+            is DynamicAmount.Fixed -> "Add ${"{C}".repeat(a.amount)}"
+            else -> "Add an amount of {C} equal to ${a.description}"
+        })
+        if (restriction != null) append(". ${restriction.description}")
     }
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
@@ -64,17 +72,21 @@ data class AddColorlessManaEffect(
 @SerialName("AddAnyColorMana")
 @Serializable
 data class AddAnyColorManaEffect(
-    val amount: DynamicAmount = DynamicAmount.Fixed(1)
+    val amount: DynamicAmount = DynamicAmount.Fixed(1),
+    val restriction: ManaRestriction? = null
 ) : Effect {
-    constructor(amount: Int) : this(DynamicAmount.Fixed(amount))
+    constructor(amount: Int, restriction: ManaRestriction? = null) : this(DynamicAmount.Fixed(amount), restriction)
 
-    override val description: String = when (val a = amount) {
-        is DynamicAmount.Fixed -> if (a.amount == 1) {
-            "Add one mana of any color"
-        } else {
-            "Add ${a.amount} mana of any color"
-        }
-        else -> "Add ${a.description} mana of any color"
+    override val description: String = buildString {
+        append(when (val a = amount) {
+            is DynamicAmount.Fixed -> if (a.amount == 1) {
+                "Add one mana of any color"
+            } else {
+                "Add ${a.amount} mana of any color"
+            }
+            else -> "Add ${a.description} mana of any color"
+        })
+        if (restriction != null) append(". ${restriction.description}")
     }
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
@@ -91,12 +103,14 @@ data class AddAnyColorManaEffect(
 @Serializable
 data class AddDynamicManaEffect(
     val amountSource: DynamicAmount,
-    val allowedColors: Set<Color>
+    val allowedColors: Set<Color>,
+    val restriction: ManaRestriction? = null
 ) : Effect {
     override val description: String = buildString {
         append("Add X mana in any combination of ")
         append(allowedColors.joinToString(" and/or ") { "{${it.symbol}}" })
         append(", where X is ${amountSource.description}")
+        if (restriction != null) append(". ${restriction.description}")
     }
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect {
@@ -118,9 +132,13 @@ data class AddDynamicManaEffect(
 @SerialName("AddManaOfColorAmong")
 @Serializable
 data class AddManaOfColorAmongEffect(
-    val filter: GameObjectFilter
+    val filter: GameObjectFilter,
+    val restriction: ManaRestriction? = null
 ) : Effect {
-    override val description: String = "Add one mana of any color among matching permanents you control"
+    override val description: String = buildString {
+        append("Add one mana of any color among matching permanents you control")
+        if (restriction != null) append(". ${restriction.description}")
+    }
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
 }

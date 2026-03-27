@@ -11,6 +11,7 @@ import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.core.CardsDiscardedEvent
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.ManaSpentEvent
+import com.wingedsheep.engine.mechanics.mana.SpellPaymentContext
 import com.wingedsheep.engine.core.PaymentStrategy
 import com.wingedsheep.engine.core.PermanentsSacrificedEvent
 import com.wingedsheep.engine.core.TappedEvent
@@ -322,9 +323,21 @@ class CastSpellHandler(
     private fun validatePayment(state: GameState, action: CastSpell, cost: ManaCost): String? {
         val xValue = action.xValue ?: 0
 
+        // Build spell context for conditional mana validation
+        val cardComponent = state.getEntity(action.cardId)?.get<CardComponent>()
+        val spellCtx = if (cardComponent != null) {
+            SpellPaymentContext(
+                isInstantOrSorcery = cardComponent.typeLine.isInstant || cardComponent.typeLine.isSorcery,
+                isKicked = action.wasKicked,
+                isCreature = cardComponent.typeLine.isCreature,
+                manaValue = cardComponent.manaCost.cmc,
+                hasXInCost = cardComponent.manaCost.hasX
+            )
+        } else null
+
         return when (action.paymentStrategy) {
             is PaymentStrategy.AutoPay -> {
-                if (!manaSolver.canPay(state, action.playerId, cost, xValue)) {
+                if (!manaSolver.canPay(state, action.playerId, cost, xValue, spellContext = spellCtx)) {
                     "Not enough mana to cast this spell"
                 } else null
             }
@@ -337,9 +350,10 @@ class CastSpellHandler(
                     black = poolComponent.black,
                     red = poolComponent.red,
                     green = poolComponent.green,
-                    colorless = poolComponent.colorless
+                    colorless = poolComponent.colorless,
+                    restrictedMana = poolComponent.restrictedMana
                 )
-                if (!costHandler.canPayManaCost(pool, cost)) {
+                if (!pool.canPay(cost, spellCtx)) {
                     "Insufficient mana in pool to cast this spell"
                 } else null
             }
@@ -800,8 +814,17 @@ class CastSpellHandler(
             events.addAll(altPaymentResult.events)
         }
 
+        // Build spell context for conditional mana restrictions
+        val spellContext = SpellPaymentContext(
+            isInstantOrSorcery = cardComponent.typeLine.isInstant || cardComponent.typeLine.isSorcery,
+            isKicked = action.wasKicked,
+            isCreature = cardComponent.typeLine.isCreature,
+            manaValue = cardComponent.manaCost.cmc,
+            hasXInCost = cardComponent.manaCost.hasX
+        )
+
         // Handle mana payment via dedicated processor
-        val paymentResult = paymentProcessor.processPayment(currentState, action, effectiveCost, cardComponent.name, xValue)
+        val paymentResult = paymentProcessor.processPayment(currentState, action, effectiveCost, cardComponent.name, xValue, spellContext)
         if (paymentResult.error != null) {
             return ExecutionResult.error(currentState, paymentResult.error)
         }

@@ -3,12 +3,34 @@ package com.wingedsheep.engine.mechanics.mana
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.ManaSymbol
+import com.wingedsheep.sdk.scripting.effects.ManaRestriction
+import com.wingedsheep.engine.state.components.player.RestrictedManaEntry
 import kotlinx.serialization.Serializable
 
 /**
  * Represents a player's mana pool.
  * Tracks available mana that can be spent on costs.
  */
+/**
+ * Context about the spell being cast, used to evaluate mana spending restrictions.
+ */
+data class SpellPaymentContext(
+    val isInstantOrSorcery: Boolean = false,
+    val isKicked: Boolean = false,
+    val isCreature: Boolean = false,
+    val manaValue: Int = 0,
+    val hasXInCost: Boolean = false
+)
+
+/**
+ * Check whether a mana restriction is satisfied by the spell being cast.
+ */
+fun ManaRestriction.isSatisfiedBy(context: SpellPaymentContext): Boolean = when (this) {
+    is ManaRestriction.InstantOrSorceryOnly -> context.isInstantOrSorcery
+    is ManaRestriction.KickedSpellsOnly -> context.isKicked
+    is ManaRestriction.CreatureMV4OrXCost -> context.isCreature && (context.manaValue >= 4 || context.hasXInCost)
+}
+
 @Serializable
 data class ManaPool(
     val white: Int = 0,
@@ -16,7 +38,8 @@ data class ManaPool(
     val black: Int = 0,
     val red: Int = 0,
     val green: Int = 0,
-    val colorless: Int = 0
+    val colorless: Int = 0,
+    val restrictedMana: List<RestrictedManaEntry> = emptyList()
 ) {
     /**
      * Get amount of mana for a specific color.
@@ -32,12 +55,20 @@ data class ManaPool(
     /**
      * Total mana in the pool.
      */
+    /**
+     * Total unrestricted mana in the pool (does not include restricted mana).
+     */
     val total: Int get() = white + blue + black + red + green + colorless
 
     /**
-     * Check if the pool is empty.
+     * Total mana including restricted mana eligible for a given spell context.
      */
-    fun isEmpty(): Boolean = total == 0
+    fun totalForSpell(context: SpellPaymentContext): Int = total + getTotalEligibleRestricted(context)
+
+    /**
+     * Check if the pool is empty (including restricted mana).
+     */
+    fun isEmpty(): Boolean = total == 0 && restrictedMana.isEmpty()
 
     /**
      * Add mana of a specific color.
@@ -54,6 +85,36 @@ data class ManaPool(
      * Add colorless mana.
      */
     fun addColorless(amount: Int = 1): ManaPool = copy(colorless = colorless + amount)
+
+    /**
+     * Add restricted mana to the pool.
+     */
+    fun addRestricted(color: Color?, amount: Int, restriction: ManaRestriction): ManaPool {
+        val entries = (1..amount).map { RestrictedManaEntry(color, restriction) }
+        return copy(restrictedMana = restrictedMana + entries)
+    }
+
+    /**
+     * Spend one unit of restricted mana matching the given color and whose restriction is satisfied by the spell context.
+     * Returns null if no matching restricted mana is available.
+     */
+    fun spendRestricted(color: Color?, context: SpellPaymentContext): ManaPool? {
+        val index = restrictedMana.indexOfFirst { it.color == color && it.restriction.isSatisfiedBy(context) }
+        if (index == -1) return null
+        return copy(restrictedMana = restrictedMana.toMutableList().apply { removeAt(index) })
+    }
+
+    /**
+     * Count eligible restricted mana of a given color for a spell.
+     */
+    fun getEligibleRestrictedCount(color: Color?, context: SpellPaymentContext): Int =
+        restrictedMana.count { it.color == color && it.restriction.isSatisfiedBy(context) }
+
+    /**
+     * Count all eligible restricted mana (any color) for a spell.
+     */
+    fun getTotalEligibleRestricted(context: SpellPaymentContext): Int =
+        restrictedMana.count { it.restriction.isSatisfiedBy(context) }
 
     /**
      * Remove mana of a specific color.
@@ -80,18 +141,19 @@ data class ManaPool(
 
     /**
      * Check if this pool can pay a mana cost.
+     * When [spellContext] is provided, eligible restricted mana is considered (spent first).
      */
-    fun canPay(cost: ManaCost): Boolean {
+    fun canPay(cost: ManaCost, spellContext: SpellPaymentContext? = null): Boolean {
         var remaining = this
 
-        // First, pay colored costs
+        // First, pay colored costs — try restricted mana first, then unrestricted
         for (symbol in cost.symbols) {
             when (symbol) {
                 is ManaSymbol.Colored -> {
-                    remaining = remaining.spend(symbol.color) ?: return false
+                    remaining = remaining.trySpendColored(symbol.color, spellContext) ?: return false
                 }
                 is ManaSymbol.Colorless -> {
-                    remaining = remaining.spendColorless() ?: return false
+                    remaining = remaining.trySpendColorless(spellContext) ?: return false
                 }
                 is ManaSymbol.Generic -> {
                     // Will handle in second pass
@@ -100,42 +162,68 @@ data class ManaPool(
                     // X is 0 unless specified otherwise
                 }
                 is ManaSymbol.Hybrid -> {
-                    // Try first color, then second
-                    val spent = remaining.spend(symbol.color1)
-                        ?: remaining.spend(symbol.color2)
+                    val spent = remaining.trySpendColored(symbol.color1, spellContext)
+                        ?: remaining.trySpendColored(symbol.color2, spellContext)
                         ?: return false
                     remaining = spent
                 }
                 is ManaSymbol.Phyrexian -> {
-                    // Can be paid with color or 2 life - for now just check color
-                    remaining = remaining.spend(symbol.color) ?: return false
+                    remaining = remaining.trySpendColored(symbol.color, spellContext) ?: return false
                 }
             }
         }
 
-        // Then, pay generic costs with any remaining mana
+        // Then, pay generic costs with any remaining mana (restricted first, then unrestricted)
         val genericAmount = cost.genericAmount
-        if (remaining.total < genericAmount) return false
+        val availableForGeneric = if (spellContext != null) {
+            remaining.total + remaining.getTotalEligibleRestricted(spellContext)
+        } else {
+            remaining.total
+        }
+        if (availableForGeneric < genericAmount) return false
 
         return true
     }
 
     /**
-     * Pay a mana cost, returning the new pool or null if can't pay.
+     * Try to spend one colored mana, preferring eligible restricted mana first.
      */
-    fun pay(cost: ManaCost): ManaPool? {
-        if (!canPay(cost)) return null
+    private fun trySpendColored(color: Color, spellContext: SpellPaymentContext?): ManaPool? {
+        if (spellContext != null) {
+            val fromRestricted = spendRestricted(color, spellContext)
+            if (fromRestricted != null) return fromRestricted
+        }
+        return spend(color)
+    }
+
+    /**
+     * Try to spend one colorless mana, preferring eligible restricted mana first.
+     */
+    private fun trySpendColorless(spellContext: SpellPaymentContext?): ManaPool? {
+        if (spellContext != null) {
+            val fromRestricted = spendRestricted(null, spellContext)
+            if (fromRestricted != null) return fromRestricted
+        }
+        return spendColorless()
+    }
+
+    /**
+     * Pay a mana cost, returning the new pool or null if can't pay.
+     * When [spellContext] is provided, eligible restricted mana is spent first.
+     */
+    fun pay(cost: ManaCost, spellContext: SpellPaymentContext? = null): ManaPool? {
+        if (!canPay(cost, spellContext)) return null
 
         var remaining = this
 
-        // Pay colored costs
+        // Pay colored costs — restricted first, then unrestricted
         for (symbol in cost.symbols) {
             when (symbol) {
                 is ManaSymbol.Colored -> {
-                    remaining = remaining.spend(symbol.color)!!
+                    remaining = remaining.trySpendColored(symbol.color, spellContext)!!
                 }
                 is ManaSymbol.Colorless -> {
-                    remaining = remaining.spendColorless()!!
+                    remaining = remaining.trySpendColorless(spellContext)!!
                 }
                 is ManaSymbol.Generic -> {
                     // Will handle separately
@@ -144,23 +232,34 @@ data class ManaPool(
                     // Handled by caller
                 }
                 is ManaSymbol.Hybrid -> {
-                    remaining = remaining.spend(symbol.color1)
-                        ?: remaining.spend(symbol.color2)!!
+                    remaining = remaining.trySpendColored(symbol.color1, spellContext)
+                        ?: remaining.trySpendColored(symbol.color2, spellContext)!!
                 }
                 is ManaSymbol.Phyrexian -> {
-                    remaining = remaining.spend(symbol.color)!!
+                    remaining = remaining.trySpendColored(symbol.color, spellContext)!!
                 }
             }
         }
 
-        // Pay generic costs - spend colorless first, then any color
+        // Pay generic costs - spend eligible restricted first, then colorless, then colored
         var genericRemaining = cost.genericAmount
+
+        // Spend eligible restricted mana for generic costs (any color)
+        if (spellContext != null) {
+            for (entry in remaining.restrictedMana.toList()) {
+                if (genericRemaining <= 0) break
+                if (entry.restriction.isSatisfiedBy(spellContext)) {
+                    remaining = remaining.spendRestricted(entry.color, spellContext)!!
+                    genericRemaining--
+                }
+            }
+        }
+
         while (genericRemaining > 0 && remaining.colorless > 0) {
             remaining = remaining.spendColorless()!!
             genericRemaining--
         }
 
-        // Spend colored mana for remaining generic
         for (color in Color.entries) {
             while (genericRemaining > 0 && remaining.get(color) > 0) {
                 remaining = remaining.spend(color)!!
@@ -184,8 +283,9 @@ data class ManaPool(
      * Pay as much of a mana cost as possible from this pool.
      * Returns the new pool, the remaining unpaid cost, and the mana that was spent.
      * This is used for AutoPay to use floating mana before tapping lands.
+     * When [spellContext] is provided, eligible restricted mana is spent first.
      */
-    fun payPartial(cost: ManaCost): PartialPaymentResult {
+    fun payPartial(cost: ManaCost, spellContext: SpellPaymentContext? = null): PartialPaymentResult {
         var remaining = this
         val unpaidSymbols = mutableListOf<ManaSymbol>()
 
@@ -197,26 +297,30 @@ data class ManaPool(
         var greenSpent = 0
         var colorlessSpent = 0
 
-        // Try to pay colored costs first
+        fun trackColorSpent(color: Color) {
+            when (color) {
+                Color.WHITE -> whiteSpent++
+                Color.BLUE -> blueSpent++
+                Color.BLACK -> blackSpent++
+                Color.RED -> redSpent++
+                Color.GREEN -> greenSpent++
+            }
+        }
+
+        // Try to pay colored costs first — restricted mana preferred
         for (symbol in cost.symbols) {
             when (symbol) {
                 is ManaSymbol.Colored -> {
-                    val spent = remaining.spend(symbol.color)
+                    val spent = remaining.trySpendColored(symbol.color, spellContext)
                     if (spent != null) {
                         remaining = spent
-                        when (symbol.color) {
-                            Color.WHITE -> whiteSpent++
-                            Color.BLUE -> blueSpent++
-                            Color.BLACK -> blackSpent++
-                            Color.RED -> redSpent++
-                            Color.GREEN -> greenSpent++
-                        }
+                        trackColorSpent(symbol.color)
                     } else {
                         unpaidSymbols.add(symbol)
                     }
                 }
                 is ManaSymbol.Colorless -> {
-                    val spent = remaining.spendColorless()
+                    val spent = remaining.trySpendColorless(spellContext)
                     if (spent != null) {
                         remaining = spent
                         colorlessSpent++
@@ -225,54 +329,38 @@ data class ManaPool(
                     }
                 }
                 is ManaSymbol.Hybrid -> {
-                    val spent = remaining.spend(symbol.color1)
-                        ?: remaining.spend(symbol.color2)
+                    val beforeRemaining = remaining
+                    val spent = remaining.trySpendColored(symbol.color1, spellContext)
+                        ?: remaining.trySpendColored(symbol.color2, spellContext)
                     if (spent != null) {
-                        remaining = spent
-                        // Track which color was used
-                        val usedColor1 = this.get(symbol.color1) > remaining.get(symbol.color1)
-                        if (usedColor1) {
-                            when (symbol.color1) {
-                                Color.WHITE -> whiteSpent++
-                                Color.BLUE -> blueSpent++
-                                Color.BLACK -> blackSpent++
-                                Color.RED -> redSpent++
-                                Color.GREEN -> greenSpent++
-                            }
+                        // Determine which color was used by checking what changed
+                        val color1Before = beforeRemaining.get(symbol.color1) +
+                            beforeRemaining.restrictedMana.count { it.color == symbol.color1 }
+                        val color1After = spent.get(symbol.color1) +
+                            spent.restrictedMana.count { it.color == symbol.color1 }
+                        if (color1Before > color1After) {
+                            trackColorSpent(symbol.color1)
                         } else {
-                            when (symbol.color2) {
-                                Color.WHITE -> whiteSpent++
-                                Color.BLUE -> blueSpent++
-                                Color.BLACK -> blackSpent++
-                                Color.RED -> redSpent++
-                                Color.GREEN -> greenSpent++
-                            }
+                            trackColorSpent(symbol.color2)
                         }
+                        remaining = spent
                     } else {
                         unpaidSymbols.add(symbol)
                     }
                 }
                 is ManaSymbol.Phyrexian -> {
-                    val spent = remaining.spend(symbol.color)
+                    val spent = remaining.trySpendColored(symbol.color, spellContext)
                     if (spent != null) {
                         remaining = spent
-                        when (symbol.color) {
-                            Color.WHITE -> whiteSpent++
-                            Color.BLUE -> blueSpent++
-                            Color.BLACK -> blackSpent++
-                            Color.RED -> redSpent++
-                            Color.GREEN -> greenSpent++
-                        }
+                        trackColorSpent(symbol.color)
                     } else {
                         unpaidSymbols.add(symbol)
                     }
                 }
                 is ManaSymbol.Generic -> {
-                    // Add to unpaid for now, will handle below
                     unpaidSymbols.add(symbol)
                 }
                 is ManaSymbol.X -> {
-                    // X is handled by caller
                     unpaidSymbols.add(symbol)
                 }
             }
@@ -281,6 +369,21 @@ data class ManaPool(
         // Now pay generic costs with remaining mana
         var genericRemaining = unpaidSymbols.filterIsInstance<ManaSymbol.Generic>().sumOf { it.amount }
         unpaidSymbols.removeAll { it is ManaSymbol.Generic }
+
+        // Spend eligible restricted mana for generic costs first
+        if (spellContext != null) {
+            for (entry in remaining.restrictedMana.toList()) {
+                if (genericRemaining <= 0) break
+                if (entry.restriction.isSatisfiedBy(spellContext)) {
+                    val spent = remaining.spendRestricted(entry.color, spellContext)
+                    if (spent != null) {
+                        remaining = spent
+                        if (entry.color != null) trackColorSpent(entry.color) else colorlessSpent++
+                        genericRemaining--
+                    }
+                }
+            }
+        }
 
         // Spend colorless first for generic
         while (genericRemaining > 0 && remaining.colorless > 0) {
@@ -293,13 +396,7 @@ data class ManaPool(
         for (color in Color.entries) {
             while (genericRemaining > 0 && remaining.get(color) > 0) {
                 remaining = remaining.spend(color)!!
-                when (color) {
-                    Color.WHITE -> whiteSpent++
-                    Color.BLUE -> blueSpent++
-                    Color.BLACK -> blackSpent++
-                    Color.RED -> redSpent++
-                    Color.GREEN -> greenSpent++
-                }
+                trackColorSpent(color)
                 genericRemaining--
             }
         }

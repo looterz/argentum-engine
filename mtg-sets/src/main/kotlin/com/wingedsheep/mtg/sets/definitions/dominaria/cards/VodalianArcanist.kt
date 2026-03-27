@@ -5,6 +5,7 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.TimingRule
+import com.wingedsheep.sdk.scripting.effects.ManaRestriction
 
 /**
  * Vodalian Arcanist
@@ -13,8 +14,6 @@ import com.wingedsheep.sdk.scripting.TimingRule
  * 1/3
  * {T}: Add {C}. Spend this mana only to cast an instant or sorcery spell.
  *
- * Note: The "spend this mana only to cast an instant or sorcery spell" restriction
- * is not yet enforced — the engine does not support mana spending restrictions.
  */
 val VodalianArcanist = card("Vodalian Arcanist") {
     manaCost = "{1}{U}"
@@ -25,10 +24,9 @@ val VodalianArcanist = card("Vodalian Arcanist") {
 
     activatedAbility {
         cost = AbilityCost.Tap
-        effect = Effects.AddColorlessMana(1)
+        effect = Effects.AddColorlessMana(1, ManaRestriction.InstantOrSorceryOnly)
         manaAbility = true
         timing = TimingRule.ManaAbility
-        // TODO: "Spend this mana only to cast an instant or sorcery spell" restriction not yet enforced
     }
 
     metadata {

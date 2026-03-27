@@ -14,6 +14,9 @@ import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.engine.mechanics.mana.ManaPool
+import com.wingedsheep.engine.mechanics.mana.SpellPaymentContext
+import com.wingedsheep.engine.mechanics.mana.isSatisfiedBy
+import com.wingedsheep.engine.state.components.player.RestrictedManaEntry
 
 /**
  * Result of a mana payment attempt.
@@ -32,16 +35,37 @@ class CastPaymentProcessor(
     private val manaSolver: ManaSolver,
     private val costHandler: CostHandler
 ) {
+    private fun toManaPool(component: ManaPoolComponent) = ManaPool(
+        white = component.white,
+        blue = component.blue,
+        black = component.black,
+        red = component.red,
+        green = component.green,
+        colorless = component.colorless,
+        restrictedMana = component.restrictedMana
+    )
+
+    private fun toComponent(pool: ManaPool) = ManaPoolComponent(
+        white = pool.white,
+        blue = pool.blue,
+        black = pool.black,
+        red = pool.red,
+        green = pool.green,
+        colorless = pool.colorless,
+        restrictedMana = pool.restrictedMana
+    )
+
     fun processPayment(
         state: GameState,
         action: com.wingedsheep.engine.core.CastSpell,
         effectiveCost: ManaCost,
         cardName: String,
-        xValue: Int
+        xValue: Int,
+        spellContext: SpellPaymentContext? = null
     ): PaymentResult {
         return when (action.paymentStrategy) {
-            is PaymentStrategy.FromPool -> payFromPool(state, action.playerId, effectiveCost, cardName, xValue)
-            is PaymentStrategy.AutoPay -> autoPay(state, action.playerId, effectiveCost, cardName, xValue)
+            is PaymentStrategy.FromPool -> payFromPool(state, action.playerId, effectiveCost, cardName, xValue, spellContext)
+            is PaymentStrategy.AutoPay -> autoPay(state, action.playerId, effectiveCost, cardName, xValue, spellContext)
             is PaymentStrategy.Explicit -> explicitPay(state, action.paymentStrategy, cardName)
         }
     }
@@ -51,24 +75,22 @@ class CastPaymentProcessor(
         playerId: EntityId,
         cost: ManaCost,
         cardName: String,
-        xValue: Int
+        xValue: Int,
+        spellContext: SpellPaymentContext? = null
     ): PaymentResult {
         val poolComponent = state.getEntity(playerId)?.get<ManaPoolComponent>()
             ?: ManaPoolComponent()
-        val pool = ManaPool(
-            white = poolComponent.white,
-            blue = poolComponent.blue,
-            black = poolComponent.black,
-            red = poolComponent.red,
-            green = poolComponent.green,
-            colorless = poolComponent.colorless
-        )
+        val pool = toManaPool(poolComponent)
 
         // Pay base cost first
-        var poolAfterPayment = costHandler.payManaCost(pool, cost)
+        var poolAfterPayment = costHandler.payManaCost(pool, cost, spellContext)
             ?: return PaymentResult(state, emptyList(), "Insufficient mana in pool")
 
-        // Track mana spent for the event
+        // Track mana spent for the event (unrestricted only — restricted changes tracked by count difference)
+        val unrestrictedBefore = ManaPool(poolComponent.white, poolComponent.blue, poolComponent.black, poolComponent.red, poolComponent.green, poolComponent.colorless)
+        val unrestrictedAfter = ManaPool(poolAfterPayment.white, poolAfterPayment.blue, poolAfterPayment.black, poolAfterPayment.red, poolAfterPayment.green, poolAfterPayment.colorless)
+        val restrictedSpent = poolComponent.restrictedMana.size - poolAfterPayment.restrictedMana.size
+
         var whiteSpent = poolComponent.white - poolAfterPayment.white
         var blueSpent = poolComponent.blue - poolAfterPayment.blue
         var blackSpent = poolComponent.black - poolAfterPayment.black
@@ -76,9 +98,41 @@ class CastPaymentProcessor(
         var greenSpent = poolComponent.green - poolAfterPayment.green
         var colorlessSpent = poolComponent.colorless - poolAfterPayment.colorless
 
+        // Count restricted mana spent by color for tracking
+        val restrictedSpentByColor = countRestrictedSpentByColor(poolComponent.restrictedMana, poolAfterPayment.restrictedMana)
+        whiteSpent += restrictedSpentByColor.getOrDefault(Color.WHITE, 0)
+        blueSpent += restrictedSpentByColor.getOrDefault(Color.BLUE, 0)
+        blackSpent += restrictedSpentByColor.getOrDefault(Color.BLACK, 0)
+        redSpent += restrictedSpentByColor.getOrDefault(Color.RED, 0)
+        greenSpent += restrictedSpentByColor.getOrDefault(Color.GREEN, 0)
+        colorlessSpent += restrictedSpentByColor.getOrDefault(null, 0)
+
         // Pay for X from remaining pool (multiply by X symbol count for XX costs)
         val xSymbolCount = cost.xCount.coerceAtLeast(1)
         var xRemainingToPay = xValue * xSymbolCount
+
+        // Spend eligible restricted mana for X first
+        if (spellContext != null) {
+            for (entry in poolAfterPayment.restrictedMana.toList()) {
+                if (xRemainingToPay <= 0) break
+                if (entry.restriction.isSatisfiedBy(spellContext)) {
+                    val spent = poolAfterPayment.spendRestricted(entry.color, spellContext)
+                    if (spent != null) {
+                        poolAfterPayment = spent
+                        if (entry.color != null) {
+                            when (entry.color) {
+                                Color.WHITE -> whiteSpent++
+                                Color.BLUE -> blueSpent++
+                                Color.BLACK -> blackSpent++
+                                Color.RED -> redSpent++
+                                Color.GREEN -> greenSpent++
+                            }
+                        } else colorlessSpent++
+                        xRemainingToPay--
+                    }
+                }
+            }
+        }
 
         // Spend colorless first for X
         while (xRemainingToPay > 0 && poolAfterPayment.colorless > 0) {
@@ -108,16 +162,7 @@ class CastPaymentProcessor(
         }
 
         val newState = state.updateEntity(playerId) { container ->
-            container.with(
-                ManaPoolComponent(
-                    white = poolAfterPayment.white,
-                    blue = poolAfterPayment.blue,
-                    black = poolAfterPayment.black,
-                    red = poolAfterPayment.red,
-                    green = poolAfterPayment.green,
-                    colorless = poolAfterPayment.colorless
-                )
-            )
+            container.with(toComponent(poolAfterPayment))
         }
 
         val event = ManaSpentEvent(
@@ -139,7 +184,8 @@ class CastPaymentProcessor(
         playerId: EntityId,
         cost: ManaCost,
         cardName: String,
-        xValue: Int
+        xValue: Int,
+        spellContext: SpellPaymentContext? = null
     ): PaymentResult {
         var currentState = state
         val events = mutableListOf<GameEvent>()
@@ -147,16 +193,9 @@ class CastPaymentProcessor(
         // Use floating mana first
         val poolComponent = state.getEntity(playerId)?.get<ManaPoolComponent>()
             ?: ManaPoolComponent()
-        val pool = ManaPool(
-            white = poolComponent.white,
-            blue = poolComponent.blue,
-            black = poolComponent.black,
-            red = poolComponent.red,
-            green = poolComponent.green,
-            colorless = poolComponent.colorless
-        )
+        val pool = toManaPool(poolComponent)
 
-        val partialResult = pool.payPartial(cost)
+        val partialResult = pool.payPartial(cost, spellContext)
         var poolAfterPayment = partialResult.newPool
         val remainingCost = partialResult.remainingCost
         val manaSpentFromPool = partialResult.manaSpent
@@ -171,6 +210,29 @@ class CastPaymentProcessor(
         // Use remaining floating mana for X cost (multiply by X symbol count for XX costs)
         val xSymbolCount = cost.xCount.coerceAtLeast(1)
         var xRemainingToPay = xValue * xSymbolCount
+
+        // Spend eligible restricted mana for X first
+        if (spellContext != null) {
+            for (entry in poolAfterPayment.restrictedMana.toList()) {
+                if (xRemainingToPay <= 0) break
+                if (entry.restriction.isSatisfiedBy(spellContext)) {
+                    val spent = poolAfterPayment.spendRestricted(entry.color, spellContext)
+                    if (spent != null) {
+                        poolAfterPayment = spent
+                        if (entry.color != null) {
+                            when (entry.color) {
+                                Color.WHITE -> whiteSpent++
+                                Color.BLUE -> blueSpent++
+                                Color.BLACK -> blackSpent++
+                                Color.RED -> redSpent++
+                                Color.GREEN -> greenSpent++
+                            }
+                        } else colorlessSpent++
+                        xRemainingToPay--
+                    }
+                }
+            }
+        }
 
         // Spend colorless first for X
         while (xRemainingToPay > 0 && poolAfterPayment.colorless > 0) {
@@ -195,21 +257,12 @@ class CastPaymentProcessor(
         }
 
         currentState = currentState.updateEntity(playerId) { container ->
-            container.with(
-                ManaPoolComponent(
-                    white = poolAfterPayment.white,
-                    blue = poolAfterPayment.blue,
-                    black = poolAfterPayment.black,
-                    red = poolAfterPayment.red,
-                    green = poolAfterPayment.green,
-                    colorless = poolAfterPayment.colorless
-                )
-            )
+            container.with(toComponent(poolAfterPayment))
         }
 
         // Tap lands for remaining cost (using xRemainingToPay instead of full xValue)
         if (!remainingCost.isEmpty() || xRemainingToPay > 0) {
-            val solution = manaSolver.solve(currentState, playerId, remainingCost, xRemainingToPay)
+            val solution = manaSolver.solve(currentState, playerId, remainingCost, xRemainingToPay, spellContext = spellContext)
                 ?: return PaymentResult(currentState, events, "Not enough mana to auto-pay")
 
             for (source in solution.sources) {
@@ -277,5 +330,19 @@ class CastPaymentProcessor(
         }
 
         return PaymentResult(currentState, events, null)
+    }
+
+    /**
+     * Count restricted mana spent by color by comparing before/after restricted mana lists.
+     */
+    private fun countRestrictedSpentByColor(
+        before: List<RestrictedManaEntry>,
+        after: List<RestrictedManaEntry>
+    ): Map<Color?, Int> {
+        val beforeCounts = before.groupingBy { it.color }.eachCount()
+        val afterCounts = after.groupingBy { it.color }.eachCount()
+        return beforeCounts.mapValues { (color, count) ->
+            count - (afterCounts[color] ?: 0)
+        }.filter { it.value > 0 }
     }
 }

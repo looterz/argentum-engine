@@ -31,7 +31,12 @@ class AddColorlessManaExecutor(
 
         val newState = state.updateEntity(context.controllerId) { container ->
             val manaPool = container.get<ManaPoolComponent>() ?: ManaPoolComponent()
-            container.with(manaPool.addColorless(amount))
+            val updatedPool = if (effect.restriction != null) {
+                manaPool.addRestricted(null, amount, effect.restriction!!)
+            } else {
+                manaPool.addColorless(amount)
+            }
+            container.with(updatedPool)
         }
 
         return ExecutionResult.success(newState)

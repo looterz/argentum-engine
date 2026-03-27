@@ -6,6 +6,7 @@ import com.wingedsheep.engine.core.CardsDiscardedEvent
 import com.wingedsheep.engine.core.PermanentsSacrificedEvent
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.mechanics.mana.ManaPool
+import com.wingedsheep.engine.mechanics.mana.SpellPaymentContext
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.AttachedToComponent
@@ -45,8 +46,8 @@ class CostHandler(
      * Pay a mana cost from a player's mana pool.
      * Returns the new mana pool or null if can't pay.
      */
-    fun payManaCost(manaPool: ManaPool, cost: ManaCost): ManaPool? {
-        return manaPool.pay(cost)
+    fun payManaCost(manaPool: ManaPool, cost: ManaCost, spellContext: SpellPaymentContext? = null): ManaPool? {
+        return manaPool.pay(cost, spellContext)
     }
 
     /**

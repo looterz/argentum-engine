@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.scripting.effects.AddAnyColorManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddColorlessManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddDynamicManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaOfColorAmongEffect
+import com.wingedsheep.sdk.scripting.effects.ManaRestriction
 import com.wingedsheep.sdk.scripting.effects.AddCardTypeEffect
 import com.wingedsheep.sdk.scripting.effects.AddCountersEffect
 import com.wingedsheep.sdk.scripting.effects.AddDynamicCountersEffect
@@ -632,54 +633,54 @@ object Effects {
     /**
      * Add mana of a specific color.
      */
-    fun AddMana(color: Color, amount: Int = 1): Effect =
-        AddManaEffect(color, amount)
+    fun AddMana(color: Color, amount: Int = 1, restriction: ManaRestriction? = null): Effect =
+        AddManaEffect(color, amount, restriction)
 
     /**
      * Add a dynamic amount of mana of a specific color.
      * Used for effects like "Add {R} for each Goblin on the battlefield."
      */
-    fun AddMana(color: Color, amount: DynamicAmount): Effect =
-        AddManaEffect(color, amount)
+    fun AddMana(color: Color, amount: DynamicAmount, restriction: ManaRestriction? = null): Effect =
+        AddManaEffect(color, amount, restriction)
 
     /**
      * Add colorless mana.
      */
-    fun AddColorlessMana(amount: Int): Effect =
-        AddColorlessManaEffect(amount)
+    fun AddColorlessMana(amount: Int, restriction: ManaRestriction? = null): Effect =
+        AddColorlessManaEffect(amount, restriction)
 
     /**
      * Add a dynamic amount of colorless mana.
      */
-    fun AddColorlessMana(amount: DynamicAmount): Effect =
-        AddColorlessManaEffect(amount)
+    fun AddColorlessMana(amount: DynamicAmount, restriction: ManaRestriction? = null): Effect =
+        AddColorlessManaEffect(amount, restriction)
 
     /**
      * Add one mana of any color.
      */
-    fun AddAnyColorMana(amount: Int = 1): Effect =
-        AddAnyColorManaEffect(amount)
+    fun AddAnyColorMana(amount: Int = 1, restriction: ManaRestriction? = null): Effect =
+        AddAnyColorManaEffect(amount, restriction)
 
     /**
      * Add a dynamic amount of mana of any one color.
      * "Add X mana of any one color, where X is..."
      */
-    fun AddAnyColorMana(amount: DynamicAmount): Effect =
-        AddAnyColorManaEffect(amount)
+    fun AddAnyColorMana(amount: DynamicAmount, restriction: ManaRestriction? = null): Effect =
+        AddAnyColorManaEffect(amount, restriction)
 
     /**
      * Add X mana in any combination of the allowed colors.
      * "Add that much mana in any combination of {R} and/or {G}."
      */
-    fun AddDynamicMana(amount: DynamicAmount, allowedColors: Set<Color>): Effect =
-        AddDynamicManaEffect(amount, allowedColors)
+    fun AddDynamicMana(amount: DynamicAmount, allowedColors: Set<Color>, restriction: ManaRestriction? = null): Effect =
+        AddDynamicManaEffect(amount, allowedColors, restriction)
 
     /**
      * Add one mana of any color among permanents matching a filter that you control.
      * Used for cards like Mox Amber.
      */
-    fun AddManaOfColorAmong(filter: GameObjectFilter): Effect =
-        AddManaOfColorAmongEffect(filter)
+    fun AddManaOfColorAmong(filter: GameObjectFilter, restriction: ManaRestriction? = null): Effect =
+        AddManaOfColorAmongEffect(filter, restriction)
 
     // =========================================================================
     // Token Effects

@@ -313,7 +313,8 @@ class MiscContinuationResumer(
 
         val newState = com.wingedsheep.engine.handlers.effects.mana.AddDynamicManaExecutor.addMana(
             state, continuation.playerId,
-            mapOf(continuation.firstColor to firstAmount, continuation.secondColor to secondAmount)
+            mapOf(continuation.firstColor to firstAmount, continuation.secondColor to secondAmount),
+            continuation.restriction
         )
 
         return checkForMore(newState, emptyList())

@@ -24,6 +24,7 @@ import com.wingedsheep.sdk.scripting.effects.AddAnyColorManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddColorlessManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaOfColorAmongEffect
+import com.wingedsheep.sdk.scripting.effects.ManaRestriction
 import com.wingedsheep.sdk.scripting.AdditionalManaOnTap
 import com.wingedsheep.sdk.scripting.DampLandManaProduction
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
@@ -57,7 +58,9 @@ data class ManaSource(
     /** Extra mana produced per tap from auras like Elvish Guidance */
     val bonusManaPerTap: Int = 0,
     /** Color of the bonus mana */
-    val bonusManaColor: Color? = null
+    val bonusManaColor: Color? = null,
+    /** Mana spending restriction (e.g., "only for instant/sorcery"). Null = unrestricted. */
+    val restriction: ManaRestriction? = null
 )
 
 /**
@@ -116,11 +119,17 @@ class ManaSolver(
         playerId: EntityId,
         cost: ManaCost,
         xValue: Int = 0,
-        excludeSources: Set<EntityId> = emptySet()
+        excludeSources: Set<EntityId> = emptySet(),
+        spellContext: SpellPaymentContext? = null
     ): ManaSolution? {
         // Get all untapped mana sources controlled by the player
+        // Filter out restricted sources that are ineligible for the spell being cast
         val availableSources = findAvailableManaSources(state, playerId)
             .filter { it.entityId !in excludeSources }
+            .filter { source ->
+                if (source.restriction == null || spellContext == null) true
+                else source.restriction.isSatisfiedBy(spellContext)
+            }
 
         if (availableSources.isEmpty() && cost.cmc > 0) {
             return null
@@ -480,6 +489,10 @@ class ManaSolver(
             var maxManaAmount = 1
             var anyAbilityHasNoPainCost = false
             var minPainAmount = Int.MAX_VALUE
+            // Track restrictions: if any ability is unrestricted, the source is unrestricted
+            var hasUnrestrictedAbility = false
+            var commonRestriction: ManaRestriction? = null
+            var firstRestrictionSeen = false
 
             for (ability in manaAbilities) {
                 // Detect pain cost in mana abilities
@@ -522,21 +535,24 @@ class ManaSolver(
                 if (abilityHasPainCost) minPainAmount = minOf(minPainAmount, abilityPainAmount)
 
                 // Accumulate production from effect
-                when (val effect = ability.effect) {
+                val effectRestriction: ManaRestriction? = when (val effect = ability.effect) {
                     is AddManaEffect -> {
                         combinedColors.add(effect.color)
                         val manaAmount = (effect.amount as? DynamicAmount.Fixed)?.amount ?: 1
                         maxManaAmount = maxOf(maxManaAmount, manaAmount)
+                        effect.restriction
                     }
                     is AddColorlessManaEffect -> {
                         producesColorless = true
                         val manaAmount = (effect.amount as? DynamicAmount.Fixed)?.amount ?: 1
                         maxManaAmount = maxOf(maxManaAmount, manaAmount)
+                        effect.restriction
                     }
                     is AddAnyColorManaEffect -> {
                         combinedColors.addAll(Color.entries)
                         val manaAmount = (effect.amount as? DynamicAmount.Fixed)?.amount ?: 1
                         maxManaAmount = maxOf(maxManaAmount, manaAmount)
+                        effect.restriction
                     }
                     is AddManaOfColorAmongEffect -> {
                         // Determine available colors from matching permanents
@@ -553,8 +569,21 @@ class ManaSolver(
                         if (combinedColors.isNotEmpty()) {
                             maxManaAmount = maxOf(maxManaAmount, 1)
                         }
+                        effect.restriction
                     }
-                    else -> {}
+                    else -> null
+                }
+
+                // Track restriction for the combined source
+                if (effectRestriction == null) {
+                    hasUnrestrictedAbility = true
+                } else if (!firstRestrictionSeen) {
+                    commonRestriction = effectRestriction
+                    firstRestrictionSeen = true
+                } else if (commonRestriction != effectRestriction) {
+                    // Different restrictions across abilities — treat as unrestricted
+                    // (player can choose which ability to activate)
+                    hasUnrestrictedAbility = true
                 }
             }
 
@@ -563,6 +592,9 @@ class ManaSolver(
                 // If any ability has no pain cost, the source is not a pain source
                 val hasPainCost = !anyAbilityHasNoPainCost && minPainAmount < Int.MAX_VALUE
                 val painAmount = if (hasPainCost) minPainAmount else 0
+
+                // Determine combined restriction: unrestricted if any ability is unrestricted
+                val sourceRestriction = if (hasUnrestrictedAbility) null else commonRestriction
 
                 return@mapNotNull ManaSource(
                     entityId = entityId,
@@ -576,7 +608,8 @@ class ManaSolver(
                     hasPainCost = hasPainCost,
                     painAmount = painAmount,
                     canAttack = canAttack,
-                    manaAmount = maxManaAmount
+                    manaAmount = maxManaAmount,
+                    restriction = sourceRestriction
                 )
             }
 
@@ -719,7 +752,8 @@ class ManaSolver(
         playerId: EntityId,
         cost: ManaCost,
         xValue: Int = 0,
-        excludeSources: Set<EntityId> = emptySet()
+        excludeSources: Set<EntityId> = emptySet(),
+        spellContext: SpellPaymentContext? = null
     ): Boolean {
         // Get the player's floating mana pool
         val poolComponent = state.getEntity(playerId)?.get<ManaPoolComponent>()
@@ -730,14 +764,15 @@ class ManaSolver(
                 black = poolComponent.black,
                 red = poolComponent.red,
                 green = poolComponent.green,
-                colorless = poolComponent.colorless
+                colorless = poolComponent.colorless,
+                restrictedMana = poolComponent.restrictedMana
             )
         } else {
             ManaPool()
         }
 
         // Pay partial from pool for the base cost
-        val partialResult = pool.payPartial(cost)
+        val partialResult = pool.payPartial(cost, spellContext)
         val remainingCost = partialResult.remainingCost
         val poolAfterPartial = partialResult.newPool
 
@@ -753,7 +788,7 @@ class ManaSolver(
         }
 
         // Check if we can tap sources for the remaining cost (including remaining X)
-        if (solve(state, playerId, remainingCost, xRemainingToPay, excludeSources) != null) return true
+        if (solve(state, playerId, remainingCost, xRemainingToPay, excludeSources, spellContext) != null) return true
 
         // Fallback: check if TapPermanents mana abilities (e.g., Birchlore Rangers) provide enough extra mana.
         // These abilities tap other permanents (not the source itself) to produce mana.
@@ -779,7 +814,7 @@ class ManaSolver(
         val augmentedXRemaining = totalXMana - augmentedXPaid
 
         if (augmentedRemaining.isEmpty() && augmentedXRemaining == 0) return true
-        return solve(state, playerId, augmentedRemaining, augmentedXRemaining, excludeSources) != null
+        return solve(state, playerId, augmentedRemaining, augmentedXRemaining, excludeSources, spellContext) != null
     }
 
     /**

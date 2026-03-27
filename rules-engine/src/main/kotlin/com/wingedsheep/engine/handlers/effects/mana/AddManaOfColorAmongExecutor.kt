@@ -49,7 +49,12 @@ class AddManaOfColorAmongExecutor : EffectExecutor<AddManaOfColorAmongEffect> {
 
         val newState = state.updateEntity(context.controllerId) { container ->
             val manaPool = container.get<ManaPoolComponent>() ?: ManaPoolComponent()
-            container.with(manaPool.add(chosenColor, 1))
+            val updatedPool = if (effect.restriction != null) {
+                manaPool.addRestricted(chosenColor, 1, effect.restriction!!)
+            } else {
+                manaPool.add(chosenColor, 1)
+            }
+            container.with(updatedPool)
         }
 
         return ExecutionResult.success(newState)

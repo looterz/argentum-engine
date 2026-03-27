@@ -20,6 +20,7 @@ import com.wingedsheep.sdk.scripting.AdditionalCost
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.effects.DividedDamageEffect
 import com.wingedsheep.sdk.scripting.effects.ModalEffect
+import com.wingedsheep.engine.mechanics.mana.SpellPaymentContext
 
 /**
  * Enumerates legal CastSpell actions for spells in hand.
@@ -145,15 +146,24 @@ class CastSpellEnumerator : ActionEnumerator {
                 context.costUtils.calculateMinDelveNeeded(state, playerId, effectiveCost, delveCards)
             } else null
 
+            // Build spell context for conditional mana restriction awareness
+            val spellContext = SpellPaymentContext(
+                isInstantOrSorcery = cardComponent.typeLine.isInstant || cardComponent.typeLine.isSorcery,
+                isKicked = false,
+                isCreature = cardComponent.typeLine.isCreature,
+                manaValue = cardComponent.manaCost.cmc,
+                hasXInCost = cardComponent.manaCost.hasX
+            )
+
             // For Convoke/Delve spells, check if affordable with alternative payment help
             val canAfford = if (hasConvoke && convokeCreatures != null && convokeCreatures.isNotEmpty()) {
-                context.manaSolver.canPay(state, playerId, effectiveCost) ||
+                context.manaSolver.canPay(state, playerId, effectiveCost, spellContext = spellContext) ||
                     context.costUtils.canAffordWithConvoke(state, playerId, effectiveCost, convokeCreatures)
             } else if (hasDelve && delveCards != null && delveCards.isNotEmpty()) {
-                context.manaSolver.canPay(state, playerId, effectiveCost) ||
+                context.manaSolver.canPay(state, playerId, effectiveCost, spellContext = spellContext) ||
                     context.costUtils.canAffordWithDelve(state, playerId, effectiveCost, delveCards)
             } else {
-                context.manaSolver.canPay(state, playerId, effectiveCost)
+                context.manaSolver.canPay(state, playerId, effectiveCost, spellContext = spellContext)
             }
 
             // Check alternative casting cost affordability (e.g., Jodah's {W}{U}{B}{R}{G})
@@ -557,9 +567,16 @@ class CastSpellEnumerator : ActionEnumerator {
             } else {
                 baseCost // No extra mana for additional-cost kicker
             }
-            val canAffordKickedMana = context.manaSolver.canPay(state, playerId, kickedCost)
+            val kickedSpellContext = SpellPaymentContext(
+                isInstantOrSorcery = cardComponent.typeLine.isInstant || cardComponent.typeLine.isSorcery,
+                isKicked = true,
+                isCreature = cardComponent.typeLine.isCreature,
+                manaValue = cardComponent.manaCost.cmc,
+                hasXInCost = cardComponent.manaCost.hasX
+            )
+            val canAffordKickedMana = context.manaSolver.canPay(state, playerId, kickedCost, spellContext = kickedSpellContext)
             val kickedCostString = kickedCost.toString()
-            val kickedAutoTapSolution = context.manaSolver.solve(state, playerId, kickedCost)
+            val kickedAutoTapSolution = context.manaSolver.solve(state, playerId, kickedCost, spellContext = kickedSpellContext)
             val kickedAutoTapPreview = kickedAutoTapSolution?.sources?.map { it.entityId }
 
             // Check additional cost payability (e.g., sacrifice a creature)

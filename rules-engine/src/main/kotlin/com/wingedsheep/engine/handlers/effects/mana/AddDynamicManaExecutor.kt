@@ -10,6 +10,7 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.scripting.effects.AddDynamicManaEffect
+import com.wingedsheep.sdk.scripting.effects.ManaRestriction
 import kotlin.reflect.KClass
 
 /**
@@ -43,7 +44,7 @@ class AddDynamicManaExecutor(
         // Single color — just add it all
         if (colors.size <= 1) {
             val color = colors.firstOrNull() ?: return ExecutionResult.success(state)
-            val newState = addMana(state, context.controllerId, mapOf(color to amount))
+            val newState = addMana(state, context.controllerId, mapOf(color to amount), effect.restriction)
             return ExecutionResult.success(newState)
         }
 
@@ -73,7 +74,8 @@ class AddDynamicManaExecutor(
             sourceName = sourceName,
             totalAmount = amount,
             firstColor = firstColor,
-            secondColor = secondColor
+            secondColor = secondColor,
+            restriction = effect.restriction
         )
 
         val stateWithContinuation = decisionResult.state.pushContinuation(continuation)
@@ -86,12 +88,16 @@ class AddDynamicManaExecutor(
     }
 
     companion object {
-        fun addMana(state: GameState, playerId: com.wingedsheep.sdk.model.EntityId, amounts: Map<Color, Int>): GameState {
+        fun addMana(state: GameState, playerId: com.wingedsheep.sdk.model.EntityId, amounts: Map<Color, Int>, restriction: ManaRestriction? = null): GameState {
             return state.updateEntity(playerId) { container ->
                 var manaPool = container.get<ManaPoolComponent>() ?: ManaPoolComponent()
                 for ((color, amount) in amounts) {
                     if (amount > 0) {
-                        manaPool = manaPool.add(color, amount)
+                        manaPool = if (restriction != null) {
+                            manaPool.addRestricted(color, amount, restriction)
+                        } else {
+                            manaPool.add(color, amount)
+                        }
                     }
                 }
                 container.with(manaPool)

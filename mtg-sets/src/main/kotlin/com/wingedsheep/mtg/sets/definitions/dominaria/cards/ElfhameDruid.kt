@@ -6,6 +6,7 @@ import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
+import com.wingedsheep.sdk.scripting.effects.ManaRestriction
 
 /**
  * Elfhame Druid
@@ -15,8 +16,6 @@ import com.wingedsheep.sdk.scripting.effects.AddManaEffect
  * {T}: Add {G}.
  * {T}: Add {G}{G}. Spend this mana only to cast kicked spells.
  *
- * Note: The "spend this mana only to cast kicked spells" restriction on the second
- * ability is not yet enforced — the engine does not support mana spending restrictions.
  */
 val ElfhameDruid = card("Elfhame Druid") {
     manaCost = "{1}{G}"
@@ -34,10 +33,9 @@ val ElfhameDruid = card("Elfhame Druid") {
 
     activatedAbility {
         cost = AbilityCost.Tap
-        effect = AddManaEffect(Color.GREEN, 2)
+        effect = AddManaEffect(Color.GREEN, 2, ManaRestriction.KickedSpellsOnly)
         manaAbility = true
         timing = TimingRule.ManaAbility
-        // TODO: "Spend this mana only to cast kicked spells" restriction not yet enforced
     }
 
     metadata {
