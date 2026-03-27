@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 58 / 266
+**Implemented:** 59 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -11,7 +11,7 @@
 | Black      | 40    | 8    |
 | Red        | 41    | 11   |
 | Green      | 41    | 5    |
-| Multicolor | 39    | 8    |
+| Multicolor | 39    | 9    |
 | Colorless  | 9     | 2    |
 | Land       | 15    | 0    |
 
@@ -56,7 +56,7 @@
 - [ ] Coiling Rebirth
 - [ ] Conduct Electricity
 - [ ] Consumed by Greed
-- [ ] Corpseberry Cultivator
+- [x] Corpseberry Cultivator
 - [ ] Coruscation Mage
 - [ ] Cruelclaw's Heist
 - [x] Crumb and Get It
