@@ -2,14 +2,14 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 71 / 266
+**Implemented:** 72 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 15   |
 | Blue       | 41    | 10   |
 | Black      | 40    | 11   |
-| Red        | 41    | 12   |
+| Red        | 41    | 13   |
 | Green      | 41    | 7    |
 | Multicolor | 39    | 10   |
 | Colorless  | 9     | 2    |
@@ -54,7 +54,7 @@
 - [ ] Clement, the Worrywort
 - [ ] Clifftop Lookout
 - [ ] Coiling Rebirth
-- [ ] Conduct Electricity
+- [x] Conduct Electricity
 - [ ] Consumed by Greed
 - [x] Corpseberry Cultivator
 - [ ] Coruscation Mage

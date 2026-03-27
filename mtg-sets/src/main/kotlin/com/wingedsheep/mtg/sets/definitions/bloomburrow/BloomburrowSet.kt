@@ -30,6 +30,7 @@ object BloomburrowSet {
         BrambleguardVeteran,
         BraveKinDuo,
         BywayBarterer,
+        ConductElectricity,
         CamelliaTheSeedmiser,
         CorpseberryCultivator,
         CrumbAndGetIt,
