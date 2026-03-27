@@ -63,6 +63,7 @@ object BloomburrowSet {
         MindSpiral,
         LifecreedDuo,
         LilypadVillage,
+        LupinflowerVillage,
         MabelsMettle,
         ManifoldMouse,
         MoonriseCleric,

@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 77 / 266
+**Implemented:** 78 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -13,7 +13,7 @@
 | Green      | 41    | 8    |
 | Multicolor | 39    | 11   |
 | Colorless  | 9     | 2    |
-| Land       | 15    | 1    |
+| Land       | 15    | 2    |
 
 ---
 
@@ -144,7 +144,7 @@
 - [ ] Longstalk Brawl
 - [ ] Lumra, Bellow of the Woods
 - [ ] Lunar Convocation
-- [ ] Lupinflower Village
+- [x] Lupinflower Village
 - [x] Mabel's Mettle
 - [ ] Mabel, Heir to Cragflame
 - [ ] Maha, Its Feathers Night
