@@ -1,13 +1,12 @@
 package com.wingedsheep.mtg.sets.definitions.onslaught.cards
 
+import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Targets
+import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.effects.MayEffect
-import com.wingedsheep.sdk.scripting.effects.PreventNextDamageEffect
-import com.wingedsheep.sdk.dsl.Triggers
 
 /**
  * Sunfire Balm
@@ -24,10 +23,7 @@ val SunfireBalm = card("Sunfire Balm") {
 
     spell {
         val t = target("target", Targets.Any)
-        effect = PreventNextDamageEffect(
-            amount = DynamicAmount.Fixed(4),
-            target = t
-        )
+        effect = Effects.PreventNextDamage(4, t)
     }
 
     keywordAbility(KeywordAbility.cycling("{1}{W}"))
@@ -35,12 +31,7 @@ val SunfireBalm = card("Sunfire Balm") {
     triggeredAbility {
         trigger = Triggers.YouCycleThis
         val t = target("target", Targets.Any)
-        effect = MayEffect(
-            PreventNextDamageEffect(
-                amount = DynamicAmount.Fixed(1),
-                target = t
-            )
-        )
+        effect = MayEffect(Effects.PreventNextDamage(1, t))
     }
 
     metadata {

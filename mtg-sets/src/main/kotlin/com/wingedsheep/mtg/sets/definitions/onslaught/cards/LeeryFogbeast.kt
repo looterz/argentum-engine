@@ -1,9 +1,9 @@
 package com.wingedsheep.mtg.sets.definitions.onslaught.cards
 
+import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.effects.PreventAllCombatDamageThisTurnEffect
 
 /**
  * Leery Fogbeast
@@ -21,7 +21,7 @@ val LeeryFogbeast = card("Leery Fogbeast") {
 
     triggeredAbility {
         trigger = Triggers.BecomesBlocked
-        effect = PreventAllCombatDamageThisTurnEffect
+        effect = Effects.PreventAllCombatDamage()
     }
 
     metadata {

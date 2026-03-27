@@ -1,10 +1,9 @@
 package com.wingedsheep.mtg.sets.definitions.onslaught.cards
 
 import com.wingedsheep.sdk.dsl.Costs
+import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.effects.PreventNextDamageEffect
-import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.targets.AnyTarget
 
 /**
@@ -25,10 +24,7 @@ val DaruHealer = card("Daru Healer") {
     activatedAbility {
         cost = Costs.Tap
         val t = target("target", AnyTarget())
-        effect = PreventNextDamageEffect(
-            amount = DynamicAmount.Fixed(1),
-            target = t
-        )
+        effect = Effects.PreventNextDamage(1, t)
     }
 
     morph = "{W}"

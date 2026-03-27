@@ -35,7 +35,6 @@ import com.wingedsheep.sdk.scripting.effects.MoveToZoneEffect
 import com.wingedsheep.sdk.scripting.effects.MustBeBlockedEffect
 import com.wingedsheep.sdk.scripting.effects.OptionalCostEffect
 import com.wingedsheep.sdk.scripting.effects.PayOrSufferEffect
-import com.wingedsheep.sdk.scripting.effects.PreventNextDamageEffect
 import com.wingedsheep.sdk.scripting.effects.ReflexiveTriggerEffect
 import com.wingedsheep.sdk.scripting.effects.RegenerateEffect
 import com.wingedsheep.sdk.scripting.effects.RemoveCountersEffect
@@ -228,7 +227,6 @@ object CardValidator {
             is ExileUntilLeavesEffect -> effect.target
             is DestroyAtEndOfCombatEffect -> effect.target
             is MustBeBlockedEffect -> effect.target
-            is PreventNextDamageEffect -> effect.target
             is RemoveFromCombatEffect -> effect.target
             is ForceSacrificeEffect -> effect.target
             is MarkExileOnDeathEffect -> effect.target

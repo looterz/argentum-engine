@@ -12,6 +12,129 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 // =============================================================================
+// Damage Prevention
+// =============================================================================
+
+/**
+ * The scope of damage a prevention shield applies to.
+ */
+@Serializable
+sealed interface PreventionScope {
+    @SerialName("AllDamage") data object AllDamage : PreventionScope
+    @SerialName("CombatOnly") data object CombatOnly : PreventionScope
+}
+
+/**
+ * The direction of damage prevention relative to the target entity.
+ */
+@Serializable
+sealed interface PreventionDirection {
+    /** Shield protects the target from receiving damage. */
+    @SerialName("ToTarget") data object ToTarget : PreventionDirection
+    /** Shield prevents the target from dealing damage. */
+    @SerialName("FromTarget") data object FromTarget : PreventionDirection
+    /** Shield prevents damage both to and from the target. */
+    @SerialName("Both") data object Both : PreventionDirection
+}
+
+/**
+ * Filter on the source of the damage being prevented.
+ */
+@Serializable
+sealed interface PreventionSourceFilter {
+    /** Any damage source. */
+    @SerialName("AnySource") data object AnySource : PreventionSourceFilter
+    /** Only damage from attacking creatures. */
+    @SerialName("AttackingCreatures") data object AttackingCreatures : PreventionSourceFilter
+    /** Player chooses a damage source on resolution. */
+    @SerialName("ChosenSource") data object ChosenSource : PreventionSourceFilter
+    /** Uses the chosen creature type from the source permanent's component. */
+    @SerialName("ChosenCreatureType") data object ChosenCreatureType : PreventionSourceFilter
+    /** Only damage from creatures matching a group filter. */
+    @SerialName("FromGroup") data class FromGroup(val filter: GroupFilter) : PreventionSourceFilter
+}
+
+/**
+ * Unified damage prevention effect.
+ *
+ * Replaces all previous prevention effect types with a single parametrized type that can express
+ * any combination of: amount-based vs prevent-all, combat-only vs all-damage, directional
+ * prevention, source filtering, and damage reflection.
+ *
+ * Examples:
+ * - "Prevent the next 3 damage to target creature" → `PreventDamageEffect(target, amount=3)`
+ * - "Prevent all combat damage this turn" → `PreventDamageEffect(scope=CombatOnly)`
+ * - "Prevent all damage target would deal" → `PreventDamageEffect(target, direction=FromTarget)`
+ * - "Prevent combat damage to and by target" → `PreventDamageEffect(target, scope=CombatOnly, direction=Both)`
+ * - "Choose a source, prevent + reflect" → `PreventDamageEffect(sourceFilter=ChosenSource, reflect=true)`
+ *
+ * @property target The entity the shield is attached to (protected or silenced, depending on direction)
+ * @property amount Amount of damage to prevent; null means prevent all
+ * @property scope Whether to prevent all damage or only combat damage
+ * @property direction Whether to prevent damage TO the target, FROM the target, or BOTH
+ * @property sourceFilter Filter on which damage sources are affected
+ * @property reflect If true, prevented damage is dealt to the source's controller (Deflecting Palm)
+ * @property duration When the shield expires
+ */
+@SerialName("PreventDamage")
+@Serializable
+data class PreventDamageEffect(
+    val target: EffectTarget = EffectTarget.Controller,
+    val amount: DynamicAmount? = null,
+    val scope: PreventionScope = PreventionScope.AllDamage,
+    val direction: PreventionDirection = PreventionDirection.ToTarget,
+    val sourceFilter: PreventionSourceFilter = PreventionSourceFilter.AnySource,
+    val reflect: Boolean = false,
+    val duration: Duration = Duration.EndOfTurn
+) : Effect {
+    override val description: String = buildString {
+        append("Prevent ")
+        if (amount != null) {
+            append("the next ${amount.description} ")
+        } else {
+            append("all ")
+        }
+        when (scope) {
+            PreventionScope.CombatOnly -> append("combat damage ")
+            PreventionScope.AllDamage -> append("damage ")
+        }
+        when (direction) {
+            PreventionDirection.ToTarget -> append("that would be dealt to ${target.description}")
+            PreventionDirection.FromTarget -> append("${target.description} would deal")
+            PreventionDirection.Both -> append("that would be dealt to and dealt by ${target.description}")
+        }
+        when (sourceFilter) {
+            PreventionSourceFilter.AnySource -> {}
+            PreventionSourceFilter.AttackingCreatures -> append(" by attacking creatures")
+            PreventionSourceFilter.ChosenSource -> append(" by a source of your choice")
+            PreventionSourceFilter.ChosenCreatureType -> append(" by a creature of the chosen type")
+            is PreventionSourceFilter.FromGroup ->
+                append(" by ${sourceFilter.filter.description.replaceFirstChar { it.lowercase() }}")
+        }
+        append(" this turn")
+        if (reflect) append(". If damage is prevented this way, deal that much damage to that source's controller")
+    }
+
+    override fun runtimeDescription(resolver: (DynamicAmount) -> Int): String {
+        if (amount == null) return description
+        val resolved = resolver(amount)
+        return description.replace(amount.description, resolved.toString())
+    }
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect {
+        val newAmount = amount?.applyTextReplacement(replacer)
+        val newFilter = when (sourceFilter) {
+            is PreventionSourceFilter.FromGroup -> {
+                val newGroupFilter = sourceFilter.filter.applyTextReplacement(replacer)
+                if (newGroupFilter !== sourceFilter.filter) PreventionSourceFilter.FromGroup(newGroupFilter) else sourceFilter
+            }
+            else -> sourceFilter
+        }
+        return if (newAmount !== amount || newFilter !== sourceFilter) copy(amount = newAmount, sourceFilter = newFilter) else this
+    }
+}
+
+// =============================================================================
 // Combat Effects
 // =============================================================================
 
@@ -89,49 +212,6 @@ data class ReflectCombatDamageEffect(
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
 }
 
-/**
- * Prevents combat damage that would be dealt by specified creatures.
- * "Prevent all combat damage that would be dealt by creatures you don't control."
- * Used for Fog-type effects with creature restrictions.
- */
-@SerialName("PreventCombatDamageFrom")
-@Serializable
-data class PreventCombatDamageFromEffect(
-    val source: GroupFilter,
-    val duration: Duration = Duration.EndOfTurn
-) : Effect {
-    override val description: String =
-        "Prevent all combat damage that would be dealt by ${source.description.replaceFirstChar { it.lowercase() }}"
-
-    override fun applyTextReplacement(replacer: TextReplacer): Effect {
-        val newSource = source.applyTextReplacement(replacer)
-        return if (newSource !== source) copy(source = newSource) else this
-    }
-}
-
-/**
- * Prevent all damage that would be dealt to you this turn by attacking creatures.
- * Used for Deep Wood: "Prevent all damage that would be dealt to you this turn by attacking creatures."
- */
-@SerialName("PreventDamageFromAttackingCreatures")
-@Serializable
-data object PreventDamageFromAttackingCreaturesThisTurnEffect : Effect {
-    override val description: String = "Prevent all damage that would be dealt to you this turn by attacking creatures"
-
-    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
-}
-
-/**
- * Prevent all combat damage that would be dealt this turn.
- * Used for Leery Fogbeast: "Whenever this creature becomes blocked, prevent all combat damage that would be dealt this turn."
- */
-@SerialName("PreventAllCombatDamage")
-@Serializable
-data object PreventAllCombatDamageThisTurnEffect : Effect {
-    override val description: String = "Prevent all combat damage that would be dealt this turn"
-
-    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
-}
 
 /**
  * Grant evasion to a group of creatures until end of turn.
@@ -243,27 +323,6 @@ data class CantBlockTargetCreaturesEffect(
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
 }
 
-/**
- * Prevent the next X damage that would be dealt to target creature this turn.
- * Used for Battlefield Medic and similar damage prevention effects.
- *
- * @property amount The amount of damage to prevent (can be dynamic, e.g., number of Clerics)
- * @property target The creature receiving the prevention shield
- */
-@SerialName("PreventNextDamage")
-@Serializable
-data class PreventNextDamageEffect(
-    val amount: DynamicAmount,
-    val target: EffectTarget
-) : Effect {
-    override val description: String =
-        "Prevent the next ${amount.description} damage that would be dealt to ${target.description} this turn"
-
-    override fun applyTextReplacement(replacer: TextReplacer): Effect {
-        val newAmount = amount.applyTextReplacement(replacer)
-        return if (newAmount !== amount) copy(amount = newAmount) else this
-    }
-}
 
 /**
  * Remove a creature from combat.
@@ -326,59 +385,8 @@ data class RedirectNextDamageEffect(
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
 }
 
-/**
- * Prevent the next time a creature of the chosen type would deal damage to you this turn.
- * Used for Circle of Solace: "{1}{W}: The next time a creature of the chosen type would
- * deal damage to you this turn, prevent that damage."
- *
- * Reads the chosen creature type from the source permanent's ChosenCreatureTypeComponent
- * and creates a prevention shield on the controller.
- */
-@SerialName("PreventNextDamageFromChosenCreatureType")
-@Serializable
-data object PreventNextDamageFromChosenCreatureTypeEffect : Effect {
-    override val description: String =
-        "The next time a creature of the chosen type would deal damage to you this turn, prevent that damage"
 
-    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
-}
 
-/**
- * Prevent all combat damage that would be dealt to and dealt by a creature this turn.
- * Used for Deftblade Elite and similar effects.
- *
- * @property target The creature whose combat damage (both dealing and receiving) is prevented
- */
-@SerialName("PreventCombatDamageToAndBy")
-@Serializable
-data class PreventCombatDamageToAndByEffect(
-    val target: EffectTarget = EffectTarget.Self
-) : Effect {
-    override val description: String =
-        "Prevent all combat damage that would be dealt to and dealt by ${target.description} this turn"
-
-    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
-}
-
-/**
- * Prevent all damage target creature or spell would deal this turn.
- * Used for Shieldmage Elder and similar "prevent all damage target would deal" effects.
- *
- * Creates a floating effect (PreventAllDamageDealtBy) on the target entity.
- * Works for both creatures (prevents combat and non-combat damage) and spells on the stack.
- *
- * @property target The creature or spell whose damage is prevented
- */
-@SerialName("PreventAllDamageDealtByTarget")
-@Serializable
-data class PreventAllDamageDealtByTargetEffect(
-    val target: EffectTarget
-) : Effect {
-    override val description: String =
-        "Prevent all damage ${target.description} would deal this turn"
-
-    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
-}
 
 /**
  * Grant a creature "can't attack or block unless its controller pays {X} for each [creature type]
@@ -452,15 +460,6 @@ data class RedirectCombatDamageToControllerEffect(
 }
 
 /**
- * Choose a source of damage, then prevent the next time that source would deal damage
- * to you this turn. If damage is prevented this way, deal that much damage to that
- * source's controller.
- *
- * Used for Deflecting Palm and similar damage prevention + reflection effects.
- * The player is presented with a choice of all game objects that could be damage sources
- * (permanents on the battlefield + spells on the stack).
- */
-/**
  * Target creature can't attack or block this turn.
  * Used for Briber's Purse and similar targeted restriction effects.
  *
@@ -480,38 +479,4 @@ data class CantAttackOrBlockTargetEffect(
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
 }
 
-@SerialName("DeflectNextDamageFromChosenSource")
-@Serializable
-data object DeflectNextDamageFromChosenSourceEffect : Effect {
-    override val description: String =
-        "The next time a source of your choice would deal damage to you this turn, prevent that damage. If damage is prevented this way, deal that much damage to that source's controller."
-
-    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
-}
-
-/**
- * Prevent the next N damage that would be dealt to a target this turn by a source of your choice.
- * The player chooses the damage source on resolution.
- *
- * Used for Healing Grace and similar source-specific damage prevention spells.
- *
- * @property amount The amount of damage to prevent
- * @property target The entity receiving the prevention shield
- */
-@SerialName("PreventNextDamageFromChosenSource")
-@Serializable
-data class PreventNextDamageFromChosenSourceEffect(
-    val amount: DynamicAmount,
-    val target: EffectTarget
-) : Effect {
-    constructor(amount: Int, target: EffectTarget) : this(DynamicAmount.Fixed(amount), target)
-
-    override val description: String =
-        "Prevent the next ${amount.description} damage that would be dealt to ${target.description} this turn by a source of your choice"
-
-    override fun applyTextReplacement(replacer: TextReplacer): Effect {
-        val newAmount = amount.applyTextReplacement(replacer)
-        return if (newAmount !== amount) copy(amount = newAmount) else this
-    }
-}
 

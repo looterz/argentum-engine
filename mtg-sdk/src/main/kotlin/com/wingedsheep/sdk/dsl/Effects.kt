@@ -94,6 +94,10 @@ import com.wingedsheep.sdk.scripting.effects.SetCreatureSubtypesEffect
 import com.wingedsheep.sdk.scripting.effects.DestroyAllEquipmentOnTargetEffect
 import com.wingedsheep.sdk.scripting.effects.ForceExileMultiZoneEffect
 import com.wingedsheep.sdk.scripting.effects.LoseGameEffect
+import com.wingedsheep.sdk.scripting.effects.PreventDamageEffect
+import com.wingedsheep.sdk.scripting.effects.PreventionDirection
+import com.wingedsheep.sdk.scripting.effects.PreventionScope
+import com.wingedsheep.sdk.scripting.effects.PreventionSourceFilter
 import com.wingedsheep.sdk.scripting.effects.SkipNextTurnEffect
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.references.Player
@@ -1021,24 +1025,95 @@ object Effects {
     fun ForceBlock(target: EffectTarget = EffectTarget.ContextTarget(0)): Effect =
         com.wingedsheep.sdk.scripting.effects.ForceBlockEffect(target)
 
+    // -------------------------------------------------------------------------
+    // Damage Prevention (unified via PreventDamageEffect)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Prevent the next N damage that would be dealt to target this turn.
+     */
+    fun PreventNextDamage(amount: DynamicAmount, target: EffectTarget): Effect =
+        PreventDamageEffect(target = target, amount = amount)
+
+    /**
+     * Prevent the next N damage that would be dealt to target this turn.
+     */
+    fun PreventNextDamage(amount: Int, target: EffectTarget): Effect =
+        PreventDamageEffect(target = target, amount = DynamicAmount.Fixed(amount))
+
+    /**
+     * Prevent all combat damage that would be dealt this turn.
+     */
+    fun PreventAllCombatDamage(): Effect =
+        PreventDamageEffect(scope = PreventionScope.CombatOnly)
+
+    /**
+     * Prevent all combat damage that would be dealt by creatures matching a filter.
+     */
+    fun PreventCombatDamageFrom(source: com.wingedsheep.sdk.scripting.filters.unified.GroupFilter, duration: Duration = Duration.EndOfTurn): Effect =
+        PreventDamageEffect(
+            scope = PreventionScope.CombatOnly,
+            direction = PreventionDirection.FromTarget,
+            sourceFilter = PreventionSourceFilter.FromGroup(source),
+            duration = duration
+        )
+
+    /**
+     * Prevent all damage that would be dealt to controller this turn by attacking creatures.
+     */
+    fun PreventDamageFromAttackingCreatures(): Effect =
+        PreventDamageEffect(
+            target = EffectTarget.Controller,
+            sourceFilter = PreventionSourceFilter.AttackingCreatures
+        )
+
     /**
      * Prevent all combat damage that would be dealt to and dealt by a creature this turn.
      */
     fun PreventCombatDamageToAndBy(target: EffectTarget = EffectTarget.Self): Effect =
-        com.wingedsheep.sdk.scripting.effects.PreventCombatDamageToAndByEffect(target)
+        PreventDamageEffect(
+            target = target,
+            scope = PreventionScope.CombatOnly,
+            direction = PreventionDirection.Both
+        )
+
+    /**
+     * Prevent all damage target creature or spell would deal this turn.
+     */
+    fun PreventAllDamageDealtBy(target: EffectTarget): Effect =
+        PreventDamageEffect(
+            target = target,
+            direction = PreventionDirection.FromTarget
+        )
 
     /**
      * Choose a source, prevent the next damage it would deal to you this turn,
      * and deal that much damage to its controller.
      */
     fun DeflectNextDamageFromChosenSource(): Effect =
-        com.wingedsheep.sdk.scripting.effects.DeflectNextDamageFromChosenSourceEffect
+        PreventDamageEffect(
+            sourceFilter = PreventionSourceFilter.ChosenSource,
+            reflect = true
+        )
 
     /**
      * Prevent the next N damage that would be dealt to a target this turn by a source of your choice.
      */
     fun PreventNextDamageFromChosenSource(amount: Int, target: EffectTarget): Effect =
-        com.wingedsheep.sdk.scripting.effects.PreventNextDamageFromChosenSourceEffect(amount, target)
+        PreventDamageEffect(
+            target = target,
+            amount = DynamicAmount.Fixed(amount),
+            sourceFilter = PreventionSourceFilter.ChosenSource
+        )
+
+    /**
+     * Prevent the next time a creature of the chosen type would deal damage to you this turn.
+     */
+    fun PreventNextDamageFromChosenCreatureType(): Effect =
+        PreventDamageEffect(
+            target = EffectTarget.Controller,
+            sourceFilter = PreventionSourceFilter.ChosenCreatureType
+        )
 
     /**
      * Remove a creature from combat.

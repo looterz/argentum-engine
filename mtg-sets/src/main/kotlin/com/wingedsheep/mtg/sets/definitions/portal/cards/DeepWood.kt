@@ -3,7 +3,7 @@ package com.wingedsheep.mtg.sets.definitions.portal.cards
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.effects.PreventDamageFromAttackingCreaturesThisTurnEffect
+import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.scripting.conditions.YouWereAttackedThisStep
 
 /**
@@ -20,7 +20,7 @@ val DeepWood = card("Deep Wood") {
     spell {
         castOnlyDuring(Step.DECLARE_ATTACKERS)
         castOnlyIf(YouWereAttackedThisStep)
-        effect = PreventDamageFromAttackingCreaturesThisTurnEffect
+        effect = Effects.PreventDamageFromAttackingCreatures()
     }
 
     metadata {

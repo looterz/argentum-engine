@@ -5,7 +5,7 @@ import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
-import com.wingedsheep.sdk.scripting.effects.PreventAllDamageDealtByTargetEffect
+import com.wingedsheep.sdk.dsl.Effects
 
 /**
  * Shieldmage Elder
@@ -25,17 +25,13 @@ val ShieldmageElder = card("Shieldmage Elder") {
     activatedAbility {
         cost = Costs.TapPermanents(2, GameObjectFilter.Creature.withSubtype("Cleric"))
         val t = target("target", Targets.Creature)
-        effect = PreventAllDamageDealtByTargetEffect(
-            target = t
-        )
+        effect = Effects.PreventAllDamageDealtBy(t)
     }
 
     activatedAbility {
         cost = Costs.TapPermanents(2, GameObjectFilter.Creature.withSubtype("Wizard"))
         val t = target("target", Targets.Spell)
-        effect = PreventAllDamageDealtByTargetEffect(
-            target = t
-        )
+        effect = Effects.PreventAllDamageDealtBy(t)
     }
 
     metadata {
