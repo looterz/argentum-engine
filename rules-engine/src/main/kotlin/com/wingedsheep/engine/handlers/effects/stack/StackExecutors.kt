@@ -13,13 +13,7 @@ class StackExecutors(
     private val cardRegistry: CardRegistry
 ) : ExecutorModule {
     override fun executors(): List<EffectExecutor<*>> = listOf(
-        CounterAbilityExecutor(cardRegistry),
-        CounterSpellExecutor(cardRegistry),
-        CounterSpellToExileExecutor(cardRegistry),
-        CounterTriggeringSpellExecutor(cardRegistry),
-        CounterSpellWithFilterExecutor(cardRegistry),
-        CounterUnlessPaysExecutor(cardRegistry),
-        CounterUnlessDynamicPaysExecutor(amountEvaluator, cardRegistry),
+        CounterEffectExecutor(amountEvaluator, cardRegistry),
         ChangeSpellTargetExecutor(),
         ChangeTargetExecutor(),
         StormCopyEffectExecutor(cardRegistry),

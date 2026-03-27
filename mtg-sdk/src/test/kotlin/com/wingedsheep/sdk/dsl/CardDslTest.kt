@@ -11,7 +11,7 @@ import com.wingedsheep.sdk.scripting.conditions.SourceHasDealtDamage
 import com.wingedsheep.sdk.scripting.conditions.SourceIsAttacking
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
-import com.wingedsheep.sdk.scripting.effects.CounterSpellEffect
+import com.wingedsheep.sdk.scripting.effects.CounterEffect
 import com.wingedsheep.sdk.scripting.effects.DealDamageEffect
 import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import com.wingedsheep.sdk.scripting.effects.GainLifeEffect
@@ -600,7 +600,7 @@ class CardDslTest : DescribeSpec({
                     modal(chooseCount = 2) {
                         mode("Counter target spell") {
                             val spell = target("spell", Targets.Spell)
-                            effect = CounterSpellEffect
+                            effect = CounterEffect()
                         }
                         mode("Return target permanent to its owner's hand") {
                             val permanent = target("permanent", Targets.Permanent)
@@ -652,7 +652,7 @@ class CardDslTest : DescribeSpec({
                         }
                         mode("Counter target instant spell") {
                             val instant = target("instant", Targets.Spell)
-                            effect = CounterSpellEffect
+                            effect = CounterEffect()
                         }
                     }
                 }

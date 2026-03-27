@@ -61,6 +61,8 @@ object CompactJsonTransformer {
         "reductionSource", "copyCost", "repeatCondition",
         // Damage source override (EffectTarget sealed interface)
         "damageSource",
+        // CounterEffect sealed parameters
+        "targetSource", "counterDestination",
         // Controller override for "under your control" effects (EffectTarget sealed interface)
         "controllerOverride",
         // EntityProperty fields (EntityReference and EntityNumericProperty sealed interfaces)

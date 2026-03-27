@@ -13,7 +13,7 @@ import com.wingedsheep.sdk.scripting.effects.AddAnyColorManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddColorlessManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
-import com.wingedsheep.sdk.scripting.effects.CounterSpellEffect
+import com.wingedsheep.sdk.scripting.effects.CounterEffect
 import com.wingedsheep.sdk.scripting.effects.DealDamageEffect
 import com.wingedsheep.sdk.scripting.effects.DrawCardsEffect
 import com.wingedsheep.sdk.scripting.effects.GainLifeEffect
@@ -252,7 +252,7 @@ object TestCards {
         manaCost = ManaCost.parse("{U}{U}"),
         oracleText = "Counter target spell.",
         script = CardScript.spell(
-            effect = CounterSpellEffect,
+            effect = CounterEffect(),
             TargetSpell()
         )
     )
@@ -265,7 +265,7 @@ object TestCards {
         manaCost = ManaCost.parse("{U}"),
         oracleText = "Counter target noncreature spell unless its controller pays {2}.",
         script = CardScript.spell(
-            effect = CounterSpellEffect,  // Simplified - no tax mechanic for now
+            effect = CounterEffect(),  // Simplified - no tax mechanic for now
             TargetSpell(filter = TargetFilter.NoncreatureSpellOnStack)
         )
     )

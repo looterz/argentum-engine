@@ -10,142 +10,161 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 // =============================================================================
-// Stack Effects
+// Stack Effects — Counter
 // =============================================================================
 
 /**
- * Counter target spell.
- * "Counter target spell."
- *
- * The countered spell is removed from the stack and placed in its owner's
- * graveyard without resolving (no effects happen).
+ * What kind of stack object to counter.
  */
-@SerialName("CounterSpell")
 @Serializable
-data object CounterSpellEffect : Effect {
-    override val description: String = "Counter target spell"
+sealed interface CounterTarget {
+    /** Counter a spell (goes to graveyard/exile). */
+    @SerialName("CounterTarget.Spell")
+    @Serializable
+    data object Spell : CounterTarget
 
-    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
+    /** Counter an activated or triggered ability (removed from stack, no zone change). */
+    @SerialName("CounterTarget.Ability")
+    @Serializable
+    data object Ability : CounterTarget
 }
 
 /**
- * Counter target spell that matches a filter.
- * Used for Mystic Denial: "Counter target creature or sorcery spell."
+ * How the target of the counter is identified.
  */
-@SerialName("CounterSpellWithFilter")
 @Serializable
-data class CounterSpellWithFilterEffect(
-    val filter: TargetFilter = TargetFilter.SpellOnStack
-) : Effect {
-    override val description: String = "Counter target ${filter.baseFilter.description} spell"
+sealed interface CounterTargetSource {
+    /** Uses a chosen target from context.targets (normal targeting). */
+    @SerialName("CounterTargetSource.Chosen")
+    @Serializable
+    data object Chosen : CounterTargetSource
 
-    override fun applyTextReplacement(replacer: TextReplacer): Effect {
-        val newFilter = filter.applyTextReplacement(replacer)
-        return if (newFilter !== filter) copy(filter = newFilter) else this
-    }
+    /** Uses context.triggeringEntityId (for triggered abilities like Decree of Silence). */
+    @SerialName("CounterTargetSource.TriggeringEntity")
+    @Serializable
+    data object TriggeringEntity : CounterTargetSource
 }
 
 /**
- * Counter target spell unless its controller pays a mana cost.
- * "Counter target spell unless its controller pays {cost}."
- *
- * If the spell's controller can pay the cost, they are given a yes/no choice.
- * If they choose to pay, the mana is deducted and the spell resolves normally.
- * If they cannot pay or choose not to, the spell is countered.
+ * Where the countered spell goes.
  */
-@SerialName("CounterUnlessPays")
 @Serializable
-data class CounterUnlessPaysEffect(
-    val cost: ManaCost
-) : Effect {
-    override val description: String = "Counter target spell unless its controller pays $cost"
+sealed interface CounterDestination {
+    /** Spell goes to owner's graveyard (default). */
+    @SerialName("CounterDestination.Graveyard")
+    @Serializable
+    data object Graveyard : CounterDestination
 
-    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
+    /**
+     * Spell is exiled instead of going to graveyard.
+     * @property grantFreeCast If true, the controller may cast the exiled card
+     *   without paying its mana cost for as long as it remains exiled.
+     */
+    @SerialName("CounterDestination.Exile")
+    @Serializable
+    data class Exile(val grantFreeCast: Boolean = false) : CounterDestination
 }
 
 /**
- * Counter target spell unless its controller pays a dynamic generic mana cost.
- * "Counter target spell unless its controller pays {X} for each [something]."
- *
- * The total generic mana cost is determined at resolution by evaluating the DynamicAmount.
- * Uses the same continuation as CounterUnlessPaysEffect.
- *
- * @property exileOnCounter If true, the spell is exiled instead of going to the graveyard
- *   when countered this way (e.g., Syncopate).
+ * Optional condition that allows the spell's controller to prevent countering.
  */
-@SerialName("CounterUnlessDynamicPays")
 @Serializable
-data class CounterUnlessDynamicPaysEffect(
-    val amount: DynamicAmount,
-    val exileOnCounter: Boolean = false
-) : Effect {
-    override val description: String = buildString {
-        append("Counter target spell unless its controller pays ${amount.description}")
-        if (exileOnCounter) append(". If countered, exile it")
-    }
+sealed interface CounterCondition {
+    /** No condition — always counter. */
+    @SerialName("CounterCondition.Always")
+    @Serializable
+    data object Always : CounterCondition
 
-    override fun applyTextReplacement(replacer: TextReplacer): Effect {
-        val newAmount = amount.applyTextReplacement(replacer)
-        return if (newAmount !== amount) copy(amount = newAmount) else this
-    }
+    /** Counter unless controller pays a fixed mana cost. */
+    @SerialName("CounterCondition.UnlessPaysMana")
+    @Serializable
+    data class UnlessPaysMana(val cost: ManaCost) : CounterCondition
+
+    /** Counter unless controller pays a dynamic generic mana cost. */
+    @SerialName("CounterCondition.UnlessPaysDynamic")
+    @Serializable
+    data class UnlessPaysDynamic(val amount: DynamicAmount) : CounterCondition
 }
 
 /**
- * Counter the spell that triggered this ability (non-targeted).
- * "Counter that spell."
+ * Unified counter effect for all counter-spell and counter-ability variations.
  *
- * Uses context.triggeringEntityId to identify the spell to counter,
- * rather than requiring a target selection. Used for triggered abilities
- * like Decree of Silence: "Whenever an opponent casts a spell, counter that spell."
+ * Replaces the former CounterSpellEffect, CounterSpellWithFilterEffect,
+ * CounterUnlessPaysEffect, CounterUnlessDynamicPaysEffect, CounterTriggeringSpellEffect,
+ * CounterSpellToExileEffect, and CounterAbilityEffect with a single parametrized type.
+ *
+ * Examples:
+ * - "Counter target spell" → CounterEffect()
+ * - "Counter target creature spell" → CounterEffect(filter = creatureFilter)
+ * - "Counter unless pays {2}" → CounterEffect(condition = UnlessPaysMana(ManaCost.parse("{2}")))
+ * - "Counter that spell" → CounterEffect(targetSource = TriggeringEntity)
+ * - "Counter and exile" → CounterEffect(counterDestination = Exile())
+ * - "Counter target ability" → CounterEffect(target = Ability)
  */
-@SerialName("CounterTriggeringSpell")
+@SerialName("Counter")
 @Serializable
-data object CounterTriggeringSpellEffect : Effect {
-    override val description: String = "Counter that spell"
-
-    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
-}
-
-/**
- * Counter target spell. If countered this way, exile it instead of putting
- * it into its owner's graveyard. Optionally grants permission to cast the
- * exiled card without paying its mana cost for as long as it remains exiled.
- *
- * Used by Kheru Spellsnatcher, Spelljack, and similar effects.
- *
- * @property grantFreeCast If true, the controller may cast the exiled card
- *   without paying its mana cost for as long as it remains exiled.
- */
-@SerialName("CounterSpellToExile")
-@Serializable
-data class CounterSpellToExileEffect(
-    val grantFreeCast: Boolean = false
+data class CounterEffect(
+    val target: CounterTarget = CounterTarget.Spell,
+    val targetSource: CounterTargetSource = CounterTargetSource.Chosen,
+    val counterDestination: CounterDestination = CounterDestination.Graveyard,
+    val condition: CounterCondition = CounterCondition.Always,
+    val filter: TargetFilter? = null
 ) : Effect {
     override val description: String = buildString {
-        append("Counter target spell. Exile it instead of putting it into its owner's graveyard")
-        if (grantFreeCast) {
-            append(". You may cast that card without paying its mana cost for as long as it remains exiled")
+        when (target) {
+            CounterTarget.Ability -> append("Counter target activated or triggered ability")
+            CounterTarget.Spell -> {
+                when (condition) {
+                    is CounterCondition.Always -> {
+                        if (targetSource == CounterTargetSource.TriggeringEntity) {
+                            append("Counter that spell")
+                        } else if (filter != null) {
+                            append("Counter target ${filter.baseFilter.description} spell")
+                        } else {
+                            append("Counter target spell")
+                        }
+                    }
+                    is CounterCondition.UnlessPaysMana -> {
+                        append("Counter target spell unless its controller pays ${condition.cost}")
+                    }
+                    is CounterCondition.UnlessPaysDynamic -> {
+                        append("Counter target spell unless its controller pays ${condition.amount.description}")
+                    }
+                }
+                when (val dest = counterDestination) {
+                    CounterDestination.Graveyard -> {}
+                    is CounterDestination.Exile -> {
+                        if (condition is CounterCondition.UnlessPaysMana || condition is CounterCondition.UnlessPaysDynamic) {
+                            append(". If countered, exile it")
+                        } else {
+                            append(". Exile it instead of putting it into its owner's graveyard")
+                        }
+                        if (dest.grantFreeCast) {
+                            append(". You may cast that card without paying its mana cost for as long as it remains exiled")
+                        }
+                    }
+                }
+            }
         }
     }
 
-    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
+    override fun applyTextReplacement(replacer: TextReplacer): Effect {
+        val newFilter = filter?.applyTextReplacement(replacer)
+        val newCondition = when (condition) {
+            is CounterCondition.UnlessPaysDynamic -> {
+                val newAmount = condition.amount.applyTextReplacement(replacer)
+                if (newAmount !== condition.amount) CounterCondition.UnlessPaysDynamic(newAmount) else condition
+            }
+            else -> condition
+        }
+        return if (newFilter !== filter || newCondition !== condition)
+            copy(filter = newFilter, condition = newCondition) else this
+    }
 }
 
-/**
- * Counter target activated or triggered ability.
- * "Counter target activated or triggered ability."
- *
- * The countered ability is removed from the stack without resolving.
- * Unlike countering a spell, the ability doesn't go to any zone since
- * abilities are not cards.
- */
-@SerialName("CounterAbility")
-@Serializable
-data object CounterAbilityEffect : Effect {
-    override val description: String = "Counter target activated or triggered ability"
-
-    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
-}
+// =============================================================================
+// Stack Effects — Other
+// =============================================================================
 
 /**
  * Change the target of a spell that has exactly one target, and that target is a creature,

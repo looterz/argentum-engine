@@ -6,7 +6,7 @@ import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.AbilityId
 import com.wingedsheep.sdk.scripting.ActivatedAbility
-import com.wingedsheep.sdk.scripting.effects.CounterSpellEffect
+import com.wingedsheep.sdk.scripting.effects.CounterEffect
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.GrantActivatedAbilityToGroupEffect
@@ -28,7 +28,7 @@ val PsychicTrance = card("Psychic Trance") {
             ability = ActivatedAbility(
                 id = AbilityId.generate(),
                 cost = AbilityCost.Tap,
-                effect = CounterSpellEffect,
+                effect = CounterEffect(),
                 targetRequirement = Targets.Spell
             ),
             filter = GroupFilter(GameObjectFilter.Creature.withSubtype("Wizard").youControl()),

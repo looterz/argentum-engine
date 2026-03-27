@@ -4,7 +4,7 @@ import com.wingedsheep.sdk.dsl.EffectPatterns
 import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.effects.CounterSpellEffect
+import com.wingedsheep.sdk.scripting.effects.CounterEffect
 
 /**
  * Discombobulate
@@ -19,7 +19,7 @@ val Discombobulate = card("Discombobulate") {
 
     spell {
         target = Targets.Spell
-        effect = CounterSpellEffect then EffectPatterns.lookAtTopAndReorder(4)
+        effect = CounterEffect() then EffectPatterns.lookAtTopAndReorder(4)
     }
 
     metadata {

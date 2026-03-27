@@ -18,7 +18,7 @@ import com.wingedsheep.sdk.model.CardScript
 import com.wingedsheep.sdk.model.Deck
 import com.wingedsheep.sdk.dsl.EffectPatterns
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
-import com.wingedsheep.sdk.scripting.effects.CounterSpellEffect
+import com.wingedsheep.sdk.scripting.effects.CounterEffect
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
@@ -41,7 +41,7 @@ class DiscombobulateTest : FunSpec({
         oracleText = "Counter target spell. Look at the top four cards of your library, then put them back in any order.",
         script = CardScript.spell(
             effect = CompositeEffect(
-                listOf(CounterSpellEffect, EffectPatterns.lookAtTopAndReorder(4))
+                listOf(CounterEffect(), EffectPatterns.lookAtTopAndReorder(4))
             ),
             Targets.Spell
         )

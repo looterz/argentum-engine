@@ -4,7 +4,7 @@ import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.effects.CounterSpellEffect
+import com.wingedsheep.sdk.scripting.effects.CounterEffect
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 
 /**
@@ -28,7 +28,7 @@ val VoidmageProdigy = card("Voidmage Prodigy") {
             Costs.Sacrifice(GameObjectFilter.Creature.withSubtype("Wizard"))
         )
         target = Targets.Spell
-        effect = CounterSpellEffect
+        effect = CounterEffect()
     }
 
     morph = "{U}"

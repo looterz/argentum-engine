@@ -21,7 +21,7 @@
                     "property": "MANA_VALUE"
                 }
             },
-            "effect": "CounterSpell"
+            "effect": "Counter"
         },
         "targetRequirements": [
             {

@@ -77,12 +77,11 @@ import com.wingedsheep.sdk.scripting.effects.CreateTokenCopyOfSourceEffect
 import com.wingedsheep.sdk.scripting.effects.CreateTokenEffect
 import com.wingedsheep.sdk.scripting.effects.CreateFoodTokensEffect
 import com.wingedsheep.sdk.scripting.effects.CreateTreasureTokensEffect
-import com.wingedsheep.sdk.scripting.effects.CounterAbilityEffect
-import com.wingedsheep.sdk.scripting.effects.CounterSpellEffect
-import com.wingedsheep.sdk.scripting.effects.CounterSpellToExileEffect
-import com.wingedsheep.sdk.scripting.effects.CounterTriggeringSpellEffect
-import com.wingedsheep.sdk.scripting.effects.CounterUnlessPaysEffect
-import com.wingedsheep.sdk.scripting.effects.CounterUnlessDynamicPaysEffect
+import com.wingedsheep.sdk.scripting.effects.CounterCondition
+import com.wingedsheep.sdk.scripting.effects.CounterDestination
+import com.wingedsheep.sdk.scripting.effects.CounterEffect
+import com.wingedsheep.sdk.scripting.effects.CounterTarget
+import com.wingedsheep.sdk.scripting.effects.CounterTargetSource
 import com.wingedsheep.sdk.scripting.effects.ChangeSpellTargetEffect
 import com.wingedsheep.sdk.scripting.effects.ChangeTargetEffect
 import com.wingedsheep.sdk.scripting.effects.ReselectTargetRandomlyEffect
@@ -838,7 +837,7 @@ object Effects {
      * Counter target spell.
      */
     fun CounterSpell(): Effect =
-        CounterSpellEffect
+        CounterEffect()
 
     /**
      * Counter target spell. If countered, exile it instead of putting it into
@@ -846,35 +845,38 @@ object Effects {
      * Used by Kheru Spellsnatcher, Spelljack.
      */
     fun CounterSpellToExile(grantFreeCast: Boolean = false): Effect =
-        CounterSpellToExileEffect(grantFreeCast)
+        CounterEffect(counterDestination = CounterDestination.Exile(grantFreeCast))
 
     /**
      * Counter the spell that triggered this ability (non-targeted).
      * "Counter that spell."
      */
     fun CounterTriggeringSpell(): Effect =
-        CounterTriggeringSpellEffect
+        CounterEffect(targetSource = CounterTargetSource.TriggeringEntity)
 
     /**
      * Counter target spell unless its controller pays a mana cost.
      * "Counter target spell unless its controller pays {cost}."
      */
     fun CounterUnlessPays(cost: String): Effect =
-        CounterUnlessPaysEffect(ManaCost.parse(cost))
+        CounterEffect(condition = CounterCondition.UnlessPaysMana(ManaCost.parse(cost)))
 
     /**
      * Counter target spell unless its controller pays a dynamic generic mana cost.
      * "Counter target spell unless its controller pays {2} for each Wizard on the battlefield."
      */
     fun CounterUnlessDynamicPays(amount: DynamicAmount, exileOnCounter: Boolean = false): Effect =
-        CounterUnlessDynamicPaysEffect(amount, exileOnCounter)
+        CounterEffect(
+            condition = CounterCondition.UnlessPaysDynamic(amount),
+            counterDestination = if (exileOnCounter) CounterDestination.Exile() else CounterDestination.Graveyard
+        )
 
     /**
      * Counter target activated or triggered ability.
      * "Counter target activated or triggered ability."
      */
     fun CounterAbility(): Effect =
-        CounterAbilityEffect
+        CounterEffect(target = CounterTarget.Ability)
 
     /**
      * Change the target of a spell to another creature.

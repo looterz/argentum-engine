@@ -3,7 +3,7 @@ package com.wingedsheep.mtg.sets.definitions.portal.cards
 import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.effects.CounterSpellEffect
+import com.wingedsheep.sdk.scripting.effects.CounterEffect
 import com.wingedsheep.sdk.scripting.conditions.OpponentSpellOnStack
 
 /**
@@ -20,7 +20,7 @@ val MysticDenial = card("Mystic Denial") {
     spell {
         castOnlyIf(OpponentSpellOnStack)
         target = Targets.CreatureOrSorcerySpell
-        effect = CounterSpellEffect
+        effect = CounterEffect()
     }
 
     metadata {

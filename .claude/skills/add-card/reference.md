@@ -424,12 +424,17 @@ constructors.
 
 | Effect                           | Parameters                    | Purpose                    |
 |----------------------------------|-------------------------------|----------------------------|
-| `CounterSpellEffect`             | (object)                      | Counter target spell       |
-| `CounterTriggeringSpellEffect`   | (object)                      | Counter triggering spell (non-targeted) |
-| `CounterSpellWithFilterEffect`   | `filter: GameObjectFilter`    | Counter matching spell     |
-| `CounterAbilityEffect`           | (object)                      | Counter activated/triggered ability |
-| `CounterUnlessPaysEffect`        | `cost: ManaCost`              | Counter unless pays        |
-| `CounterUnlessDynamicPaysEffect` | `amount: DynamicAmount, exileOnCounter: Boolean = false` | Counter unless dynamic pay (exile if countered) |
+| `CounterEffect`                  | `target, targetSource, destination, condition, filter` | Unified counter — see below |
+
+**CounterEffect parameter combinations (use `Effects.*` facades):**
+| Facade Method | Equivalent CounterEffect | Purpose |
+|---|---|---|
+| `Effects.CounterSpell()` | `CounterEffect()` | Counter target spell |
+| `Effects.CounterAbility()` | `CounterEffect(target = CounterTarget.Ability)` | Counter target ability |
+| `Effects.CounterTriggeringSpell()` | `CounterEffect(targetSource = CounterTargetSource.TriggeringEntity)` | Counter triggering spell (non-targeted) |
+| `Effects.CounterUnlessPays("{2}")` | `CounterEffect(condition = UnlessPaysMana(...))` | Counter unless pays fixed cost |
+| `Effects.CounterUnlessDynamicPays(amt)` | `CounterEffect(condition = UnlessPaysDynamic(amt))` | Counter unless pays dynamic cost |
+| `Effects.CounterSpellToExile()` | `CounterEffect(destination = Exile())` | Counter and exile |
 | `ChangeSpellTargetEffect`        | `targetMustBeSource: Boolean` | Redirect spell target      |
 | `ChangeTargetEffect`             | (object)                      | Change target of spell/ability with single target |
 | `ReselectTargetRandomlyEffect`   | (object)                      | Randomly reselect triggering spell/ability's target |
