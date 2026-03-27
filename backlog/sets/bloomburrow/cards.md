@@ -2,11 +2,11 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 78 / 266
+**Implemented:** 79 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
-| White      | 40    | 15   |
+| White      | 40    | 16   |
 | Blue       | 41    | 10   |
 | Black      | 40    | 12   |
 | Red        | 41    | 15   |
@@ -276,7 +276,7 @@
 - [ ] Wax-Wane Witness
 - [ ] Wear Down
 - [ ] Whiskerquill Scribe
-- [ ] Whiskervale Forerunner
+- [x] Whiskervale Forerunner
 - [ ] Wick's Patrol
 - [x] Wick, the Whorled Mind
 - [x] Wildfire Howl
