@@ -216,4 +216,9 @@ object Costs {
      */
     fun Composite(costs: List<AbilityCost>): AbilityCost =
         AbilityCost.Composite(costs)
+
+    /**
+     * Forage: exile three cards from your graveyard or sacrifice a Food.
+     */
+    fun Forage(): AbilityCost = AbilityCost.Forage
 }

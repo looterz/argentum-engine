@@ -387,4 +387,15 @@ sealed interface AbilityCost : TextReplaceable<AbilityCost> {
         override val description: String = "Remove a $counterType counter from this permanent"
         override fun applyTextReplacement(replacer: TextReplacer): AbilityCost = this
     }
+
+    /**
+     * Forage: exile three cards from your graveyard or sacrifice a Food.
+     * Used as an activated ability cost for Bloomburrow cards.
+     */
+    @SerialName("CostForage")
+    @Serializable
+    data object Forage : AbilityCost {
+        override val description: String = "Forage"
+        override fun applyTextReplacement(replacer: TextReplacer): AbilityCost = this
+    }
 }

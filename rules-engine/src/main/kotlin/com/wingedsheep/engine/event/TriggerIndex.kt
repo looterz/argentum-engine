@@ -12,6 +12,7 @@ import com.wingedsheep.engine.core.ControlChangedEvent
 import com.wingedsheep.engine.core.DamageDealtEvent
 import com.wingedsheep.engine.core.LifeChangeReason
 import com.wingedsheep.engine.core.LifeChangedEvent
+import com.wingedsheep.engine.core.PermanentsSacrificedEvent
 import com.wingedsheep.engine.core.SpellCastEvent
 import com.wingedsheep.engine.core.TappedEvent
 import com.wingedsheep.engine.core.TurnFaceUpEvent
@@ -54,6 +55,7 @@ enum class TriggerCategory {
     TURN_FACE_UP,
     STEP,
     LIBRARY_TO_GRAVEYARD,
+    SACRIFICE,
 }
 
 /**
@@ -157,6 +159,7 @@ class TriggerIndex(
                 is SdkGameEvent.CreatureTurnedFaceUpEvent -> listOf(TriggerCategory.TURN_FACE_UP)
                 is SdkGameEvent.StepEvent -> listOf(TriggerCategory.STEP)
                 is SdkGameEvent.CardsPutIntoGraveyardFromLibraryEvent -> listOf(TriggerCategory.LIBRARY_TO_GRAVEYARD)
+                is SdkGameEvent.PermanentsSacrificedEvent -> listOf(TriggerCategory.SACRIFICE)
                 // These are handled by specialized detect methods, not the main loop
                 else -> emptyList()
             }

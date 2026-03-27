@@ -26,6 +26,7 @@ object BloomburrowSet {
         BonebindOrator,
         BraveKinDuo,
         BywayBarterer,
+        CamelliaTheSeedmiser,
         CrumbAndGetIt,
         DawnsTruce,
         DreamdewEntrancer,

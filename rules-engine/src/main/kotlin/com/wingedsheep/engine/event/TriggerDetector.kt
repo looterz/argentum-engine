@@ -5,6 +5,7 @@ import com.wingedsheep.engine.core.AttackersDeclaredEvent
 import com.wingedsheep.engine.core.CardCycledEvent
 import com.wingedsheep.engine.core.ControlChangedEvent
 import com.wingedsheep.engine.core.DamageDealtEvent
+import com.wingedsheep.engine.core.PermanentsSacrificedEvent
 import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.core.GameEvent as EngineGameEvent
 import com.wingedsheep.engine.handlers.ConditionEvaluator
@@ -187,6 +188,11 @@ class TriggerDetector(
         // batching triggers (e.g., Sidisi, Brood Tyrant). Groups library→graveyard zone changes
         // and fires the trigger at most once per controller.
         detectLibraryToGraveyardBatchTriggers(state, events, triggers, index)
+
+        // Detect "whenever you sacrifice one or more [permanents]" batching triggers
+        // (e.g., Camellia, the Seedmiser). Groups sacrifice events per controller
+        // and fires the trigger at most once per controller.
+        detectSacrificeBatchTriggers(state, events, triggers, index)
 
         // Detect Saga chapter triggers from lore counter additions
         detectSagaChapterTriggers(state, events, triggers)
@@ -728,6 +734,75 @@ class TriggerDetector(
                             }
                         }
                     } else false
+                }
+
+                if (hasMatch) {
+                    triggers.add(
+                        PendingTrigger(
+                            ability = ability,
+                            sourceId = entry.entityId,
+                            sourceName = entry.cardComponent.name,
+                            controllerId = controllerId,
+                            triggerContext = TriggerContext()
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Detect "whenever you sacrifice one or more [permanents]" batching triggers.
+     *
+     * Groups PermanentsSacrificedEvent by controller and fires the trigger at most once
+     * per controller, regardless of how many sacrifice events occurred.
+     */
+    private fun detectSacrificeBatchTriggers(
+        state: GameState,
+        events: List<EngineGameEvent>,
+        triggers: MutableList<PendingTrigger>,
+        index: TriggerIndex
+    ) {
+        // Collect all sacrifice events, grouped by controller
+        val sacrificeByController = mutableMapOf<EntityId, MutableList<PermanentsSacrificedEvent>>()
+        for (event in events) {
+            if (event is PermanentsSacrificedEvent) {
+                sacrificeByController.getOrPut(event.playerId) { mutableListOf() }.add(event)
+            }
+        }
+        if (sacrificeByController.isEmpty()) return
+
+        // Check battlefield permanents with sacrifice batch triggers
+        for (entry in index.getEntitiesForCategory(TriggerCategory.SACRIFICE)) {
+            for (ability in entry.abilities) {
+                val trigger = ability.trigger
+                if (trigger !is GameEvent.PermanentsSacrificedEvent) continue
+
+                // This trigger watches the controller's own sacrifices
+                val controllerId = entry.controllerId
+                val controllerEvents = sacrificeByController[controllerId] ?: continue
+
+                // Check if any of the sacrificed permanents match the filter
+                val hasMatch = controllerEvents.any { event ->
+                    event.permanentIds.any { permanentId ->
+                        if (trigger.filter == GameObjectFilter.Any) return@any true
+                        // Look up the entity (should be in graveyard or still accessible)
+                        val entity = state.getEntity(permanentId)
+                        val cardComponent = entity?.get<CardComponent>()
+                        if (cardComponent != null) {
+                            trigger.filter.cardPredicates.all { predicate ->
+                                when (predicate) {
+                                    is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsCreature ->
+                                        cardComponent.typeLine.isCreature
+                                    is com.wingedsheep.sdk.scripting.predicates.CardPredicate.IsArtifact ->
+                                        cardComponent.typeLine.isArtifact
+                                    is com.wingedsheep.sdk.scripting.predicates.CardPredicate.HasSubtype ->
+                                        cardComponent.typeLine.hasSubtype(predicate.subtype)
+                                    else -> true
+                                }
+                            }
+                        } else false
+                    }
                 }
 
                 if (hasMatch) {

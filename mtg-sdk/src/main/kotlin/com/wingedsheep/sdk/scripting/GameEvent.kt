@@ -817,6 +817,42 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
             return if (newFilter !== filter) copy(filter = newFilter) else this
         }
     }
+
+    // =========================================================================
+    // Sacrifice Triggers
+    // =========================================================================
+
+    /**
+     * Whenever you sacrifice one or more permanents matching a filter.
+     * Batching trigger — fires at most once per event batch regardless of how many
+     * permanents were sacrificed.
+     *
+     * Examples:
+     *   → PermanentsSacrificedEvent(filter = GameObjectFilter.Food)
+     *     "Whenever you sacrifice one or more Foods"
+     *   → PermanentsSacrificedEvent()
+     *     "Whenever you sacrifice a permanent"
+     */
+    @SerialName("PermanentsSacrificedEvent")
+    @Serializable
+    data class PermanentsSacrificedEvent(
+        val filter: GameObjectFilter = GameObjectFilter.Any
+    ) : GameEvent {
+        override val description: String = buildString {
+            append("you sacrifice one or more ")
+            if (filter != GameObjectFilter.Any) {
+                append(filter.cardPredicates.joinToString(" ") { it.description })
+                append("s")
+            } else {
+                append("permanents")
+            }
+        }
+
+        override fun applyTextReplacement(replacer: TextReplacer): GameEvent {
+            val newFilter = filter.applyTextReplacement(replacer)
+            return if (newFilter !== filter) copy(filter = newFilter) else this
+        }
+    }
 }
 
 /**

@@ -825,6 +825,22 @@ object Triggers {
     )
 
     // =========================================================================
+    // Sacrifice Triggers
+    // =========================================================================
+
+    /**
+     * Whenever you sacrifice one or more permanents matching the filter.
+     * Batching trigger — fires at most once per event batch.
+     *
+     * Example: "Whenever you sacrifice one or more Foods"
+     * → YouSacrificeOneOrMore(GameObjectFilter.Artifact.withSubtype("Food"))
+     */
+    fun YouSacrificeOneOrMore(filter: GameObjectFilter = GameObjectFilter.Any): TriggerSpec = TriggerSpec(
+        event = PermanentsSacrificedEvent(filter = filter),
+        binding = TriggerBinding.ANY
+    )
+
+    // =========================================================================
     // Expend Triggers (Bloomburrow)
     // =========================================================================
 

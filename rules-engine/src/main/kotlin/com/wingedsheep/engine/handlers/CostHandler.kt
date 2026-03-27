@@ -152,6 +152,17 @@ class CostHandler(
                 val counterType = resolveNamedCounterType(cost.counterType)
                 (counters?.getCount(counterType) ?: 0) > 0
             }
+            is AbilityCost.Forage -> {
+                // Can forage if: 3+ cards in graveyard OR a Food artifact on battlefield
+                val graveyardSize = state.getZone(ZoneKey(controllerId, Zone.GRAVEYARD)).size
+                val hasFood = state.getBattlefield().any { permId ->
+                    val permContainer = state.getEntity(permId) ?: return@any false
+                    val permCard = permContainer.get<CardComponent>() ?: return@any false
+                    val permController = permContainer.get<ControllerComponent>()?.playerId
+                    permController == controllerId && permCard.typeLine.hasSubtype(Subtype.FOOD)
+                }
+                graveyardSize >= 3 || hasFood
+            }
             is AbilityCost.Composite -> {
                 cost.costs.all { canPayAbilityCost(state, it, sourceId, controllerId, manaPool) }
             }
@@ -486,6 +497,49 @@ class CostHandler(
                     container.with(c.withRemoved(counterType, 1))
                 }
                 CostPaymentResult.success(newState, manaPool)
+            }
+            is AbilityCost.Forage -> {
+                // Forage: sacrifice a Food if available, otherwise exile 3 cards from graveyard
+                val foods = state.getBattlefield().filter { permId ->
+                    val permContainer = state.getEntity(permId) ?: return@filter false
+                    val permCard = permContainer.get<CardComponent>() ?: return@filter false
+                    val permController = permContainer.get<ControllerComponent>()?.playerId
+                    permController == controllerId && permCard.typeLine.hasSubtype(Subtype.FOOD)
+                }
+
+                if (foods.isNotEmpty()) {
+                    // Sacrifice a Food (auto-select first available)
+                    val foodId = choices.sacrificeChoices.firstOrNull()?.takeIf { it in foods } ?: foods.first()
+                    val foodName = state.getEntity(foodId)?.get<CardComponent>()?.name ?: "Food"
+                    val foodController = state.getEntity(foodId)?.get<ControllerComponent>()?.playerId ?: controllerId
+
+                    val transitionResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+                        state, foodId, Zone.GRAVEYARD
+                    )
+                    val events = mutableListOf<GameEvent>()
+                    events.add(PermanentsSacrificedEvent(foodController, listOf(foodId), listOf(foodName)))
+                    events.addAll(transitionResult.events)
+                    CostPaymentResult.success(transitionResult.state, manaPool, events)
+                } else {
+                    // Exile 3 cards from graveyard
+                    val graveyardZone = ZoneKey(controllerId, Zone.GRAVEYARD)
+                    val graveyardCards = state.getZone(graveyardZone)
+                    if (graveyardCards.size < 3) {
+                        return CostPaymentResult.failure("Cannot forage: need 3 cards in graveyard or a Food")
+                    }
+                    val toExile = (choices.exileChoices.takeIf { it.size >= 3 }?.take(3)
+                        ?: graveyardCards.take(3))
+                    var newState = state
+                    val events = mutableListOf<GameEvent>()
+                    for (cardId in toExile) {
+                        val transitionResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+                            newState, cardId, Zone.EXILE
+                        )
+                        newState = transitionResult.state
+                        events.addAll(transitionResult.events)
+                    }
+                    CostPaymentResult.success(newState, manaPool, events)
+                }
             }
             is AbilityCost.Composite -> {
                 var currentState = state

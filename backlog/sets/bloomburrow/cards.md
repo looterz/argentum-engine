@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 48 / 266
+**Implemented:** 49 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -11,7 +11,7 @@
 | Black      | 40    | 8    |
 | Red        | 41    | 8    |
 | Green      | 41    | 5    |
-| Multicolor | 39    | 5    |
+| Multicolor | 39    | 6    |
 | Colorless  | 9     | 1    |
 | Land       | 15    | 0    |
 
@@ -47,7 +47,7 @@
 - [x] Byway Barterer
 - [ ] Cache Grab
 - [ ] Calamitous Tide
-- [ ] Camellia, the Seedmiser
+- [x] Camellia, the Seedmiser
 - [ ] Caretaker's Talent
 - [ ] Carrot Cake
 - [ ] Cindering Cutthroat

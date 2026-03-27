@@ -299,6 +299,21 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                         break
                                     }
                                 }
+                                is AbilityCost.Forage -> {
+                                    // Forage: can exile 3 from graveyard OR sacrifice a Food
+                                    val graveyardZone = ZoneKey(playerId, Zone.GRAVEYARD)
+                                    val graveyardSize = state.getZone(graveyardZone).size
+                                    val hasFood = state.getBattlefield().any { permId ->
+                                        val pc = state.getEntity(permId) ?: return@any false
+                                        val pCard = pc.get<CardComponent>() ?: return@any false
+                                        val pCtrl = pc.get<ControllerComponent>()?.playerId
+                                        pCtrl == playerId && pCard.typeLine.hasSubtype(com.wingedsheep.sdk.core.Subtype.FOOD)
+                                    }
+                                    if (graveyardSize < 3 && !hasFood) {
+                                        costCanBePaid = false
+                                        break
+                                    }
+                                }
                                 is AbilityCost.ExileXFromGraveyard -> {
                                     // ExileXFromGraveyard: validated via maxAffordableX cap below
                                 }
