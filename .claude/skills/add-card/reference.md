@@ -346,8 +346,7 @@ constructors.
 |----------------------------------|---------------------------------------------------------------------------------------------|--------------------------------|
 | `CreateTokenEffect`              | `count: DynamicAmount, power, toughness, colors, creatureTypes, keywords, name?, imageUri?, tapped?, attacking?, legendary?, exileAtStep?` | Create token (tapped = enter tapped, attacking = enter attacking, legendary = legendary supertype, exileAtStep = create delayed trigger to exile tokens at that step) |
 | `CreateChosenTokenEffect`        | `dynamicPower: DynamicAmount, dynamicToughness: DynamicAmount`                              | Create token with chosen stats |
-| `CreateTreasureTokensEffect`     | `count: DynamicAmount`                                                                      | Create Treasure                |
-| `CreateFoodTokensEffect`        | `count: Int, controller: EffectTarget?`                                                     | Create Food artifact tokens    |
+| `CreatePredefinedTokenEffect`    | `tokenType: String, count: Int, controller: EffectTarget?`                                  | Create predefined tokens (Treasure, Food, Lander). Use `Effects.CreateTreasure()`, `Effects.CreateFood()`, `Effects.CreateLander()` facades. |
 | `CreateTokenCopyOfSourceEffect`  | `count: Int`                                                                                | Create token copy of source permanent |
 | `CreateTokenFromGraveyardEffect` | `power, toughness, colors, creatureTypes`                                                   | Token from graveyard           |
 

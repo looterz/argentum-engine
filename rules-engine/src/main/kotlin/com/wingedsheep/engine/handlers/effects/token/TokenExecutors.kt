@@ -16,9 +16,7 @@ class TokenExecutors(
 ) : ExecutorModule {
     override fun executors(): List<EffectExecutor<*>> = listOf(
         CreateTokenExecutor(amountEvaluator, staticAbilityHandler),
-        CreateTreasureExecutor(),
-        CreateFoodTokenExecutor(),
-        CreateLanderTokenExecutor(),
+        CreatePredefinedTokenExecutor(cardRegistry),
         CreateChosenTokenExecutor(amountEvaluator),
         CreateTokenCopyOfSourceExecutor(cardRegistry, staticAbilityHandler),
         CreateTokenCopyOfEquippedCreatureExecutor(cardRegistry, staticAbilityHandler)

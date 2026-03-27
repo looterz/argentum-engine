@@ -1,43 +1,46 @@
 package com.wingedsheep.engine.handlers.effects.token
 
 import com.wingedsheep.engine.core.ExecutionResult
+import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
+import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.TokenComponent
-import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.core.ManaCost
-import com.wingedsheep.sdk.core.TypeLine
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
-import com.wingedsheep.engine.core.ZoneChangeEvent
-import com.wingedsheep.sdk.scripting.effects.CreateLanderTokensEffect
+import com.wingedsheep.sdk.scripting.effects.CreatePredefinedTokenEffect
 import kotlin.reflect.KClass
 
 /**
- * Executor for CreateLanderTokensEffect.
- * Creates Lander artifact tokens ("Artifact — Lander").
+ * Unified executor for all predefined token types (Treasure, Food, Lander, etc.).
  *
- * Lander tokens have the activated ability:
- * "{2}, {T}, Sacrifice this token: Search your library for a basic land card,
- * put it onto the battlefield tapped, then shuffle."
+ * Looks up the token's CardDefinition from the CardRegistry to read type line, imageUri,
+ * and abilities. The CardDefinition name must match [CreatePredefinedTokenEffect.tokenType].
  *
- * The ability is defined via a CardDefinition registered in the CardRegistry as "Lander",
- * which the engine looks up by token name to resolve activated abilities.
+ * To add a new predefined token type, define it in `PredefinedTokens.kt` and add a facade
+ * method to `Effects.kt` — no new executor needed.
  */
-class CreateLanderTokenExecutor : EffectExecutor<CreateLanderTokensEffect> {
+class CreatePredefinedTokenExecutor(
+    private val cardRegistry: CardRegistry
+) : EffectExecutor<CreatePredefinedTokenEffect> {
 
-    override val effectType: KClass<CreateLanderTokensEffect> = CreateLanderTokensEffect::class
+    override val effectType: KClass<CreatePredefinedTokenEffect> = CreatePredefinedTokenEffect::class
 
     override fun execute(
         state: GameState,
-        effect: CreateLanderTokensEffect,
+        effect: CreatePredefinedTokenEffect,
         context: EffectContext
     ): ExecutionResult {
+        val cardDef = cardRegistry.getCard(effect.tokenType)
+            ?: return ExecutionResult.error(state, "No CardDefinition registered for predefined token '${effect.tokenType}'")
+
         val controller = effect.controller
         val tokenControllerId = if (controller != null) {
             TargetResolutionUtils.resolvePlayerTarget(controller, context, state)
@@ -54,11 +57,12 @@ class CreateLanderTokenExecutor : EffectExecutor<CreateLanderTokensEffect> {
             createdTokenIds.add(tokenId)
 
             val tokenComponent = CardComponent(
-                cardDefinitionId = "Lander",
-                name = "Lander",
+                cardDefinitionId = effect.tokenType,
+                name = effect.tokenType,
                 manaCost = ManaCost.ZERO,
-                typeLine = TypeLine.parse("Artifact - Lander"),
-                ownerId = tokenControllerId
+                typeLine = cardDef.typeLine,
+                ownerId = tokenControllerId,
+                imageUri = cardDef.metadata.imageUri
             )
 
             val container = ComponentContainer.of(
@@ -76,7 +80,7 @@ class CreateLanderTokenExecutor : EffectExecutor<CreateLanderTokensEffect> {
         val events = createdTokenIds.map { tokenId ->
             ZoneChangeEvent(
                 entityId = tokenId,
-                entityName = "Lander",
+                entityName = effect.tokenType,
                 fromZone = null,
                 toZone = Zone.BATTLEFIELD,
                 ownerId = tokenControllerId

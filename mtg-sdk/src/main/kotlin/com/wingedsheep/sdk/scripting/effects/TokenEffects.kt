@@ -136,63 +136,30 @@ data class CreateTokenEffect(
 }
 
 /**
- * Create Treasure artifact tokens.
- * Treasure tokens have "{T}, Sacrifice this artifact: Add one mana of any color."
- */
-@SerialName("CreateTreasureTokens")
-@Serializable
-data class CreateTreasureTokensEffect(
-    val count: Int = 1
-) : Effect {
-    override val description: String = if (count == 1) {
-        "Create a Treasure token"
-    } else {
-        "Create $count Treasure tokens"
-    }
-
-    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
-}
-
-/**
- * Create Food artifact tokens.
- * Food tokens have "{2}, {T}, Sacrifice this artifact: You gain 3 life."
+ * Create predefined artifact tokens (Treasure, Food, Lander, etc.).
  *
- * @property count Number of Food tokens to create
+ * The [tokenType] must match a CardDefinition registered in PredefinedTokens. The engine
+ * looks up the token's type line, abilities, and metadata from the CardDefinition at runtime.
+ *
+ * To add a new predefined token type:
+ * 1. Add a CardDefinition to `PredefinedTokens.kt` (mtg-sets)
+ * 2. Add a facade method to `Effects.kt` (e.g., `Effects.CreateClue()`)
+ *
+ * @property tokenType Name of the predefined token (must match a registered CardDefinition)
+ * @property count Number of tokens to create
  * @property controller Who controls the created tokens (null = spell controller)
  */
-@SerialName("CreateFoodTokens")
+@SerialName("CreatePredefinedToken")
 @Serializable
-data class CreateFoodTokensEffect(
+data class CreatePredefinedTokenEffect(
+    val tokenType: String,
     val count: Int = 1,
     val controller: EffectTarget? = null
 ) : Effect {
     override val description: String = if (count == 1) {
-        "Create a Food token"
+        "Create a $tokenType token"
     } else {
-        "Create $count Food tokens"
-    }
-
-    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
-}
-
-/**
- * Create Lander artifact tokens.
- * Lander tokens are artifacts with "{2}, {T}, Sacrifice this token: Search your library for a
- * basic land card, put it onto the battlefield tapped, then shuffle."
- *
- * @property count Number of Lander tokens to create
- * @property controller Who controls the created tokens (null = spell controller)
- */
-@SerialName("CreateLanderTokens")
-@Serializable
-data class CreateLanderTokensEffect(
-    val count: Int = 1,
-    val controller: EffectTarget? = null
-) : Effect {
-    override val description: String = if (count == 1) {
-        "Create a Lander token"
-    } else {
-        "Create $count Lander tokens"
+        "Create $count $tokenType tokens"
     }
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
