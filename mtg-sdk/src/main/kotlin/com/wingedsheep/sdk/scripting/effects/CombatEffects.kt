@@ -19,22 +19,22 @@ import kotlinx.serialization.Serializable
  * The scope of damage a prevention shield applies to.
  */
 @Serializable
-sealed interface PreventionScope {
-    @SerialName("AllDamage") data object AllDamage : PreventionScope
-    @SerialName("CombatOnly") data object CombatOnly : PreventionScope
+enum class PreventionScope {
+    AllDamage,
+    CombatOnly
 }
 
 /**
  * The direction of damage prevention relative to the target entity.
  */
 @Serializable
-sealed interface PreventionDirection {
+enum class PreventionDirection {
     /** Shield protects the target from receiving damage. */
-    @SerialName("ToTarget") data object ToTarget : PreventionDirection
+    ToTarget,
     /** Shield prevents the target from dealing damage. */
-    @SerialName("FromTarget") data object FromTarget : PreventionDirection
+    FromTarget,
     /** Shield prevents damage both to and from the target. */
-    @SerialName("Both") data object Both : PreventionDirection
+    Both
 }
 
 /**
@@ -43,15 +43,15 @@ sealed interface PreventionDirection {
 @Serializable
 sealed interface PreventionSourceFilter {
     /** Any damage source. */
-    @SerialName("AnySource") data object AnySource : PreventionSourceFilter
+    @SerialName("AnySource") @Serializable data object AnySource : PreventionSourceFilter
     /** Only damage from attacking creatures. */
-    @SerialName("AttackingCreatures") data object AttackingCreatures : PreventionSourceFilter
+    @SerialName("AttackingCreatures") @Serializable data object AttackingCreatures : PreventionSourceFilter
     /** Player chooses a damage source on resolution. */
-    @SerialName("ChosenSource") data object ChosenSource : PreventionSourceFilter
+    @SerialName("ChosenSource") @Serializable data object ChosenSource : PreventionSourceFilter
     /** Uses the chosen creature type from the source permanent's component. */
-    @SerialName("ChosenCreatureType") data object ChosenCreatureType : PreventionSourceFilter
+    @SerialName("ChosenCreatureType") @Serializable data object ChosenCreatureType : PreventionSourceFilter
     /** Only damage from creatures matching a group filter. */
-    @SerialName("FromGroup") data class FromGroup(val filter: GroupFilter) : PreventionSourceFilter
+    @SerialName("FromGroup") @Serializable data class FromGroup(val filter: GroupFilter) : PreventionSourceFilter
 }
 
 /**
@@ -76,7 +76,7 @@ sealed interface PreventionSourceFilter {
  * @property reflect If true, prevented damage is dealt to the source's controller (Deflecting Palm)
  * @property duration When the shield expires
  */
-@SerialName("PreventDamage")
+@SerialName("PreventDamageShield")
 @Serializable
 data class PreventDamageEffect(
     val target: EffectTarget = EffectTarget.Controller,
