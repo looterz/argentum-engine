@@ -38,6 +38,7 @@ object BloomburrowSet {
         DawnsTruce,
         DireDowndraft,
         DreamdewEntrancer,
+        DruidOfTheSpade,
         DriftgloomCoyote,
         EarlyWinter,
         EmberheartChallenger,

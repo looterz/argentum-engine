@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 72 / 266
+**Implemented:** 73 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -10,7 +10,7 @@
 | Blue       | 41    | 10   |
 | Black      | 40    | 11   |
 | Red        | 41    | 13   |
-| Green      | 41    | 7    |
+| Green      | 41    | 8    |
 | Multicolor | 39    | 10   |
 | Colorless  | 9     | 2    |
 | Land       | 15    | 1    |
@@ -74,7 +74,7 @@
 - [ ] Dragonhawk, Fate's Tempest
 - [x] Dreamdew Entrancer
 - [x] Driftgloom Coyote
-- [ ] Druid of the Spade
+- [x] Druid of the Spade
 - [x] Early Winter
 - [x] Eddymurk Crab
 - [ ] Eluge, the Shoreless Sea
