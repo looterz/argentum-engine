@@ -2,11 +2,11 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 84 / 266
+**Implemented:** 85 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
-| White      | 40    | 18   |
+| White      | 40    | 19   |
 | Blue       | 41    | 10   |
 | Black      | 40    | 12   |
 | Red        | 41    | 15   |
@@ -175,7 +175,7 @@
 - [ ] Pearl of Wisdom
 - [ ] Peerless Recycling
 - [ ] Persistent Marshstalker
-- [ ] Pileated Provisioner
+- [x] Pileated Provisioner
 - [ ] Plains
 - [x] Playful Shove
 - [ ] Plumecreed Escort
