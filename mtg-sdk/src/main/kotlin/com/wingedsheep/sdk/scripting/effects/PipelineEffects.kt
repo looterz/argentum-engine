@@ -543,11 +543,14 @@ data class SelectTargetEffect(
 @Serializable
 data class GrantMayPlayFromExileEffect(
     val from: String,
-    val untilEndOfNextTurn: Boolean = false
+    val untilEndOfNextTurn: Boolean = false,
+    val permanent: Boolean = false
 ) : Effect {
-    override val description: String =
-        if (untilEndOfNextTurn) "Until the end of your next turn, you may play the $from cards from exile"
-        else "Until end of turn, you may play the $from cards from exile"
+    override val description: String = when {
+        permanent -> "For as long as they remain exiled, you may play the $from cards from exile"
+        untilEndOfNextTurn -> "Until the end of your next turn, you may play the $from cards from exile"
+        else -> "Until end of turn, you may play the $from cards from exile"
+    }
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
 }

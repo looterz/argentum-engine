@@ -2,13 +2,13 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 118 / 266
+**Implemented:** 119 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 22   |
 | Blue       | 41    | 16   |
-| Black      | 40    | 20   |
+| Black      | 40    | 21   |
 | Red        | 41    | 18   |
 | Green      | 41    | 14   |
 | Multicolor | 39    | 16   |
@@ -58,7 +58,7 @@
 - [ ] Consumed by Greed
 - [x] Corpseberry Cultivator
 - [ ] Coruscation Mage
-- [ ] Cruelclaw's Heist
+- [x] Cruelclaw's Heist
 - [x] Crumb and Get It
 - [ ] Curious Forager
 - [x] Daggerfang Duo

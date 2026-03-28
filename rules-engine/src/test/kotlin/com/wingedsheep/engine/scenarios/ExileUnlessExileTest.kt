@@ -113,8 +113,7 @@ class ExileUnlessExileTest : FunSpec({
         // Should have a pending decision to select a card from graveyard
         val decision = driver.pendingDecision
         decision shouldNotBe null
-        decision.shouldBeInstanceOf<SelectCardsDecision>()
-        (decision as SelectCardsDecision).options shouldContain graveyardCard
+        decision.shouldBeInstanceOf<SelectCardsDecision>().options shouldContain graveyardCard
     }
 
     test("creature stays if player exiles a card from graveyard") {

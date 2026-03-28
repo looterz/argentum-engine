@@ -90,13 +90,11 @@ class ReturnSelfToBattlefieldAttachedExecutor(
                 .with(AttachedToComponent(attachTargetId))
 
             // Set up continuous effects from static abilities
-            if (cardRegistry != null) {
-                val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
-                if (cardDef != null) {
-                    val staticAbilityHandler = StaticAbilityHandler(cardRegistry)
-                    updated = staticAbilityHandler.addContinuousEffectComponent(updated, cardDef)
-                    updated = staticAbilityHandler.addReplacementEffectComponent(updated, cardDef)
-                }
+            val cardDef = cardRegistry.getCard(cardComponent.cardDefinitionId)
+            if (cardDef != null) {
+                val staticAbilityHandler = StaticAbilityHandler(cardRegistry)
+                updated = staticAbilityHandler.addContinuousEffectComponent(updated, cardDef)
+                updated = staticAbilityHandler.addReplacementEffectComponent(updated, cardDef)
             }
 
             updated

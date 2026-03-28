@@ -108,8 +108,7 @@ class SacrificeUnlessSacrificeTest : FunSpec({
         // Should have a pending decision to select a Forest
         val decision = driver.pendingDecision
         decision shouldNotBe null
-        decision.shouldBeInstanceOf<SelectCardsDecision>()
-        (decision as SelectCardsDecision).options shouldContain forest
+        decision.shouldBeInstanceOf<SelectCardsDecision>().options shouldContain forest
     }
 
     test("Plant Elemental stays if player sacrifices a Forest") {

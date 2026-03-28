@@ -40,6 +40,7 @@ class GrantMayPlayFromExileExecutor : EffectExecutor<GrantMayPlayFromExileEffect
                 container.with(
                     MayPlayFromExileComponent(
                         controllerId = controllerId,
+                        permanent = effect.permanent,
                         expiresAfterTurn = expiresAfterTurn
                     )
                 )

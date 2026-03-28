@@ -107,8 +107,7 @@ class CardSerializationRoundTripTest : DescribeSpec({
             serialized shouldContain "GainLife"
 
             val deserialized = CardLoader.fromJson(serialized)
-            deserialized.script.spellEffect.shouldBeInstanceOf<CompositeEffect>()
-            val composite = deserialized.script.spellEffect as CompositeEffect
+            val composite = deserialized.script.spellEffect.shouldBeInstanceOf<CompositeEffect>()
             composite.effects.size shouldBe 2
         }
 

@@ -247,7 +247,7 @@ class LibraryAndZoneContinuationResumer(
             val nextRemaining = remainingAuras.drop(1)
 
             val nextCardComponent = newState.getEntity(nextAuraId)?.get<CardComponent>()
-            val nextCardDef = nextCardComponent?.let { services.cardRegistry?.getCard(it.cardDefinitionId) }
+            val nextCardDef = nextCardComponent?.let { services.cardRegistry.getCard(it.cardDefinitionId) }
             val nextAuraTarget = nextCardDef?.script?.auraTarget
 
             if (nextAuraTarget == null) {

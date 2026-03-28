@@ -257,14 +257,14 @@ class ModalAndCloneContinuationResumer(
                 }
 
                 // Look up the card definition for the copied creature
-                copiedCardDef = services.cardRegistry?.getCard(targetCardComponent.cardDefinitionId)
+                copiedCardDef = services.cardRegistry.getCard(targetCardComponent.cardDefinitionId)
             } else {
                 // Target creature no longer exists - enter as itself
-                copiedCardDef = services.cardRegistry?.getCard(originalCardComponent.cardDefinitionId)
+                copiedCardDef = services.cardRegistry.getCard(originalCardComponent.cardDefinitionId)
             }
         } else {
             // Player declined to copy - enter as itself (0/0 Clone)
-            copiedCardDef = services.cardRegistry?.getCard(originalCardComponent.cardDefinitionId)
+            copiedCardDef = services.cardRegistry.getCard(originalCardComponent.cardDefinitionId)
         }
 
         // Get the (possibly updated) card component for event names
@@ -326,7 +326,7 @@ class ModalAndCloneContinuationResumer(
             ?: return ExecutionResult.error(state, "Spell has no CardComponent")
 
         // Check if the card also needs a creature type choice
-        val cardDef = services.cardRegistry?.getCard(cardComponent.cardDefinitionId)
+        val cardDef = services.cardRegistry.getCard(cardComponent.cardDefinitionId)
         val entersWithCreatureTypeChoice = cardDef?.script?.replacementEffects
             ?.filterIsInstance<com.wingedsheep.sdk.scripting.EntersWithCreatureTypeChoice>()?.firstOrNull()
 
@@ -425,7 +425,7 @@ class ModalAndCloneContinuationResumer(
         }
 
         // Complete the permanent entry
-        val cardDef = services.cardRegistry?.getCard(cardComponent.cardDefinitionId)
+        val cardDef = services.cardRegistry.getCard(cardComponent.cardDefinitionId)
         newState = services.stackResolver.enterPermanentOnBattlefield(
             newState, spellId, spellComponent, cardComponent, cardDef
         )
@@ -480,7 +480,7 @@ class ModalAndCloneContinuationResumer(
         }
 
         // Complete the permanent entry
-        val cardDef = services.cardRegistry?.getCard(cardComponent.cardDefinitionId)
+        val cardDef = services.cardRegistry.getCard(cardComponent.cardDefinitionId)
         newState = services.stackResolver.enterPermanentOnBattlefield(
             newState, spellId, spellComponent, cardComponent, cardDef
         )
@@ -628,7 +628,7 @@ class ModalAndCloneContinuationResumer(
         val spellComponent = spellContainer.get<SpellOnStackComponent>()
             ?: return ExecutionResult.error(state, "Spell has no SpellOnStackComponent")
 
-        val cardDef = services.cardRegistry?.getCard(cardComponent.cardDefinitionId)
+        val cardDef = services.cardRegistry.getCard(cardComponent.cardDefinitionId)
         newState = services.stackResolver.enterPermanentOnBattlefield(
             newState, spellId, spellComponent, cardComponent, cardDef
         )

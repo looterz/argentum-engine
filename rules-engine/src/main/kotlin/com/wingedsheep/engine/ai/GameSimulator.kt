@@ -80,7 +80,7 @@ class GameSimulator(
 
         while (iterations < maxIterations) {
             if (current.error != null) {
-                return SimulationResult.Illegal(current.state, allEvents, current.error!!)
+                return SimulationResult.Illegal(current.state, allEvents, current.error)
             }
 
             // Auto-resolve trivial decisions
@@ -99,7 +99,7 @@ class GameSimulator(
             // to respond, which is the most common outcome.
             val state = current.state
             if (state.stack.isNotEmpty() && state.priorityPlayerId != null && !state.gameOver) {
-                val passAction = PassPriority(state.priorityPlayerId!!)
+                val passAction = PassPriority(state.priorityPlayerId)
                 current = processor.process(state, passAction)
                 allEvents = allEvents + current.events
                 iterations++
@@ -112,7 +112,7 @@ class GameSimulator(
 
         return when {
             current.error != null ->
-                SimulationResult.Illegal(current.state, allEvents, current.error!!)
+                SimulationResult.Illegal(current.state, allEvents, current.error)
             current.isPaused ->
                 SimulationResult.NeedsDecision(current.state, current.pendingDecision!!, allEvents)
             else ->

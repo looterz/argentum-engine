@@ -333,8 +333,7 @@ class CostEnumerationUtils(
         abilityCost: AbilityCost,
         manaCost: ManaCost?
     ): Int {
-        val hasXInMana = manaCost?.hasX == true
-        var maxX = if (hasXInMana && manaCost != null) {
+        var maxX = if (manaCost != null && manaCost.hasX) {
             val availableSources = manaSolver.getAvailableManaCount(state, playerId)
             val fixedCost = manaCost.cmc
             (availableSources - fixedCost).coerceAtLeast(0)

@@ -58,11 +58,10 @@ class CloneTest : FunSpec({
 
         // Should have a SelectCardsDecision for choosing creature to copy
         val decision = driver.pendingDecision
-        decision.shouldBeInstanceOf<SelectCardsDecision>()
-        decision as SelectCardsDecision
-        decision.minSelections shouldBe 0  // optional
-        decision.maxSelections shouldBe 1
-        decision.options shouldContain warrior
+        val selectDecision = decision.shouldBeInstanceOf<SelectCardsDecision>()
+        selectDecision.minSelections shouldBe 0  // optional
+        selectDecision.maxSelections shouldBe 1
+        selectDecision.options shouldContain warrior
 
         // Select the warrior to copy
         driver.submitCardSelection(activePlayer, listOf(warrior))

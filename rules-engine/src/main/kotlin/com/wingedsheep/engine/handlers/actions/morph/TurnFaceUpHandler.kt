@@ -404,7 +404,7 @@ class TurnFaceUpHandler(
                 for (targetId in action.costTargetIds) {
                     val result = ZoneMovementUtils.movePermanentToZone(currentState, targetId, Zone.HAND)
                     if (result.error != null) {
-                        return ExecutionResult.error(currentState, result.error!!)
+                        return ExecutionResult.error(currentState, result.error)
                     }
                     currentState = result.newState
                     events.addAll(result.events)
@@ -414,7 +414,7 @@ class TurnFaceUpHandler(
                 for (targetId in action.costTargetIds) {
                     val result = ZoneMovementUtils.movePermanentToZone(currentState, targetId, Zone.GRAVEYARD)
                     if (result.error != null) {
-                        return ExecutionResult.error(currentState, result.error!!)
+                        return ExecutionResult.error(currentState, result.error)
                     }
                     currentState = result.newState
                     events.addAll(result.events)
@@ -429,7 +429,7 @@ class TurnFaceUpHandler(
                     discardedIds.add(targetId)
                     val result = ZoneMovementUtils.moveCardToZone(currentState, targetId, Zone.GRAVEYARD)
                     if (result.error != null) {
-                        return ExecutionResult.error(currentState, result.error!!)
+                        return ExecutionResult.error(currentState, result.error)
                     }
                     currentState = result.newState
                     events.addAll(result.events)
@@ -452,7 +452,7 @@ class TurnFaceUpHandler(
                 for (targetId in action.costTargetIds) {
                     val result = ZoneMovementUtils.moveCardToZone(currentState, targetId, Zone.EXILE)
                     if (result.error != null) {
-                        return ExecutionResult.error(currentState, result.error!!)
+                        return ExecutionResult.error(currentState, result.error)
                     }
                     currentState = result.newState
                     events.addAll(result.events)

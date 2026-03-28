@@ -126,9 +126,9 @@ class ProwlingPangolinTest : FunSpec({
         // Active player should be asked to sacrifice
         val decision = driver.pendingDecision
         decision shouldNotBe null
-        decision.shouldBeInstanceOf<SelectCardsDecision>()
-        (decision as SelectCardsDecision).playerId shouldBe activePlayer
-        decision.maxSelections shouldBe 2
+        val selectDecision = decision.shouldBeInstanceOf<SelectCardsDecision>()
+        selectDecision.playerId shouldBe activePlayer
+        selectDecision.maxSelections shouldBe 2
 
         // Active player sacrifices two goblins
         driver.submitCardSelection(activePlayer, listOf(goblin1, goblin2))
@@ -210,8 +210,7 @@ class ProwlingPangolinTest : FunSpec({
         // Opponent should now be asked
         val decision = driver.pendingDecision
         decision shouldNotBe null
-        decision.shouldBeInstanceOf<SelectCardsDecision>()
-        (decision as SelectCardsDecision).playerId shouldBe opponent
+        decision.shouldBeInstanceOf<SelectCardsDecision>().playerId shouldBe opponent
 
         // Opponent sacrifices two goblins
         driver.submitCardSelection(opponent, listOf(oppGoblin1, oppGoblin2))
@@ -258,8 +257,7 @@ class ProwlingPangolinTest : FunSpec({
         // Opponent should now be asked
         val opponentDecision = driver.pendingDecision
         opponentDecision shouldNotBe null
-        opponentDecision.shouldBeInstanceOf<SelectCardsDecision>()
-        (opponentDecision as SelectCardsDecision).playerId shouldBe opponent
+        opponentDecision.shouldBeInstanceOf<SelectCardsDecision>().playerId shouldBe opponent
 
         // Opponent also declines
         driver.submitCardSelection(opponent, emptyList())

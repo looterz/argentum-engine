@@ -69,7 +69,7 @@ class AIPlayer(
         while (!current.gameOver && iterations < maxIterations) {
             // Handle pending decisions first
             if (current.pendingDecision != null) {
-                val decision = current.pendingDecision!!
+                val decision = current.pendingDecision
                 if (decision.playerId != playerId) break // not our decision
                 val response = respondToDecision(current, decision)
                 val result = processor.process(current, SubmitDecision(playerId, response))

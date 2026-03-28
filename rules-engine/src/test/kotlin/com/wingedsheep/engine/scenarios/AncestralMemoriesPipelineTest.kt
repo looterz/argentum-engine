@@ -75,10 +75,8 @@ class AncestralMemoriesPipelineTest : FunSpec({
         // GatherCards runs (stores top 7 in "looked") then SelectFromCollection pauses for a decision
         driver.isPaused shouldBe true
         val decision = driver.pendingDecision
-        decision.shouldBeInstanceOf<SelectCardsDecision>()
-
         // The decision should show 7 cards to choose from
-        val selectDecision = decision as SelectCardsDecision
+        val selectDecision = decision.shouldBeInstanceOf<SelectCardsDecision>()
         selectDecision.options.size shouldBe 7
         selectDecision.minSelections shouldBe 2
         selectDecision.maxSelections shouldBe 2

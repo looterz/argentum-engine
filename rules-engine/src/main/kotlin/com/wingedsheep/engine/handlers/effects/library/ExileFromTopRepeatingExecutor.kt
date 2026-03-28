@@ -46,7 +46,6 @@ class ExileFromTopRepeatingExecutor : EffectExecutor<ExileFromTopRepeatingEffect
         context: EffectContext
     ): ExecutionResult {
         val controllerId = context.controllerId
-            ?: return ExecutionResult.error(state, "No controller for ExileFromTopRepeating")
         val sourceId = context.sourceId
 
         val predicateContext = PredicateContext.fromEffectContext(context)

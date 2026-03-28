@@ -232,7 +232,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                     sacrificeTargets = context.costUtils.findAbilitySacrificeTargets(
                                         state, playerId, subCost.filter, if (subCost.excludeSelf) entityId else null
                                     )
-                                    if (sacrificeTargets!!.size < subCost.count) {
+                                    if (sacrificeTargets.size < subCost.count) {
                                         costCanBePaid = false
                                         break
                                     }

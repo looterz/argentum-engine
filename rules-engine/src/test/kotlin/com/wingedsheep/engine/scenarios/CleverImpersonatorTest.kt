@@ -49,9 +49,7 @@ class CleverImpersonatorTest : FunSpec({
         driver.castSpell(activePlayer, impersonator)
         driver.bothPass()
 
-        val decision = driver.pendingDecision
-        decision.shouldBeInstanceOf<SelectCardsDecision>()
-        decision as SelectCardsDecision
+        val decision = driver.pendingDecision.shouldBeInstanceOf<SelectCardsDecision>()
         decision.options shouldContain warrior
         driver.submitCardSelection(activePlayer, listOf(warrior))
 
@@ -78,9 +76,7 @@ class CleverImpersonatorTest : FunSpec({
         driver.castSpell(activePlayer, impersonator)
         driver.bothPass()
 
-        val decision = driver.pendingDecision
-        decision.shouldBeInstanceOf<SelectCardsDecision>()
-        decision as SelectCardsDecision
+        val decision = driver.pendingDecision.shouldBeInstanceOf<SelectCardsDecision>()
         decision.options shouldContain enchantment
         driver.submitCardSelection(activePlayer, listOf(enchantment))
 

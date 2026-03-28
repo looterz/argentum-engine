@@ -71,9 +71,7 @@ class ContinuationSystemTest : FunSpec({
         driver.isPaused shouldBe true
 
         // Check the pending decision
-        val decision = driver.pendingDecision
-        decision.shouldBeInstanceOf<SelectCardsDecision>()
-        decision as SelectCardsDecision
+        val decision = driver.pendingDecision.shouldBeInstanceOf<SelectCardsDecision>()
         decision.playerId shouldBe opponent
         decision.minSelections shouldBe 2
         decision.maxSelections shouldBe 2
@@ -203,9 +201,7 @@ class ContinuationSystemTest : FunSpec({
         // Engine should be paused for discard choice
         driver.isPaused shouldBe true
 
-        val decision = driver.pendingDecision
-        decision.shouldBeInstanceOf<SelectCardsDecision>()
-        decision as SelectCardsDecision
+        val decision = driver.pendingDecision.shouldBeInstanceOf<SelectCardsDecision>()
         decision.playerId shouldBe activePlayer
         decision.minSelections shouldBe 1
         decision.maxSelections shouldBe 1

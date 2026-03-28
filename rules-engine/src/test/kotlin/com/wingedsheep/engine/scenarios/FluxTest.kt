@@ -60,9 +60,7 @@ class FluxTest : FunSpec({
         // Engine should be paused for active player's selection
         driver.isPaused shouldBe true
 
-        val decision = driver.pendingDecision
-        decision.shouldBeInstanceOf<SelectCardsDecision>()
-        decision as SelectCardsDecision
+        val decision = driver.pendingDecision.shouldBeInstanceOf<SelectCardsDecision>()
         decision.playerId shouldBe activePlayer
         decision.minSelections shouldBe 0  // "any number" means 0 minimum
     }
@@ -98,9 +96,7 @@ class FluxTest : FunSpec({
         // Should now be paused for opponent's selection
         driver.isPaused shouldBe true
 
-        val decision = driver.pendingDecision
-        decision.shouldBeInstanceOf<SelectCardsDecision>()
-        decision as SelectCardsDecision
+        val decision = driver.pendingDecision.shouldBeInstanceOf<SelectCardsDecision>()
         decision.playerId shouldBe opponent
         decision.minSelections shouldBe 0
     }

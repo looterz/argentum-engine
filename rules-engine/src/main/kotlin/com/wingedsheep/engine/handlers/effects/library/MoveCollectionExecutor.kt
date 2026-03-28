@@ -265,7 +265,7 @@ class MoveCollectionExecutor(
         val destZone = destination.zone
 
         // When moving to battlefield, detect auras that need target selection (Rule 303.4f)
-        if (destZone == Zone.BATTLEFIELD && cardRegistry != null && targetFinder != null) {
+        if (destZone == Zone.BATTLEFIELD && targetFinder != null) {
             val auraCards = mutableListOf<EntityId>()
             val nonAuraCards = mutableListOf<EntityId>()
 

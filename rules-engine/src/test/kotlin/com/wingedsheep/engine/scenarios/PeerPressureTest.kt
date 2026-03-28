@@ -68,8 +68,7 @@ class PeerPressureTest : FunSpec({
 
         // Should present a creature type choice decision
         val decision = driver.pendingDecision
-        decision.shouldBeInstanceOf<ChooseOptionDecision>()
-        val chooseDecision = decision as ChooseOptionDecision
+        val chooseDecision = decision.shouldBeInstanceOf<ChooseOptionDecision>()
         val typeIndex = chooseDecision.options.indexOf(chosenType)
         driver.submitDecision(caster, OptionChosenResponse(chooseDecision.id, typeIndex))
     }

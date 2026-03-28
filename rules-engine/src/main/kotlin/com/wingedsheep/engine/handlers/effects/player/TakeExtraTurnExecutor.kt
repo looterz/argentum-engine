@@ -35,7 +35,6 @@ class TakeExtraTurnExecutor : EffectExecutor<TakeExtraTurnEffect> {
         // Resolve who takes the extra turn — defaults to the controller
         val turnTakerId = TargetResolutionUtils.resolveTarget(effect.target, context, state)
             ?: context.controllerId
-            ?: return ExecutionResult.error(state, "No controller for TakeExtraTurnEffect")
 
         // Check if extra turns are prevented (e.g., Ugin's Nexus on the battlefield)
         if (ReplacementEffectUtils.isExtraTurnPrevented(state)) {

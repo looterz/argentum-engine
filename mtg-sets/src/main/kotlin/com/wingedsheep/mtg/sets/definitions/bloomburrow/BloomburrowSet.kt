@@ -39,6 +39,7 @@ object BloomburrowSet {
         BywayBarterer,
         ClementTheWorrywort,
         ConductElectricity,
+        CruelclawsHeist,
         CamelliaTheSeedmiser,
         CorpseberryCultivator,
         CrumbAndGetIt,

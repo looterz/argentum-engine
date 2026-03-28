@@ -103,9 +103,9 @@ class AccursedCentaurTest : FunSpec({
         // Should have a pending decision to choose which creature to sacrifice
         val decision = driver.pendingDecision
         decision shouldNotBe null
-        decision.shouldBeInstanceOf<SelectCardsDecision>()
-        (decision as SelectCardsDecision).minSelections shouldBe 1
-        decision.maxSelections shouldBe 1
+        val selectDecision = decision.shouldBeInstanceOf<SelectCardsDecision>()
+        selectDecision.minSelections shouldBe 1
+        selectDecision.maxSelections shouldBe 1
 
         // Choose to sacrifice the other creature (keep the Centaur)
         driver.submitCardSelection(activePlayer, listOf(otherCreature))

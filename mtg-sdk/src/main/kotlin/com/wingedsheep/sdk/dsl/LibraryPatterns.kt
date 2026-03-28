@@ -182,7 +182,7 @@ object LibraryPatterns {
                 SearchDestination.BATTLEFIELD -> Zone.BATTLEFIELD to
                     if (entersTapped) ZonePlacement.Tapped else ZonePlacement.Default
                 SearchDestination.GRAVEYARD -> Zone.GRAVEYARD to ZonePlacement.Default
-                else -> error("unreachable")
+                SearchDestination.TOP_OF_LIBRARY -> error("unreachable")
             }
             effects.add(
                 MoveCollectionEffect(

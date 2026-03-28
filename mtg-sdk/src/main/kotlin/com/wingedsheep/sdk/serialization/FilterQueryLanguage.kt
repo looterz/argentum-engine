@@ -308,7 +308,7 @@ object FilterQueryLanguage {
         return buildJsonObject {
             if (cardPredicates.isNotEmpty()) put("cardPredicates", JsonArray(cardPredicates))
             if (statePredicates.isNotEmpty()) put("statePredicates", JsonArray(statePredicates))
-            if (controllerPredicate != null) put("controllerPredicate", controllerPredicate!!)
+            if (controllerPredicate != null) put("controllerPredicate", controllerPredicate)
             if (!matchAll) put("matchAll", false)
         }
     }

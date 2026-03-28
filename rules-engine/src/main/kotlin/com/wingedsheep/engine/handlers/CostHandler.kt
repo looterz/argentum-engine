@@ -238,7 +238,6 @@ class CostHandler(
                             ?: return CostPaymentResult.failure("No creature type chosen")
                         GameObjectFilter.Creature.withSubtype(chosenType)
                     }
-                    else -> null
                 }
 
                 val context = PredicateContext(controllerId = controllerId)

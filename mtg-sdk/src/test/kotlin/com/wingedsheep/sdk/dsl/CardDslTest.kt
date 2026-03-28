@@ -93,7 +93,7 @@ class CardDslTest : DescribeSpec({
             bears.typeLine.subtypes shouldContain Subtype.BEAR
             bears.creatureStats shouldNotBe null
             bears.creatureStats!!.basePower shouldBe 2
-            bears.creatureStats!!.baseToughness shouldBe 2
+            bears.creatureStats.baseToughness shouldBe 2
             bears.metadata.flavorText shouldBe "We cannot go to the woods today..."
         }
     }
@@ -685,11 +685,10 @@ class CardDslTest : DescribeSpec({
             tarmogoyf.creatureStats!!.isDynamic shouldBe true
 
             // Power is * (dynamic with no offset)
-            tarmogoyf.creatureStats!!.power.shouldBeInstanceOf<com.wingedsheep.sdk.model.CharacteristicValue.Dynamic>()
+            tarmogoyf.creatureStats.power.shouldBeInstanceOf<com.wingedsheep.sdk.model.CharacteristicValue.Dynamic>()
 
             // Toughness is *+1 (dynamic with +1 offset)
-            tarmogoyf.creatureStats!!.toughness.shouldBeInstanceOf<com.wingedsheep.sdk.model.CharacteristicValue.DynamicWithOffset>()
-            val toughness = tarmogoyf.creatureStats!!.toughness as com.wingedsheep.sdk.model.CharacteristicValue.DynamicWithOffset
+            val toughness = tarmogoyf.creatureStats.toughness.shouldBeInstanceOf<com.wingedsheep.sdk.model.CharacteristicValue.DynamicWithOffset>()
             toughness.offset shouldBe 1
         }
 
@@ -704,7 +703,7 @@ class CardDslTest : DescribeSpec({
 
             lhurgoyf.creatureStats shouldNotBe null
             lhurgoyf.creatureStats!!.isDynamic shouldBe true
-            lhurgoyf.creatureStats!!.basePower shouldBe null  // No fixed base power
+            lhurgoyf.creatureStats.basePower shouldBe null  // No fixed base power
         }
     }
 
@@ -737,8 +736,7 @@ class CardDslTest : DescribeSpec({
 
             // First trigger stores the exiled card
             val etbEffect = oRing.triggeredAbilities[0].effect
-            etbEffect.shouldBeInstanceOf<StoreResultEffect>()
-            val storeEffect = etbEffect as StoreResultEffect
+            val storeEffect = etbEffect.shouldBeInstanceOf<StoreResultEffect>()
             storeEffect.storeAs shouldBe EffectVariable.EntityRef("exiledCard")
         }
 
@@ -885,8 +883,7 @@ class CardDslTest : DescribeSpec({
                 thenEffect = DrawCardsEffect(1)
             )
 
-            effect.shouldBeInstanceOf<CompositeEffect>()
-            val composite = effect as CompositeEffect
+            val composite = effect.shouldBeInstanceOf<CompositeEffect>()
             composite.effects shouldHaveSize 2
             composite.effects[0].shouldBeInstanceOf<StoreCountEffect>()
         }
@@ -946,17 +943,14 @@ class CardDslTest : DescribeSpec({
 
             karakykGuardian.staticAbilities shouldHaveSize 1
             val staticAbility = karakykGuardian.staticAbilities[0]
-            staticAbility.shouldBeInstanceOf<ConditionalStaticAbility>()
-
-            val conditional = staticAbility as ConditionalStaticAbility
-            conditional.ability.shouldBeInstanceOf<GrantKeyword>()
+            val conditional = staticAbility.shouldBeInstanceOf<ConditionalStaticAbility>()
             conditional.condition.shouldBeInstanceOf<NotCondition>()
 
-            val grantKeyword = conditional.ability as GrantKeyword
+            val grantKeyword = conditional.ability.shouldBeInstanceOf<GrantKeyword>()
             grantKeyword.keyword shouldBe Keyword.HEXPROOF.name
             grantKeyword.target shouldBe StaticTarget.SourceCreature
 
-            val notCondition = conditional.condition as NotCondition
+            val notCondition = conditional.condition.shouldBeInstanceOf<NotCondition>()
             notCondition.condition shouldBe SourceHasDealtDamage
         }
 
@@ -976,13 +970,10 @@ class CardDslTest : DescribeSpec({
 
             feralKrushok.staticAbilities shouldHaveSize 1
             val staticAbility = feralKrushok.staticAbilities[0]
-            staticAbility.shouldBeInstanceOf<ConditionalStaticAbility>()
-
-            val conditional = staticAbility as ConditionalStaticAbility
-            conditional.ability.shouldBeInstanceOf<ModifyStats>()
+            val conditional = staticAbility.shouldBeInstanceOf<ConditionalStaticAbility>()
             conditional.condition shouldBe SourceIsAttacking
 
-            val modifyStats = conditional.ability as ModifyStats
+            val modifyStats = conditional.ability.shouldBeInstanceOf<ModifyStats>()
             modifyStats.powerBonus shouldBe 2
             modifyStats.toughnessBonus shouldBe 2
         }
@@ -1003,9 +994,7 @@ class CardDslTest : DescribeSpec({
 
             guardianShield.staticAbilities shouldHaveSize 1
             val staticAbility = guardianShield.staticAbilities[0]
-            staticAbility.shouldBeInstanceOf<ConditionalStaticAbility>()
-
-            val conditional = staticAbility as ConditionalStaticAbility
+            val conditional = staticAbility.shouldBeInstanceOf<ConditionalStaticAbility>()
             conditional.ability.shouldBeInstanceOf<CantBlock>()
             conditional.condition.shouldBeInstanceOf<NotCondition>()
         }

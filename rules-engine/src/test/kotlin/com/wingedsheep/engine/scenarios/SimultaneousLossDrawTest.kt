@@ -47,8 +47,8 @@ class SimultaneousLossDrawTest : FunSpec({
             startingLife = 5
         )
 
-        val player1 = driver.player1!!
-        val player2 = driver.player2!!
+        val player1 = driver.player1
+        val player2 = driver.player2
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
         // Use active player (whoever goes first) to cast the spell
