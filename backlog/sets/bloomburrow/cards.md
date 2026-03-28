@@ -2,11 +2,11 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 91 / 266
+**Implemented:** 92 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
-| White      | 40    | 20   |
+| White      | 40    | 21   |
 | Blue       | 41    | 11   |
 | Black      | 40    | 13   |
 | Red        | 41    | 16   |
@@ -273,7 +273,7 @@
 - [ ] Warren Elder
 - [x] Warren Warleader
 - [ ] Waterspout Warden
-- [ ] Wax-Wane Witness
+- [x] Wax-Wane Witness
 - [ ] Wear Down
 - [ ] Whiskerquill Scribe
 - [x] Whiskervale Forerunner

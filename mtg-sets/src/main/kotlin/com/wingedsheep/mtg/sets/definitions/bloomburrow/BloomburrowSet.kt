@@ -108,6 +108,7 @@ object BloomburrowSet {
         ValleyQuestcaller,
         ValleyRotcaller,
         WarrenWarleader,
+        WaxWaneWitness,
         WhiskervaleForerunner,
         WildfireHowl,
         WickTheWhorledMind,
