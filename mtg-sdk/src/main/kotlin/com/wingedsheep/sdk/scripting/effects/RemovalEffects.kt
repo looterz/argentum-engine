@@ -197,34 +197,38 @@ data class ExileUntilLeavesEffect(
 }
 
 /**
- * Destroy target creature at end of combat.
- * Creates a delayed destruction that happens when the end of combat step begins.
- * Used by Serpentine Basilisk and similar "basilisk" abilities.
- *
- * The target is typically the creature that was dealt combat damage,
- * resolved from the trigger context (triggeringEntityId).
+ * The type of delayed action to perform at end of combat.
  */
-@SerialName("DestroyAtEndOfCombat")
 @Serializable
-data class DestroyAtEndOfCombatEffect(
-    val target: EffectTarget
-) : Effect {
-    override val description: String = "Destroy ${target.description} at end of combat"
-    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
+enum class DelayedAction {
+    DESTROY,
+    SACRIFICE
 }
 
 /**
- * Sacrifice target permanent at end of combat.
- * Marks the permanent for sacrifice when the end of combat step begins.
- * Used by Mardu Blazebringer and similar creatures that sacrifice themselves
- * after attacking or blocking.
+ * Mark a permanent for a delayed action at end of combat.
+ *
+ * When executed, adds a marker component to the target permanent. The TurnManager
+ * processes these markers when the END_COMBAT step begins:
+ * - [DelayedAction.DESTROY] adds MarkedForDestructionAtEndOfCombatComponent
+ * - [DelayedAction.SACRIFICE] adds MarkedForSacrificeAtEndOfCombatComponent
+ *
+ * Used by Serpentine Basilisk ("destroy that creature at end of combat")
+ * and Mardu Blazebringer ("sacrifice it at end of combat").
+ *
+ * @property target The permanent to mark
+ * @property action Whether to destroy or sacrifice the permanent
  */
-@SerialName("SacrificeAtEndOfCombat")
+@SerialName("MarkForDelayedAction")
 @Serializable
-data class SacrificeAtEndOfCombatEffect(
-    val target: EffectTarget
+data class MarkForDelayedActionEffect(
+    val target: EffectTarget,
+    val action: DelayedAction
 ) : Effect {
-    override val description: String = "Sacrifice ${target.description} at end of combat"
+    override val description: String = when (action) {
+        DelayedAction.DESTROY -> "Destroy ${target.description} at end of combat"
+        DelayedAction.SACRIFICE -> "Sacrifice ${target.description} at end of combat"
+    }
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
 }
 

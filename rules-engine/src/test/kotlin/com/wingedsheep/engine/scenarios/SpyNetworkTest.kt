@@ -24,7 +24,8 @@ import com.wingedsheep.sdk.scripting.effects.CardOrder
 import com.wingedsheep.sdk.scripting.effects.CardSource
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
-import com.wingedsheep.sdk.scripting.effects.LookAtAllFaceDownCreaturesEffect
+import com.wingedsheep.sdk.scripting.effects.FaceDownLookScope
+import com.wingedsheep.sdk.scripting.effects.LookAtFaceDownEffect
 import com.wingedsheep.sdk.scripting.effects.LookAtTargetHandEffect
 import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
 import com.wingedsheep.sdk.scripting.references.Player
@@ -73,7 +74,7 @@ class SpyNetworkTest : FunSpec({
                             )
                         )
                     ),
-                    LookAtAllFaceDownCreaturesEffect(EffectTarget.ContextTarget(0)),
+                    LookAtFaceDownEffect(EffectTarget.ContextTarget(0), FaceDownLookScope.ALL_CONTROLLED_BY_TARGET_PLAYER),
                     EffectPatterns.lookAtTopAndReorder(4)
                 )
             ),

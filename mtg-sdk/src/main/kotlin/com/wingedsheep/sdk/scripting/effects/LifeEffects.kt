@@ -90,24 +90,6 @@ data class OwnerGainsLifeEffect(
 }
 
 /**
- * Gain life equal to the number of lands of a specific type on the battlefield.
- * Used for Fruition: "You gain 1 life for each Forest on the battlefield."
- *
- * @property landType The type of land to count (e.g., "Forest")
- * @property lifePerLand The amount of life gained per land
- */
-@SerialName("GainLifeForEachLand")
-@Serializable
-data class GainLifeForEachLandOnBattlefieldEffect(
-    val landType: String,
-    val lifePerLand: Int = 1
-) : Effect {
-    override val description: String = "You gain $lifePerLand life for each $landType on the battlefield"
-
-    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
-}
-
-/**
  * Set a player's life total to a specific amount.
  * Used for Form of the Dragon: "At the beginning of each end step, your life total becomes 5."
  *
@@ -135,26 +117,6 @@ data class SetLifeTotalEffect(
         val newAmount = amount.applyTextReplacement(replacer)
         return if (newAmount !== amount) copy(amount = newAmount) else this
     }
-}
-
-/**
- * Set each player's life total to a dynamic amount evaluated per-player.
- * Used for Biorhythm: "Each player's life total becomes the number of creatures they control."
- *
- * The [perPlayerAmount] is evaluated with each player as the "controller" in the context,
- * so Player.You in the DynamicAmount resolves to the player whose life is being set.
- *
- * Per MTG Rule 118.5, if an effect sets a player's life total to a specific number,
- * the player gains or loses the necessary amount of life.
- */
-@SerialName("SetLifeTotalForEachPlayer")
-@Serializable
-data class SetLifeTotalForEachPlayerEffect(
-    val perPlayerAmount: DynamicAmount
-) : Effect {
-    override val description: String = "Each player's life total becomes ${perPlayerAmount.description}"
-
-    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
 }
 
 /**

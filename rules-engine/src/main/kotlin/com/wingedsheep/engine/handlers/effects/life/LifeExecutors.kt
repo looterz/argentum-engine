@@ -15,7 +15,6 @@ class LifeExecutors(
         GainLifeExecutor(amountEvaluator),
         LoseLifeExecutor(amountEvaluator),
         OwnerGainsLifeExecutor(),
-        SetLifeTotalForEachPlayerExecutor(amountEvaluator),
         SetLifeTotalExecutor(amountEvaluator)
     )
 }

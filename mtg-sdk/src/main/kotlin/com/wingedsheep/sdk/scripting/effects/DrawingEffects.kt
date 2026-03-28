@@ -63,33 +63,39 @@ data class LookAtTargetHandEffect(
 }
 
 /**
- * Look at target face-down creature.
- * Used for Aven Soulgazer and similar morph-interaction effects.
- * Marks the face-down creature as revealed to the controller of the ability.
+ * Scope for looking at face-down creatures.
  */
-@SerialName("LookAtFaceDownCreature")
 @Serializable
-data class LookAtFaceDownCreatureEffect(
-    val target: EffectTarget = EffectTarget.ContextTarget(0)
-) : Effect {
-    override val description: String = "Look at target face-down creature"
-
-    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
+enum class FaceDownLookScope {
+    /** Look at a single target face-down creature. */
+    SINGLE_TARGET,
+    /** Look at all face-down creatures controlled by the target player. */
+    ALL_CONTROLLED_BY_TARGET_PLAYER
 }
 
 /**
- * Look at all face-down creatures a player controls.
- * Used for Spy Network and similar effects that reveal all face-down creatures.
- * Marks each face-down creature as revealed to the controller of the ability.
+ * Look at face-down creature(s).
  *
- * @property target The player whose face-down creatures to look at
+ * When [scope] is [FaceDownLookScope.SINGLE_TARGET], looks at the single face-down
+ * creature identified by [target]. When [scope] is [FaceDownLookScope.ALL_CONTROLLED_BY_TARGET_PLAYER],
+ * looks at all face-down creatures controlled by the player identified by [target].
+ *
+ * In both cases, marks the face-down creature(s) as revealed to the controller of the ability.
+ *
+ * @property target The creature (SINGLE_TARGET) or player (ALL_CONTROLLED_BY_TARGET_PLAYER)
+ * @property scope Whether to look at one creature or all of a player's face-down creatures
  */
-@SerialName("LookAtAllFaceDownCreatures")
+@SerialName("LookAtFaceDown")
 @Serializable
-data class LookAtAllFaceDownCreaturesEffect(
-    val target: EffectTarget = EffectTarget.PlayerRef(Player.TargetPlayer)
+data class LookAtFaceDownEffect(
+    val target: EffectTarget,
+    val scope: FaceDownLookScope
 ) : Effect {
-    override val description: String = "Look at any face-down creatures ${target.description} controls"
+    override val description: String = when (scope) {
+        FaceDownLookScope.SINGLE_TARGET -> "Look at target face-down creature"
+        FaceDownLookScope.ALL_CONTROLLED_BY_TARGET_PLAYER ->
+            "Look at any face-down creatures ${target.description} controls"
+    }
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
 }

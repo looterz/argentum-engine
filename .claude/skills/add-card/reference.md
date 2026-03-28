@@ -223,9 +223,7 @@ constructors.
 | `PayLifeEffect`                          | `amount: Int`                    | Pay life cost             |
 | `LoseHalfLifeEffect`                     | `roundUp, target`                | Lose half life total      |
 | `OwnerGainsLifeEffect`                   | `amount: DynamicAmount`          | Card owner gains life     |
-| `GainLifeForEachLandOnBattlefieldEffect` | `landType, lifePerLand`          | Life per lands            |
 | `SetLifeTotalEffect`                     | `amount: DynamicAmount, target: EffectTarget` | Set a player's life total |
-| `SetLifeTotalForEachPlayerEffect`        | `perPlayerAmount: DynamicAmount` | Set life total per player |
 
 ### Drawing & Hand
 

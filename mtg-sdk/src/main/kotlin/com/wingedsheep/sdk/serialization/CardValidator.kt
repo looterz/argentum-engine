@@ -11,7 +11,7 @@ import com.wingedsheep.sdk.scripting.effects.ChangeCreatureTypeTextEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.ConditionalEffect
 import com.wingedsheep.sdk.scripting.effects.DealDamageEffect
-import com.wingedsheep.sdk.scripting.effects.DestroyAtEndOfCombatEffect
+import com.wingedsheep.sdk.scripting.effects.MarkForDelayedActionEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.ExileUntilLeavesEffect
 import com.wingedsheep.sdk.scripting.effects.FlipCoinEffect
@@ -24,7 +24,7 @@ import com.wingedsheep.sdk.scripting.effects.GainControlByMostOfSubtypeEffect
 import com.wingedsheep.sdk.scripting.effects.GainControlEffect
 import com.wingedsheep.sdk.scripting.effects.GrantKeywordEffect
 import com.wingedsheep.sdk.scripting.effects.GrantTriggeredAbilityEffect
-import com.wingedsheep.sdk.scripting.effects.LookAtFaceDownCreatureEffect
+import com.wingedsheep.sdk.scripting.effects.LookAtFaceDownEffect
 import com.wingedsheep.sdk.scripting.effects.LoseAllCreatureTypesEffect
 import com.wingedsheep.sdk.scripting.effects.MarkExileOnDeathEffect
 import com.wingedsheep.sdk.scripting.effects.MayEffect
@@ -225,7 +225,7 @@ object CardValidator {
             is RegenerateEffect -> effect.target
             is CantBeRegeneratedEffect -> effect.target
             is ExileUntilLeavesEffect -> effect.target
-            is DestroyAtEndOfCombatEffect -> effect.target
+            is MarkForDelayedActionEffect -> effect.target
             is MustBeBlockedEffect -> effect.target
             is RemoveFromCombatEffect -> effect.target
             is ForceSacrificeEffect -> effect.target
@@ -239,7 +239,7 @@ object CardValidator {
             is TransformAllCreaturesEffect -> effect.target
             is AddMinusCountersEffect -> effect.target
             is LoseAllCreatureTypesEffect -> effect.target
-            is LookAtFaceDownCreatureEffect -> effect.target
+            is LookAtFaceDownEffect -> effect.target
             is TransformEffect -> effect.target
             is GainControlByMostOfSubtypeEffect -> effect.target
             is SacrificeTargetEffect -> effect.target

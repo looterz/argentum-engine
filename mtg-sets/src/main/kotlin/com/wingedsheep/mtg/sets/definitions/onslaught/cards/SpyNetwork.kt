@@ -10,7 +10,8 @@ import com.wingedsheep.sdk.scripting.effects.CardOrder
 import com.wingedsheep.sdk.scripting.effects.CardSource
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
-import com.wingedsheep.sdk.scripting.effects.LookAtAllFaceDownCreaturesEffect
+import com.wingedsheep.sdk.scripting.effects.FaceDownLookScope
+import com.wingedsheep.sdk.scripting.effects.LookAtFaceDownEffect
 import com.wingedsheep.sdk.scripting.effects.LookAtTargetHandEffect
 import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
 import com.wingedsheep.sdk.scripting.effects.ZonePlacement
@@ -53,7 +54,7 @@ val SpyNetwork = card("Spy Network") {
                     )
                 )
             )
-            .then(LookAtAllFaceDownCreaturesEffect(t))
+            .then(LookAtFaceDownEffect(t, FaceDownLookScope.ALL_CONTROLLED_BY_TARGET_PLAYER))
             .then(EffectPatterns.lookAtTopAndReorder(4))
     }
 

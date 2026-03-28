@@ -3,7 +3,8 @@ package com.wingedsheep.mtg.sets.definitions.onslaught.cards
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.effects.DestroyAtEndOfCombatEffect
+import com.wingedsheep.sdk.scripting.effects.DelayedAction
+import com.wingedsheep.sdk.scripting.effects.MarkForDelayedActionEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 
 /**
@@ -24,7 +25,7 @@ val SerpentineBasilisk = card("Serpentine Basilisk") {
 
     triggeredAbility {
         trigger = Triggers.DealsCombatDamageToCreature
-        effect = DestroyAtEndOfCombatEffect(EffectTarget.TriggeringEntity)
+        effect = MarkForDelayedActionEffect(EffectTarget.TriggeringEntity, DelayedAction.DESTROY)
     }
 
     morph = "{1}{G}{G}"

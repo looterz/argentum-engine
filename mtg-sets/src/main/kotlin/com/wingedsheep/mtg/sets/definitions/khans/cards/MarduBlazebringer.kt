@@ -3,7 +3,8 @@ package com.wingedsheep.mtg.sets.definitions.khans.cards
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.effects.SacrificeAtEndOfCombatEffect
+import com.wingedsheep.sdk.scripting.effects.DelayedAction
+import com.wingedsheep.sdk.scripting.effects.MarkForDelayedActionEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 
 /**
@@ -22,12 +23,12 @@ val MarduBlazebringer = card("Mardu Blazebringer") {
 
     triggeredAbility {
         trigger = Triggers.Attacks
-        effect = SacrificeAtEndOfCombatEffect(EffectTarget.Self)
+        effect = MarkForDelayedActionEffect(EffectTarget.Self, DelayedAction.SACRIFICE)
     }
 
     triggeredAbility {
         trigger = Triggers.Blocks
-        effect = SacrificeAtEndOfCombatEffect(EffectTarget.Self)
+        effect = MarkForDelayedActionEffect(EffectTarget.Self, DelayedAction.SACRIFICE)
     }
 
     metadata {
