@@ -51,6 +51,7 @@ object BloomburrowSet {
         FlamecacheGecko,
         FrilledSparkshooter,
         FlowerfootSwordmaster,
+        HeapedHarvest,
         HeirloomEpic,
         HelgaSkittishSeer,
         HiredClaw,

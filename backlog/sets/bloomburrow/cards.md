@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 85 / 266
+**Implemented:** 86 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -10,7 +10,7 @@
 | Blue       | 41    | 10   |
 | Black      | 40    | 12   |
 | Red        | 41    | 15   |
-| Green      | 41    | 8    |
+| Green      | 41    | 9    |
 | Multicolor | 39    | 13   |
 | Colorless  | 9     | 3    |
 | Land       | 15    | 2    |
@@ -106,7 +106,7 @@
 - [ ] Hazardroot Herbalist
 - [ ] Hazel's Nocturne
 - [ ] Head of the Homestead
-- [ ] Heaped Harvest
+- [x] Heaped Harvest
 - [ ] Heartfire Hero
 - [ ] Hearthborn Battler
 - [x] Heirloom Epic
