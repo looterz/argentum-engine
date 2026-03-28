@@ -2,13 +2,13 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 95 / 266
+**Implemented:** 96 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 21   |
 | Blue       | 41    | 11   |
-| Black      | 40    | 14   |
+| Black      | 40    | 15   |
 | Red        | 41    | 16   |
 | Green      | 41    | 12   |
 | Multicolor | 39    | 13   |
@@ -246,7 +246,7 @@
 - [x] Tender Wildguide
 - [ ] The Infamous Cruelclaw
 - [x] Thistledown Players
-- [ ] Thornplate Intimidator
+- [x] Thornplate Intimidator
 - [x] Thornvault Forager
 - [ ] Thought Shucker
 - [ ] Thought-Stalker Warlock

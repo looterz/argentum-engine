@@ -105,6 +105,7 @@ object BloomburrowSet {
         TenderWildguide,
         ThistledownPlayers,
         TidecallerMentor,
+        ThornplateIntimidator,
         ThornvaultForager,
         ThundertrapTrainer,
         ValleyQuestcaller,
