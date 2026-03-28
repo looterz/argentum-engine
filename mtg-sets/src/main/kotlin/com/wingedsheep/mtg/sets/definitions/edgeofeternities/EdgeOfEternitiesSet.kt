@@ -14,11 +14,15 @@ object EdgeOfEternitiesSet {
     const val SET_CODE = "EOE"
     const val SET_NAME = "Edge of Eternities"
 
+    val basicLands = EdgeOfEternitiesBasicLands
+
     /**
      * All cards implemented from this set.
      */
     val allCards = listOf(
         Cryoshatter,
         SledgeClassSeedship,
-    )
+
+        // Basic lands
+    ) + EdgeOfEternitiesBasicLands
 }

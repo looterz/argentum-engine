@@ -39,6 +39,59 @@ class BoosterGenerator(
     )
 
     companion object {
+
+        private val BASIC_LAND_NAMES = setOf("Plains", "Island", "Swamp", "Mountain", "Forest")
+
+        /**
+         * Distribute basic lands in a deck list across art variants for a nice mix.
+         *
+         * Replaces plain land names (e.g., "Plains" → 8) with variant identifiers
+         * (e.g., "Plains#331" → 2, "Plains#332" → 2, "Plains#333" → 2, "Plains#334" → 2).
+         *
+         * @param deckList The original deck list with basic land names
+         * @param variants Map of land name to all art variants from the set
+         * @return Modified deck list with basic lands distributed across variants
+         */
+        fun distributeBasicLandVariants(
+            deckList: Map<String, Int>,
+            variants: Map<String, List<CardDefinition>>
+        ): Map<String, Int> {
+            val result = mutableMapOf<String, Int>()
+
+            for ((cardName, count) in deckList) {
+                if (cardName !in BASIC_LAND_NAMES || count <= 0) {
+                    result[cardName] = count
+                    continue
+                }
+
+                val landVariants = variants[cardName]
+                if (landVariants.isNullOrEmpty()) {
+                    result[cardName] = count
+                    continue
+                }
+
+                // Distribute evenly across variants with round-robin assignment
+                val variantCount = landVariants.size
+                val basePerVariant = count / variantCount
+                val remainder = count % variantCount
+
+                for ((i, variant) in landVariants.withIndex()) {
+                    val variantCopies = basePerVariant + if (i < remainder) 1 else 0
+                    if (variantCopies > 0) {
+                        val collectorNumber = variant.metadata.collectorNumber
+                        val identifier = if (collectorNumber != null) {
+                            "$cardName#$collectorNumber"
+                        } else {
+                            cardName
+                        }
+                        result[identifier] = (result[identifier] ?: 0) + variantCopies
+                    }
+                }
+            }
+
+            return result
+        }
+
         /**
          * Portal set configuration (always available).
          */
@@ -103,7 +156,7 @@ class BoosterGenerator(
             setCode = DominariaSet.SET_CODE,
             setName = DominariaSet.SET_NAME,
             cards = DominariaSet.allCards,
-            basicLands = PortalSet.basicLands,  // Dominaria has no basic lands implemented; use Portal lands
+            basicLands = DominariaSet.basicLands,
             incomplete = true,
             guaranteedLegendary = true
         )
@@ -115,7 +168,7 @@ class BoosterGenerator(
             setCode = BloomburrowSet.SET_CODE,
             setName = BloomburrowSet.SET_NAME,
             cards = BloomburrowSet.allCards,
-            basicLands = PortalSet.basicLands,  // Bloomburrow has no basic lands implemented; use Portal lands
+            basicLands = BloomburrowSet.basicLands,
             incomplete = true
         )
 
@@ -126,7 +179,7 @@ class BoosterGenerator(
             setCode = EdgeOfEternitiesSet.SET_CODE,
             setName = EdgeOfEternitiesSet.SET_NAME,
             cards = EdgeOfEternitiesSet.allCards,
-            basicLands = PortalSet.basicLands,
+            basicLands = EdgeOfEternitiesSet.basicLands,
             incomplete = true
         )
     }
@@ -332,6 +385,33 @@ class BoosterGenerator(
         }
         // Use basic lands from the first set
         return getBasicLands(setCodes.first())
+    }
+
+    /**
+     * Get all basic land variants for deck building from a set.
+     *
+     * @param setCode The set code
+     * @return Map of land name to list of all art variants
+     */
+    fun getAllBasicLandVariants(setCode: String): Map<String, List<CardDefinition>> {
+        val setConfig = availableSets[setCode]
+            ?: throw IllegalArgumentException("Unknown set code: $setCode")
+
+        return setConfig.basicLands.groupBy { it.name }
+    }
+
+    /**
+     * Get all basic land variants for deck building from multiple sets.
+     * Uses the basic lands from the first set that has them.
+     *
+     * @param setCodes The set codes
+     * @return Map of land name to list of all art variants
+     */
+    fun getAllBasicLandVariants(setCodes: List<String>): Map<String, List<CardDefinition>> {
+        if (setCodes.isEmpty()) {
+            throw IllegalArgumentException("At least one set code is required")
+        }
+        return getAllBasicLandVariants(setCodes.first())
     }
 
     /**

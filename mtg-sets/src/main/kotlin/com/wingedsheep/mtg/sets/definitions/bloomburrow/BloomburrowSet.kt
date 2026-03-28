@@ -21,9 +21,9 @@ object BloomburrowSet {
     /**
      * All cards implemented from this set.
      */
+    val basicLands = BloomburrowBasicLands
+
     val allCards = listOf(
-        BloomburrowPlains,
-        BloomburrowIsland,
         AgateBladeAssassin,
         ArtistsTalent,
         BarkKnuckleBoxer,
@@ -132,5 +132,7 @@ object BloomburrowSet {
         WickTheWhorledMind,
         YgraEaterOfAll,
         ZoralineCosmosCaller,
-    )
+
+        // Basic lands
+    ) + BloomburrowBasicLands
 }

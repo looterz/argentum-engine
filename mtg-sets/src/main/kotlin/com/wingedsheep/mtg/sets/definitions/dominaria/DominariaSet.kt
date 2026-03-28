@@ -17,6 +17,8 @@ object DominariaSet {
     const val SET_CODE = "DOM"
     const val SET_NAME = "Dominaria"
 
+    val basicLands = DominariaBasicLands
+
     /**
      * All cards implemented from this set.
      */
@@ -270,5 +272,7 @@ object DominariaSet {
         YavimayaSapherd,
         ZahidDjinnOfTheLamp,
         ZhalfirinVoid,
-    )
+
+        // Basic lands
+    ) + DominariaBasicLands
 }

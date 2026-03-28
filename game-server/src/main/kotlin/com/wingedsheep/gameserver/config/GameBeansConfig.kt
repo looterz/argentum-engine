@@ -36,6 +36,11 @@ class GameBeansConfig(
         if (gameProperties.sets.legionsEnabled) {
             register(LegionsSet.allCards)
         }
+        // Scourge/Legions use Onslaught basic lands — register them even if Onslaught itself isn't enabled
+        if (!gameProperties.sets.onslaughtEnabled &&
+            (gameProperties.sets.scourgeEnabled || gameProperties.sets.legionsEnabled)) {
+            register(OnslaughtSet.basicLands)
+        }
         if (gameProperties.sets.khansEnabled) {
             register(KhansOfTarkirSet.allCards)
         }

@@ -202,9 +202,14 @@ class TournamentLobby(
     var state: LobbyState = LobbyState.WAITING_FOR_PLAYERS
         private set
 
-    /** Basic lands available for deck building */
+    /** Basic lands available for deck building (one variant per type, for client display) */
     val basicLands: Map<String, CardDefinition> by lazy {
         boosterGenerator.getBasicLands(setCodes)
+    }
+
+    /** All basic land art variants grouped by land name (for distributing across variants in decks) */
+    val allBasicLandVariants: Map<String, List<CardDefinition>> by lazy {
+        boosterGenerator.getAllBasicLandVariants(setCodes)
     }
 
     /** Players who are ready for the next round */
