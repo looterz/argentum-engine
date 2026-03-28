@@ -2,14 +2,14 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 123 / 266
+**Implemented:** 124 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 23   |
 | Blue       | 41    | 16   |
 | Black      | 40    | 22   |
-| Red        | 41    | 19   |
+| Red        | 41    | 20   |
 | Green      | 41    | 15   |
 | Multicolor | 39    | 16   |
 | Colorless  | 9     | 3    |
@@ -269,7 +269,7 @@
 - [ ] Vinereap Mentor
 - [ ] Vren, the Relentless
 - [ ] Wandertale Mentor
-- [ ] War Squeak
+- [x] War Squeak
 - [x] Warren Elder
 - [x] Warren Warleader
 - [ ] Waterspout Warden

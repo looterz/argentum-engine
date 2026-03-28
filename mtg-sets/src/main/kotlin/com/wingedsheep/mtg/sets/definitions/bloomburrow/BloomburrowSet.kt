@@ -137,6 +137,7 @@ object BloomburrowSet {
         ValleyQuestcaller,
         ValleyRally,
         ValleyRotcaller,
+        WarSqueak,
         WarrenElder,
         WarrenWarleader,
         WaxWaneWitness,
