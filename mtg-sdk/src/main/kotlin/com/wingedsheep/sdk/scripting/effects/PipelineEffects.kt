@@ -542,10 +542,12 @@ data class SelectTargetEffect(
 @SerialName("GrantMayPlayFromExile")
 @Serializable
 data class GrantMayPlayFromExileEffect(
-    val from: String
+    val from: String,
+    val untilEndOfNextTurn: Boolean = false
 ) : Effect {
     override val description: String =
-        "Until end of turn, you may play the $from cards from exile"
+        if (untilEndOfNextTurn) "Until the end of your next turn, you may play the $from cards from exile"
+        else "Until end of turn, you may play the $from cards from exile"
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
 }

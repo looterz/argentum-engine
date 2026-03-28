@@ -417,7 +417,8 @@ object Effects {
      * Grant "may play from exile" permission to all cards in a named collection.
      * Does NOT waive mana cost — pair with [GrantPlayWithoutPayingCost] for free play.
      */
-    fun GrantMayPlayFromExile(from: String): Effect = GrantMayPlayFromExileEffect(from)
+    fun GrantMayPlayFromExile(from: String, untilEndOfNextTurn: Boolean = false): Effect =
+        GrantMayPlayFromExileEffect(from, untilEndOfNextTurn)
 
     /**
      * Grant "play without paying mana cost" permission to all cards in a named collection.

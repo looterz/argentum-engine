@@ -84,6 +84,7 @@ object BloomburrowSet {
         ManifoldMouse,
         MoonriseCleric,
         MouseTrapper,
+        MuerraTrashTactician,
         NocturnalHunger,
         NettleGuard,
         NightwhorlHermit,

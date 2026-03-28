@@ -359,10 +359,14 @@ class CleanupPhaseManager(
 
         // 9. Remove MayPlayFromExileComponent and PlayWithoutPayingCostComponent (expire at end of turn)
         // Skip permanent ones (used by "for as long as it remains exiled" effects)
+        // For expiresAfterTurn: keep alive until that turn number's end step
         for ((entityId, container) in newState.entities) {
             val mayPlay = container.get<MayPlayFromExileComponent>()
             val playFree = container.get<PlayWithoutPayingCostComponent>()
-            val removeMayPlay = mayPlay != null && !mayPlay.permanent
+            val removeMayPlay = mayPlay != null && !mayPlay.permanent && when {
+                mayPlay.expiresAfterTurn != null -> newState.turnNumber >= mayPlay.expiresAfterTurn
+                else -> true // default: expire at end of this turn
+            }
             val removePlayFree = playFree != null && !playFree.permanent
             if (removeMayPlay || removePlayFree) {
                 newState = newState.updateEntity(entityId) { c ->

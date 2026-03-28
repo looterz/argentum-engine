@@ -28,14 +28,47 @@ class GrantMayPlayFromExileExecutor : EffectExecutor<GrantMayPlayFromExileEffect
         val controllerId = context.controllerId
         val collection = context.pipeline.storedCollections[effect.from] ?: emptyList()
 
+        val expiresAfterTurn = if (effect.untilEndOfNextTurn) {
+            calculateNextTurnOfPlayer(state, controllerId)
+        } else {
+            null
+        }
+
         var newState = state
         for (cardId in collection) {
             newState = newState.updateEntity(cardId) { container ->
-                container.with(MayPlayFromExileComponent(controllerId = controllerId))
+                container.with(
+                    MayPlayFromExileComponent(
+                        controllerId = controllerId,
+                        expiresAfterTurn = expiresAfterTurn
+                    )
+                )
             }
         }
 
         return ExecutionResult.success(newState)
+    }
+
+    /**
+     * Calculate the turn number of the player's next turn.
+     * If it's currently the player's turn, "next turn" means their following turn.
+     */
+    private fun calculateNextTurnOfPlayer(state: GameState, playerId: com.wingedsheep.sdk.model.EntityId): Int {
+        val turnOrder = state.turnOrder
+        val playerIndex = turnOrder.indexOf(playerId)
+        val activeIndex = turnOrder.indexOf(state.activePlayerId)
+        val playerCount = turnOrder.size
+
+        // How many turns until it's this player's turn again
+        val turnsUntilNext = if (playerIndex == activeIndex) {
+            // It's currently their turn — "next turn" is playerCount turns away
+            playerCount
+        } else {
+            // Calculate distance forward in turn order
+            (playerIndex - activeIndex + playerCount) % playerCount
+        }
+
+        return state.turnNumber + turnsUntilNext
     }
 }
 

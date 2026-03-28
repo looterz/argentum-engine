@@ -33,11 +33,14 @@ data class RevealedToComponent(
  * @param controllerId The player who may play this card from exile.
  * @param permanent If true, this permission persists indefinitely (not cleaned up at end of turn).
  *   Used for "for as long as it remains exiled" effects like Kheru Spellsnatcher / Spelljack.
+ * @param expiresAfterTurn If set, the permission persists until the end of the specified turn number
+ *   (inclusive). Used for "until the end of your next turn" effects like Muerra, Trash Tactician.
  */
 @Serializable
 data class MayPlayFromExileComponent(
     val controllerId: EntityId,
-    val permanent: Boolean = false
+    val permanent: Boolean = false,
+    val expiresAfterTurn: Int? = null
 ) : Component
 
 /**
