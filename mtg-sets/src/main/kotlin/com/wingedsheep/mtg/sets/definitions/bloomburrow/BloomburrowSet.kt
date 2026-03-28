@@ -48,6 +48,7 @@ object BloomburrowSet {
         EarlyWinter,
         EmberheartChallenger,
         EddymurkCrab,
+        Fell,
         FeatherOfFlight,
         FecundGreenshell,
         FlamecacheGecko,

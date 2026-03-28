@@ -2,13 +2,13 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 96 / 266
+**Implemented:** 97 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 21   |
 | Blue       | 41    | 11   |
-| Black      | 40    | 15   |
+| Black      | 40    | 16   |
 | Red        | 41    | 16   |
 | Green      | 41    | 12   |
 | Multicolor | 39    | 13   |
@@ -84,7 +84,7 @@
 - [x] Feather of Flight
 - [x] Fecund Greenshell
 - [ ] Feed the Cycle
-- [ ] Fell
+- [x] Fell
 - [ ] Festival of Embers
 - [ ] Finch Formation
 - [ ] Finneas, Ace Archer
