@@ -46,14 +46,12 @@ class CostEnumerationUtils(
         playerId: EntityId,
         cost: AdditionalCost.SacrificePermanent
     ): List<EntityId> {
-        val playerBattlefield = ZoneKey(playerId, Zone.BATTLEFIELD)
         val predicateContext = PredicateContext(controllerId = playerId)
-        return state.getZone(playerBattlefield).filter { entityId ->
+        val projected = state.projectedState
+        return projected.getBattlefieldControlledBy(playerId).filter { entityId ->
             val container = state.getEntity(entityId) ?: return@filter false
             container.get<CardComponent>() ?: return@filter false
-            val controllerId = container.get<ControllerComponent>()?.playerId
-            if (controllerId != playerId) return@filter false
-            predicateEvaluator.matches(state, entityId, cost.filter, predicateContext)
+            predicateEvaluator.matchesWithProjection(state, projected, entityId, cost.filter, predicateContext)
         }
     }
 
@@ -62,14 +60,12 @@ class CostEnumerationUtils(
         playerId: EntityId,
         filter: GameObjectFilter
     ): List<EntityId> {
-        val playerBattlefield = ZoneKey(playerId, Zone.BATTLEFIELD)
         val predicateContext = PredicateContext(controllerId = playerId)
-        return state.getZone(playerBattlefield).filter { entityId ->
+        val projected = state.projectedState
+        return projected.getBattlefieldControlledBy(playerId).filter { entityId ->
             val container = state.getEntity(entityId) ?: return@filter false
             container.get<CardComponent>() ?: return@filter false
-            val controllerId = container.get<ControllerComponent>()?.playerId
-            if (controllerId != playerId) return@filter false
-            predicateEvaluator.matches(state, entityId, filter, predicateContext)
+            predicateEvaluator.matchesWithProjection(state, projected, entityId, filter, predicateContext)
         }
     }
 
@@ -79,15 +75,12 @@ class CostEnumerationUtils(
         filter: GameObjectFilter,
         excludeEntityId: EntityId? = null
     ): List<EntityId> {
-        val playerBattlefield = ZoneKey(playerId, Zone.BATTLEFIELD)
         val predicateContext = PredicateContext(controllerId = playerId)
         val projected = state.projectedState
-        return state.getZone(playerBattlefield).filter { entityId ->
+        return projected.getBattlefieldControlledBy(playerId).filter { entityId ->
             if (entityId == excludeEntityId) return@filter false
             val container = state.getEntity(entityId) ?: return@filter false
             container.get<CardComponent>() ?: return@filter false
-            val controllerId = container.get<ControllerComponent>()?.playerId
-            if (controllerId != playerId) return@filter false
             predicateEvaluator.matchesWithProjection(state, projected, entityId, filter, predicateContext)
         }
     }
@@ -99,14 +92,11 @@ class CostEnumerationUtils(
         playerId: EntityId,
         filter: GameObjectFilter
     ): List<EntityId> {
-        val playerBattlefield = ZoneKey(playerId, Zone.BATTLEFIELD)
         val predicateContext = PredicateContext(controllerId = playerId)
         val projected = state.projectedState
-        return state.getZone(playerBattlefield).filter { entityId ->
+        return projected.getBattlefieldControlledBy(playerId).filter { entityId ->
             val container = state.getEntity(entityId) ?: return@filter false
             container.get<CardComponent>() ?: return@filter false
-            val controllerId = container.get<ControllerComponent>()?.playerId
-            if (controllerId != playerId) return@filter false
             if (container.has<TappedComponent>()) return@filter false
             predicateEvaluator.matchesWithProjection(state, projected, entityId, filter, predicateContext)
         }
@@ -119,14 +109,11 @@ class CostEnumerationUtils(
         playerId: EntityId,
         filter: GameObjectFilter
     ): List<EntityId> {
-        val playerBattlefield = ZoneKey(playerId, Zone.BATTLEFIELD)
         val predicateContext = PredicateContext(controllerId = playerId)
         val projected = state.projectedState
-        return state.getZone(playerBattlefield).filter { entityId ->
+        return projected.getBattlefieldControlledBy(playerId).filter { entityId ->
             val container = state.getEntity(entityId) ?: return@filter false
             container.get<CardComponent>() ?: return@filter false
-            val controllerId = container.get<ControllerComponent>()?.playerId
-            if (controllerId != playerId) return@filter false
             predicateEvaluator.matchesWithProjection(state, projected, entityId, filter, predicateContext)
         }
     }
@@ -171,15 +158,12 @@ class CostEnumerationUtils(
         filter: GameObjectFilter,
         excludeEntityId: EntityId
     ): List<EntityId> {
-        val projected = state.projectedState
-        val playerBattlefield = ZoneKey(playerId, Zone.BATTLEFIELD)
         val predicateContext = PredicateContext(controllerId = playerId)
-        return state.getZone(playerBattlefield).filter { entityId ->
+        val projected = state.projectedState
+        return projected.getBattlefieldControlledBy(playerId).filter { entityId ->
             if (entityId == excludeEntityId) return@filter false
             val container = state.getEntity(entityId) ?: return@filter false
             container.get<CardComponent>() ?: return@filter false
-            val controllerId = container.get<ControllerComponent>()?.playerId
-            if (controllerId != playerId) return@filter false
             predicateEvaluator.matchesWithProjection(state, projected, entityId, filter, predicateContext)
         }
     }
@@ -197,15 +181,12 @@ class CostEnumerationUtils(
         filter: GameObjectFilter,
         excludeEntityId: EntityId
     ): List<EntityId> {
-        val projected = state.projectedState
-        val playerBattlefield = ZoneKey(playerId, Zone.BATTLEFIELD)
         val predicateContext = PredicateContext(controllerId = playerId)
-        return state.getZone(playerBattlefield).filter { entityId ->
+        val projected = state.projectedState
+        return projected.getBattlefieldControlledBy(playerId).filter { entityId ->
             if (entityId == excludeEntityId) return@filter false
             val container = state.getEntity(entityId) ?: return@filter false
             container.get<CardComponent>() ?: return@filter false
-            val controllerId = container.get<ControllerComponent>()?.playerId
-            if (controllerId != playerId) return@filter false
             predicateEvaluator.matchesWithProjection(state, projected, entityId, filter, predicateContext)
         }
     }
@@ -213,13 +194,11 @@ class CostEnumerationUtils(
     // --- Convoke ---
 
     fun findConvokeCreatures(state: GameState, playerId: EntityId): List<ConvokeCreatureData> {
-        val playerBattlefield = ZoneKey(playerId, Zone.BATTLEFIELD)
-        return state.getZone(playerBattlefield).mapNotNull { entityId ->
+        val projected = state.projectedState
+        return projected.getBattlefieldControlledBy(playerId).mapNotNull { entityId ->
             val container = state.getEntity(entityId) ?: return@mapNotNull null
             val cardComponent = container.get<CardComponent>() ?: return@mapNotNull null
             if (!cardComponent.typeLine.isCreature) return@mapNotNull null
-            val controllerId = container.get<ControllerComponent>()?.playerId
-            if (controllerId != playerId) return@mapNotNull null
             if (container.has<TappedComponent>()) return@mapNotNull null
             ConvokeCreatureData(entityId, cardComponent.name, cardComponent.colors)
         }
