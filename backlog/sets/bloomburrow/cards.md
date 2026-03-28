@@ -2,14 +2,14 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 119 / 266
+**Implemented:** 120 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 22   |
 | Blue       | 41    | 16   |
 | Black      | 40    | 21   |
-| Red        | 41    | 18   |
+| Red        | 41    | 19   |
 | Green      | 41    | 14   |
 | Multicolor | 39    | 16   |
 | Colorless  | 9     | 3    |
@@ -186,7 +186,7 @@
 - [ ] Psychic Whorl
 - [x] Quaketusk Boar
 - [ ] Rabbit Response
-- [ ] Rabid Gnaw
+- [x] Rabid Gnaw
 - [ ] Raccoon Rallier
 - [ ] Ral, Crackling Wit
 - [x] Ravine Raider
