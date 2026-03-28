@@ -214,3 +214,41 @@ data class AnimateLandGroup(
         return if (newFilter !== filter || newSubtypes != creatureSubtypes) copy(filter = newFilter, creatureSubtypes = newSubtypes) else this
     }
 }
+
+/**
+ * Transforms the enchanted permanent into a completely different card type identity.
+ * Used for Sugar Coat: "Enchanted permanent is a colorless Food artifact..."
+ * Used for Imprisoned in the Moon, Darksteel Mutation, Song of the Dryads, etc.
+ *
+ * This generates multiple continuous effects across layers:
+ * - Layer 4 (TYPE): SetCardTypes to replace all card types, SetAllSubtypes to replace all subtypes
+ * - Layer 5 (COLOR): ChangeColor to set color identity (empty set = colorless)
+ *
+ * Note: Combine with LoseAllAbilities and GrantActivatedAbilityToAttachedCreature
+ * separately for ability removal/granting.
+ *
+ * @property setCardTypes Card types to set (replaces ALL existing card types)
+ * @property setSubtypes Subtypes to set (replaces ALL existing subtypes)
+ * @property setColors Colors to set (null = don't change, empty = colorless)
+ * @property target What this ability applies to
+ */
+@SerialName("TransformPermanent")
+@Serializable
+data class TransformPermanent(
+    val setCardTypes: Set<String> = emptySet(),
+    val setSubtypes: Set<String> = emptySet(),
+    val setColors: Set<Color>? = null,
+    val target: StaticTarget = StaticTarget.AttachedCreature
+) : StaticAbility {
+    override val description: String = buildString {
+        append("is ")
+        if (setColors?.isEmpty() == true) append("a colorless ")
+        else if (setColors != null) append("a ${setColors.joinToString("/") { it.name.lowercase() }} ")
+        if (setSubtypes.isNotEmpty()) append(setSubtypes.joinToString(" "))
+        if (setCardTypes.isNotEmpty()) {
+            if (setSubtypes.isNotEmpty()) append(" ")
+            append(setCardTypes.joinToString(" ") { it.lowercase() })
+        }
+    }
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
+}
