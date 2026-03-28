@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 102 / 266
+**Implemented:** 103 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -13,7 +13,7 @@
 | Green      | 41    | 12   |
 | Multicolor | 39    | 14   |
 | Colorless  | 9     | 3    |
-| Land       | 15    | 3    |
+| Land       | 15    | 4    |
 
 ---
 
@@ -125,7 +125,7 @@
 - [ ] Into the Flood Maw
 - [x] Intrepid Rabbit
 - [x] Iridescent Vinelasher
-- [ ] Island
+- [x] Island
 - [x] Jackdaw Savior
 - [ ] Jolly Gerbils
 - [x] Junkblade Bruiser
