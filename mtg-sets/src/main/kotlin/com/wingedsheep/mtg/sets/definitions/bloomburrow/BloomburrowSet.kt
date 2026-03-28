@@ -24,6 +24,7 @@ object BloomburrowSet {
     val allCards = listOf(
         AgateBladeAssassin,
         ArtistsTalent,
+        BarkKnuckleBoxer,
         BarkformHarvester,
         BaylenTheHaymaker,
         BellowingCrier,

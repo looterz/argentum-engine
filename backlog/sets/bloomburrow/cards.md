@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 87 / 266
+**Implemented:** 88 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -10,7 +10,7 @@
 | Blue       | 41    | 10   |
 | Black      | 40    | 12   |
 | Red        | 41    | 16   |
-| Green      | 41    | 9    |
+| Green      | 41    | 10   |
 | Multicolor | 39    | 13   |
 | Colorless  | 9     | 3    |
 | Land       | 15    | 2    |
@@ -26,7 +26,7 @@
 - [ ] Bakersbane Duo
 - [ ] Bandit's Talent
 - [ ] Banishing Light
-- [ ] Bark-Knuckle Boxer
+- [x] Bark-Knuckle Boxer
 - [x] Barkform Harvester
 - [x] Baylen, the Haymaker
 - [x] Bellowing Crier
