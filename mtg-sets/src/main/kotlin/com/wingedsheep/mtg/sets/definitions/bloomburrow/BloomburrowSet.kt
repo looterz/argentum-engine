@@ -66,6 +66,7 @@ object BloomburrowSet {
         FlamecacheGecko,
         FrilledSparkshooter,
         FlowerfootSwordmaster,
+        Fountainport,
         GlidediveDuo,
         HeapedHarvest,
         HeirloomEpic,
