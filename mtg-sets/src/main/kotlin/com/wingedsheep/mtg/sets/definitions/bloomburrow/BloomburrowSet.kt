@@ -69,6 +69,7 @@ object BloomburrowSet {
         FlowerfootSwordmaster,
         Fountainport,
         GlidediveDuo,
+        HazardrootHerbalist,
         HeapedHarvest,
         HeirloomEpic,
         HelgaSkittishSeer,

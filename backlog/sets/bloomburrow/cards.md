@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 136 / 266
+**Implemented:** 137 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -10,7 +10,7 @@
 | Blue       | 41    | 16   |
 | Black      | 40    | 24   |
 | Red        | 41    | 21   |
-| Green      | 41    | 16   |
+| Green      | 41    | 17   |
 | Multicolor | 39    | 17   |
 | Colorless  | 9     | 3    |
 | Land       | 15    | 11   |
@@ -103,7 +103,7 @@
 - [ ] Gossip's Talent
 - [ ] Harnesser of Storms
 - [ ] Harvestrite Host
-- [ ] Hazardroot Herbalist
+- [x] Hazardroot Herbalist
 - [ ] Hazel's Nocturne
 - [ ] Head of the Homestead
 - [x] Heaped Harvest
