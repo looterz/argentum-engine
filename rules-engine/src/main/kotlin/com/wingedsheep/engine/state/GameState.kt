@@ -90,8 +90,8 @@ data class GameState(
     /** Per-player spell count this turn, used for Damping Sphere-style tax effects */
     val playerSpellsCastThisTurn: Map<EntityId, Int> = emptyMap(),
 
-    /** Per-player spell types cast this turn, for conditional evasion (e.g., Relic Runner) */
-    val spellTypesCastThisTurn: Map<EntityId, Set<String>> = emptyMap(),
+    /** Per-player spell types cast this turn with counts, for conditional evasion and "first of type" triggers */
+    val spellTypesCastThisTurn: Map<EntityId, Map<String, Int>> = emptyMap(),
 
     /** Pending spell copies — copy the next instant/sorcery spell cast by a player (e.g., Howl of the Horde) */
     val pendingSpellCopies: List<PendingSpellCopy> = emptyList(),

@@ -905,20 +905,30 @@ class CastSpellHandler(
             spellWarpedThisTurn = currentState.spellWarpedThisTurn || wasWarped
         )
 
-        // Track spell types cast this turn (for conditional evasion like Relic Runner)
+        // Track spell types cast this turn (for conditional evasion like Relic Runner, and "first of type" triggers)
         if (!action.castFaceDown) {
             val spellTypes = buildSet {
                 add("ANY")
                 if (cardComponent.typeLine.isCreature) add("CREATURE")
                 if (!cardComponent.typeLine.isCreature) add("NONCREATURE")
+                if (cardComponent.typeLine.isInstant) add("INSTANT")
+                if (cardComponent.typeLine.isSorcery) add("SORCERY")
                 if (cardComponent.typeLine.isInstant || cardComponent.typeLine.isSorcery) add("INSTANT_OR_SORCERY")
                 if (cardComponent.typeLine.isEnchantment) add("ENCHANTMENT")
                 if (cardComponent.typeLine.isArtifact || cardComponent.typeLine.isLegendary) add("HISTORIC")
+                // Track subtypes for "first Otter spell" etc.
+                for (subtype in cardComponent.typeLine.subtypes) {
+                    add("SUBTYPE_${subtype.value.uppercase()}")
+                }
             }
-            val existingTypes = currentState.spellTypesCastThisTurn[action.playerId] ?: emptySet()
+            val existingCounts = currentState.spellTypesCastThisTurn[action.playerId] ?: emptyMap()
+            val updatedCounts = existingCounts.toMutableMap()
+            for (type in spellTypes) {
+                updatedCounts[type] = (updatedCounts[type] ?: 0) + 1
+            }
             currentState = currentState.copy(
                 spellTypesCastThisTurn = currentState.spellTypesCastThisTurn +
-                    (action.playerId to existingTypes + spellTypes)
+                    (action.playerId to updatedCounts)
             )
         }
 

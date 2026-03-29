@@ -48,6 +48,7 @@ import com.wingedsheep.sdk.scripting.conditions.TriggeringEntityWasHistoric
 import com.wingedsheep.sdk.scripting.conditions.CardsLeftGraveyardThisTurn
 import com.wingedsheep.sdk.scripting.conditions.OpponentLostLifeThisTurn
 import com.wingedsheep.sdk.scripting.conditions.SacrificedFoodThisTurn
+import com.wingedsheep.sdk.scripting.conditions.IsFirstSpellOfTypeCastThisTurn
 import com.wingedsheep.sdk.scripting.conditions.WasKicked
 import com.wingedsheep.sdk.scripting.conditions.YouAttackedThisTurn
 import com.wingedsheep.sdk.scripting.conditions.YouWereAttackedThisStep
@@ -105,6 +106,7 @@ class ConditionEvaluator {
             is YouWereDealtCombatDamageThisTurn -> evaluateYouWereDealtCombatDamageThisTurn(state, context)
             is CardsLeftGraveyardThisTurn -> evaluateCardsLeftGraveyardThisTurn(state, condition, context)
             is SacrificedFoodThisTurn -> evaluateSacrificedFoodThisTurn(state, context)
+            is IsFirstSpellOfTypeCastThisTurn -> evaluateFirstSpellOfType(state, condition, context)
 
             // Stack conditions
             is OpponentSpellOnStack -> evaluateOpponentSpellOnStack(state, context)
@@ -376,5 +378,15 @@ class ConditionEvaluator {
         val predicateContext = PredicateContext.fromEffectContext(context)
         val projected = state.projectedState
         return predicateEvaluator.matchesWithProjection(state, projected, entityId, condition.filter, predicateContext)
+    }
+
+    private fun evaluateFirstSpellOfType(
+        state: GameState,
+        condition: IsFirstSpellOfTypeCastThisTurn,
+        context: EffectContext
+    ): Boolean {
+        val castCounts = state.spellTypesCastThisTurn[context.controllerId] ?: return false
+        val count = castCounts[condition.spellCategory] ?: 0
+        return count == 1
     }
 }

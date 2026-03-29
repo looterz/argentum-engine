@@ -78,6 +78,22 @@ data object OpponentLostLifeThisTurn : Condition {
     override fun applyTextReplacement(replacer: TextReplacer): Condition = this
 }
 
+/**
+ * Condition: "if this is the first spell of a given type category cast by you this turn"
+ * Checks the per-player spell type count tracker. The spell category uses the same keys
+ * as GameState.spellTypesCastThisTurn (e.g., "INSTANT", "SORCERY", "SUBTYPE_OTTER").
+ * The condition is true if the count for that category is exactly 1 (just this spell).
+ * Used for Alania, Divergent Storm.
+ */
+@SerialName("IsFirstSpellOfTypeCastThisTurn")
+@Serializable
+data class IsFirstSpellOfTypeCastThisTurn(
+    val spellCategory: String
+) : Condition {
+    override val description: String = "if it's the first ${spellCategory.lowercase().replace('_', ' ')} spell you've cast this turn"
+    override fun applyTextReplacement(replacer: TextReplacer): Condition = this
+}
+
 // =============================================================================
 // Land Conditions
 // =============================================================================

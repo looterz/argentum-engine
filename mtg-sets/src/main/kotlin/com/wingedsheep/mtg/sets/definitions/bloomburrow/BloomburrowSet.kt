@@ -24,6 +24,7 @@ object BloomburrowSet {
     val basicLands = BloomburrowBasicLands.map { it.copy(setCode = SET_CODE) }
 
     val allCards = listOf(
+        AlaniaDivergentStorm,
         AlaniasPathmaker,
         AgateBladeAssassin,
         ArtistsTalent,

@@ -710,6 +710,7 @@ constructors.
 - `Conditions.OpponentLostLifeThisTurn` — true if any opponent lost life this turn (from any source)
 - `Conditions.CardsLeftGraveyardThisTurn(count)` — true if N+ cards left your graveyard this turn
 - `Conditions.SacrificedFoodThisTurn` — true if you've sacrificed a Food artifact this turn
+- `IsFirstSpellOfTypeCastThisTurn(spellCategory: String)` — raw condition. True if the count of spells matching the category cast by you this turn is exactly 1. Categories: `"INSTANT"`, `"SORCERY"`, `"CREATURE"`, `"NONCREATURE"`, `"INSTANT_OR_SORCERY"`, `"ENCHANTMENT"`, `"HISTORIC"`, `"SUBTYPE_<NAME>"` (e.g., `"SUBTYPE_OTTER"`).
 
 ### Zone Presence
 

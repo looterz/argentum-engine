@@ -415,7 +415,7 @@ class CantBeBlockedIfCastSpellTypeRule : BlockEvasionRule {
         val attackerController = ctx.projected.getController(ctx.attackerId) ?: return null
         val castTypes = ctx.state.spellTypesCastThisTurn[attackerController] ?: return null
 
-        if (restriction.spellType.name in castTypes) {
+        if ((castTypes[restriction.spellType.name] ?: 0) > 0) {
             return "${attackerCard.name} can't be blocked (controller cast a ${restriction.spellType.name.lowercase().replace('_', ' ')} spell this turn)"
         }
         return null
