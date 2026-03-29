@@ -355,6 +355,9 @@ object ZoneTransitionService {
         return state.updateEntity(entityId) { c ->
             var updated = c.with(ControllerComponent(controllerId))
 
+            // Track that this permanent entered the battlefield this turn
+            updated = updated.with(EnteredThisTurnComponent)
+
             // Creatures enter with summoning sickness
             if (cardComponent.typeLine.isCreature) {
                 updated = updated.with(SummoningSicknessComponent)

@@ -77,17 +77,21 @@ data class Exists(
     val player: Player,
     val zone: Zone,
     val filter: GameObjectFilter = GameObjectFilter.Any,
-    val negate: Boolean = false
+    val negate: Boolean = false,
+    /** When true, exclude the source entity from the search (for "another" wording). */
+    val excludeSelf: Boolean = false
 ) : Condition {
     override val description: String = buildString {
         if (negate) {
             append("if there are no ")
+            if (excludeSelf) append("other ")
             append(filter.description.ifEmpty { "cards" })
             append(" in ")
         } else {
-            append("if there is a ")
+            append("if ")
+            if (excludeSelf) append("another ") else append("a ")
             append(filter.description.ifEmpty { "card" })
-            append(" in ")
+            append(" is in ")
         }
         append(player.possessive)
         append(" ")

@@ -710,6 +710,10 @@ constructors.
 - `Conditions.CardsLeftGraveyardThisTurn(count)` — true if N+ cards left your graveyard this turn
 - `Conditions.SacrificedFoodThisTurn` — true if you've sacrificed a Food artifact this turn
 
+### Zone Presence
+
+- `Exists(player: Player, zone: Zone, filter: GameObjectFilter, negate = false, excludeSelf = false)` — raw condition (import directly from `com.wingedsheep.sdk.scripting.conditions.Exists`). Checks if any matching object exists in a player's zone. Use `excludeSelf = true` for "another" wording (excludes the source entity). Use with `GameObjectFilter.Creature.enteredThisTurn().youControl()` for "if a creature entered the battlefield under your control this turn".
+
 ### Composite
 
 - `Conditions.All(cond1, cond2)` — AND

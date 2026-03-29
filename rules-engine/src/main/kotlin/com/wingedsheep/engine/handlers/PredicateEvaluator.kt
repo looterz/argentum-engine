@@ -3,6 +3,7 @@ package com.wingedsheep.engine.handlers
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.AttachmentsComponent
+import com.wingedsheep.engine.state.components.battlefield.EnteredThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.combat.AttackingComponent
 import com.wingedsheep.engine.state.components.combat.BlockingComponent
@@ -589,10 +590,7 @@ class PredicateEvaluator {
 
             // Summoning sickness / ETB
             StatePredicate.EnteredThisTurn -> {
-                // Check if the entity entered the battlefield this turn
-                // This requires turn tracking - for now return false
-                // TODO: Implement with ETB tracking
-                false
+                container.has<EnteredThisTurnComponent>()
             }
 
             // Damage state

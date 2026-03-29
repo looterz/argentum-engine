@@ -16,6 +16,7 @@ import com.wingedsheep.engine.state.components.battlefield.SagaComponent
 import com.wingedsheep.engine.state.components.battlefield.CastFromHandComponent
 import com.wingedsheep.engine.state.components.battlefield.WarpedComponent
 import com.wingedsheep.engine.state.components.battlefield.WasKickedComponent
+import com.wingedsheep.engine.state.components.battlefield.EnteredThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CantBeCounteredComponent
@@ -663,6 +664,9 @@ class StackResolver(
             if (cardComponent?.typeLine?.isCreature == true || spellComponent.castFaceDown) {
                 updated = updated.with(SummoningSicknessComponent)
             }
+
+            // Track that this permanent entered the battlefield this turn
+            updated = updated.with(EnteredThisTurnComponent)
 
             // Track if this permanent was cast from hand (for cards like Phage the Untouchable)
             if (spellComponent.castFromZone == Zone.HAND) {

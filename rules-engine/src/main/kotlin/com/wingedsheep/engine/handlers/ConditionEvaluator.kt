@@ -143,12 +143,17 @@ class ConditionEvaluator {
         }
 
         val found = playerIds.any { playerId ->
-            val entities = if (condition.zone == Zone.BATTLEFIELD) {
+            var entities = if (condition.zone == Zone.BATTLEFIELD) {
                 state.getBattlefield().filter { entityId ->
                     state.getEntity(entityId)?.get<ControllerComponent>()?.playerId == playerId
                 }
             } else {
                 state.getZone(ZoneKey(playerId, condition.zone))
+            }
+
+            // Exclude the source entity for "another" wording
+            if (condition.excludeSelf) {
+                entities = entities.filter { it != context.sourceId }
             }
 
             if (condition.filter == GameObjectFilter.Any) {

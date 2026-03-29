@@ -7,6 +7,7 @@ import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.SagaComponent
+import com.wingedsheep.engine.state.components.battlefield.EnteredThisTurnComponent
 import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -192,6 +193,14 @@ class BeginningPhaseManager(
 
         for (entityId in creaturesToRefresh) {
             newState = newState.updateEntity(entityId) { it.without<SummoningSicknessComponent>() }
+        }
+
+        // Remove "entered this turn" tracking from all permanents
+        val enteredThisTurn = newState.entities.filter { (_, container) ->
+            container.has<EnteredThisTurnComponent>()
+        }.keys
+        for (entityId in enteredThisTurn) {
+            newState = newState.updateEntity(entityId) { it.without<EnteredThisTurnComponent>() }
         }
 
         return ExecutionResult.success(newState, events)
