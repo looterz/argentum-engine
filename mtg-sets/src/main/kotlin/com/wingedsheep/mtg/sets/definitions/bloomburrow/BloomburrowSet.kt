@@ -128,6 +128,7 @@ object BloomburrowSet {
         SeasonedWarrenguard,
         SeedpodSquire,
         SeedglaiveMentor,
+        ShrikeForce,
         ShoreUp,
         ShorelineLooter,
         SinisterMonolith,

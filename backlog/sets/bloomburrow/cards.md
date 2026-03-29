@@ -2,11 +2,11 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 146 / 266
+**Implemented:** 147 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
-| White      | 40    | 26   |
+| White      | 40    | 27   |
 | Blue       | 41    | 18   |
 | Black      | 40    | 25   |
 | Red        | 41    | 23   |
@@ -215,7 +215,7 @@
 - [x] Shore Up
 - [x] Shoreline Looter
 - [ ] Short Bow
-- [ ] Shrike Force
+- [x] Shrike Force
 - [x] Sinister Monolith
 - [ ] Skyskipper Duo
 - [x] Sonar Strike
