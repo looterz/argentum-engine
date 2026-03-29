@@ -48,6 +48,7 @@ object BloomburrowSet {
         DazzlingDenial,
         DawnsTruce,
         DireDowndraft,
+        Diresight,
         DreamdewEntrancer,
         DruidOfTheSpade,
         DriftgloomCoyote,

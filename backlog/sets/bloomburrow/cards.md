@@ -2,13 +2,13 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 125 / 266
+**Implemented:** 126 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 23   |
 | Blue       | 41    | 16   |
-| Black      | 40    | 22   |
+| Black      | 40    | 23   |
 | Red        | 41    | 20   |
 | Green      | 41    | 16   |
 | Multicolor | 39    | 16   |
@@ -68,7 +68,7 @@
 - [x] Dazzling Denial
 - [ ] Dewdrop Cure
 - [x] Dire Downdraft
-- [ ] Diresight
+- [x] Diresight
 - [ ] Dour Port-Mage
 - [ ] Downwind Ambusher
 - [ ] Dragonhawk, Fate's Tempest
