@@ -472,9 +472,9 @@ export function useGroupedZoneCards(zoneId: ZoneId): readonly GroupedCard[] {
 }
 
 /**
- * Hook to get "ghost" cards — graveyard cards that have legal activated abilities,
- * top-of-library cards playable via Future Sight-like effects, and exile cards
- * playable via Mind's Desire-like effects.
+ * Hook to get "ghost" cards — graveyard cards that have legal activated abilities
+ * or castable spells (e.g., flashback), top-of-library cards playable via
+ * Future Sight-like effects, and exile cards playable via Mind's Desire-like effects.
  * These are shown as translucent cards appended to the player's hand for discoverability.
  * Excludes simple mana abilities and unaffordable actions (same filtering as useHasLegalActions).
  */
@@ -487,18 +487,23 @@ export function useGhostCards(playerId: EntityId | null): readonly ClientCard[] 
 
     const ghostCardIds = new Set<EntityId>()
 
-    // 1. Graveyard cards with legal activated abilities
+    // 1. Graveyard cards with legal activated abilities or castable spells (e.g., flashback)
     const gyZoneId = graveyard(playerId)
     const gyZone = gameState.zones.find((z) => zoneIdEquals(z.zoneId, gyZoneId))
     if (gyZone && gyZone.cardIds && gyZone.cardIds.length > 0) {
       const gyCardIds = new Set(gyZone.cardIds)
       for (const actionInfo of legalActions) {
         const action = actionInfo.action
-        if (action.type !== 'ActivateAbility') continue
-        if (!gyCardIds.has(action.sourceId)) continue
-        if (actionInfo.isManaAbility && !actionInfo.additionalCostInfo) continue
-        if (actionInfo.isAffordable === false) continue
-        ghostCardIds.add(action.sourceId)
+        if (action.type === 'ActivateAbility') {
+          if (!gyCardIds.has(action.sourceId)) continue
+          if (actionInfo.isManaAbility && !actionInfo.additionalCostInfo) continue
+          if (actionInfo.isAffordable === false) continue
+          ghostCardIds.add(action.sourceId)
+        } else if (action.type === 'CastSpell' && actionInfo.sourceZone === 'GRAVEYARD') {
+          if (!gyCardIds.has(action.cardId)) continue
+          if (actionInfo.isAffordable === false) continue
+          ghostCardIds.add(action.cardId)
+        }
       }
     }
 
