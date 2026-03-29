@@ -2,13 +2,13 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 133 / 266
+**Implemented:** 134 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 24   |
 | Blue       | 41    | 16   |
-| Black      | 40    | 23   |
+| Black      | 40    | 24   |
 | Red        | 41    | 21   |
 | Green      | 41    | 16   |
 | Multicolor | 39    | 17   |
@@ -183,7 +183,7 @@
 - [ ] Polliwallop
 - [x] Pond Prophet
 - [ ] Portent of Calamity
-- [ ] Psychic Whorl
+- [x] Psychic Whorl
 - [x] Quaketusk Boar
 - [ ] Rabbit Response
 - [x] Rabid Gnaw
