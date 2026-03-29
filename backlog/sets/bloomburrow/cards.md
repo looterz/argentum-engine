@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 141 / 266
+**Implemented:** 142 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -10,7 +10,7 @@
 | Blue       | 41    | 17   |
 | Black      | 40    | 24   |
 | Red        | 41    | 22   |
-| Green      | 41    | 17   |
+| Green      | 41    | 18   |
 | Multicolor | 39    | 18   |
 | Colorless  | 9     | 3    |
 | Land       | 15    | 11   |
@@ -52,7 +52,7 @@
 - [ ] Carrot Cake
 - [ ] Cindering Cutthroat
 - [x] Clement, the Worrywort
-- [ ] Clifftop Lookout
+- [x] Clifftop Lookout
 - [ ] Coiling Rebirth
 - [x] Conduct Electricity
 - [ ] Consumed by Greed

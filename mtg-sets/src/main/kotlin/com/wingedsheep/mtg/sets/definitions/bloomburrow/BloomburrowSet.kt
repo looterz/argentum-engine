@@ -41,6 +41,7 @@ object BloomburrowSet {
         BrightbladeStoat,
         BurrowguardMentor,
         BywayBarterer,
+        ClifftopLookout,
         ClementTheWorrywort,
         ConductElectricity,
         CruelclawsHeist,
