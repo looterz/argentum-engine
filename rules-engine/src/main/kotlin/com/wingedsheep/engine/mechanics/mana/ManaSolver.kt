@@ -22,11 +22,16 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.effects.AddAnyColorManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddColorlessManaEffect
+import com.wingedsheep.sdk.scripting.effects.AddDynamicManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaOfColorAmongEffect
 import com.wingedsheep.sdk.scripting.effects.ManaRestriction
+import com.wingedsheep.sdk.scripting.ActivatedAbility
 import com.wingedsheep.sdk.scripting.AdditionalManaOnTap
 import com.wingedsheep.sdk.scripting.DampLandManaProduction
+import com.wingedsheep.sdk.scripting.GrantActivatedAbilityToCreatureGroup
+import com.wingedsheep.sdk.scripting.predicates.CardPredicate
+import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
@@ -440,7 +445,11 @@ class ManaSolver(
             // Check for explicit mana abilities via CardRegistry
             val cardDef = cardRegistry.getCard(card.cardDefinitionId)
             val allAbilities = cardDef?.script?.activatedAbilities ?: emptyList()
-            val manaAbilities = allAbilities.filter { it.isManaAbility }
+
+            // Include mana abilities granted by static effects from other permanents
+            // (e.g., Clement, the Worrywort granting {T}: Add {G} or {U} to Frogs)
+            val staticGrantedManaAbilities = getStaticGrantedManaAbilities(entityId, card, state)
+            val manaAbilities = allAbilities.filter { it.isManaAbility } + staticGrantedManaAbilities
 
             // Detect non-mana activated abilities (utility land/creature)
             val hasNonManaAbilities = allAbilities.any { !it.isManaAbility }
@@ -571,6 +580,12 @@ class ManaSolver(
                         }
                         effect.restriction
                     }
+                    is AddDynamicManaEffect -> {
+                        combinedColors.addAll(effect.allowedColors)
+                        val manaAmount = (effect.amountSource as? DynamicAmount.Fixed)?.amount ?: 1
+                        maxManaAmount = maxOf(maxManaAmount, manaAmount)
+                        effect.restriction
+                    }
                     else -> null
                 }
 
@@ -688,6 +703,43 @@ class ManaSolver(
         } else {
             source
         }
+    }
+
+    /**
+     * Get mana abilities granted to an entity by static abilities on battlefield permanents.
+     * E.g., Clement, the Worrywort grants "{T}: Add {G} or {U}" to Frog creatures.
+     */
+    private fun getStaticGrantedManaAbilities(
+        entityId: EntityId,
+        targetCard: CardComponent,
+        state: GameState
+    ): List<ActivatedAbility> {
+        val result = mutableListOf<ActivatedAbility>()
+
+        for (permanentId in state.getBattlefield()) {
+            val container = state.getEntity(permanentId) ?: continue
+            val card = container.get<CardComponent>() ?: continue
+            if (container.has<FaceDownComponent>()) continue
+
+            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
+            for (ability in cardDef.staticAbilities) {
+                if (ability is GrantActivatedAbilityToCreatureGroup) {
+                    val filter = ability.filter.baseFilter
+                    val matchesAll = filter.cardPredicates.all { predicate ->
+                        when (predicate) {
+                            is CardPredicate.IsCreature -> targetCard.typeLine.isCreature
+                            is CardPredicate.HasSubtype -> targetCard.typeLine.hasSubtype(predicate.subtype)
+                            else -> true
+                        }
+                    }
+                    if (matchesAll && ability.ability.isManaAbility) {
+                        result.add(ability.ability)
+                    }
+                }
+            }
+        }
+
+        return result
     }
 
     /**
