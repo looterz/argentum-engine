@@ -712,6 +712,7 @@ class StaticAbilityHandler(
         val hasTappedPredicate = baseFilter.statePredicates.any { it == StatePredicate.IsTapped }
         val hasFaceDownPredicate = baseFilter.statePredicates.any { it == StatePredicate.IsFaceDown }
         val subtypePredicate = baseFilter.cardPredicates.filterIsInstance<CardPredicate.HasSubtype>().firstOrNull()
+        val hasAnyOfSubtypes = baseFilter.cardPredicates.any { it is CardPredicate.HasAnyOfSubtypes }
 
         // Check if the card predicates are creature-compatible (empty, IsCreature only, or IsCreature + subtype).
         // Non-creature type predicates (e.g., IsPlaneswalker) must fall through to Generic.
@@ -742,12 +743,12 @@ class StaticAbilityHandler(
         }
 
         // Handle "other creatures you control" pattern
-        if (hasExcludeSelf && subtypePredicate == null && controllerPredicate == ControllerPredicate.ControlledByYou && baseFilter.statePredicates.isEmpty()) {
+        if (hasExcludeSelf && subtypePredicate == null && !hasAnyOfSubtypes && controllerPredicate == ControllerPredicate.ControlledByYou && baseFilter.statePredicates.isEmpty()) {
             return AffectsFilter.OtherCreaturesYouControl
         }
 
         // Handle "other creatures" pattern (only when no other restrictions)
-        if (hasExcludeSelf && subtypePredicate == null && controllerPredicate == null && baseFilter.statePredicates.isEmpty()) {
+        if (hasExcludeSelf && subtypePredicate == null && !hasAnyOfSubtypes && controllerPredicate == null && baseFilter.statePredicates.isEmpty()) {
             return AffectsFilter.AllOtherCreatures
         }
 
@@ -757,7 +758,7 @@ class StaticAbilityHandler(
         }
 
         // Handle controller-only filters (no subtype or other complex predicates)
-        if (subtypePredicate == null && baseFilter.statePredicates.isEmpty()) {
+        if (subtypePredicate == null && !hasAnyOfSubtypes && baseFilter.statePredicates.isEmpty()) {
             return when (controllerPredicate) {
                 ControllerPredicate.ControlledByYou -> AffectsFilter.AllCreaturesYouControl
                 ControllerPredicate.ControlledByOpponent -> AffectsFilter.AllCreaturesOpponentsControl
