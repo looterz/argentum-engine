@@ -29,23 +29,23 @@ val FeedTheCycle = card("Feed the Cycle") {
 
     spell {
         effect = ModalEffect.chooseOne(
-            // Mode 1: Pay {B} additional — destroy target creature or planeswalker
-            Mode.withTarget(
-                Effects.Destroy(EffectTarget.ContextTarget(0)),
-                TargetCreatureOrPlaneswalker(),
-                "Pay {B} — destroy target creature or planeswalker"
+            // Mode 1: Pay {B} additional — total mana cost becomes {1}{B}{B}
+            Mode(
+                effect = Effects.Destroy(EffectTarget.ContextTarget(0)),
+                targetRequirements = listOf(TargetCreatureOrPlaneswalker()),
+                description = "Pay {B} — destroy target creature or planeswalker",
+                additionalManaCost = "{B}",
+                additionalCosts = emptyList()
             ),
-            // Mode 2: Forage — destroy target creature or planeswalker
-            Mode.withTarget(
-                Effects.Destroy(EffectTarget.ContextTarget(0)),
-                TargetCreatureOrPlaneswalker(),
-                "Forage — destroy target creature or planeswalker"
+            // Mode 2: Forage — total mana cost stays {1}{B} plus forage
+            Mode(
+                effect = Effects.Destroy(EffectTarget.ContextTarget(0)),
+                targetRequirements = listOf(TargetCreatureOrPlaneswalker()),
+                description = "Forage — destroy target creature or planeswalker",
+                additionalCosts = listOf(AdditionalCost.Forage)
             )
         )
     }
-
-    // Mode 2 requires forage as additional cost
-    additionalCost(AdditionalCost.Forage)
 
     metadata {
         rarity = Rarity.UNCOMMON

@@ -269,6 +269,91 @@ class CastSpellEnumerator : ActionEnumerator {
             val modalEffect = spellEffect as? ModalEffect
             if (modalEffect != null && modalEffect.chooseCount == 1 && canAfford) {
                 for ((modeIndex, mode) in modalEffect.modes.withIndex()) {
+                    // Per-mode cost overrides: if a mode has additionalManaCost or additionalCosts,
+                    // compute mode-specific affordability and cost info
+                    val modeExtraManaCost = mode.additionalManaCost
+                    val modeEffectiveCost = if (modeExtraManaCost != null) {
+                        effectiveCost + ManaCost.parse(modeExtraManaCost)
+                    } else {
+                        effectiveCost
+                    }
+                    val modeCanAfford = if (modeExtraManaCost != null) {
+                        context.manaSolver.canPay(state, playerId, modeEffectiveCost, spellContext = spellContext)
+                    } else {
+                        true // already checked above
+                    }
+                    if (!modeCanAfford) continue
+
+                    // Per-mode additional costs: when mode specifies its own, use those instead of card-level
+                    val modeAdditionalCosts = mode.additionalCosts ?: additionalCosts
+                    var modeCanPayAdditionalCosts = true
+                    val modeSacrificeTargets = mutableListOf<EntityId>()
+                    var modeExileTargets = emptyList<EntityId>()
+                    var modeExileMinCount = 0
+                    var modeDiscardTargets = emptyList<EntityId>()
+                    var modeDiscardCount = 0
+                    if (mode.additionalCosts != null) {
+                        // Re-evaluate additional cost payability for this mode's specific costs
+                        for (cost in modeAdditionalCosts) {
+                            when (cost) {
+                                is AdditionalCost.SacrificePermanent -> {
+                                    val validSacTargets = context.costUtils.findSacrificeTargets(state, playerId, cost)
+                                    if (validSacTargets.size < cost.count) modeCanPayAdditionalCosts = false
+                                    modeSacrificeTargets.addAll(validSacTargets)
+                                }
+                                is AdditionalCost.ExileCards -> {
+                                    val validExileTargets = context.costUtils.findExileTargets(state, playerId, cost.filter, cost.fromZone)
+                                    if (validExileTargets.size < cost.count) modeCanPayAdditionalCosts = false
+                                    modeExileTargets = validExileTargets
+                                    modeExileMinCount = cost.count
+                                }
+                                is AdditionalCost.DiscardCards -> {
+                                    val handZone = ZoneKey(playerId, Zone.HAND)
+                                    val handCards = state.getZone(handZone).filter { it != cardId }
+                                    val predicateContext = PredicateContext(controllerId = playerId)
+                                    val validDiscards = if (cost.filter == com.wingedsheep.sdk.scripting.GameObjectFilter.Any) {
+                                        handCards
+                                    } else {
+                                        handCards.filter { context.predicateEvaluator.matches(state, it, cost.filter, predicateContext) }
+                                    }
+                                    if (validDiscards.size < cost.count) modeCanPayAdditionalCosts = false
+                                    modeDiscardTargets = validDiscards
+                                    modeDiscardCount = cost.count
+                                }
+                                is AdditionalCost.Forage -> {
+                                    val graveyardSize = state.getZone(ZoneKey(playerId, Zone.GRAVEYARD)).size
+                                    val hasFood = state.getBattlefield().any { permId ->
+                                        val permContainer = state.getEntity(permId) ?: return@any false
+                                        val permCard = permContainer.get<CardComponent>() ?: return@any false
+                                        val permController = permContainer.get<ControllerComponent>()?.playerId
+                                        permController == playerId && permCard.typeLine.hasSubtype(com.wingedsheep.sdk.core.Subtype.FOOD)
+                                    }
+                                    if (graveyardSize < 3 && !hasFood) modeCanPayAdditionalCosts = false
+                                }
+                                else -> {}
+                            }
+                        }
+                    }
+                    if (!modeCanPayAdditionalCosts) continue
+
+                    val modeCostInfo = if (mode.additionalCosts != null) {
+                        buildAdditionalCostData(modeAdditionalCosts, modeSacrificeTargets, emptyList(), modeExileTargets, modeExileMinCount, modeDiscardTargets, modeDiscardCount)
+                    } else {
+                        costInfo
+                    }
+
+                    val modeManaCostString = modeEffectiveCost.toString()
+                    val modeAutoTapSolution = if (modeExtraManaCost != null) {
+                        context.manaSolver.solve(state, playerId, modeEffectiveCost)
+                    } else {
+                        autoTapSolution
+                    }
+                    val modeAutoTapPreview = if (modeExtraManaCost != null) {
+                        modeAutoTapSolution?.sources?.map { it.entityId }
+                    } else {
+                        autoTapPreview
+                    }
+
                     val modeTargetReqs = mode.targetRequirements
                     if (modeTargetReqs.isNotEmpty()) {
                         // Mode requires targets
@@ -291,14 +376,14 @@ class CastSpellEnumerator : ActionEnumerator {
                                 action = CastSpell(playerId, cardId, targets = listOf(autoTarget), chosenMode = modeIndex),
                                 hasXCost = hasXCost,
                                 maxAffordableX = maxAffordableX,
-                                additionalCostInfo = costInfo,
+                                additionalCostInfo = modeCostInfo,
                                 hasConvoke = hasConvoke,
                                 convokeCreatures = convokeCreatures,
                                 hasDelve = hasDelve,
                                 delveCards = delveCards,
                                 minDelveNeeded = minDelveNeeded,
-                                manaCostString = manaCostString,
-                                autoTapPreview = autoTapPreview
+                                manaCostString = modeManaCostString,
+                                autoTapPreview = modeAutoTapPreview
                             ))
                         } else {
                             result.add(LegalAction(
@@ -313,14 +398,14 @@ class CastSpellEnumerator : ActionEnumerator {
                                 targetRequirements = if (modeTargetInfos.size > 1) modeTargetInfos else null,
                                 hasXCost = hasXCost,
                                 maxAffordableX = maxAffordableX,
-                                additionalCostInfo = costInfo,
+                                additionalCostInfo = modeCostInfo,
                                 hasConvoke = hasConvoke,
                                 convokeCreatures = convokeCreatures,
                                 hasDelve = hasDelve,
                                 delveCards = delveCards,
                                 minDelveNeeded = minDelveNeeded,
-                                manaCostString = manaCostString,
-                                autoTapPreview = autoTapPreview
+                                manaCostString = modeManaCostString,
+                                autoTapPreview = modeAutoTapPreview
                             ))
                         }
                     } else {
@@ -331,14 +416,14 @@ class CastSpellEnumerator : ActionEnumerator {
                             action = CastSpell(playerId, cardId, chosenMode = modeIndex),
                             hasXCost = hasXCost,
                             maxAffordableX = maxAffordableX,
-                            additionalCostInfo = costInfo,
+                            additionalCostInfo = modeCostInfo,
                             hasConvoke = hasConvoke,
                             convokeCreatures = convokeCreatures,
                             hasDelve = hasDelve,
                             delveCards = delveCards,
                             minDelveNeeded = minDelveNeeded,
-                            manaCostString = manaCostString,
-                            autoTapPreview = autoTapPreview
+                            manaCostString = modeManaCostString,
+                            autoTapPreview = modeAutoTapPreview
                         ))
                     }
                 }

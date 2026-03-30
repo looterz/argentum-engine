@@ -49,6 +49,7 @@ import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.AdditionalCost
 import com.wingedsheep.sdk.scripting.CastRestriction
 import com.wingedsheep.sdk.scripting.effects.DividedDamageEffect
+import com.wingedsheep.sdk.scripting.effects.ModalEffect
 import com.wingedsheep.sdk.scripting.effects.StormCopyEffect
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.GrantFlashToSpellType
@@ -152,9 +153,10 @@ class CastSpellHandler(
             }
         }
 
-        // Validate additional costs
+        // Validate additional costs (use per-mode costs if the chosen mode overrides them)
         if (cardDef != null) {
-            val additionalCostError = validateAdditionalCosts(state, cardDef.script.additionalCosts, action)
+            val modeAdditionalCosts = resolveAdditionalCostsForMode(cardDef, action)
+            val additionalCostError = validateAdditionalCosts(state, modeAdditionalCosts, action)
             if (additionalCostError != null) {
                 return additionalCostError
             }
@@ -432,6 +434,25 @@ class CastSpellHandler(
         }
     }
 
+    /**
+     * Resolves the additional costs for a spell, considering per-mode overrides.
+     * If the chosen mode specifies its own additionalCosts, those are used instead of card-level costs.
+     */
+    private fun resolveAdditionalCostsForMode(
+        cardDef: com.wingedsheep.sdk.model.CardDefinition,
+        action: CastSpell
+    ): List<AdditionalCost> {
+        if (action.chosenMode != null) {
+            val modalEffect = cardDef.script.spellEffect as? ModalEffect
+            val chosenMode = modalEffect?.modes?.getOrNull(action.chosenMode)
+            val modeCosts = chosenMode?.additionalCosts
+            if (modeCosts != null) {
+                return modeCosts
+            }
+        }
+        return cardDef.script.additionalCosts
+    }
+
     private fun validateAdditionalCosts(
         state: GameState,
         additionalCosts: List<AdditionalCost>,
@@ -651,6 +672,16 @@ class CastSpellHandler(
             }
         }
 
+        // Apply per-mode additional mana cost (e.g., Feed the Cycle "pay {B}" mode)
+        if (cardDef != null && action.chosenMode != null) {
+            val modalEffect = cardDef.script.spellEffect as? ModalEffect
+            val chosenMode = modalEffect?.modes?.getOrNull(action.chosenMode)
+            val modeManaCost = chosenMode?.additionalManaCost
+            if (modeManaCost != null) {
+                effectiveCost = effectiveCost + ManaCost.parse(modeManaCost)
+            }
+        }
+
         // Process additional costs (sacrifice, exile, etc.)
         val sacrificedPermanentIds = mutableListOf<EntityId>()
         val sacrificedPermanentSubtypes = mutableMapOf<EntityId, Set<String>>()
@@ -658,8 +689,9 @@ class CastSpellHandler(
 
         // Collect all additional costs: script costs + kicker additional cost (if kicked)
         // + self-alternative cost's additional costs (if using alternative cost)
+        // Per-mode additional costs override card-level costs when present
         val allAdditionalCosts = buildList {
-            if (cardDef != null) addAll(cardDef.script.additionalCosts)
+            if (cardDef != null) addAll(resolveAdditionalCostsForMode(cardDef, action))
             if (action.wasKicked && cardDef != null) {
                 val kickerAdditionalCost = cardDef.keywordAbilities
                     .filterIsInstance<KeywordAbility.KickerWithAdditionalCost>()

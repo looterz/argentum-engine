@@ -4,6 +4,7 @@ import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.AdditionalCost
 import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.costs.PayCost
@@ -70,15 +71,22 @@ data class MayEffect(
  * Each mode can have its own targeting requirements, allowing cards like
  * Cryptic Command where different modes need different targets.
  *
+ * Modes can also carry per-mode costs for cards like Feed the Cycle
+ * ("forage or pay {B}") where different modes have different costs.
+ *
  * @property effect The effect when this mode is chosen
  * @property targetRequirements Targets required for this specific mode
  * @property description Human-readable description of the mode
+ * @property additionalManaCost Extra mana added to the spell's cost when this mode is chosen (e.g., "{B}")
+ * @property additionalCosts Per-mode additional costs (e.g., Forage). When non-null, overrides card-level additional costs.
  */
 @Serializable
 data class Mode(
     val effect: Effect,
     val targetRequirements: List<TargetRequirement> = emptyList(),
-    val description: String = effect.description
+    val description: String = effect.description,
+    val additionalManaCost: String? = null,
+    val additionalCosts: List<AdditionalCost>? = null
 ) {
     companion object {
         /**
