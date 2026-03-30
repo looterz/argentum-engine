@@ -130,6 +130,7 @@ object BloomburrowSet {
         SazacapsBrew,
         ScavengersTalent,
         SeasonOfLoss,
+        SeasonOfWeaving,
         SeasonedWarrenguard,
         SeedpodSquire,
         SeedglaiveMentor,

@@ -2,12 +2,12 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 154 / 266
+**Implemented:** 155 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 27   |
-| Blue       | 41    | 20   |
+| Blue       | 41    | 21   |
 | Black      | 40    | 26   |
 | Red        | 41    | 23   |
 | Green      | 41    | 19   |
@@ -206,7 +206,7 @@
 - [ ] Scrapshooter
 - [ ] Season of Gathering
 - [x] Season of Loss
-- [ ] Season of Weaving
+- [x] Season of Weaving
 - [ ] Season of the Bold
 - [ ] Season of the Burrow
 - [x] Seasoned Warrenguard

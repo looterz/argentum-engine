@@ -187,3 +187,21 @@ data class BudgetModalContinuation(
     val combinations: List<List<Int>>,
     val opponentId: EntityId? = null
 ) : ContinuationFrame
+
+/**
+ * Resume after player chooses a permanent to create a token copy of.
+ *
+ * Used by CreateTokenCopyOfChosenPermanentEffect — the player selects one
+ * artifact/creature/permanent they control, and a token copy is created.
+ *
+ * @property controllerId The player who controls the effect
+ * @property sourceId The spell/ability source
+ * @property sourceName Name of the source for display
+ */
+@Serializable
+data class CreateTokenCopyOfChosenContinuation(
+    override val decisionId: String,
+    val controllerId: EntityId,
+    val sourceId: EntityId?,
+    val sourceName: String?
+) : ContinuationFrame

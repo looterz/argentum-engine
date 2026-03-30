@@ -25,7 +25,8 @@ class ModalAndCloneContinuationResumer(
         resumer(ChooseCreatureEntersContinuation::class, ::resumeChooseCreatureEnters),
         resumer(AmplifyEntersContinuation::class, ::resumeAmplifyEnters),
         resumer(CastWithCreatureTypeContinuation::class, ::resumeCastWithCreatureType),
-        resumer(BudgetModalContinuation::class, ::resumeBudgetModal)
+        resumer(BudgetModalContinuation::class, ::resumeBudgetModal),
+        resumer(CreateTokenCopyOfChosenContinuation::class, ::resumeCreateTokenCopyOfChosen)
     )
 
     fun resumeModal(
@@ -688,6 +689,33 @@ class ModalAndCloneContinuationResumer(
         )
 
         val result = services.effectExecutorRegistry.execute(state, CompositeEffect(effects), context)
+        if (result.isPaused) return result
+        return checkForMore(result.state, result.events.toList())
+    }
+
+    /**
+     * Resume after player chose a permanent to create a token copy of.
+     */
+    fun resumeCreateTokenCopyOfChosen(
+        state: GameState,
+        continuation: CreateTokenCopyOfChosenContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        if (response !is CardsSelectedResponse) {
+            return ExecutionResult.error(state, "Expected cards selected response for token copy")
+        }
+
+        if (response.selectedCards.isEmpty()) {
+            return checkForMore(state, emptyList())
+        }
+
+        val chosenId = response.selectedCards.first()
+        val staticAbilityHandler = com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler(services.cardRegistry)
+        val result = com.wingedsheep.engine.handlers.effects.token.CreateTokenCopyOfChosenPermanentExecutor.createTokenCopy(
+            state, chosenId, continuation.controllerId,
+            staticAbilityHandler
+        )
         if (result.isPaused) return result
         return checkForMore(result.state, result.events.toList())
     }

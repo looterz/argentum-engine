@@ -3,6 +3,7 @@ package com.wingedsheep.sdk.scripting.effects
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.StaticAbility
 import com.wingedsheep.sdk.scripting.TriggeredAbility
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
@@ -246,5 +247,29 @@ data class CreateTokenFromGraveyardEffect(
     override fun applyTextReplacement(replacer: TextReplacer): Effect {
         val newTypes = creatureTypes.map { replacer.replaceCreatureType(it) }.toSet()
         return if (newTypes != creatureTypes) copy(creatureTypes = newTypes) else this
+    }
+}
+
+/**
+ * Choose a permanent you control matching [filter], then create a token that's a copy of it.
+ * "Choose an artifact or creature you control. Create a token that's a copy of it."
+ *
+ * The choice is made during resolution (not at cast time). The executor finds matching
+ * permanents the controller controls, presents a selection decision, and creates a
+ * token copy of the chosen permanent.
+ *
+ * @property filter Which permanents can be chosen (e.g., artifact or creature)
+ */
+@SerialName("CreateTokenCopyOfChosenPermanent")
+@Serializable
+data class CreateTokenCopyOfChosenPermanentEffect(
+    val filter: GameObjectFilter = GameObjectFilter.Permanent
+) : Effect {
+    override val description: String =
+        "Choose a ${filter.description} you control. Create a token that's a copy of it"
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect {
+        val newFilter = filter.applyTextReplacement(replacer)
+        return if (newFilter !== filter) copy(filter = newFilter) else this
     }
 }

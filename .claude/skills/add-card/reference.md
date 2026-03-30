@@ -131,6 +131,7 @@ constructors.
 - `Effects.CreateToken(power, toughness, colors, creatureTypes, keywords, count = 1, legendary = false)`
 - `Effects.CreateDynamicToken(dynamicPower, dynamicToughness, colors, creatureTypes, keywords, count = 1)` — token with P/T evaluated at resolution time
 - `Effects.CreateTokenCopyOfSelf(count = 1, overridePower = null, overrideToughness = null)` — create a token that's a copy of the source permanent (copies CardComponent + abilities via cardDefinitionId). For Offspring, use `overridePower = 1, overrideToughness = 1` to create a 1/1 copy.
+- `CreateTokenCopyOfChosenPermanentEffect(filter)` — choose a permanent you control matching filter during resolution, create a token copy. Used for "Choose an artifact or creature you control. Create a token that's a copy of it."
 - `Effects.CreateTreasure(count = 1)`
 - `Effects.CreateFood(count = 1, controller: EffectTarget? = null)` — create Food artifact tokens; `controller` overrides who gets the tokens (e.g., `PlayerRef(Player.EachOpponent)` for Gift a Food)
 
@@ -474,7 +475,7 @@ constructors.
 - `Targets.CreatureWithKeyword(keyword)` / `Targets.CreatureWithColor(color)`
 - `Targets.CreatureWithPowerAtMost(maxPower)` / `Targets.UpToCreatures(count)`
 - `TargetFilter.NonlegendaryCreature` — nonlegendary creature (use with `TargetCreature(filter = ...)`)
-- Fluent builders: `.nonlegendary()`, `.legendary()` on `TargetFilter` and `GameObjectFilter`
+- Fluent builders: `.nonlegendary()`, `.legendary()`, `.nontoken()` on `TargetFilter` and `GameObjectFilter`
 - Fluent state predicate: `.hasGreatestPower()` on `TargetFilter` and `GameObjectFilter` — restricts to creatures with the greatest power among creatures their controller controls
 - `GameObjectFilter.Historic` — matches artifacts, legendaries, and Sagas (Dominaria "historic" batching)
 

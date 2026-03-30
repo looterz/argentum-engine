@@ -233,6 +233,11 @@ data class GameObjectFilter(
         cardPredicates = cardPredicates + CardPredicate.IsNonlegendary
     )
 
+    /** Must not be a token */
+    fun nontoken() = copy(
+        cardPredicates = cardPredicates + CardPredicate.IsNontoken
+    )
+
     /** Must not be of the creature type chosen on the source permanent */
     fun notOfSourceChosenType() = copy(
         cardPredicates = cardPredicates + CardPredicate.NotOfSourceChosenType
