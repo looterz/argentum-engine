@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 159 / 266
+**Implemented:** 160 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -10,7 +10,7 @@
 | Blue       | 41    | 23   |
 | Black      | 40    | 26   |
 | Red        | 41    | 23   |
-| Green      | 41    | 20   |
+| Green      | 41    | 21   |
 | Multicolor | 39    | 23   |
 | Colorless  | 9     | 3    |
 | Land       | 15    | 11   |
@@ -236,7 +236,7 @@
 - [x] Stormchaser's Talent
 - [ ] Stormsplitter
 - [ ] Sugar Coat
-- [ ] Sunshower Druid
+- [x] Sunshower Druid
 - [x] Sunspine Lynx
 - [x] Swamp
 - [x] Take Out the Trash
