@@ -466,6 +466,9 @@ class TriggerMatcher(
         // Valiant: check if the targeting spell/ability is controlled by "you" (the trigger's controller)
         if (trigger.byYou && event.controllerId != controllerId) return false
 
+        // Check if the targeting spell/ability is controlled by an opponent
+        if (trigger.byOpponent && event.controllerId == controllerId) return false
+
         // Valiant: check if this is the first time this turn
         if (trigger.firstTimeEachTurn && !event.firstTimeByThisController) return false
 

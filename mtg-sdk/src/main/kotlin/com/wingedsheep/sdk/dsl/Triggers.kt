@@ -789,6 +789,15 @@ object Triggers {
     )
 
     /**
+     * Whenever a creature you control becomes the target of a spell or ability
+     * an opponent controls.
+     */
+    fun CreatureYouControlBecomesTargetByOpponent(filter: GameObjectFilter = GameObjectFilter.Creature): TriggerSpec = TriggerSpec(
+        event = BecomesTargetEvent(targetFilter = filter.youControl(), byOpponent = true),
+        binding = TriggerBinding.ANY
+    )
+
+    /**
      * Valiant — Whenever this creature becomes the target of a spell or ability
      * you control for the first time each turn.
      */

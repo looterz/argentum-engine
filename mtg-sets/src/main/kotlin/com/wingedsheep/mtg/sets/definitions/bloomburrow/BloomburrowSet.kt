@@ -110,6 +110,7 @@ object BloomburrowSet {
         NocturnalHunger,
         NettleGuard,
         NightwhorlHermit,
+        PawpatchRecruit,
         PatchworkBanner,
         PawpatchFormation,
         PileatedProvisioner,

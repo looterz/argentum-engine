@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 160 / 266
+**Implemented:** 161 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -10,7 +10,7 @@
 | Blue       | 41    | 23   |
 | Black      | 40    | 26   |
 | Red        | 41    | 23   |
-| Green      | 41    | 21   |
+| Green      | 41    | 22   |
 | Multicolor | 39    | 23   |
 | Colorless  | 9     | 3    |
 | Land       | 15    | 11   |
@@ -171,7 +171,7 @@
 - [ ] Parting Gust
 - [x] Patchwork Banner
 - [x] Pawpatch Formation
-- [ ] Pawpatch Recruit
+- [x] Pawpatch Recruit
 - [ ] Pearl of Wisdom
 - [ ] Peerless Recycling
 - [ ] Persistent Marshstalker

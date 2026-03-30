@@ -643,12 +643,14 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
     data class BecomesTargetEvent(
         val targetFilter: GameObjectFilter = GameObjectFilter.Any,
         val byYou: Boolean = false,
+        val byOpponent: Boolean = false,
         val firstTimeEachTurn: Boolean = false
     ) : GameEvent {
         override val description: String = buildString {
             append(describeObjectForEvent(targetFilter))
             append(" becomes the target of a spell or ability")
             if (byYou) append(" you control")
+            if (byOpponent) append(" an opponent controls")
             if (firstTimeEachTurn) append(" for the first time each turn")
         }
 
