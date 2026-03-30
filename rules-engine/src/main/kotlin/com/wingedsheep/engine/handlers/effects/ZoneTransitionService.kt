@@ -18,6 +18,7 @@ import com.wingedsheep.engine.state.components.identity.TokenComponent
 import com.wingedsheep.engine.state.components.player.CardsLeftGraveyardThisTurnComponent
 import com.wingedsheep.engine.state.components.player.CreaturesDiedThisTurnComponent
 import com.wingedsheep.engine.state.components.player.NonTokenCreaturesDiedThisTurnComponent
+import com.wingedsheep.engine.state.components.player.OpponentCreaturesExiledThisTurnComponent
 import com.wingedsheep.engine.state.components.player.SacrificedFoodThisTurnComponent
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Subtype
@@ -248,6 +249,22 @@ object ZoneTransitionService {
                     val existing = playerContainer.get<NonTokenCreaturesDiedThisTurnComponent>()
                         ?: NonTokenCreaturesDiedThisTurnComponent()
                     playerContainer.with(NonTokenCreaturesDiedThisTurnComponent(existing.count + 1))
+                }
+            }
+        }
+
+        // 8b2. Track creatures exiled from battlefield for opponent's tracking
+        // Used by Vren, the Relentless: "creatures exiled under your opponents' control this turn"
+        if (leavingBattlefield && actualDestZone == Zone.EXILE && cardComponent.typeLine.isCreature) {
+            // For each opponent of the creature's controller, increment their exile count
+            val allPlayers = newState.turnOrder
+            for (opponentId in allPlayers) {
+                if (opponentId != controllerId) {
+                    newState = newState.updateEntity(opponentId) { playerContainer ->
+                        val existing = playerContainer.get<OpponentCreaturesExiledThisTurnComponent>()
+                            ?: OpponentCreaturesExiledThisTurnComponent()
+                        playerContainer.with(OpponentCreaturesExiledThisTurnComponent(existing.count + 1))
+                    }
                 }
             }
         }

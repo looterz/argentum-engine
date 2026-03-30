@@ -191,6 +191,12 @@ class DynamicAmountEvaluator(
                 }
             }
 
+            is DynamicAmount.OpponentCreaturesExiledThisTurn -> {
+                state.getEntity(context.controllerId)
+                    ?.get<com.wingedsheep.engine.state.components.player.OpponentCreaturesExiledThisTurnComponent>()
+                    ?.count ?: 0
+            }
+
             is DynamicAmount.CreaturesSharingTypeWithTriggeringEntity -> {
                 val triggeringId = context.triggeringEntityId ?: return 0
                 // Get the triggering creature's subtypes from projected state

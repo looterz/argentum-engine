@@ -552,4 +552,17 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
         override val description: String = "the number of creatures that died under ${player.possessive} control this turn"
         override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
     }
+
+    /**
+     * Count of creatures that were exiled from opponents' control this turn.
+     * Used for Vren, the Relentless.
+     *
+     * Reads from OpponentCreaturesExiledThisTurnComponent on the player entity.
+     */
+    @SerialName("OpponentCreaturesExiledThisTurn")
+    @Serializable
+    data object OpponentCreaturesExiledThisTurn : DynamicAmount {
+        override val description: String = "the number of creatures that were exiled under your opponents' control this turn"
+        override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
+    }
 }

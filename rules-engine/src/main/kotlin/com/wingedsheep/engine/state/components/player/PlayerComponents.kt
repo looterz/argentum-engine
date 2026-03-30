@@ -380,6 +380,19 @@ data class CreaturesDiedThisTurnComponent(
 ) : Component
 
 /**
+ * Tracks the number of creatures that were exiled from opponents' control this turn.
+ * Used by Vren, the Relentless: "create X tokens where X is the number of creatures
+ * that were exiled under your opponents' control this turn."
+ *
+ * Stored on the player who controls the exiling effect (i.e., Vren's controller).
+ * Cleared at end of turn by CleanupPhaseManager.
+ */
+@Serializable
+data class OpponentCreaturesExiledThisTurnComponent(
+    val count: Int = 0
+) : Component
+
+/**
  * Tracks whether this player has lost life during the current turn.
  * Set whenever a LifeChangedEvent with a non-gain reason is emitted for this player.
  * Cleared at end of turn by CleanupPhaseManager.

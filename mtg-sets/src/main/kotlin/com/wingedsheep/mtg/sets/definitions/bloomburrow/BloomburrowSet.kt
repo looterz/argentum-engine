@@ -165,6 +165,7 @@ object BloomburrowSet {
         ValleyRally,
         ValleyRotcaller,
         VinereapMentor,
+        VrenTheRelentless,
         WaterspoutWarden,
         WarSqueak,
         WarrenElder,

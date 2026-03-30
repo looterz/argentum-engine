@@ -26,6 +26,7 @@ import com.wingedsheep.engine.state.components.player.SacrificedFoodThisTurnComp
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.engine.state.components.player.CreaturesDiedThisTurnComponent
 import com.wingedsheep.engine.state.components.player.NonTokenCreaturesDiedThisTurnComponent
+import com.wingedsheep.engine.state.components.player.OpponentCreaturesExiledThisTurnComponent
 import com.wingedsheep.engine.state.components.player.PlayerEffectRemoval
 import com.wingedsheep.engine.state.components.player.MayCastCreaturesFromGraveyardWithForageComponent
 import com.wingedsheep.engine.state.components.player.PlayerHexproofComponent
@@ -294,6 +295,9 @@ class CleanupPhaseManager(
                 }
                 if (result.has<CreaturesDiedThisTurnComponent>()) {
                     result = result.without<CreaturesDiedThisTurnComponent>()
+                }
+                if (result.has<OpponentCreaturesExiledThisTurnComponent>()) {
+                    result = result.without<OpponentCreaturesExiledThisTurnComponent>()
                 }
                 if (result.has<LifeLostThisTurnComponent>()) {
                     result = result.without<LifeLostThisTurnComponent>()
