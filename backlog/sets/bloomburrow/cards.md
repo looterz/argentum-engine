@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 174 / 266
+**Implemented:** 176 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -11,9 +11,9 @@
 | Black      | 40    | 30   |
 | Red        | 41    | 26   |
 | Green      | 41    | 22   |
-| Multicolor | 39    | 25   |
+| Multicolor | 39    | 26   |
 | Colorless  | 9     | 4    |
-| Land       | 15    | 12   |
+| Land       | 15    | 13   |
 
 ---
 
@@ -159,7 +159,7 @@
 - [x] Moonstone Harbinger
 - [x] Mountain
 - [x] Mouse Trapper
-- [ ] Mudflat Village
+- [x] Mudflat Village
 - [x] Muerra, Trash Tactician
 - [x] Nettle Guard
 - [x] Nightwhorl Hermit
@@ -242,7 +242,7 @@
 - [x] Take Out the Trash
 - [ ] Tangle Tumbler
 - [ ] Teapot Slinger
-- [ ] Tempest Angler
+- [x] Tempest Angler
 - [x] Tender Wildguide
 - [ ] The Infamous Cruelclaw
 - [x] Thistledown Players
