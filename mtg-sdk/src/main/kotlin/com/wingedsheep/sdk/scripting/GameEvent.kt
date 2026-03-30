@@ -751,6 +751,32 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
         override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
     }
 
+    // ---- Counter Triggers ----
+
+    /**
+     * When one or more counters of a specific type are placed on a permanent.
+     *
+     * Examples:
+     * - "Whenever you put one or more +1/+1 counters on a creature you control"
+     *   → CountersPlacedEvent(counterType = "+1/+1", filter = GameObjectFilter.Creature.youControl())
+     *
+     * @property counterType The counter type to match (e.g., "+1/+1", "LORE")
+     * @property filter Filter for the permanent receiving counters
+     */
+    @SerialName("CountersPlacedEvent")
+    @Serializable
+    data class CountersPlacedEvent(
+        val counterType: String,
+        val filter: GameObjectFilter = GameObjectFilter.Any
+    ) : GameEvent {
+        override val description: String = buildString {
+            append("one or more $counterType counters are placed on ")
+            append(describeObjectForEvent(filter))
+        }
+
+        override fun applyTextReplacement(replacer: TextReplacer): GameEvent = this
+    }
+
     // ---- Draw/Reveal Triggers ----
 
     /**

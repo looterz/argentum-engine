@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 185 / 266
+**Implemented:** 186 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -10,7 +10,7 @@
 | Blue       | 41    | 27   |
 | Black      | 40    | 31   |
 | Red        | 41    | 27   |
-| Green      | 41    | 24   |
+| Green      | 41    | 25   |
 | Multicolor | 39    | 28   |
 | Colorless  | 9     | 5    |
 | Land       | 15    | 13   |
@@ -231,7 +231,7 @@
 - [ ] Starseer Mentor
 - [x] Steampath Charger
 - [x] Stickytongue Sentinel
-- [ ] Stocking the Pantry
+- [x] Stocking the Pantry
 - [x] Stormcatch Mentor
 - [x] Stormchaser's Talent
 - [ ] Stormsplitter

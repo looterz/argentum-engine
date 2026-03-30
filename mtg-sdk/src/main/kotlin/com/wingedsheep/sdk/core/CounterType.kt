@@ -22,5 +22,6 @@ enum class CounterType {
     LORE,
     AIM,
     STUN,
-    FINALITY
+    FINALITY,
+    SUPPLY
 }

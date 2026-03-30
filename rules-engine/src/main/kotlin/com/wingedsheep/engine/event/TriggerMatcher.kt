@@ -8,6 +8,7 @@ import com.wingedsheep.engine.core.BlockersDeclaredEvent
 import com.wingedsheep.engine.core.CardCycledEvent
 import com.wingedsheep.engine.core.CardRevealedFromDrawEvent
 import com.wingedsheep.engine.core.CardsDrawnEvent
+import com.wingedsheep.engine.core.CountersAddedEvent
 import com.wingedsheep.engine.core.DamageDealtEvent
 import com.wingedsheep.engine.core.LifeChangedEvent
 import com.wingedsheep.engine.core.SpellCastEvent
@@ -227,6 +228,23 @@ class TriggerMatcher(
             is GameEvent.OneOrMoreDealCombatDamageToPlayerEvent -> false
             // Leave battlefield without dying batch triggers are handled by detectLeaveBattlefieldWithoutDyingBatchTriggers
             is GameEvent.LeaveBattlefieldWithoutDyingEvent -> false
+            is GameEvent.CountersPlacedEvent -> {
+                if (event !is CountersAddedEvent) return false
+                if (trigger.counterType != event.counterType) return false
+                // Check filter: the permanent receiving counters must match
+                if (trigger.filter != GameObjectFilter.Any) {
+                    val projected = state.projectedState
+                    val predicateContext = com.wingedsheep.engine.handlers.PredicateContext(
+                        controllerId = controllerId,
+                        sourceId = sourceId
+                    )
+                    val predicateEvaluator = PredicateEvaluator()
+                    if (!predicateEvaluator.matchesWithProjection(state, projected, event.entityId, trigger.filter, predicateContext)) {
+                        return false
+                    }
+                }
+                true
+            }
         }
     }
 

@@ -8,6 +8,7 @@ import com.wingedsheep.engine.core.BlockersDeclaredEvent
 import com.wingedsheep.engine.core.CardCycledEvent
 import com.wingedsheep.engine.core.CardRevealedFromDrawEvent
 import com.wingedsheep.engine.core.CardsDrawnEvent
+import com.wingedsheep.engine.core.CountersAddedEvent
 import com.wingedsheep.engine.core.ControlChangedEvent
 import com.wingedsheep.engine.core.DamageDealtEvent
 import com.wingedsheep.engine.core.LifeChangeReason
@@ -58,6 +59,7 @@ enum class TriggerCategory {
     SACRIFICE,
     COMBAT_DAMAGE_BATCH,
     LEAVE_WITHOUT_DYING,
+    COUNTERS_ADDED,
 }
 
 /**
@@ -165,6 +167,7 @@ class TriggerIndex(
                 is SdkGameEvent.PermanentsSacrificedEvent -> listOf(TriggerCategory.SACRIFICE)
                 is SdkGameEvent.OneOrMoreDealCombatDamageToPlayerEvent -> listOf(TriggerCategory.COMBAT_DAMAGE_BATCH)
                 is SdkGameEvent.LeaveBattlefieldWithoutDyingEvent -> listOf(TriggerCategory.LEAVE_WITHOUT_DYING)
+                is SdkGameEvent.CountersPlacedEvent -> listOf(TriggerCategory.COUNTERS_ADDED)
                 // These are handled by specialized detect methods, not the main loop
                 else -> emptyList()
             }
@@ -192,6 +195,7 @@ class TriggerIndex(
             }
             is BecomesTargetEvent -> BECOMES_TARGET_LIST
             is TurnFaceUpEvent -> TURN_FACE_UP_LIST
+            is CountersAddedEvent -> COUNTERS_ADDED_LIST
             else -> emptyList()
         }
 
@@ -211,5 +215,6 @@ class TriggerIndex(
         private val LIFE_LOSS_LIST = listOf(TriggerCategory.LIFE_LOSS)
         private val BECOMES_TARGET_LIST = listOf(TriggerCategory.BECOMES_TARGET)
         private val TURN_FACE_UP_LIST = listOf(TriggerCategory.TURN_FACE_UP)
+        private val COUNTERS_ADDED_LIST = listOf(TriggerCategory.COUNTERS_ADDED)
     }
 }

@@ -593,6 +593,21 @@ object Triggers {
     )
 
     // =========================================================================
+    // Counter Triggers
+    // =========================================================================
+
+    /**
+     * Whenever you put one or more +1/+1 counters on a creature you control.
+     */
+    val PlusOneCountersPlacedOnYourCreature: TriggerSpec = TriggerSpec(
+        event = CountersPlacedEvent(
+            counterType = "+1/+1",
+            filter = GameObjectFilter.Creature.youControl()
+        ),
+        binding = TriggerBinding.ANY
+    )
+
+    // =========================================================================
     // Damage Triggers
     // =========================================================================
 

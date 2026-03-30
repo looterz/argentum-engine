@@ -164,6 +164,7 @@ object BloomburrowSet {
         SplashLasher,
         SplashPortal,
         StickytongueSentinel,
+        StockingThePantry,
         SugarCoat,
         Stargaze,
         StarscapeCleric,
