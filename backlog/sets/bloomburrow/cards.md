@@ -2,14 +2,14 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 188 / 266
+**Implemented:** 189 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 27   |
 | Blue       | 41    | 27   |
 | Black      | 40    | 32   |
-| Red        | 41    | 28   |
+| Red        | 41    | 29   |
 | Green      | 41    | 25   |
 | Multicolor | 39    | 28   |
 | Colorless  | 9     | 5    |
@@ -57,7 +57,7 @@
 - [x] Conduct Electricity
 - [ ] Consumed by Greed
 - [x] Corpseberry Cultivator
-- [ ] Coruscation Mage
+- [x] Coruscation Mage
 - [x] Cruelclaw's Heist
 - [x] Crumb and Get It
 - [ ] Curious Forager

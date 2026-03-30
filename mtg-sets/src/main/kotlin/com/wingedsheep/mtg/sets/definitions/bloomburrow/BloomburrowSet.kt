@@ -52,6 +52,7 @@ object BloomburrowSet {
         CruelclawsHeist,
         CamelliaTheSeedmiser,
         CorpseberryCultivator,
+        CoruscationMage,
         CrumbAndGetIt,
         DaggerfangDuo,
         DarkstarAugur,
