@@ -111,6 +111,7 @@ object BloomburrowSet {
         LightshellDuo,
         LifecreedDuo,
         LilypadVillage,
+        LunarConvocation,
         LupinflowerVillage,
         MabelsMettle,
         MahaItsFeathersNight,

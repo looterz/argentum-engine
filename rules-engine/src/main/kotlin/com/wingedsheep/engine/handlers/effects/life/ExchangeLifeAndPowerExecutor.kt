@@ -76,6 +76,9 @@ class ExchangeLifeAndPowerExecutor : EffectExecutor<ExchangeLifeAndPowerEffect> 
 
             val reason = if (currentPower > currentLife) LifeChangeReason.LIFE_GAIN else LifeChangeReason.LIFE_LOSS
             events.add(LifeChangedEvent(controllerId, currentLife, currentPower, reason))
+            if (currentPower > currentLife) {
+                newState = DamageUtils.markLifeGainedThisTurn(newState, controllerId)
+            }
             if (currentPower < currentLife) {
                 newState = DamageUtils.markLifeLostThisTurn(newState, controllerId)
             }

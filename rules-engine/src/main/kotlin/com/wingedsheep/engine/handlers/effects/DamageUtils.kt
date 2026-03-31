@@ -222,6 +222,17 @@ object DamageUtils {
     }
 
     /**
+     * Mark that [playerId] gained life this turn.
+     * Sets the LifeGainedThisTurnComponent on the player entity.
+     * Used for conditions like "if you gained life this turn" (Lunar Convocation).
+     */
+    fun markLifeGainedThisTurn(state: GameState, playerId: EntityId): GameState {
+        return state.updateEntity(playerId) { container ->
+            container.with(com.wingedsheep.engine.state.components.player.LifeGainedThisTurnComponent)
+        }
+    }
+
+    /**
      * Mark that [playerId] lost life this turn (non-damage life loss, e.g., from LoseLife effects or payments).
      * Sets the LifeLostThisTurnComponent on the player entity.
      * Used for conditions like "if an opponent lost life this turn" (Hired Claw).

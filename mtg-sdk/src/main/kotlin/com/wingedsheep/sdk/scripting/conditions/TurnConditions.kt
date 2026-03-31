@@ -71,6 +71,30 @@ data object YouAttackedThisTurn : Condition {
  * lost, not whether the net life total changed.
  * Used for cards like Hired Claw.
  */
+/**
+ * Condition: "if you gained life this turn"
+ * Checks whether the controller has gained life at any point during the current turn.
+ * Used for Lunar Convocation.
+ */
+@SerialName("YouGainedLifeThisTurn")
+@Serializable
+data object YouGainedLifeThisTurn : Condition {
+    override val description: String = "if you gained life this turn"
+    override fun applyTextReplacement(replacer: TextReplacer): Condition = this
+}
+
+/**
+ * Condition: "if you gained and lost life this turn"
+ * Checks whether the controller has BOTH gained AND lost life during the current turn.
+ * Used for Lunar Convocation's second ability.
+ */
+@SerialName("YouGainedAndLostLifeThisTurn")
+@Serializable
+data object YouGainedAndLostLifeThisTurn : Condition {
+    override val description: String = "if you gained and lost life this turn"
+    override fun applyTextReplacement(replacer: TextReplacer): Condition = this
+}
+
 @SerialName("OpponentLostLifeThisTurn")
 @Serializable
 data object OpponentLostLifeThisTurn : Condition {

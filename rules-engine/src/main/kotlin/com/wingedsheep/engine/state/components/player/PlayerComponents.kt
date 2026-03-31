@@ -393,6 +393,16 @@ data class OpponentCreaturesExiledThisTurnComponent(
 ) : Component
 
 /**
+ * Tracks whether this player has gained life during the current turn.
+ * Set whenever life is gained by this player.
+ * Cleared at end of turn by CleanupPhaseManager.
+ *
+ * Used for conditions like "if you gained life this turn" (Lunar Convocation).
+ */
+@Serializable
+data object LifeGainedThisTurnComponent : Component
+
+/**
  * Tracks whether this player has lost life during the current turn.
  * Set whenever a LifeChangedEvent with a non-gain reason is emitted for this player.
  * Cleared at end of turn by CleanupPhaseManager.

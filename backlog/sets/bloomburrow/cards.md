@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 191 / 266
+**Implemented:** 192 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -11,7 +11,7 @@
 | Black      | 40    | 32   |
 | Red        | 41    | 30   |
 | Green      | 41    | 25   |
-| Multicolor | 39    | 29   |
+| Multicolor | 39    | 30   |
 | Colorless  | 9     | 5    |
 | Land       | 15    | 13   |
 
@@ -143,7 +143,7 @@
 - [ ] Long River's Pull
 - [ ] Longstalk Brawl
 - [ ] Lumra, Bellow of the Woods
-- [ ] Lunar Convocation
+- [x] Lunar Convocation
 - [x] Lupinflower Village
 - [x] Mabel's Mettle
 - [ ] Mabel, Heir to Cragflame

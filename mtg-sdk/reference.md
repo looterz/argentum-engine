@@ -711,6 +711,8 @@ constructors.
 ### Turn
 
 - `Conditions.IsYourTurn` / `.IsNotYourTurn`
+- `Conditions.YouGainedLifeThisTurn` — true if you gained life this turn
+- `Conditions.YouGainedAndLostLifeThisTurn` — true if you both gained and lost life this turn
 - `Conditions.OpponentLostLifeThisTurn` — true if any opponent lost life this turn (from any source)
 - `Conditions.CardsLeftGraveyardThisTurn(count)` — true if N+ cards left your graveyard this turn
 - `Conditions.SacrificedFoodThisTurn` — true if you've sacrificed a Food artifact this turn

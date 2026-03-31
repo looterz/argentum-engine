@@ -323,6 +323,20 @@ object Conditions {
     // =========================================================================
 
     /**
+     * If you gained life this turn.
+     * Used for Lunar Convocation.
+     */
+    val YouGainedLifeThisTurn: ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.YouGainedLifeThisTurn
+
+    /**
+     * If you gained and lost life this turn.
+     * Used for Lunar Convocation's second ability.
+     */
+    val YouGainedAndLostLifeThisTurn: ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.YouGainedAndLostLifeThisTurn
+
+    /**
      * If an opponent lost life this turn (from any source).
      * Used for cards like Hired Claw: "Activate only if an opponent lost life this turn"
      */

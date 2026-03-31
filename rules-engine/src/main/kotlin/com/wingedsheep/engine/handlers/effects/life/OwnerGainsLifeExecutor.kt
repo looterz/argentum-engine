@@ -46,9 +46,10 @@ class OwnerGainsLifeExecutor : EffectExecutor<OwnerGainsLifeEffect> {
 
         // Apply life gain
         val newLife = currentLife + effect.amount
-        val newState = state.updateEntity(ownerId) { container ->
+        var newState = state.updateEntity(ownerId) { container ->
             container.with(LifeTotalComponent(newLife))
         }
+        newState = com.wingedsheep.engine.handlers.effects.DamageUtils.markLifeGainedThisTurn(newState, ownerId)
 
         return ExecutionResult.success(
             newState,

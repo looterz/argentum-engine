@@ -882,6 +882,7 @@ internal class CombatDamageManager(
             newState = newState.updateEntity(controllerId) { container ->
                 container.with(LifeTotalComponent(newLife))
             }
+            newState = DamageUtils.markLifeGainedThisTurn(newState, controllerId)
             lifelinkEvents.add(LifeChangedEvent(controllerId, currentLife, newLife, LifeChangeReason.LIFE_GAIN))
         }
 
