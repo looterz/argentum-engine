@@ -81,6 +81,7 @@ object BloomburrowSet {
         Fountainport,
         FountainportBell,
         GlidediveDuo,
+        GevScaledScorch,
         GossipsTalent,
         HeadOfTheHomestead,
         HazardrootHerbalist,

@@ -572,6 +572,15 @@ object Triggers {
     )
 
     /**
+     * Whenever you cast a spell with a specific creature subtype.
+     * Example: "Whenever you cast a Lizard spell" → YouCastSubtype(Subtype.LIZARD)
+     */
+    fun YouCastSubtype(subtype: Subtype): TriggerSpec = TriggerSpec(
+        event = SpellCastEvent(player = Player.You, subtype = subtype),
+        binding = TriggerBinding.ANY
+    )
+
+    /**
      * Whenever you cast a kicked spell.
      */
     val YouCastKickedSpell: TriggerSpec = TriggerSpec(

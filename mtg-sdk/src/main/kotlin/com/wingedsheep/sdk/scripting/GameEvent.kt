@@ -573,19 +573,24 @@ sealed interface GameEvent : TextReplaceable<GameEvent> {
         val manaValueAtMost: Int? = null,
         val manaValueEquals: Int? = null,
         val kicked: Boolean? = null,
-        val player: Player = Player.You
+        val player: Player = Player.You,
+        val subtype: Subtype? = null
     ) : GameEvent {
         override val description: String = buildString {
             append(player.description)
             append(" casts ")
             if (kicked == true) append("a kicked ")
-            when (spellType) {
-                SpellTypeFilter.ANY -> if (kicked != true) append("a spell") else append("spell")
-                SpellTypeFilter.CREATURE -> if (kicked != true) append("a creature spell") else append("creature spell")
-                SpellTypeFilter.NONCREATURE -> if (kicked != true) append("a noncreature spell") else append("noncreature spell")
-                SpellTypeFilter.INSTANT_OR_SORCERY -> if (kicked != true) append("an instant or sorcery spell") else append("instant or sorcery spell")
-                SpellTypeFilter.ENCHANTMENT -> if (kicked != true) append("an enchantment spell") else append("enchantment spell")
-                SpellTypeFilter.HISTORIC -> if (kicked != true) append("a historic spell") else append("historic spell")
+            if (subtype != null) {
+                append("a ${subtype.value} spell")
+            } else {
+                when (spellType) {
+                    SpellTypeFilter.ANY -> if (kicked != true) append("a spell") else append("spell")
+                    SpellTypeFilter.CREATURE -> if (kicked != true) append("a creature spell") else append("creature spell")
+                    SpellTypeFilter.NONCREATURE -> if (kicked != true) append("a noncreature spell") else append("noncreature spell")
+                    SpellTypeFilter.INSTANT_OR_SORCERY -> if (kicked != true) append("an instant or sorcery spell") else append("instant or sorcery spell")
+                    SpellTypeFilter.ENCHANTMENT -> if (kicked != true) append("an enchantment spell") else append("enchantment spell")
+                    SpellTypeFilter.HISTORIC -> if (kicked != true) append("a historic spell") else append("historic spell")
+                }
             }
             if (manaValueAtLeast != null) append(" with mana value $manaValueAtLeast or greater")
             if (manaValueAtMost != null) append(" with mana value $manaValueAtMost or less")

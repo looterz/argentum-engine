@@ -697,7 +697,7 @@ class StaticAbilityHandler(
         container: ComponentContainer,
         cardDefinition: CardDefinition
     ): ComponentContainer {
-        val runtimeEffects = cardDefinition.script.replacementEffects.filter { it is PreventDamage || it is DoubleDamage || it is PreventLifeGain || it is com.wingedsheep.sdk.scripting.DamageCantBePrevented || it is ReplaceDamageWithCounters || it is com.wingedsheep.sdk.scripting.ReplaceDrawWithEffect || it is com.wingedsheep.sdk.scripting.ModifyCounterPlacement || it is com.wingedsheep.sdk.scripting.RedirectZoneChange || it is com.wingedsheep.sdk.scripting.PreventExtraTurns || it is com.wingedsheep.sdk.scripting.RedirectZoneChangeWithEffect }
+        val runtimeEffects = cardDefinition.script.replacementEffects.filter { it is PreventDamage || it is DoubleDamage || it is PreventLifeGain || it is com.wingedsheep.sdk.scripting.DamageCantBePrevented || it is ReplaceDamageWithCounters || it is com.wingedsheep.sdk.scripting.ReplaceDrawWithEffect || it is com.wingedsheep.sdk.scripting.ModifyCounterPlacement || it is com.wingedsheep.sdk.scripting.RedirectZoneChange || it is com.wingedsheep.sdk.scripting.PreventExtraTurns || it is com.wingedsheep.sdk.scripting.RedirectZoneChangeWithEffect || it is com.wingedsheep.sdk.scripting.EntersWithCounters || it is com.wingedsheep.sdk.scripting.EntersWithDynamicCounters }
         if (runtimeEffects.isEmpty()) return container
         return container.with(ReplacementEffectSourceComponent(runtimeEffects))
     }

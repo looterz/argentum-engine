@@ -568,6 +568,7 @@ constructors.
 - `Triggers.YouCastNoncreature` / `Triggers.YouCastInstantOrSorcery`
 - `Triggers.YouCastEnchantment`
 - `Triggers.YouCastHistoric` — whenever you cast a historic spell (artifact, legendary, or Saga)
+- `Triggers.YouCastSubtype(subtype)` — whenever you cast a spell with a specific subtype (e.g., `YouCastSubtype(Subtype.LIZARD)`)
 - `Triggers.YouCastKickedSpell` — whenever you cast a kicked spell
 - `Triggers.NthSpellCast(n, player)` — whenever a player casts their Nth spell each turn (e.g., `NthSpellCast(2)` for "second spell")
 - `Triggers.AnySpellOrAbilityOnStack` — whenever any spell or ability is put onto the stack (any player)
@@ -752,6 +753,7 @@ constructors.
 - `DynamicAmount.NumberOfBlockers` / `DynamicAmounts.numberOfBlockers()` — number of creatures blocking the triggering entity
 - `DynamicAmount.DamageDealtToTargetPlayerThisTurn(targetIndex)` — total damage dealt to a target player this turn
 - `DynamicAmount.NonTokenCreaturesDiedThisTurn(player)` / `DynamicAmounts.nonTokenCreaturesDiedThisTurn(player)` — count of nontoken creatures put into a player's graveyard from battlefield this turn
+- `DynamicAmount.OpponentsWhoLostLifeThisTurn` — count of opponents who lost life this turn
 - `DynamicAmount.Count(player, zone, filter)` /
   `DynamicAmount.AggregateBattlefield(player, filter, aggregation?, property?, excludeSelf?)` /
   `DynamicAmount.AggregateZone(player, zone, filter, aggregation?, property?)` — zone-generic aggregate for non-battlefield zones (graveyard, hand, library, exile)
@@ -1210,7 +1212,7 @@ Used in `OptionalCostEffect`, `MayPayManaEffect`, `AnyPlayerMayPayEffect`, `PayO
 - `AttackEvent` / `YouAttackEvent(minAttackers, attackerFilter: GameObjectFilter? = null)` / `BlockEvent` / `BecomesBlockedEvent(filter: GameObjectFilter? = null)`
 - `BecomesTargetEvent(targetFilter, byYou: Boolean = false, firstTimeEachTurn: Boolean = false)` — when a permanent becomes the target of a spell or ability; `byYou` restricts to spells/abilities controlled by trigger's controller; `firstTimeEachTurn` restricts to first time each turn (Valiant)
 - `StepEvent(step, player)`
-- `SpellCastEvent(spellType, manaValueAtLeast?, manaValueAtMost?, manaValueEquals?, player)`
+- `SpellCastEvent(spellType, manaValueAtLeast?, manaValueAtMost?, manaValueEquals?, player, subtype?)`
 - `NthSpellCastEvent(nthSpell, player)` — fires when a player's per-turn spell count reaches exactly N
 - `CycleEvent(player)` / `TapEvent` / `UntapEvent`
 - `TurnFaceUpEvent` / `TransformEvent(intoBackFace?)` / `ControlChangeEvent`

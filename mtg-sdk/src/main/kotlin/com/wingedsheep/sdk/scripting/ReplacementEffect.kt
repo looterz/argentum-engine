@@ -241,12 +241,17 @@ data class EntersWithCounters(
 /**
  * Permanent/creature enters with a dynamic number of counters.
  * Example: Stag Beetle (enters with X +1/+1 counters where X = number of other creatures)
+ *
+ * @param otherOnly When true, this effect only applies to OTHER creatures entering
+ *                  (not the permanent with this replacement effect). Used for
+ *                  Gev, Scaled Scorch: "Other creatures you control enter with additional counters."
  */
 @SerialName("EntersWithDynamicCounters")
 @Serializable
 data class EntersWithDynamicCounters(
     val counterType: CounterTypeFilter = CounterTypeFilter.PlusOnePlusOne,
     val count: DynamicAmount,
+    val otherOnly: Boolean = false,
     override val appliesTo: GameEvent = GameEvent.ZoneChangeEvent(
         filter = GameObjectFilter.Creature.youControl(),
         to = Zone.BATTLEFIELD

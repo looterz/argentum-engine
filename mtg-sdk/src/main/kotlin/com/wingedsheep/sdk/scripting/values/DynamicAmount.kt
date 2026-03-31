@@ -617,6 +617,19 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
     }
 
     /**
+     * Count of opponents who lost life this turn.
+     * Used for Gev, Scaled Scorch: "for each opponent who lost life this turn"
+     *
+     * Reads from LifeLostThisTurnComponent on each opponent entity.
+     */
+    @SerialName("OpponentsWhoLostLifeThisTurn")
+    @Serializable
+    data object OpponentsWhoLostLifeThisTurn : DynamicAmount {
+        override val description: String = "the number of opponents who lost life this turn"
+        override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
+    }
+
+    /**
      * Count of creatures that were exiled from opponents' control this turn.
      * Used for Vren, the Relentless.
      *

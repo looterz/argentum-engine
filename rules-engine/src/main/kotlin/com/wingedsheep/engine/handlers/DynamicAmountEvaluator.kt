@@ -195,6 +195,16 @@ class DynamicAmountEvaluator(
                 }
             }
 
+            is DynamicAmount.OpponentsWhoLostLifeThisTurn -> {
+                val controllerId = context.controllerId
+                state.turnOrder
+                    .filter { it != controllerId }
+                    .count { opponentId ->
+                        state.getEntity(opponentId)
+                            ?.get<com.wingedsheep.engine.state.components.player.LifeLostThisTurnComponent>() != null
+                    }
+            }
+
             is DynamicAmount.OpponentCreaturesExiledThisTurn -> {
                 state.getEntity(context.controllerId)
                     ?.get<com.wingedsheep.engine.state.components.player.OpponentCreaturesExiledThisTurnComponent>()

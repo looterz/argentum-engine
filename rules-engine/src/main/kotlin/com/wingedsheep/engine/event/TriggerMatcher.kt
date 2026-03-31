@@ -643,6 +643,12 @@ class TriggerMatcher(
         if (trigger.manaValueAtMost != null && mv > trigger.manaValueAtMost!!) return false
         if (trigger.manaValueEquals != null && mv != trigger.manaValueEquals!!) return false
 
+        // Check subtype filter (e.g., "cast a Lizard spell")
+        if (trigger.subtype != null) {
+            if (isFaceDown) return false
+            if (!cardComponent.typeLine.subtypes.contains(trigger.subtype!!)) return false
+        }
+
         return true
     }
 
