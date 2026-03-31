@@ -185,6 +185,13 @@ export function getFinalityCounters(card: ClientCard): number {
 }
 
 /**
+ * Get the number of supply counters on a card.
+ */
+export function getSupplyCounters(card: ClientCard): number {
+  return card.counters[CounterType.SUPPLY] ?? 0
+}
+
+/**
  * Get an emoji or icon for an effect based on its icon identifier.
  */
 export function getEffectIcon(icon: string): string {

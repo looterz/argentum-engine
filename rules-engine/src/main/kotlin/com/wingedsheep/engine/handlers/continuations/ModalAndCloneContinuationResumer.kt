@@ -277,9 +277,11 @@ class ModalAndCloneContinuationResumer(
         } else null
 
         // Complete the permanent entry using the shared helper
-        newState = services.stackResolver.enterPermanentOnBattlefield(
+        val (enterState, enterEvents) = services.stackResolver.enterPermanentOnBattlefield(
             newState, spellId, spellComponent, finalCardComponent, copiedCardDef
         )
+        newState = enterState
+        events.addAll(enterEvents)
 
         events.add(ResolvedEvent(spellId, finalCardComponent.name))
         events.add(
@@ -371,11 +373,13 @@ class ModalAndCloneContinuationResumer(
         val spellComponent = spellContainer.get<SpellOnStackComponent>()
             ?: return ExecutionResult.error(state, "Spell has no SpellOnStackComponent")
 
-        newState = services.stackResolver.enterPermanentOnBattlefield(
+        val (enterState1, enterEvents1) = services.stackResolver.enterPermanentOnBattlefield(
             newState, spellId, spellComponent, cardComponent, cardDef
         )
+        newState = enterState1
 
         val events = mutableListOf<GameEvent>()
+        events.addAll(enterEvents1)
         events.add(ResolvedEvent(spellId, cardComponent.name))
         events.add(
             ZoneChangeEvent(
@@ -427,9 +431,11 @@ class ModalAndCloneContinuationResumer(
 
         // Complete the permanent entry
         val cardDef = services.cardRegistry.getCard(cardComponent.cardDefinitionId)
-        newState = services.stackResolver.enterPermanentOnBattlefield(
+        val (enterState2, enterEvents2) = services.stackResolver.enterPermanentOnBattlefield(
             newState, spellId, spellComponent, cardComponent, cardDef
         )
+        newState = enterState2
+        events.addAll(enterEvents2)
 
         events.add(ResolvedEvent(spellId, cardComponent.name))
         events.add(
@@ -482,9 +488,11 @@ class ModalAndCloneContinuationResumer(
 
         // Complete the permanent entry
         val cardDef = services.cardRegistry.getCard(cardComponent.cardDefinitionId)
-        newState = services.stackResolver.enterPermanentOnBattlefield(
+        val (enterState3, enterEvents3) = services.stackResolver.enterPermanentOnBattlefield(
             newState, spellId, spellComponent, cardComponent, cardDef
         )
+        newState = enterState3
+        events.addAll(enterEvents3)
 
         events.add(ResolvedEvent(spellId, cardComponent.name))
         events.add(
@@ -630,11 +638,13 @@ class ModalAndCloneContinuationResumer(
             ?: return ExecutionResult.error(state, "Spell has no SpellOnStackComponent")
 
         val cardDef = services.cardRegistry.getCard(cardComponent.cardDefinitionId)
-        newState = services.stackResolver.enterPermanentOnBattlefield(
+        val (enterState4, enterEvents4) = services.stackResolver.enterPermanentOnBattlefield(
             newState, spellId, spellComponent, cardComponent, cardDef
         )
+        newState = enterState4
 
         val events = mutableListOf<GameEvent>()
+        events.addAll(enterEvents4)
         events.addAll(revealEvents)
         events.add(ResolvedEvent(spellId, cardComponent.name))
         events.add(

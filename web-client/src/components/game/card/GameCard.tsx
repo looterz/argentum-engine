@@ -23,6 +23,7 @@ import {
   getLoreCounters,
   getStunCounters,
   getFinalityCounters,
+  getSupplyCounters,
 } from '../board/shared'
 import { styles } from '../board/styles'
 import {
@@ -1058,6 +1059,20 @@ export function GameCard({
           <i className={`ms ms-${counterManaClass.FINALITY}`} style={{ fontSize: responsive.isMobile ? 8 : 10 }} />
           <span style={{ fontWeight: 700 }}>
             {getFinalityCounters(card)}
+          </span>
+        </div>
+      )}
+
+      {/* Supply counter badge */}
+      {battlefield && getSupplyCounters(card) > 0 && (
+        <div style={{
+          ...styles.supplyCounterBadge,
+          fontSize: responsive.isMobile ? 9 : 11,
+          padding: responsive.isMobile ? '1px 4px' : '2px 6px',
+        }}>
+          <i className={`ms ms-${counterManaClass.SUPPLY}`} style={{ fontSize: responsive.isMobile ? 8 : 10 }} />
+          <span style={{ fontWeight: 700 }}>
+            {getSupplyCounters(card)}
           </span>
         </div>
       )}

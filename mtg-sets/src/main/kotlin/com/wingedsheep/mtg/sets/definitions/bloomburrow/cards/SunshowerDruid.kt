@@ -24,7 +24,7 @@ val SunshowerDruid = card("Sunshower Druid") {
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
         val creature = target("target creature", Targets.Creature)
-        effect = Effects.AddCounters("plus_one_plus_one", 1, creature)
+        effect = Effects.AddCounters("+1/+1", 1, creature)
             .then(Effects.GainLife(1))
     }
 

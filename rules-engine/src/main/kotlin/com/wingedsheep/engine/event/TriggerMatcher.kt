@@ -240,7 +240,7 @@ class TriggerMatcher(
             is GameEvent.PermanentsEnteredEvent -> false
             is GameEvent.CountersPlacedEvent -> {
                 if (event !is CountersAddedEvent) return false
-                if (trigger.counterType != event.counterType) return false
+                if (!counterTypesMatch(trigger.counterType, event.counterType)) return false
                 // Check filter: the permanent receiving counters must match
                 if (trigger.filter != GameObjectFilter.Any) {
                     val projected = state.projectedState
@@ -720,4 +720,20 @@ class TriggerMatcher(
             !matchesStatePredicateForTrigger(predicate.predicate, state, entityId)
         else -> true
     }
+
+    /**
+     * Compare counter type strings, normalizing different representations to allow matching
+     * between trigger specs (e.g., "+1/+1") and event strings (which may be "+1/+1",
+     * "plus_one_plus_one", "PLUS_ONE_PLUS_ONE", etc.).
+     */
+    private fun counterTypesMatch(triggerType: String, eventType: String): Boolean {
+        if (triggerType == eventType) return true
+        return normalizeCounterType(triggerType) == normalizeCounterType(eventType)
+    }
+
+    private fun normalizeCounterType(type: String): String =
+        type.lowercase()
+            .replace("+1/+1", "plus_one_plus_one")
+            .replace("-1/-1", "minus_one_minus_one")
+            .replace(" ", "_")
 }

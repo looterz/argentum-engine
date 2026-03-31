@@ -617,13 +617,13 @@ class StackResolver(
         }
 
         // Normal permanent entry
-        val newState = enterPermanentOnBattlefield(state, spellId, spellComponent, cardComponent, cardDef)
+        val (newState, enterEvents) = enterPermanentOnBattlefield(state, spellId, spellComponent, cardComponent, cardDef)
         val sagaEvents = if (cardDef != null && !spellComponent.castFaceDown && cardDef.isSaga) {
             listOf(CountersAddedEvent(spellId, "LORE", 1, cardDef.name))
         } else {
             emptyList()
         }
-        return ExecutionResult.success(newState, sagaEvents)
+        return ExecutionResult.success(newState, enterEvents + sagaEvents)
     }
 
     /**
@@ -635,7 +635,7 @@ class StackResolver(
         spellComponent: SpellOnStackComponent,
         cardComponent: CardComponent?,
         cardDef: com.wingedsheep.sdk.model.CardDefinition?
-    ): GameState {
+    ): Pair<GameState, List<GameEvent>> {
         val controllerId = spellComponent.casterId
 
         // For Auras: get the target before removing TargetsComponent
@@ -733,8 +733,11 @@ class StackResolver(
         }
 
         // Handle "enters with counters" replacement effects (before adding to battlefield)
+        val counterEvents = mutableListOf<GameEvent>()
         if (cardDef != null && !spellComponent.castFaceDown) {
-            newState = applyEntersWithCounters(newState, spellId, cardDef, controllerId, spellComponent.xValue)
+            val (counterState, events) = applyEntersWithCounters(newState, spellId, cardDef, controllerId, spellComponent.xValue)
+            newState = counterState
+            counterEvents.addAll(events)
         }
 
         // Handle planeswalker starting loyalty (Rule 306.5b)
@@ -786,7 +789,7 @@ class StackResolver(
             newState = newState.addDelayedTrigger(delayedTrigger)
         }
 
-        return newState
+        return newState to counterEvents
     }
 
     /**
@@ -1120,8 +1123,10 @@ class StackResolver(
         cardDef: com.wingedsheep.sdk.model.CardDefinition,
         controllerId: EntityId,
         xValue: Int? = null
-    ): GameState {
+    ): Pair<GameState, List<GameEvent>> {
         var newState = state
+        val events = mutableListOf<GameEvent>()
+        val entityName = newState.getEntity(entityId)?.get<CardComponent>()?.name ?: ""
         // Apply the entering creature's own replacement effects
         for (effect in cardDef.script.replacementEffects) {
             when (effect) {
@@ -1134,6 +1139,7 @@ class StackResolver(
                     newState = newState.updateEntity(entityId) { c ->
                         c.with(current.withAdded(counterType, modifiedCount))
                     }
+                    events.add(CountersAddedEvent(entityId, effect.counterType.description, modifiedCount, entityName))
                 }
                 is EntersWithDynamicCounters -> {
                     // Skip "other only" effects when applying to self (e.g., Gev)
@@ -1154,6 +1160,7 @@ class StackResolver(
                         newState = newState.updateEntity(entityId) { c ->
                             c.with(current.withAdded(counterType, modifiedCount))
                         }
+                        events.add(CountersAddedEvent(entityId, effect.counterType.description, modifiedCount, entityName))
                     }
                 }
                 else -> { /* Other replacement effects handled elsewhere */ }
@@ -1162,9 +1169,11 @@ class StackResolver(
 
         // Apply "enters with counters" replacement effects from other battlefield permanents
         // (e.g., Gev: "Other creatures you control enter with additional +1/+1 counters")
-        newState = applyGlobalEntersWithCounters(newState, entityId, controllerId)
+        val (globalState, globalEvents) = applyGlobalEntersWithCounters(newState, entityId, controllerId)
+        newState = globalState
+        events.addAll(globalEvents)
 
-        return newState
+        return newState to events
     }
 
     /**
@@ -1175,9 +1184,11 @@ class StackResolver(
         state: GameState,
         enteringEntityId: EntityId,
         enteringControllerId: EntityId
-    ): GameState {
+    ): Pair<GameState, List<GameEvent>> {
         var newState = state
+        val events = mutableListOf<GameEvent>()
         val predicateEvaluator = PredicateEvaluator()
+        val entityName = newState.getEntity(enteringEntityId)?.get<CardComponent>()?.name ?: ""
 
         for (sourceId in newState.getBattlefield()) {
             if (sourceId == enteringEntityId) continue // Skip the entering creature itself
@@ -1197,6 +1208,7 @@ class StackResolver(
                         newState = newState.updateEntity(enteringEntityId) { c ->
                             c.with(current.withAdded(counterType, modifiedCount))
                         }
+                        events.add(CountersAddedEvent(enteringEntityId, effect.counterType.description, modifiedCount, entityName))
                     }
                     is EntersWithDynamicCounters -> {
                         if (!matchesEnterFilter(effect.appliesTo, enteringEntityId, enteringControllerId, sourceControllerId, newState, predicateEvaluator)) continue
@@ -1215,13 +1227,14 @@ class StackResolver(
                             newState = newState.updateEntity(enteringEntityId) { c ->
                                 c.with(current.withAdded(counterType, modifiedCount))
                             }
+                            events.add(CountersAddedEvent(enteringEntityId, effect.counterType.description, modifiedCount, entityName))
                         }
                     }
                     else -> { /* Other replacement effects not relevant here */ }
                 }
             }
         }
-        return newState
+        return newState to events
     }
 
     /**
