@@ -224,6 +224,7 @@ data class EntersTapped(
 data class EntersWithCounters(
     val counterType: CounterTypeFilter = CounterTypeFilter.PlusOnePlusOne,
     val count: Int,
+    val selfOnly: Boolean = false,
     override val appliesTo: GameEvent = GameEvent.ZoneChangeEvent(
         filter = GameObjectFilter.Creature.youControl(),
         to = Zone.BATTLEFIELD

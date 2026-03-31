@@ -1199,6 +1199,7 @@ class StackResolver(
             for (effect in replacementComponent.replacementEffects) {
                 when (effect) {
                     is EntersWithCounters -> {
+                        if (effect.selfOnly) continue
                         if (!matchesEnterFilter(effect.appliesTo, enteringEntityId, enteringControllerId, sourceControllerId, newState, predicateEvaluator)) continue
                         val counterType = resolveCounterType(effect.counterType)
                         val modifiedCount = ReplacementEffectUtils.applyCounterPlacementModifiers(

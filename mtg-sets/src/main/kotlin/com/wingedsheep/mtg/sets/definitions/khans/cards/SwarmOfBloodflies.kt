@@ -26,7 +26,7 @@ val SwarmOfBloodflies = card("Swarm of Bloodflies") {
 
     keywords(Keyword.FLYING)
 
-    replacementEffect(EntersWithCounters(count = 2))
+    replacementEffect(EntersWithCounters(count = 2, selfOnly = true))
 
     triggeredAbility {
         trigger = Triggers.AnyOtherCreatureDies
