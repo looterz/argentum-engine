@@ -98,6 +98,9 @@ import com.wingedsheep.sdk.scripting.effects.PreventionDirection
 import com.wingedsheep.sdk.scripting.effects.PreventionScope
 import com.wingedsheep.sdk.scripting.effects.PreventionSourceFilter
 import com.wingedsheep.sdk.scripting.effects.SkipNextTurnEffect
+import com.wingedsheep.sdk.scripting.effects.ChooseActionEffect
+import com.wingedsheep.sdk.scripting.effects.EffectChoice
+import com.wingedsheep.sdk.scripting.effects.FeasibilityCheck
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
@@ -845,6 +848,17 @@ object Effects {
      */
     fun RepeatWhile(body: Effect, repeatCondition: RepeatCondition): Effect =
         RepeatWhileEffect(body, repeatCondition)
+
+    /**
+     * Present a player with labeled options and execute the chosen effect.
+     *
+     * Infeasible options (per [FeasibilityCheck]) are filtered out at execution time.
+     * If only one option remains, it is auto-selected. If zero remain, nothing happens.
+     */
+    fun ChooseAction(
+        choices: List<EffectChoice>,
+        player: EffectTarget = EffectTarget.Controller
+    ): Effect = ChooseActionEffect(choices, player)
 
     // =========================================================================
     // Counter Effects

@@ -1,7 +1,9 @@
 package com.wingedsheep.mtg.sets.definitions.bloomburrow.cards
 
 import com.wingedsheep.sdk.core.ManaCost
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Effects
+import com.wingedsheep.sdk.dsl.EffectPatterns
 import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
@@ -9,9 +11,11 @@ import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.conditions.WasKicked
-import com.wingedsheep.sdk.scripting.costs.PayCost
+import com.wingedsheep.sdk.scripting.effects.ChooseActionEffect
+import com.wingedsheep.sdk.scripting.effects.EffectChoice
+import com.wingedsheep.sdk.scripting.effects.FeasibilityCheck
+import com.wingedsheep.sdk.scripting.effects.ForceSacrificeEffect
 import com.wingedsheep.sdk.scripting.effects.LoseLifeEffect
-import com.wingedsheep.sdk.scripting.effects.PayOrSufferEffect
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 
 /**
@@ -23,8 +27,8 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  * When this creature enters, target opponent loses 3 life unless they sacrifice
  * a nonland permanent of their choice or discard a card.
  *
- * The "unless sacrifice OR discard" is modeled as nested PayOrSufferEffects:
- * first asks to sacrifice, then (if declined) asks to discard, then loses life.
+ * Modeled as a ChooseActionEffect: the opponent picks "Sacrifice", "Discard", or "Lose 3 life".
+ * Infeasible options (no nonland permanents / no cards in hand) are filtered automatically.
  */
 val ThornplateIntimidator = card("Thornplate Intimidator") {
     manaCost = "{3}{B}"
@@ -44,18 +48,32 @@ val ThornplateIntimidator = card("Thornplate Intimidator") {
         effect = Effects.CreateTokenCopyOfSelf(overridePower = 1, overrideToughness = 1)
     }
 
-    // ETB: target opponent loses 3 life unless they sacrifice a nonland permanent or discard a card
+    // ETB: target opponent chooses sacrifice, discard, or lose 3 life
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
         val opponent = target("target opponent", Targets.Opponent)
-        effect = PayOrSufferEffect(
-            cost = PayCost.Sacrifice(filter = GameObjectFilter.NonlandPermanent),
-            suffer = PayOrSufferEffect(
-                cost = PayCost.Discard(),
-                suffer = LoseLifeEffect(3, EffectTarget.ContextTarget(0)),
-                player = EffectTarget.ContextTarget(0)
+        effect = ChooseActionEffect(
+            choices = listOf(
+                EffectChoice(
+                    label = "Sacrifice a nonland permanent",
+                    effect = ForceSacrificeEffect(
+                        filter = GameObjectFilter.NonlandPermanent,
+                        count = 1,
+                        target = opponent
+                    ),
+                    feasibilityCheck = FeasibilityCheck.ControlsPermanentMatching(GameObjectFilter.NonlandPermanent)
+                ),
+                EffectChoice(
+                    label = "Discard a card",
+                    effect = EffectPatterns.discardCards(1, opponent),
+                    feasibilityCheck = FeasibilityCheck.HasCardsInZone(Zone.HAND)
+                ),
+                EffectChoice(
+                    label = "Lose 3 life",
+                    effect = LoseLifeEffect(3, opponent)
+                )
             ),
-            player = EffectTarget.ContextTarget(0)
+            player = opponent
         )
     }
 

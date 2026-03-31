@@ -1,8 +1,10 @@
 package com.wingedsheep.engine.core
 
+import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.BudgetMode
 import com.wingedsheep.sdk.scripting.effects.Effect
+import com.wingedsheep.sdk.scripting.effects.EffectChoice
 import com.wingedsheep.sdk.scripting.effects.Mode
 import com.wingedsheep.sdk.scripting.targets.TargetRequirement
 import kotlinx.serialization.Serializable
@@ -167,14 +169,16 @@ data class AmplifyEntersContinuation(
  * Resume after player chooses a budget modal combination (e.g., Season cycle pawprint modes).
  *
  * The executor pre-computes all valid combinations of modes that fit within the budget
- * and presents them as options. After the player chooses, this continuation maps the
- * chosen option back to a list of mode effects and executes them in order.
+ * Iterative mode selection: each step the player picks one mode (or "Done"),
+ * deducting from the remaining budget. Modes execute in the order chosen,
+ * giving the player control over sequencing.
  *
  * @property controllerId The player who controls the spell
  * @property sourceId The spell entity
  * @property sourceName Name of the source for event messages
  * @property modes The budget modes (cost + effect)
- * @property combinations Pre-computed valid combinations, each a list of mode indices
+ * @property remainingBudget How many pawprints are left to spend
+ * @property selectedModeIndices Mode indices selected so far, in order of selection
  * @property opponentId The opponent player ID
  */
 @Serializable
@@ -184,7 +188,8 @@ data class BudgetModalContinuation(
     val sourceId: EntityId?,
     val sourceName: String?,
     val modes: List<@Serializable BudgetMode>,
-    val combinations: List<List<Int>>,
+    val remainingBudget: Int,
+    val selectedModeIndices: List<Int> = emptyList(),
     val opponentId: EntityId? = null
 ) : ContinuationFrame
 
@@ -204,4 +209,35 @@ data class CreateTokenCopyOfChosenContinuation(
     val controllerId: EntityId,
     val sourceId: EntityId?,
     val sourceName: String?
+) : ContinuationFrame
+
+/**
+ * Resume after a player chooses an action from a list of labeled options.
+ *
+ * Used by [ChooseActionEffect] — the player is presented with feasible options
+ * and picks one. This continuation stores the choices and original context
+ * so the chosen effect can be executed with the correct targets.
+ *
+ * @property choosingPlayerId The player who is making the choice
+ * @property controllerId The ability controller (for effect context)
+ * @property sourceId The spell/ability source
+ * @property sourceName Name of the source for display
+ * @property choices The feasible choices presented to the player (indices match the decision options)
+ * @property targets Original targets from the effect context (preserved for ContextTarget resolution)
+ * @property namedTargets Named targets from the pipeline state
+ * @property opponentId The opponent player ID
+ * @property triggeringEntityId The entity that triggered the ability
+ */
+@Serializable
+data class ChooseActionContinuation(
+    override val decisionId: String,
+    val choosingPlayerId: EntityId,
+    val controllerId: EntityId,
+    val sourceId: EntityId?,
+    val sourceName: String?,
+    val choices: List<@Serializable EffectChoice>,
+    val targets: List<ChosenTarget> = emptyList(),
+    val namedTargets: Map<String, ChosenTarget> = emptyMap(),
+    val opponentId: EntityId? = null,
+    val triggeringEntityId: EntityId? = null
 ) : ContinuationFrame

@@ -55,7 +55,9 @@ class PayOrSufferExecutor(
         val sourceId = context.sourceId
             ?: return ExecutionResult.error(state, "No source for pay or suffer effect")
 
-        val controllerId = context.controllerId
+        // Resolve who must pay — defaults to controller but can be the opponent (e.g., "target opponent loses 3 life unless they sacrifice")
+        val payingPlayerId = TargetResolutionUtils.resolvePlayerTarget(effect.player, context)
+            ?: context.controllerId
 
         // Find source card info
         val sourceContainer = state.getEntity(sourceId)
@@ -64,11 +66,11 @@ class PayOrSufferExecutor(
             ?: return ExecutionResult.error(state, "Source has no card component")
 
         return when (val cost = effect.cost) {
-            is PayCost.Discard -> handleDiscardCost(state, effect, context, cost, sourceId, sourceCard.name, controllerId)
-            is PayCost.Sacrifice -> handleSacrificeCost(state, effect, context, cost, sourceId, sourceCard.name, controllerId)
-            is PayCost.PayLife -> handlePayLifeCost(state, effect, context, cost, sourceId, sourceCard.name, controllerId)
-            is PayCost.Mana -> handleManaCost(state, effect, context, cost, sourceId, sourceCard.name, controllerId)
-            is PayCost.Exile -> handleExileCost(state, effect, context, cost, sourceId, sourceCard.name, controllerId)
+            is PayCost.Discard -> handleDiscardCost(state, effect, context, cost, sourceId, sourceCard.name, payingPlayerId)
+            is PayCost.Sacrifice -> handleSacrificeCost(state, effect, context, cost, sourceId, sourceCard.name, payingPlayerId)
+            is PayCost.PayLife -> handlePayLifeCost(state, effect, context, cost, sourceId, sourceCard.name, payingPlayerId)
+            is PayCost.Mana -> handleManaCost(state, effect, context, cost, sourceId, sourceCard.name, payingPlayerId)
+            is PayCost.Exile -> handleExileCost(state, effect, context, cost, sourceId, sourceCard.name, payingPlayerId)
             is PayCost.ReturnToHand -> ExecutionResult.error(state, "ReturnToHand payment for PayOrSuffer not yet implemented")
             is PayCost.RevealCard -> ExecutionResult.error(state, "RevealCard payment for PayOrSuffer not yet implemented")
         }

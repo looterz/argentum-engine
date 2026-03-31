@@ -37,6 +37,7 @@ class CompositeExecutors(
     private val repeatWhileExecutor by lazy { RepeatWhileExecutor(effectExecutor) }
     private val conditionalOnCollectionExecutor by lazy { ConditionalOnCollectionExecutor(effectExecutor) }
     private val flipTwoCoinsExecutor by lazy { FlipTwoCoinsExecutor(effectExecutor) }
+    private val chooseActionEffectExecutor by lazy { ChooseActionEffectExecutor(effectExecutor) }
 
     /**
      * Initialize the module with the parent registry's execute function.
@@ -48,6 +49,7 @@ class CompositeExecutors(
 
     override fun executors(): List<EffectExecutor<*>> = listOf(
         budgetModalEffectExecutor,
+        chooseActionEffectExecutor,
         compositeEffectExecutor,
         conditionalEffectExecutor,
         createDelayedTriggerExecutor,

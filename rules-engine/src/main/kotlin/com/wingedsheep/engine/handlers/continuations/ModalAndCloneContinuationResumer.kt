@@ -26,7 +26,8 @@ class ModalAndCloneContinuationResumer(
         resumer(AmplifyEntersContinuation::class, ::resumeAmplifyEnters),
         resumer(CastWithCreatureTypeContinuation::class, ::resumeCastWithCreatureType),
         resumer(BudgetModalContinuation::class, ::resumeBudgetModal),
-        resumer(CreateTokenCopyOfChosenContinuation::class, ::resumeCreateTokenCopyOfChosen)
+        resumer(CreateTokenCopyOfChosenContinuation::class, ::resumeCreateTokenCopyOfChosen),
+        resumer(ChooseActionContinuation::class, ::resumeChooseAction)
     )
 
     fun resumeModal(
@@ -661,9 +662,9 @@ class ModalAndCloneContinuationResumer(
     }
 
     /**
-     * Resume after player chose a budget modal combination (Season cycle pawprints).
-     * Maps the chosen option index to a list of mode effects and executes them
-     * in printed order as a CompositeEffect.
+     * Resume after player chose budget modal modes (Season cycle pawprints).
+     * Receives a BudgetModalResponse with all selected mode indices at once.
+     * Validates the total cost fits the budget, then executes in printed order.
      */
     fun resumeBudgetModal(
         state: GameState,
@@ -671,26 +672,34 @@ class ModalAndCloneContinuationResumer(
         response: DecisionResponse,
         checkForMore: CheckForMore
     ): ExecutionResult {
-        if (response !is OptionChosenResponse) {
-            return ExecutionResult.error(state, "Expected option response for budget modal spell")
+        if (response !is BudgetModalResponse) {
+            return ExecutionResult.error(state, "Expected budget modal response")
         }
 
-        val comboIndex = response.optionIndex
-        if (comboIndex < 0 || comboIndex >= continuation.combinations.size) {
-            return ExecutionResult.error(state, "Invalid combination index: $comboIndex")
+        val selectedIndices = response.selectedModeIndices
+
+        // Validate all indices are in range
+        for (idx in selectedIndices) {
+            if (idx < 0 || idx >= continuation.modes.size) {
+                return ExecutionResult.error(state, "Invalid mode index: $idx")
+            }
         }
 
-        val selectedCombo = continuation.combinations[comboIndex]
+        // Validate total cost doesn't exceed budget
+        val totalCost = selectedIndices.sumOf { continuation.modes[it].cost }
+        if (totalCost > continuation.remainingBudget) {
+            return ExecutionResult.error(state, "Total cost $totalCost exceeds budget ${continuation.remainingBudget}")
+        }
 
-        // Empty combination = no modes chosen
-        if (selectedCombo.isEmpty()) {
+        // No modes chosen → no-op
+        if (selectedIndices.isEmpty()) {
             return checkForMore(state, emptyList())
         }
 
-        // Build a CompositeEffect from the selected modes in order
-        val effects = selectedCombo.map { modeIndex ->
-            continuation.modes[modeIndex].effect
-        }
+        // Sort by mode index for printed-order execution
+        val sortedIndices = selectedIndices.sorted()
+
+        val effects = sortedIndices.map { continuation.modes[it].effect }
 
         val context = EffectContext(
             sourceId = continuation.sourceId,
@@ -781,6 +790,46 @@ class ModalAndCloneContinuationResumer(
                 )
             )
         )
+    }
+
+    // =========================================================================
+    // ChooseAction
+    // =========================================================================
+
+    private fun resumeChooseAction(
+        state: GameState,
+        continuation: ChooseActionContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        if (response !is OptionChosenResponse) {
+            return ExecutionResult.error(state, "Expected option response for ChooseActionEffect")
+        }
+
+        val choiceIndex = response.optionIndex
+        if (choiceIndex < 0 || choiceIndex >= continuation.choices.size) {
+            return ExecutionResult.error(state, "Invalid choice index: $choiceIndex")
+        }
+
+        val chosenEffect = continuation.choices[choiceIndex].effect
+
+        // Build context preserving original targets so ContextTarget references still work
+        val context = EffectContext(
+            sourceId = continuation.sourceId,
+            controllerId = continuation.controllerId,
+            opponentId = continuation.opponentId,
+            targets = continuation.targets,
+            triggeringEntityId = continuation.triggeringEntityId,
+            pipeline = PipelineState(namedTargets = continuation.namedTargets)
+        )
+
+        val result = services.effectExecutorRegistry.execute(state, chosenEffect, context)
+
+        return if (result.isPaused) {
+            result
+        } else {
+            checkForMore(result.state, result.events.toList())
+        }
     }
 
 }

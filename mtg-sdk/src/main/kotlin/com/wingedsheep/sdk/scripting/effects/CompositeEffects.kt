@@ -4,6 +4,7 @@ import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.AdditionalCost
 import com.wingedsheep.sdk.scripting.conditions.Condition
 import com.wingedsheep.sdk.scripting.effects.Effect
@@ -787,5 +788,111 @@ data class RepeatWhileEffect(
     override fun applyTextReplacement(replacer: TextReplacer): Effect {
         val newBody = body.applyTextReplacement(replacer)
         return if (newBody !== body) copy(body = newBody) else this
+    }
+}
+
+// =============================================================================
+// Choose Action (Player Chooses Between Effects)
+// =============================================================================
+
+/**
+ * Check whether a choice is feasible for the choosing player.
+ *
+ * Used by [ChooseActionEffect] to filter out options the player cannot fulfill.
+ * For example, "sacrifice a nonland permanent" is infeasible if the player controls none.
+ */
+@Serializable
+sealed interface FeasibilityCheck {
+
+    /**
+     * The player controls at least [count] permanents matching [filter].
+     */
+    @SerialName("ControlsPermanentMatching")
+    @Serializable
+    data class ControlsPermanentMatching(
+        val filter: GameObjectFilter,
+        val count: Int = 1
+    ) : FeasibilityCheck
+
+    /**
+     * The player has at least [count] cards in [zone] matching [filter].
+     */
+    @SerialName("HasCardsInZone")
+    @Serializable
+    data class HasCardsInZone(
+        val zone: Zone,
+        val filter: GameObjectFilter = GameObjectFilter.Any,
+        val count: Int = 1
+    ) : FeasibilityCheck
+}
+
+/**
+ * A labeled option in a [ChooseActionEffect].
+ *
+ * @property label Human-readable label shown in the UI (e.g., "Sacrifice a nonland permanent")
+ * @property effect The effect executed when this option is chosen
+ * @property feasibilityCheck Optional check — if non-null and the check fails, this option is hidden
+ */
+@Serializable
+data class EffectChoice(
+    val label: String,
+    val effect: Effect,
+    val feasibilityCheck: FeasibilityCheck? = null
+) {
+    fun applyTextReplacement(replacer: TextReplacer): EffectChoice {
+        val newEffect = effect.applyTextReplacement(replacer)
+        return if (newEffect !== effect) copy(effect = newEffect) else this
+    }
+}
+
+/**
+ * Present a player with labeled options and execute the chosen effect.
+ *
+ * This is a reusable "choose one action" pattern for punisher effects,
+ * opponent choices, and any card where a player picks between distinct effects.
+ *
+ * Infeasible options (per [FeasibilityCheck]) are filtered out at execution time.
+ * If only one option remains, it is auto-selected. If zero remain, nothing happens.
+ *
+ * Example (Thornplate Intimidator):
+ * ```kotlin
+ * ChooseActionEffect(
+ *     choices = listOf(
+ *         EffectChoice("Sacrifice a nonland permanent", ForceSacrificeEffect(...),
+ *             FeasibilityCheck.ControlsPermanentMatching(GameObjectFilter.NonlandPermanent)),
+ *         EffectChoice("Discard a card", discardPipeline,
+ *             FeasibilityCheck.HasCardsInZone(Zone.HAND)),
+ *         EffectChoice("Lose 3 life", LoseLifeEffect(3, target))
+ *     ),
+ *     player = EffectTarget.ContextTarget(0)  // opponent chooses
+ * )
+ * ```
+ *
+ * @property choices The labeled options to present
+ * @property player Who makes the choice (defaults to controller)
+ */
+@SerialName("ChooseAction")
+@Serializable
+data class ChooseActionEffect(
+    val choices: List<EffectChoice>,
+    val player: EffectTarget = EffectTarget.Controller
+) : Effect {
+    override val description: String = buildString {
+        append("Choose one —\n")
+        choices.forEachIndexed { index, choice ->
+            append("• ")
+            append(choice.label)
+            if (index < choices.lastIndex) append("\n")
+        }
+    }
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect {
+        var anyChanged = false
+        val newChoices = choices.map { choice ->
+            val newChoice = choice.applyTextReplacement(replacer)
+            if (newChoice !== choice) anyChanged = true
+            newChoice
+        }
+        return if (anyChanged) copy(choices = newChoices) else this
     }
 }

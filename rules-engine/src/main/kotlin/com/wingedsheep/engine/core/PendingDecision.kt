@@ -514,6 +514,43 @@ data class OptionChosenResponse(
 ) : DecisionResponse
 
 /**
+ * Player must choose modes from a budget-based modal spell (Bloomburrow Season cycle).
+ * Each mode has a pawprint cost, and the player has a budget to spend.
+ * The same mode can be chosen multiple times if budget allows.
+ */
+@Serializable
+@SerialName("BudgetModalDecision")
+data class BudgetModalDecision(
+    override val id: String,
+    override val playerId: EntityId,
+    override val prompt: String,
+    override val context: DecisionContext,
+    val budget: Int,
+    val modes: List<BudgetModeOption>
+) : PendingDecision
+
+/**
+ * A single mode option in a budget modal decision (cost + description, no effect data).
+ */
+@Serializable
+data class BudgetModeOption(
+    val cost: Int,
+    val description: String
+)
+
+/**
+ * Response to BudgetModalDecision.
+ * Contains the selected mode indices in the order they should execute.
+ * The same index can appear multiple times (repeated mode selection).
+ */
+@Serializable
+@SerialName("BudgetModalResponse")
+data class BudgetModalResponse(
+    override val decisionId: String,
+    val selectedModeIndices: List<Int>
+) : DecisionResponse
+
+/**
  * Response to AssignDamageDecision.
  */
 @Serializable

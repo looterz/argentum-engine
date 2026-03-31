@@ -97,6 +97,7 @@ val engineSerializersModule = SerializersModule {
         subclass(OrderObjectsDecision::class)
         subclass(SplitPilesDecision::class)
         subclass(ChooseOptionDecision::class)
+        subclass(BudgetModalDecision::class)
         subclass(AssignDamageDecision::class)
         subclass(SearchLibraryDecision::class)
     }
@@ -113,6 +114,7 @@ val engineSerializersModule = SerializersModule {
         subclass(OrderedResponse::class)
         subclass(PilesSplitResponse::class)
         subclass(OptionChosenResponse::class)
+        subclass(BudgetModalResponse::class)
         subclass(DamageAssignmentResponse::class)
         subclass(CancelDecisionResponse::class)
     }
