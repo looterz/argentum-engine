@@ -1212,6 +1212,7 @@ class StackResolver(
                         events.add(CountersAddedEvent(enteringEntityId, effect.counterType.description, modifiedCount, entityName))
                     }
                     is EntersWithDynamicCounters -> {
+                        if (!effect.otherOnly) continue
                         if (!matchesEnterFilter(effect.appliesTo, enteringEntityId, enteringControllerId, sourceControllerId, newState, predicateEvaluator)) continue
                         val counterType = resolveCounterType(effect.counterType)
                         val context = EffectContext(
