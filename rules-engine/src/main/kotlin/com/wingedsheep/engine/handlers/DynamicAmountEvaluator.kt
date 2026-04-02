@@ -121,6 +121,21 @@ class DynamicAmountEvaluator(
                 0
             }
 
+            is DynamicAmount.CardTypesInLinkedExile -> {
+                val sourceId = context.sourceId ?: return 0
+                val linkedExile = state.getEntity(sourceId)
+                    ?.get<com.wingedsheep.engine.state.components.battlefield.LinkedExileComponent>()
+                    ?: return 0
+                val cardTypes = mutableSetOf<com.wingedsheep.sdk.core.CardType>()
+                for (exiledId in linkedExile.exiledIds) {
+                    val card = state.getEntity(exiledId)
+                        ?.get<com.wingedsheep.engine.state.components.identity.CardComponent>()
+                        ?: continue
+                    cardTypes.addAll(card.typeLine.cardTypes)
+                }
+                cardTypes.size
+            }
+
             is DynamicAmount.ColorsAmongPermanentsYouControl -> {
                 // TODO: Count unique colors
                 0

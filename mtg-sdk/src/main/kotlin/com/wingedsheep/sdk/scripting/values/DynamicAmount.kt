@@ -106,6 +106,17 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
         override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
     }
 
+    /**
+     * Count of distinct card types among cards exiled and linked to the source permanent.
+     * Used for Keen-Eyed Curator: "four or more card types among cards exiled with this creature"
+     */
+    @SerialName("CardTypesInLinkedExile")
+    @Serializable
+    data object CardTypesInLinkedExile : DynamicAmount {
+        override val description: String = "the number of card types among cards exiled with this creature"
+        override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
+    }
+
     // =========================================================================
     // X Value and Variable References
     // =========================================================================

@@ -114,6 +114,7 @@ object BloomburrowSet {
         JackdawSavior,
         JunkbladeBruiser,
         KastralTheWindcrested,
+        KeenEyedCurator,
         KindlesparkDuo,
         Kitnap,
         Knightfisher,

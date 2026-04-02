@@ -756,7 +756,7 @@ constructors.
 - `DynamicAmount.XValue` / `DynamicAmount.Fixed(n)` / `DynamicAmount.YourLifeTotal`
 - `DynamicAmount.SacrificedPermanentPower` / `.SacrificedPermanentToughness`
 - `DynamicAmount.SourcePower` / `.SourceToughness` / `.TriggerDamageAmount` / `.TriggerLifeGainAmount` / `.LastKnownCounterCount`
-- `DynamicAmount.ColorsAmongPermanentsYouControl` / `.CardTypesInAllGraveyards`
+- `DynamicAmount.ColorsAmongPermanentsYouControl` / `.CardTypesInAllGraveyards` / `.CardTypesInLinkedExile`
 - `DynamicAmount.CountersOnSelf(counterType)` / `.CountersOnTarget(counterType, targetIndex)` / `.CreaturesSharingTypeWithTriggeringEntity`
 - `DynamicAmount.VariableReference(variableName)` / `.StoredCardManaValue(collectionName)` / `.AdditionalCostExiledCount`
 - `DynamicAmount.AttachmentsOnSelf` — count of Auras and Equipment attached to the source entity

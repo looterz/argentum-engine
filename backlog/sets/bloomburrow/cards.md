@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 214 / 266
+**Implemented:** 215 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -10,7 +10,7 @@
 | Blue       | 41    | 32   |
 | Black      | 40    | 32   |
 | Red        | 41    | 32   |
-| Green      | 41    | 32   |
+| Green      | 41    | 33   |
 | Multicolor | 39    | 31   |
 | Colorless  | 9     | 8    |
 | Land       | 15    | 13   |
@@ -130,7 +130,7 @@
 - [ ] Jolly Gerbils
 - [x] Junkblade Bruiser
 - [x] Kastral, the Windcrested
-- [ ] Keen-Eyed Curator
+- [x] Keen-Eyed Curator
 - [x] Kindlespark Duo
 - [x] Kitnap
 - [ ] Kitsa, Otterball Elite
