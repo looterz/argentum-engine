@@ -63,6 +63,7 @@ object BloomburrowSet {
         Diresight,
         DourPortMage,
         DownwindAmbusher,
+        DragonhawkFatesTempest,
         DreamdewEntrancer,
         DruidOfTheSpade,
         DriftgloomCoyote,
