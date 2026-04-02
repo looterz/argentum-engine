@@ -147,7 +147,8 @@ class EngineAiController(
         pickedSoFar: List<SealedCardInfo>,
         packNumber: Int,
         pickNumber: Int,
-        picksRequired: Int
+        picksRequired: Int,
+        passDirection: String
     ): List<String> {
         val colorCommitment = inferColors(pickedSoFar)
         val ranked = pack.sortedByDescending { rateCard(it, colorCommitment, pickedSoFar) }

@@ -33,8 +33,14 @@ class AiPlayerController(
     private val conversationHistory = mutableListOf<ChatMessage>()
     private val maxHistorySize = 10
 
+    // Draft-specific conversation history for prompt caching.
+    // Accumulates pick-by-pick exchanges so the message prefix is stable and cacheable.
+    private val draftHistory = mutableListOf<ChatMessage>()
+
     init {
-        conversationHistory.add(ChatMessage("system", SYSTEM_PROMPT))
+        // Mark system prompt with an explicit cache breakpoint — this content is identical
+        // for every game and should be cached across requests.
+        conversationHistory.add(ChatMessage("system", SYSTEM_PROMPT, cacheControl = CacheControl()))
     }
 
     /**
@@ -56,8 +62,10 @@ class AiPlayerController(
                 appendLine("  ${count}x $name")
             }
         }
-        // Insert as a system-level context message right after the main system prompt
-        conversationHistory.add(ChatMessage("system", deckDescription))
+        // Insert as a system-level context message right after the main system prompt.
+        // Explicit cache breakpoint: deck context is stable for the entire game and should
+        // be cached. This supersedes the system prompt breakpoint as the outermost cached prefix.
+        conversationHistory.add(ChatMessage("system", deckDescription, cacheControl = CacheControl()))
         logger.info("AI deck context set: {} unique cards, {} total", deckList.size, deckList.values.sum())
     }
 
@@ -269,7 +277,7 @@ class AiPlayerController(
             }
         }
 
-        val response = llmClient.chatCompletion(conversationHistory)
+        val response = llmClient.chatCompletion(conversationHistory, cacheControl = CacheControl())
 
         if (response != null) {
             conversationHistory.add(ChatMessage("assistant", response))
@@ -290,7 +298,7 @@ class AiPlayerController(
         // Build a temporary message list: system messages + this prompt only
         val messages = conversationHistory.filter { it.role == "system" }.toMutableList()
         messages.add(ChatMessage("user", prompt))
-        return llmClient.chatCompletion(messages)
+        return llmClient.chatCompletion(messages, cacheControl = CacheControl())
     }
 
     // =========================================================================
@@ -844,13 +852,21 @@ class AiPlayerController(
         pickedSoFar: List<SealedCardInfo>,
         packNumber: Int,
         pickNumber: Int,
-        picksRequired: Int
+        picksRequired: Int,
+        passDirection: String
     ): List<String> {
-        val prompt = formatDraftPickPrompt(pack, pickedSoFar, packNumber, pickNumber, picksRequired)
-        logger.info("AI draft pick prompt ({} chars)", prompt.length)
+        // Initialize draft history with system prompt on first pick
+        if (draftHistory.isEmpty()) {
+            draftHistory.add(ChatMessage("system", DRAFT_SYSTEM_PROMPT))
+        }
 
-        val response = queryLlmEphemeral(prompt)
+        val prompt = formatDraftPickPrompt(pack, pickedSoFar, packNumber, pickNumber, picksRequired, passDirection)
+        draftHistory.add(ChatMessage("user", prompt))
+        logger.info("AI draft pick prompt ({} chars, {} messages in history)", prompt.length, draftHistory.size)
+
+        val response = llmClient.chatCompletion(draftHistory, cacheControl = CacheControl())
         if (response != null) {
+            draftHistory.add(ChatMessage("assistant", response))
             val answer = extractAnswer(response) ?: response
             val picked = parseDraftPickResponse(answer, pack, picksRequired)
             if (picked.isNotEmpty()) {
@@ -858,6 +874,9 @@ class AiPlayerController(
                 return picked
             }
             logger.warn("AI failed to parse draft pick LLM response: {}", response)
+        } else {
+            // Remove unanswered user message
+            draftHistory.removeLastOrNull()
         }
 
         // Fallback: pick by rarity then alphabetical
@@ -872,14 +891,22 @@ class AiPlayerController(
         pileSizes: List<Int>,
         pickedSoFar: List<SealedCardInfo>
     ): Boolean {
-        val prompt = formatWinstonPrompt(pileCards, pileIndex, pileSizes, pickedSoFar)
-        logger.info("AI Winston prompt ({} chars)", prompt.length)
+        if (draftHistory.isEmpty()) {
+            draftHistory.add(ChatMessage("system", WINSTON_SYSTEM_PROMPT))
+        }
 
-        val response = queryLlmEphemeral(prompt)
+        val prompt = formatWinstonPrompt(pileCards, pileIndex, pileSizes, pickedSoFar)
+        draftHistory.add(ChatMessage("user", prompt))
+        logger.info("AI Winston prompt ({} chars, {} messages in history)", prompt.length, draftHistory.size)
+
+        val response = llmClient.chatCompletion(draftHistory, cacheControl = CacheControl())
         if (response != null) {
+            draftHistory.add(ChatMessage("assistant", response))
             val answer = (extractAnswer(response) ?: response).trim().lowercase()
             if (answer.contains("take")) return true
             if (answer.contains("skip")) return false
+        } else {
+            draftHistory.removeLastOrNull()
         }
 
         // Fallback: take if pile has 3+ cards or a rare
@@ -892,18 +919,25 @@ class AiPlayerController(
         availableSelections: List<String>,
         pickedSoFar: List<SealedCardInfo>
     ): String {
-        val prompt = formatGridDraftPrompt(grid, availableSelections, pickedSoFar)
-        logger.info("AI grid draft prompt ({} chars)", prompt.length)
+        if (draftHistory.isEmpty()) {
+            draftHistory.add(ChatMessage("system", GRID_SYSTEM_PROMPT))
+        }
 
-        val response = queryLlmEphemeral(prompt)
+        val prompt = formatGridDraftPrompt(grid, availableSelections, pickedSoFar)
+        draftHistory.add(ChatMessage("user", prompt))
+        logger.info("AI grid draft prompt ({} chars, {} messages in history)", prompt.length, draftHistory.size)
+
+        val response = llmClient.chatCompletion(draftHistory, cacheControl = CacheControl())
         if (response != null) {
+            draftHistory.add(ChatMessage("assistant", response))
             val answer = (extractAnswer(response) ?: response).trim().uppercase()
-            // Match against available selections
             val match = availableSelections.find { answer.contains(it) }
             if (match != null) {
                 logger.info("AI LLM grid draft pick: {}", match)
                 return match
             }
+        } else {
+            draftHistory.removeLastOrNull()
         }
 
         // Fallback: pick selection with most non-null cards
@@ -917,11 +951,10 @@ class AiPlayerController(
         pickedSoFar: List<SealedCardInfo>,
         packNumber: Int,
         pickNumber: Int,
-        picksRequired: Int
+        picksRequired: Int,
+        passDirection: String
     ): String = buildString {
-        appendLine("You are drafting Magic: The Gathering cards. Pick $picksRequired card${if (picksRequired > 1) "s" else ""} from this pack.")
-        appendLine()
-        appendLine("Pack $packNumber, Pick $pickNumber")
+        appendLine("Pack $packNumber, Pick $pickNumber (passing $passDirection). Pick $picksRequired card${if (picksRequired > 1) "s" else ""}.")
         appendLine()
         appendLine("PACK (choose from these):")
         for ((i, card) in pack.withIndex()) {
@@ -935,18 +968,32 @@ class AiPlayerController(
             appendLine("YOUR PICKS SO FAR (${pickedSoFar.size} cards):")
             val grouped = pickedSoFar.groupBy { it.name }
             for ((name, copies) in grouped.entries.sortedBy { it.value.first().manaCost ?: "zzz" }) {
+                val card = copies.first()
                 val count = if (copies.size > 1) "${copies.size}x " else ""
-                appendLine("  $count${name} ${copies.first().manaCost ?: ""} [${copies.first().typeLine}]")
+                val stats = if (card.power != null) " ${card.power}/${card.toughness}" else ""
+                val oracle = if (!card.oracleText.isNullOrBlank()) " — ${card.oracleText}" else ""
+                appendLine("  $count${name} ${card.manaCost ?: ""} [${card.typeLine}]$stats$oracle")
+            }
+
+            appendLine()
+            appendLine("COLOR DISTRIBUTION:")
+            val colorCounts = mutableMapOf<Char, Int>()
+            for (card in pickedSoFar) {
+                val cost = card.manaCost ?: continue
+                for (ch in cost) {
+                    if (ch in "WUBRG") colorCounts[ch] = (colorCounts[ch] ?: 0) + 1
+                }
+            }
+            if (colorCounts.isEmpty()) {
+                appendLine("  No colored cards picked yet")
+            } else {
+                val colorNames = mapOf('W' to "White", 'U' to "Blue", 'B' to "Black", 'R' to "Red", 'G' to "Green")
+                val summary = colorCounts.entries.sortedByDescending { it.value }
+                    .joinToString(", ") { "${colorNames[it.key] ?: it.key} (${it.value} symbols)" }
+                appendLine("  $summary")
             }
         }
 
-        appendLine()
-        appendLine("DRAFT STRATEGY:")
-        appendLine("- Early picks (1-3): take the best card regardless of color")
-        appendLine("- Mid picks (4-8): start committing to 2 colors based on what's open")
-        appendLine("- Late picks (9+): stay in your colors, fill curve gaps")
-        appendLine("- Prioritize: removal > efficient creatures > evasion > card advantage > fillers")
-        appendLine("- Good mana curve: enough 2-drops and 3-drops to not fall behind")
         appendLine()
         appendLine("Reply with ONLY the letter(s) of your pick. Example: A")
     }
@@ -963,14 +1010,19 @@ class AiPlayerController(
         appendLine("CURRENT PILE (${pileCards.size} cards):")
         for (card in pileCards) {
             val stats = if (card.power != null) " ${card.power}/${card.toughness}" else ""
-            appendLine("  ${card.name} ${card.manaCost ?: ""} [${card.typeLine}]$stats [${card.rarity}]")
+            val oracle = if (!card.oracleText.isNullOrBlank()) " — ${card.oracleText}" else ""
+            appendLine("  ${card.name} ${card.manaCost ?: ""} [${card.typeLine}]$stats [${card.rarity}]$oracle")
         }
 
         if (pickedSoFar.isNotEmpty()) {
             appendLine()
             appendLine("YOUR PICKS SO FAR (${pickedSoFar.size} cards):")
             pickedSoFar.groupBy { it.name }.forEach { (name, copies) ->
-                appendLine("  ${if (copies.size > 1) "${copies.size}x " else ""}$name")
+                val card = copies.first()
+                val count = if (copies.size > 1) "${copies.size}x " else ""
+                val stats = if (card.power != null) " ${card.power}/${card.toughness}" else ""
+                val oracle = if (!card.oracleText.isNullOrBlank()) " — ${card.oracleText}" else ""
+                appendLine("  $count$name ${card.manaCost ?: ""} [${card.typeLine}]$stats$oracle")
             }
         }
 
@@ -987,11 +1039,17 @@ class AiPlayerController(
         appendLine()
         appendLine("GRID:")
         for (row in 0..2) {
-            val cells = (0..2).map { col ->
+            appendLine("  Row $row:")
+            for (col in 0..2) {
                 val card = grid.getOrNull(row * 3 + col)
-                card?.let { "${it.name} ${it.manaCost ?: ""}" } ?: "[empty]"
+                if (card != null) {
+                    val stats = if (card.power != null) " ${card.power}/${card.toughness}" else ""
+                    val oracle = if (!card.oracleText.isNullOrBlank()) " — ${card.oracleText}" else ""
+                    appendLine("    ${card.name} ${card.manaCost ?: ""} [${card.typeLine}]$stats [${card.rarity}]$oracle")
+                } else {
+                    appendLine("    [empty]")
+                }
             }
-            appendLine("  Row $row: ${cells.joinToString(" | ")}")
         }
 
         appendLine()
@@ -1001,7 +1059,11 @@ class AiPlayerController(
             appendLine()
             appendLine("YOUR PICKS SO FAR (${pickedSoFar.size} cards):")
             pickedSoFar.groupBy { it.name }.forEach { (name, copies) ->
-                appendLine("  ${if (copies.size > 1) "${copies.size}x " else ""}$name")
+                val card = copies.first()
+                val count = if (copies.size > 1) "${copies.size}x " else ""
+                val stats = if (card.power != null) " ${card.power}/${card.toughness}" else ""
+                val oracle = if (!card.oracleText.isNullOrBlank()) " — ${card.oracleText}" else ""
+                appendLine("  $count$name ${card.manaCost ?: ""} [${card.typeLine}]$stats$oracle")
             }
         }
 
@@ -1061,6 +1123,54 @@ class AiPlayerController(
     }
 
     companion object {
+        private val DRAFT_SYSTEM_PROMPT = """
+            You are an expert Magic: The Gathering drafter. You will be shown packs of cards and asked to pick cards for your draft pool.
+
+            RESPONSE FORMAT:
+            - Reply with ONLY the letter(s) of your pick. No explanation, no reasoning.
+            - Example: A
+
+            DRAFT STRATEGY:
+            - Early picks (1-3): take the best card regardless of color
+            - Mid picks (4-8): start committing to 2 colors based on what's open
+            - Late picks (9+): stay in your colors, fill curve gaps
+            - Prioritize: removal > efficient creatures > evasion > card advantage > fillers
+            - Good mana curve: enough 2-drops and 3-drops to not fall behind
+            - Pay attention to pass direction: cards you see late in a pack indicate those colors are open from that direction
+        """.trimIndent()
+
+        private val WINSTON_SYSTEM_PROMPT = """
+            You are an expert Magic: The Gathering drafter playing Winston Draft.
+
+            In Winston Draft, you examine piles one at a time and decide to TAKE the entire pile or SKIP to the next pile.
+            If you skip all piles, you take a random card from the remaining pool.
+
+            RESPONSE FORMAT:
+            - Reply with ONLY: TAKE or SKIP. No explanation, no reasoning.
+
+            STRATEGY:
+            - Take piles with strong cards (good removal, efficient creatures, bombs)
+            - Consider pile size: larger piles give more cards, even if some are mediocre
+            - Prioritize staying in 2 colors once you've committed
+            - Rares and mythics in a pile make it worth taking
+            - Skip weak piles early to see other options; be less picky on the last pile
+        """.trimIndent()
+
+        private val GRID_SYSTEM_PROMPT = """
+            You are an expert Magic: The Gathering drafter playing Grid Draft.
+
+            In Grid Draft, cards are laid out in a 3x3 grid. You choose a full row or column to draft all cards in that selection.
+
+            RESPONSE FORMAT:
+            - Reply with ONLY the selection (e.g., ROW_0 or COL_1). No explanation, no reasoning.
+
+            STRATEGY:
+            - Pick the row or column with the highest total card quality
+            - Prioritize: removal > efficient creatures > evasion > card advantage
+            - Stay in 2 colors when possible
+            - Consider mana curve — variety of costs is better than all expensive or all cheap
+        """.trimIndent()
+
         private val SYSTEM_PROMPT = """
             You are an expert Magic: The Gathering player. You will be shown the game state and asked to choose ONE action at a time.
 

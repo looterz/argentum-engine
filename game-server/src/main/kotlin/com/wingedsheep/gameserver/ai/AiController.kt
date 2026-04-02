@@ -62,7 +62,8 @@ interface AiController {
         pickedSoFar: List<SealedCardInfo>,
         packNumber: Int,
         pickNumber: Int,
-        picksRequired: Int = 1
+        picksRequired: Int = 1,
+        passDirection: String = "LEFT"
     ): List<String>
 
     /**
