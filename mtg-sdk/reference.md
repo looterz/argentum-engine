@@ -730,6 +730,10 @@ constructors.
 
 - `Exists(player: Player, zone: Zone, filter: GameObjectFilter, negate = false, excludeSelf = false)` — raw condition (import directly from `com.wingedsheep.sdk.scripting.conditions.Exists`). Checks if any matching object exists in a player's zone. Use `excludeSelf = true` for "another" wording (excludes the source entity). Use with `GameObjectFilter.Creature.enteredThisTurn().youControl()` for "if a creature entered the battlefield under your control this turn".
 
+### Pipeline Collection
+
+- `Conditions.CollectionContainsMatch(collection: String, filter: GameObjectFilter)` — true if a named pipeline collection contains a card matching the filter. Used for "if you did X this way" patterns (e.g., "if you returned a Squirrel card to your hand this way").
+
 ### Composite
 
 - `Conditions.All(cond1, cond2)` — AND

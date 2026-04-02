@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 215 / 266
+**Implemented:** 216 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -10,7 +10,7 @@
 | Blue       | 41    | 32   |
 | Black      | 40    | 32   |
 | Red        | 41    | 32   |
-| Green      | 41    | 33   |
+| Green      | 41    | 34   |
 | Multicolor | 39    | 31   |
 | Colorless  | 9     | 8    |
 | Land       | 15    | 13   |
@@ -45,7 +45,7 @@
 - [x] Burrowguard Mentor
 - [x] Bushy Bodyguard
 - [x] Byway Barterer
-- [ ] Cache Grab
+- [x] Cache Grab
 - [ ] Calamitous Tide
 - [x] Camellia, the Seedmiser
 - [x] Caretaker's Talent

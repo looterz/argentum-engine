@@ -49,6 +49,7 @@ object BloomburrowSet {
         BurrowguardMentor,
         BushyBodyguard,
         BywayBarterer,
+        CacheGrab,
         CinderingCutthroat,
         ClifftopLookout,
         ClementTheWorrywort,

@@ -46,6 +46,7 @@ import com.wingedsheep.sdk.scripting.conditions.SacrificedPermanentHadSubtype
 import com.wingedsheep.sdk.scripting.conditions.TargetMatchesFilter
 import com.wingedsheep.sdk.scripting.conditions.TriggeringEntityWasHistoric
 import com.wingedsheep.sdk.scripting.conditions.CardsLeftGraveyardThisTurn
+import com.wingedsheep.sdk.scripting.conditions.CollectionContainsMatch
 import com.wingedsheep.sdk.scripting.conditions.OpponentLostLifeThisTurn
 import com.wingedsheep.sdk.scripting.conditions.YouGainedLifeThisTurn
 import com.wingedsheep.sdk.scripting.conditions.YouGainedAndLostLifeThisTurn
@@ -118,6 +119,9 @@ class ConditionEvaluator {
 
             // Stack conditions
             is OpponentSpellOnStack -> evaluateOpponentSpellOnStack(state, context)
+
+            // Collection conditions
+            is CollectionContainsMatch -> evaluateCollectionContainsMatch(state, condition, context)
 
             // Composite conditions
             is AllConditions -> condition.conditions.all { evaluate(state, it, context) }
@@ -425,5 +429,20 @@ class ConditionEvaluator {
             ?.get<com.wingedsheep.engine.state.components.battlefield.AbilityResolutionCountThisTurnComponent>()
             ?: return false
         return component.count == condition.count
+    }
+
+    private fun evaluateCollectionContainsMatch(
+        state: GameState,
+        condition: CollectionContainsMatch,
+        context: EffectContext
+    ): Boolean {
+        val collection = context.pipeline.storedCollections[condition.collection] ?: return false
+        if (collection.isEmpty()) return false
+        if (condition.filter == GameObjectFilter.Any) return true
+        val predicateEvaluator = PredicateEvaluator()
+        val predicateContext = PredicateContext.fromEffectContext(context)
+        return collection.any { entityId ->
+            predicateEvaluator.matches(state, entityId, condition.filter, predicateContext)
+        }
     }
 }

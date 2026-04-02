@@ -393,6 +393,17 @@ object Conditions {
         com.wingedsheep.sdk.scripting.conditions.TriggeringEntityWasHistoric
 
     // =========================================================================
+    // Collection Conditions (pipeline-based)
+    // =========================================================================
+
+    /**
+     * If a card in the named pipeline collection matches the given filter.
+     * Used for "if you did X this way" patterns (e.g., "if you returned a Squirrel card").
+     */
+    fun CollectionContainsMatch(collection: String, filter: GameObjectFilter = GameObjectFilter.Any): ConditionInterface =
+        com.wingedsheep.sdk.scripting.conditions.CollectionContainsMatch(collection, filter)
+
+    // =========================================================================
     // Composite Conditions
     // =========================================================================
 

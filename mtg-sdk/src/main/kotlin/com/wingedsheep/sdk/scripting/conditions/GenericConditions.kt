@@ -9,6 +9,29 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 // =============================================================================
+// Collection Conditions (pipeline-based)
+// =============================================================================
+
+/**
+ * Condition: "if a card in the named collection matches [filter]"
+ * Checks whether any entity in a stored pipeline collection matches the given filter.
+ * Used for "if you did X this way" patterns where the card selected/milled/returned
+ * needs to be checked for a property (e.g., "if you returned a Squirrel card").
+ */
+@SerialName("CollectionContainsMatch")
+@Serializable
+data class CollectionContainsMatch(
+    val collection: String,
+    val filter: GameObjectFilter = GameObjectFilter.Any
+) : Condition {
+    override val description: String = "if the $collection cards contain a ${filter.description}"
+    override fun applyTextReplacement(replacer: TextReplacer): Condition {
+        val newFilter = filter.applyTextReplacement(replacer)
+        return if (newFilter !== filter) copy(filter = newFilter) else this
+    }
+}
+
+// =============================================================================
 // Generic Condition Primitives
 // =============================================================================
 
