@@ -423,6 +423,10 @@ class TriggerMatcher(
                     else lastKnownToughness ?: projected.getToughness(entityId) ?: cardComponent.baseStats?.baseToughness ?: 0
                 power >= predicate.min || toughness >= predicate.min
             }
+            is com.wingedsheep.sdk.scripting.predicates.CardPredicate.HasKeyword ->
+                projected.hasKeyword(entityId, predicate.keyword)
+            is com.wingedsheep.sdk.scripting.predicates.CardPredicate.NotKeyword ->
+                !projected.hasKeyword(entityId, predicate.keyword)
             is com.wingedsheep.sdk.scripting.predicates.CardPredicate.Or ->
                 predicate.predicates.any { matchesCardPredicate(it, cardComponent, projected, entityId, isFaceDown, lastKnownPower, lastKnownToughness) }
             is com.wingedsheep.sdk.scripting.predicates.CardPredicate.And ->
