@@ -3,6 +3,7 @@ package com.wingedsheep.engine.mechanics.layers
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.battlefield.GrantCantBeBlockedToSmallCreaturesComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
@@ -12,6 +13,7 @@ import com.wingedsheep.engine.state.components.identity.HexproofFromColorCompone
 import com.wingedsheep.engine.state.components.identity.ProtectionComponent
 import com.wingedsheep.engine.state.components.identity.TextReplacementComponent
 import com.wingedsheep.sdk.core.AbilityFlag
+import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Subtype
@@ -39,6 +41,13 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  *    d. Counters (+1/+1, -1/-1)
  *    e. Effects that switch P/T
  */
+/**
+ * Mapping from keyword counter types to the keyword name they grant (Rule 122.1b).
+ */
+private val KEYWORD_COUNTER_MAP = mapOf(
+    CounterType.FLYING to Keyword.FLYING.name
+)
+
 class StateProjector(
     private val dynamicAmountEvaluator: DynamicAmountEvaluator = DynamicAmountEvaluator(projectForBattlefieldCounting = false)
 ) {
@@ -85,6 +94,16 @@ class StateProjector(
                     controllerId = container.get<ControllerComponent>()?.playerId,
                     isFaceDown = false
                 )
+
+                // Rule 122.1b: Keyword counters grant their keyword
+                val countersComponent = container.get<CountersComponent>()
+                if (countersComponent != null) {
+                    KEYWORD_COUNTER_MAP.forEach { (counterType, keywordName) ->
+                        if (countersComponent.getCount(counterType) > 0) {
+                            projectedValues[entityId]?.keywords?.add(keywordName)
+                        }
+                    }
+                }
 
                 if (Keyword.CHANGELING in cardComponent.baseKeywords) {
                     projectedValues[entityId]?.subtypes?.addAll(Subtype.ALL_CREATURE_TYPES)
