@@ -97,6 +97,7 @@ object BloomburrowSet {
         HiredClaw,
         HopToIt,
         HivespineWolverine,
+        HoardersOverflow,
         HonoredDreyleader,
         HugsGrislyGuardian,
         IntrepidRabbit,
