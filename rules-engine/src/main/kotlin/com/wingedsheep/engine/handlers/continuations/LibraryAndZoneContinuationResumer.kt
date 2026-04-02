@@ -21,7 +21,8 @@ class LibraryAndZoneContinuationResumer(
         resumer(PutFromHandContinuation::class, ::resumePutFromHand),
         resumer(SelectFromCollectionContinuation::class, ::resumeSelectFromCollection),
         resumer(SelectTargetPipelineContinuation::class, ::resumeSelectTargetPipeline),
-        resumer(MoveCollectionAuraTargetContinuation::class, ::resumeMoveCollectionAuraTarget)
+        resumer(MoveCollectionAuraTargetContinuation::class, ::resumeMoveCollectionAuraTarget),
+        resumer(PutOnTopOrBottomContinuation::class, ::resumePutOnTopOrBottom)
     )
 
     fun resumeReturnFromGraveyard(
@@ -404,5 +405,46 @@ class LibraryAndZoneContinuationResumer(
         }
 
         return checkForMore(newState, emptyList())
+    }
+
+    /**
+     * Resume after a card's owner chose top or bottom of their library.
+     * Moves the card to the chosen position via ZoneTransitionService.
+     */
+    fun resumePutOnTopOrBottom(
+        state: GameState,
+        continuation: PutOnTopOrBottomContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        if (response !is OptionChosenResponse) {
+            return ExecutionResult.error(state, "Expected option choice response for top/bottom of library")
+        }
+
+        val chosenOption = continuation.options.getOrNull(response.optionIndex)
+            ?: return ExecutionResult.error(state, "Invalid option index: ${response.optionIndex}")
+
+        val placement = if (chosenOption == "Top of library") {
+            com.wingedsheep.engine.handlers.effects.LibraryPlacement.Top
+        } else {
+            com.wingedsheep.engine.handlers.effects.LibraryPlacement.Bottom
+        }
+
+        val cardId = continuation.cardId
+
+        // Find what zone the card is currently in
+        val currentZone = state.zones.entries.firstOrNull { (_, entities) -> cardId in entities }?.key
+            ?: return checkForMore(state, emptyList()) // Card no longer exists in any zone
+
+        val transitionResult = com.wingedsheep.engine.handlers.effects.ZoneTransitionService.moveToZone(
+            state, cardId, Zone.LIBRARY,
+            com.wingedsheep.engine.handlers.effects.ZoneEntryOptions(
+                controllerId = continuation.ownerId,
+                libraryPlacement = placement
+            ),
+            currentZone
+        )
+
+        return checkForMore(transitionResult.state, transitionResult.events)
     }
 }

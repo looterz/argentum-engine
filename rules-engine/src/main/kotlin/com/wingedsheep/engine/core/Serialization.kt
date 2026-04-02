@@ -180,6 +180,7 @@ val engineSerializersModule = SerializersModule {
         subclass(AddDynamicManaContinuation::class)
         subclass(AssignAsUnblockedContinuation::class)
         subclass(BudgetModalContinuation::class)
+        subclass(PutOnTopOrBottomContinuation::class)
     }
 
     // Component hierarchy (for GameState persistence)

@@ -147,6 +147,28 @@ data class PutOnBottomOfLibraryContinuation(
 ) : ContinuationFrame
 
 /**
+ * Resume after a card's owner chooses top or bottom of their library.
+ *
+ * Used by PutOnTopOrBottomOfLibraryEffect: the owner has chosen where to put
+ * the card. The continuation moves the card to the chosen position.
+ *
+ * @property ownerId The owner making the choice
+ * @property cardId The card being put into the library
+ * @property sourceId The spell/ability that caused this effect
+ * @property sourceName Name of the source for event messages
+ * @property options The option strings ("Top of library", "Bottom of library")
+ */
+@Serializable
+data class PutOnTopOrBottomContinuation(
+    override val decisionId: String,
+    val ownerId: EntityId,
+    val cardId: EntityId,
+    val sourceId: EntityId?,
+    val sourceName: String?,
+    val options: List<String>
+) : ContinuationFrame
+
+/**
  * Resume after player chooses a card to return from a linked exile.
  *
  * Used for effects like Dimensional Breach's upkeep trigger: the active player

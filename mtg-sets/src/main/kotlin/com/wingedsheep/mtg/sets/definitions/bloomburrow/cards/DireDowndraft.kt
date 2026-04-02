@@ -15,8 +15,6 @@ import com.wingedsheep.sdk.model.Rarity
  *
  * Note: The conditional cost reduction (costs {1} less if targeting attacking/tapped creature)
  * is not yet implemented — target-conditional cost reduction is not supported.
- * Note: Currently always puts on top of library. Owner's choice of top or bottom
- * is not yet supported.
  */
 val DireDowndraft = card("Dire Downdraft") {
     manaCost = "{3}{U}"
@@ -25,7 +23,7 @@ val DireDowndraft = card("Dire Downdraft") {
 
     spell {
         val creature = target("creature", Targets.Creature)
-        effect = Effects.PutOnTopOfLibrary(creature)
+        effect = Effects.PutOnTopOrBottomOfLibrary(creature)
     }
 
     metadata {

@@ -54,6 +54,7 @@ import com.wingedsheep.sdk.scripting.effects.LoseLifeEffect
 import com.wingedsheep.sdk.scripting.effects.SetLifeTotalEffect
 import com.wingedsheep.sdk.scripting.effects.ModifyStatsEffect
 import com.wingedsheep.sdk.scripting.effects.MoveToZoneEffect
+import com.wingedsheep.sdk.scripting.effects.PutOnTopOrBottomOfLibraryEffect
 import com.wingedsheep.sdk.scripting.effects.ExileFromTopRepeatingEffect
 import com.wingedsheep.sdk.scripting.effects.ExileOpponentsGraveyardsEffect
 import com.wingedsheep.sdk.scripting.effects.ExileUntilLeavesEffect
@@ -402,6 +403,12 @@ object Effects {
      */
     fun PutOnTopOfLibrary(target: EffectTarget): Effect =
         MoveToZoneEffect(target, Zone.LIBRARY, ZonePlacement.Top)
+
+    /**
+     * Owner chooses to put target on top or bottom of their library.
+     */
+    fun PutOnTopOrBottomOfLibrary(target: EffectTarget): Effect =
+        PutOnTopOrBottomOfLibraryEffect(target)
 
     /**
      * Shuffle into library.

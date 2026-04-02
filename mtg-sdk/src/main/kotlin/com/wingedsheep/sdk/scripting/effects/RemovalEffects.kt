@@ -392,6 +392,24 @@ data class ForceExileMultiZoneEffect(
 }
 
 /**
+ * The target creature's owner puts it on their choice of the top or bottom of their library.
+ *
+ * Pauses for the owner to make a ChooseOptionDecision with "Top" and "Bottom" options,
+ * then moves the card accordingly.
+ *
+ * @property target The creature to put into its owner's library
+ */
+@SerialName("PutOnTopOrBottomOfLibrary")
+@Serializable
+data class PutOnTopOrBottomOfLibraryEffect(
+    val target: EffectTarget
+) : Effect {
+    override val description: String =
+        "${target.description}'s owner puts it on the top or bottom of their library"
+    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
+}
+
+/**
  * Exile a warped permanent and mark it as re-castable via warp from exile.
  * Used by the warp mechanic's delayed trigger: "At the beginning of the next end step,
  * exile this permanent." The exiled card retains its warp ability and can be cast
