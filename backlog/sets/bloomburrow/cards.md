@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 220 / 266
+**Implemented:** 221 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -10,7 +10,7 @@
 | Blue       | 41    | 33   |
 | Black      | 40    | 32   |
 | Red        | 41    | 32   |
-| Green      | 41    | 35   |
+| Green      | 41    | 36   |
 | Multicolor | 39    | 31   |
 | Colorless  | 9     | 8    |
 | Land       | 15    | 13   |
@@ -173,7 +173,7 @@
 - [x] Pawpatch Formation
 - [x] Pawpatch Recruit
 - [x] Pearl of Wisdom
-- [ ] Peerless Recycling
+- [x] Peerless Recycling
 - [ ] Persistent Marshstalker
 - [x] Pileated Provisioner
 - [x] Plains

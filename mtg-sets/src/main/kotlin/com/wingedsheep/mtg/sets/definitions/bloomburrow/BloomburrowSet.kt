@@ -154,6 +154,7 @@ object BloomburrowSet {
         OakhollowVillage,
         OsteomancerAdept,
         PearlOfWisdom,
+        PeerlessRecycling,
         PondProphet,
         PlayfulShove,
         PlumecreedEscort,
