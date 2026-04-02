@@ -5,7 +5,7 @@ import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.scripting.effects.MayEffect
 import com.wingedsheep.sdk.scripting.references.Player
 
 /**
@@ -25,9 +25,10 @@ val WhiskerquillScribe = card("Whiskerquill Scribe") {
 
     triggeredAbility {
         trigger = Triggers.Valiant
-        effect = EffectPatterns.discardCards(1, EffectTarget.PlayerRef(Player.You))
-            .then(Effects.DrawCards(1))
-        optional = true
+        effect = MayEffect(
+            EffectPatterns.discardCards(1)
+                .then(Effects.DrawCards(1))
+        )
     }
 
     metadata {
