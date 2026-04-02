@@ -55,6 +55,7 @@ object BloomburrowSet {
         CorpseberryCultivator,
         CoruscationMage,
         CrumbAndGetIt,
+        CuriousForager,
         DaggerfangDuo,
         DarkstarAugur,
         DazzlingDenial,
