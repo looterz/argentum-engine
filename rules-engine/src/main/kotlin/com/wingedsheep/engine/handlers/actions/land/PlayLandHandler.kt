@@ -24,6 +24,7 @@ import com.wingedsheep.sdk.core.CardType
 import com.wingedsheep.sdk.scripting.EntersTapped
 import com.wingedsheep.sdk.scripting.MayPlayPermanentsFromGraveyard
 import com.wingedsheep.sdk.scripting.PlayFromTopOfLibrary
+import com.wingedsheep.sdk.scripting.PlayLandsAndCastFilteredFromTopOfLibrary
 import kotlin.reflect.KClass
 
 /**
@@ -218,7 +219,9 @@ class PlayLandHandler(
         for (entityId in state.getBattlefield(playerId)) {
             val card = state.getEntity(entityId)?.get<CardComponent>() ?: continue
             val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
-            if (cardDef.script.staticAbilities.any { it is PlayFromTopOfLibrary }) {
+            if (cardDef.script.staticAbilities.any {
+                it is PlayFromTopOfLibrary || it is PlayLandsAndCastFilteredFromTopOfLibrary
+            }) {
                 return true
             }
         }

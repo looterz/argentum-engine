@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 208 / 266
+**Implemented:** 209 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -11,7 +11,7 @@
 | Black      | 40    | 32   |
 | Red        | 41    | 32   |
 | Green      | 41    | 31   |
-| Multicolor | 39    | 30   |
+| Multicolor | 39    | 31   |
 | Colorless  | 9     | 6    |
 | Land       | 15    | 13   |
 
@@ -98,7 +98,7 @@
 - [x] Frilled Sparkshooter
 - [x] Galewind Moose
 - [x] Gev, Scaled Scorch
-- [ ] Glarb, Calamity's Augur
+- [x] Glarb, Calamity's Augur
 - [x] Glidedive Duo
 - [x] Gossip's Talent
 - [ ] Harnesser of Storms

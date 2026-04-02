@@ -87,6 +87,7 @@ object BloomburrowSet {
         Fountainport,
         FountainportBell,
         GalewindMoose,
+        GlarbCalamitysAugur,
         GlidediveDuo,
         GevScaledScorch,
         GossipsTalent,

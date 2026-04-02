@@ -1025,6 +1025,7 @@ Set via `staticAbility { ability = ... }`:
 - `AdditionalManaOnTap(color, amount: DynamicAmount)` — produce additional mana
 - `PlayFromTopOfLibrary` — play cards from top of library (revealed to all)
 - `CastSpellTypesFromTopOfLibrary(filter: GameObjectFilter)` — cast matching spells from top of library (e.g., instants/sorceries only)
+- `PlayLandsAndCastFilteredFromTopOfLibrary(spellFilter: GameObjectFilter)` — play lands + cast spells matching filter from top of library (e.g., MV 4+)
 - `LookAtTopOfLibrary` — look at top card of your library any time (private, controller only)
 - `MayCastSelfFromZones(zones: List<Zone>)` — intrinsic permission to cast this card from specified zones (e.g., graveyard, exile)
 - `MayPlayPermanentsFromGraveyard` — during each of your turns, play a land and cast a permanent spell of each type from your graveyard (Muldrotha). Tracks per-type usage via `GraveyardPlayPermissionUsedComponent` on the source permanent, cleared at end of turn.

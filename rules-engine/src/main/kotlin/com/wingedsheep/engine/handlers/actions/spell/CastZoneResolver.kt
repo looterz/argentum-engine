@@ -24,6 +24,7 @@ import com.wingedsheep.sdk.scripting.KeywordAbility
 import com.wingedsheep.sdk.scripting.MayCastSelfFromZones
 import com.wingedsheep.sdk.scripting.MayPlayPermanentsFromGraveyard
 import com.wingedsheep.sdk.scripting.PlayFromTopOfLibrary
+import com.wingedsheep.sdk.scripting.PlayLandsAndCastFilteredFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
 
 /**
@@ -300,6 +301,9 @@ class CastZoneResolver(
                 if (ability is CastSpellTypesFromTopOfLibrary) {
                     if (matchesCardFilter(cardComponent, ability.filter)) return true
                 }
+                if (ability is PlayLandsAndCastFilteredFromTopOfLibrary) {
+                    if (matchesCardFilter(cardComponent, ability.spellFilter)) return true
+                }
             }
         }
         return false
@@ -379,6 +383,9 @@ class CastZoneResolver(
                 is CardPredicate.IsEnchantment -> card.typeLine.isEnchantment
                 is CardPredicate.IsArtifact -> card.typeLine.isArtifact
                 is CardPredicate.IsLand -> card.typeLine.isLand
+                is CardPredicate.ManaValueAtLeast -> card.manaCost.cmc >= predicate.min
+                is CardPredicate.ManaValueAtMost -> card.manaCost.cmc <= predicate.max
+                is CardPredicate.ManaValueEquals -> card.manaCost.cmc == predicate.value
                 is CardPredicate.Or -> predicate.predicates.any { matchesCardPredicate(card, it) }
                 is CardPredicate.And -> predicate.predicates.all { matchesCardPredicate(card, it) }
                 is CardPredicate.Not -> !matchesCardPredicate(card, predicate.predicate)

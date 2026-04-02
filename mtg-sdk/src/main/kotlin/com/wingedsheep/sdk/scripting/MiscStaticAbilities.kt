@@ -148,6 +148,26 @@ data object LookAtTopOfLibrary : StaticAbility {
 }
 
 /**
+ * You may play lands and cast spells matching a filter from the top of your library.
+ * Unlike PlayFromTopOfLibrary, this restricts which spells can be cast (but always allows lands).
+ * Used for Glarb, Calamity's Augur (mana value 4 or greater).
+ *
+ * @property spellFilter The filter that spells on top of library must match to be castable
+ */
+@SerialName("PlayLandsAndCastFilteredFromTopOfLibrary")
+@Serializable
+data class PlayLandsAndCastFilteredFromTopOfLibrary(
+    val spellFilter: GameObjectFilter
+) : StaticAbility {
+    override val description: String =
+        "You may play lands and cast spells matching ${spellFilter.description} from the top of your library."
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newFilter = spellFilter.applyTextReplacement(replacer)
+        return if (newFilter !== spellFilter) copy(spellFilter = newFilter) else this
+    }
+}
+
+/**
  * You may look at face-down creatures you don't control any time.
  * Reveals the identity of opponent's face-down creatures to the controller.
  * Used for Lens of Clarity.

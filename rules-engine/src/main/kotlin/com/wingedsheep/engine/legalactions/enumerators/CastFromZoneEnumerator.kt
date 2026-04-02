@@ -63,8 +63,13 @@ class CastFromZoneEnumerator : ActionEnumerator {
         val castFromTopFilter = if (!canPlayAllFromTop) {
             context.castPermissionUtils.getCastFromTopOfLibraryFilter(state, playerId)
         } else null
+        val canPlayLandsFromTop = canPlayAllFromTop ||
+            context.castPermissionUtils.hasPlayLandsFromTopOfLibrary(state, playerId)
+        val castFilteredFromTopFilter = if (!canPlayAllFromTop) {
+            context.castPermissionUtils.getCastFilteredFromTopOfLibraryFilter(state, playerId)
+        } else null
 
-        if (!canPlayAllFromTop && castFromTopFilter == null) return
+        if (!canPlayAllFromTop && castFromTopFilter == null && !canPlayLandsFromTop && castFilteredFromTopFilter == null) return
 
         val library = state.getLibrary(playerId)
         if (library.isEmpty()) return
@@ -73,8 +78,8 @@ class CastFromZoneEnumerator : ActionEnumerator {
         val topCardComponent = state.getEntity(topCardId)?.get<CardComponent>() ?: return
         val topCardDef = context.cardRegistry.getCard(topCardComponent.name)
 
-        // Land on top of library (only for PlayFromTopOfLibrary, not filtered cast)
-        if (canPlayAllFromTop && topCardComponent.typeLine.isLand && context.canPlayLand) {
+        // Land on top of library (PlayFromTopOfLibrary or PlayLandsAndCastFilteredFromTopOfLibrary)
+        if (canPlayLandsFromTop && topCardComponent.typeLine.isLand && context.canPlayLand) {
             result.add(
                 LegalAction(
                     actionType = "PlayLand",
@@ -89,6 +94,9 @@ class CastFromZoneEnumerator : ActionEnumerator {
         val topCardMatchesFilter = canPlayAllFromTop ||
             (castFromTopFilter != null && context.predicateEvaluator.matches(
                 state, topCardId, castFromTopFilter, PredicateContext(controllerId = playerId)
+            )) ||
+            (castFilteredFromTopFilter != null && context.predicateEvaluator.matches(
+                state, topCardId, castFilteredFromTopFilter, PredicateContext(controllerId = playerId)
             ))
 
         if (!topCardComponent.typeLine.isLand && topCardMatchesFilter) {
