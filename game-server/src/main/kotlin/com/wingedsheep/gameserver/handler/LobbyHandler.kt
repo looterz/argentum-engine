@@ -126,6 +126,67 @@ class LobbyHandler(
         return lobbyRepository.findLobbyById(lobbyId)
     }
 
+    /**
+     * Programmatically create a sealed tournament with AI-only players.
+     * Returns the lobby ID for spectating. Used by the dev AI tournament endpoint.
+     */
+    fun createAiTournament(setCodes: List<String>, playerCount: Int = 2): String {
+        require(aiGameManager.isEnabled) { "AI opponent is not enabled on this server" }
+        require(playerCount in 2..8) { "Player count must be between 2 and 8" }
+
+        val setConfigs = setCodes.map { code ->
+            boosterGenerator.getSetConfig(code)
+                ?: error("Unknown set code: $code")
+        }
+
+        val codes = setConfigs.map { it.setCode }
+        val boosterCount = 6
+        val lobby = TournamentLobby(
+            setCodes = codes,
+            setNames = setConfigs.map { it.setName },
+            boosterGenerator = boosterGenerator,
+            format = TournamentFormat.SEALED,
+            boosterCount = boosterCount,
+            boosterDistribution = TournamentLobby.calculateDefaultDistribution(codes, boosterCount),
+            maxPlayers = playerCount
+        )
+
+        // Add AI players
+        repeat(playerCount) {
+            val aiIdentity = aiGameManager.createAiIdentity()
+            lobby.addPlayer(aiIdentity)
+        }
+
+        lobbyRepository.saveLobby(lobby)
+
+        // Start sealed deck building (first AI is host)
+        val hostId = lobby.hostPlayerId!!
+        val started = lobby.startDeckBuilding(hostId)
+        require(started) { "Failed to start deck building" }
+
+        logger.info("AI tournament created: ${lobby.lobbyId} (${playerCount} AI players, sets: ${setConfigs.joinToString(", ") { it.setName }})")
+
+        // Send SealedPoolGenerated to AI sessions (matches normal flow)
+        val basicLandInfos = lobby.basicLands.values.map { ConnectionHandler.cardToSealedCardInfo(it) }
+        lobby.players.forEach { (_, playerState) ->
+            val ws = playerState.identity.webSocketSession
+            if (ws != null) {
+                sender.send(ws, ServerMessage.SealedPoolGenerated(
+                    setCodes = lobby.setCodes,
+                    setNames = lobby.setNames,
+                    cardPool = playerState.cardPool.map { ConnectionHandler.cardToSealedCardInfo(it) },
+                    basicLands = basicLandInfos
+                ))
+            }
+        }
+
+        // Launch AI deck building in background (handles tournament activation + match start)
+        launchAiDeckBuilding(lobby)
+
+        lobbyRepository.saveLobby(lobby)
+        return lobby.lobbyId
+    }
+
     // =========================================================================
     // Sealed Game
     // =========================================================================
