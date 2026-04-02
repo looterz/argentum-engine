@@ -2,12 +2,12 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 195 / 266
+**Implemented:** 196 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 28   |
-| Blue       | 41    | 27   |
+| Blue       | 41    | 28   |
 | Black      | 40    | 32   |
 | Red        | 41    | 30   |
 | Green      | 41    | 27   |
@@ -140,7 +140,7 @@
 - [x] Lilypad Village
 - [ ] Lilysplash Mentor
 - [ ] Long River Lurker
-- [ ] Long River's Pull
+- [x] Long River's Pull
 - [ ] Longstalk Brawl
 - [ ] Lumra, Bellow of the Woods
 - [x] Lunar Convocation

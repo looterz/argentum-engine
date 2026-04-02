@@ -259,9 +259,14 @@ class CastSpellHandler(
         }
 
         // Validate targets (include auraTarget as a target requirement for aura spells)
-        // Use kickerTargetRequirements when spell is kicked and alternate targets are defined
+        // Use mode-specific targets for modal spells, kickerTargetRequirements when kicked
         if (cardDef != null) {
-            val baseTargetReqs = if (action.wasKicked && cardDef.script.kickerTargetRequirements.isNotEmpty()) {
+            val modalEffect = cardDef.script.spellEffect as? com.wingedsheep.sdk.scripting.effects.ModalEffect
+            val baseTargetReqs = if (action.chosenMode != null && modalEffect != null) {
+                // Modal spell with mode chosen at cast time — validate against mode-specific targets
+                val mode = modalEffect.modes.getOrNull(action.chosenMode)
+                mode?.targetRequirements ?: emptyList()
+            } else if (action.wasKicked && cardDef.script.kickerTargetRequirements.isNotEmpty()) {
                 cardDef.script.kickerTargetRequirements
             } else {
                 cardDef.script.targetRequirements
