@@ -159,6 +159,7 @@ object BloomburrowSet {
         PatchworkBanner,
         PawpatchFormation,
         PileatedProvisioner,
+        PortentOfCalamity,
         Overprotect,
         OakhollowVillage,
         OsteomancerAdept,
