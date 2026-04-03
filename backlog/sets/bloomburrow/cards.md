@@ -2,11 +2,11 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 247 / 266
+**Implemented:** 248 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
-| White      | 40    | 37   |
+| White      | 40    | 38   |
 | Blue       | 41    | 39   |
 | Black      | 40    | 36   |
 | Red        | 41    | 37   |
@@ -49,7 +49,7 @@
 - [ ] Calamitous Tide
 - [x] Camellia, the Seedmiser
 - [x] Caretaker's Talent
-- [ ] Carrot Cake
+- [x] Carrot Cake
 - [x] Cindering Cutthroat
 - [x] Clement, the Worrywort
 - [x] Clifftop Lookout

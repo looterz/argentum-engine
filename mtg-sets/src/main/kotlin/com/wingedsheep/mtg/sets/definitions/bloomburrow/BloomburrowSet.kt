@@ -53,6 +53,7 @@ object BloomburrowSet {
         BushyBodyguard,
         BywayBarterer,
         CacheGrab,
+        CarrotCake,
         CinderingCutthroat,
         ClifftopLookout,
         ClementTheWorrywort,
