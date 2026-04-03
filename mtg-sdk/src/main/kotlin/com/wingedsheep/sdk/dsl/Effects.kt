@@ -802,6 +802,13 @@ object Effects {
     fun CreateSword(count: Int = 1): Effect =
         CreatePredefinedTokenEffect("Sword", count)
 
+    /**
+     * Create Cragflame, a legendary colorless Equipment artifact token.
+     * "Equipped creature gets +1/+1 and has vigilance, trample, and haste" and equip {2}.
+     */
+    fun CreateCragflame(): Effect =
+        CreatePredefinedTokenEffect("Cragflame")
+
     // =========================================================================
     // Protection Effects
     // =========================================================================

@@ -148,6 +148,7 @@ object BloomburrowSet {
         LumraBellowOfTheWoods,
         LunarConvocation,
         LupinflowerVillage,
+        MabelHeirToCragflame,
         MabelsMettle,
         MahaItsFeathersNight,
         ManifoldMouse,

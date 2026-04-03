@@ -1,5 +1,6 @@
 package com.wingedsheep.mtg.sets.tokens
 
+import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.EffectPatterns
 import com.wingedsheep.sdk.dsl.Effects
@@ -135,6 +136,41 @@ object PredefinedTokens {
     }
 
     /**
+     * Cragflame — a legendary colorless Equipment artifact token with:
+     * "Equipped creature gets +1/+1 and has vigilance, trample, and haste" and equip {2}.
+     * Created by Mabel, Heir to Cragflame.
+     */
+    val Cragflame = card("Cragflame") {
+        typeLine = "Legendary Artifact — Equipment"
+
+        staticAbility {
+            effect = Effects.ModifyStats(+1, +1)
+            filter = Filters.EquippedCreature
+        }
+
+        staticAbility {
+            effect = Effects.GrantKeyword(Keyword.VIGILANCE)
+            filter = Filters.EquippedCreature
+        }
+
+        staticAbility {
+            effect = Effects.GrantKeyword(Keyword.TRAMPLE)
+            filter = Filters.EquippedCreature
+        }
+
+        staticAbility {
+            effect = Effects.GrantKeyword(Keyword.HASTE)
+            filter = Filters.EquippedCreature
+        }
+
+        equipAbility("{2}")
+
+        metadata {
+            imageUri = "https://cards.scryfall.io/normal/front/c/7/c76fa1c6-6000-47b2-9188-9c15b2c73f8f.jpg?1721431172"
+        }
+    }
+
+    /**
      * All predefined token definitions.
      * Register these in the CardRegistry so token abilities are resolved.
      */
@@ -143,6 +179,7 @@ object PredefinedTokens {
         Food,
         Lander,
         JustOneGlass,
-        Sword
+        Sword,
+        Cragflame
     )
 }

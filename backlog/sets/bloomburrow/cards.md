@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 253 / 266
+**Implemented:** 254 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -11,7 +11,7 @@
 | Black      | 40    | 37   |
 | Red        | 41    | 38   |
 | Green      | 41    | 37   |
-| Multicolor | 39    | 36   |
+| Multicolor | 39    | 37   |
 | Colorless  | 9     | 9    |
 | Land       | 15    | 15   |
 
@@ -146,7 +146,7 @@
 - [x] Lunar Convocation
 - [x] Lupinflower Village
 - [x] Mabel's Mettle
-- [ ] Mabel, Heir to Cragflame
+- [x] Mabel, Heir to Cragflame
 - [x] Maha, Its Feathers Night
 - [x] Manifold Mouse
 - [x] Might of the Meek
