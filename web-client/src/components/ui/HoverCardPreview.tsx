@@ -68,10 +68,13 @@ export function HoverCardPreview({ name, imageUri, imageSize = 'large', pos, rul
     }
     left = Math.max(VIEWPORT_PADDING, Math.min(left, vw - previewWidth - VIEWPORT_PADDING))
 
-    top = Math.max(VIEWPORT_PADDING, Math.min(
-      pos.y - estimatedHeight / 2,
-      vh - estimatedHeight - VIEWPORT_PADDING
-    ))
+    // Place the preview above the cursor, falling back to below if too close to top
+    const aboveTop = pos.y - estimatedHeight - MARGIN
+    if (aboveTop >= VIEWPORT_PADDING) {
+      top = aboveTop
+    } else {
+      top = VIEWPORT_PADDING
+    }
   }
 
   return (
