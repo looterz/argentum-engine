@@ -1,6 +1,7 @@
 package com.wingedsheep.gameserver.config
 
 import com.wingedsheep.gameserver.deck.RandomDeckGenerator
+import com.wingedsheep.gameserver.deck.SealedDeckGenerator
 import com.wingedsheep.gameserver.sealed.BoosterGenerator
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.mtg.sets.definitions.bloomburrow.BloomburrowSet
@@ -91,6 +92,10 @@ class GameBeansConfig(
         }
         return BoosterGenerator(sets)
     }
+
+    @Bean
+    fun sealedDeckGenerator(boosterGenerator: BoosterGenerator): SealedDeckGenerator =
+        SealedDeckGenerator(boosterGenerator)
 
     @Bean
     fun randomDeckGenerator(): RandomDeckGenerator = RandomDeckGenerator(

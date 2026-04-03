@@ -2,7 +2,7 @@ package com.wingedsheep.gameserver.handler
 
 import com.wingedsheep.gameserver.ai.AiGameManager
 import com.wingedsheep.gameserver.ai.AiWebSocketSession
-import com.wingedsheep.gameserver.deck.RandomDeckGenerator
+import com.wingedsheep.gameserver.deck.SealedDeckGenerator
 import com.wingedsheep.gameserver.protocol.ClientMessage
 import com.wingedsheep.gameserver.protocol.ErrorCode
 import com.wingedsheep.gameserver.protocol.GameOverReason
@@ -34,7 +34,7 @@ class GamePlayHandler(
     private val lobbyRepository: LobbyRepository,
     private val sender: MessageSender,
     private val cardRegistry: CardRegistry,
-    private val deckGenerator: RandomDeckGenerator,
+    private val deckGenerator: SealedDeckGenerator,
     private val gameProperties: GameProperties,
     private val gameHistoryRepository: GameHistoryRepository,
     private val aiGameManager: AiGameManager

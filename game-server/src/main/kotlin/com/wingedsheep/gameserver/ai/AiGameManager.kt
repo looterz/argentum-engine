@@ -1,7 +1,7 @@
 package com.wingedsheep.gameserver.ai
 
 import com.wingedsheep.gameserver.config.GameProperties
-import com.wingedsheep.gameserver.deck.RandomDeckGenerator
+import com.wingedsheep.gameserver.deck.SealedDeckGenerator
 import com.wingedsheep.gameserver.session.GameSession
 import com.wingedsheep.gameserver.session.PlayerIdentity
 import com.wingedsheep.gameserver.session.PlayerSession
@@ -28,7 +28,7 @@ private val logger = LoggerFactory.getLogger(AiGameManager::class.java)
 class AiGameManager(
     private val gameProperties: GameProperties,
     private val sessionRegistry: SessionRegistry,
-    private val deckGenerator: RandomDeckGenerator,
+    private val deckGenerator: SealedDeckGenerator,
     private val cardRegistry: CardRegistry
 ) {
     private val activeSessions = ConcurrentHashMap<String, AiWebSocketSession>()
