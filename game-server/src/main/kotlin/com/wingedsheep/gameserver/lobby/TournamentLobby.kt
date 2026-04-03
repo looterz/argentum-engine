@@ -91,11 +91,13 @@ data class LobbyPlayerState(
     val cardPool: List<CardDefinition> = emptyList(),
     /** Draft only: current pack to pick from. */
     var currentPack: List<CardDefinition>? = null,
-    /** Draft only: whether player has picked from current pack. */
-    var hasPicked: Boolean = false,
+    /** Draft only: queued packs waiting to be picked from (async pack passing). */
+    val packQueue: MutableList<List<CardDefinition>> = mutableListOf(),
     var submittedDeck: Map<String, Int>? = null
 ) {
     val hasSubmittedDeck: Boolean get() = submittedDeck != null
+    /** Total number of packs held by this player (current + queued). */
+    val totalPackCount: Int get() = (if (currentPack != null) 1 else 0) + packQueue.size
 }
 
 /**
@@ -105,7 +107,18 @@ sealed interface PickResult {
     data class Success(
         val pickedCards: List<CardDefinition>,
         val totalPicked: Int,
-        val waitingForPlayers: List<String>
+        /** Player ID that received the passed pack (null if pack was exhausted). */
+        val passedToPlayerId: EntityId? = null,
+        /** True if the recipient's currentPack was null and they got the pack directly. */
+        val recipientGotNewPack: Boolean = false,
+        /** True if the picker dequeued a pack from their own queue. */
+        val pickerGotNewPack: Boolean = false,
+        /** Per-player pack counts (playerName → total packs held). */
+        val playerPackCounts: Map<String, Int> = emptyMap(),
+        /** True if all packs in this round were exhausted and new boosters were distributed. */
+        val newPackRound: Boolean = false,
+        /** True if the draft is complete (no more packs). */
+        val draftComplete: Boolean = false
     ) : PickResult
 
     data class Error(val message: String) : PickResult
@@ -234,7 +247,7 @@ class TournamentLobby(
     var currentPackNumber: Int = 0
         private set
 
-    /** Current pick number within the pack (1-15) */
+    /** Current pick number within the pack (1-15). In async mode, this is the minimum across all players. */
     @Volatile
     var currentPickNumber: Int = 0
         private set
@@ -242,13 +255,29 @@ class TournamentLobby(
     /** Player order for pack passing (circular) */
     private var playerOrder: List<EntityId> = emptyList()
 
-    /** Timer job for pick timeout */
+    /** Lock for synchronizing draft pick operations (async pack passing). */
+    val draftLock = Any()
+
+    /** Timer job for pick timeout (used by Winston/Grid draft) */
     @Volatile
     var pickTimerJob: Job? = null
 
-    /** Seconds remaining on current pick timer */
+    /** Seconds remaining on current pick timer (used by Winston/Grid draft) */
     @Volatile
     var pickTimeRemaining: Int = 0
+
+    /** Per-player timer jobs for booster draft (async pack passing). */
+    val playerTimerJobs: ConcurrentHashMap<EntityId, Job> = ConcurrentHashMap()
+
+    /** Per-player seconds remaining for booster draft. */
+    val playerTimeRemaining: ConcurrentHashMap<EntityId, Int> = ConcurrentHashMap()
+
+    /** Cancel all per-player draft timers. */
+    fun cancelAllPlayerTimers() {
+        playerTimerJobs.values.forEach { it.cancel() }
+        playerTimerJobs.clear()
+        playerTimeRemaining.clear()
+    }
 
     // =========================================================================
     // Winston Draft-specific State
@@ -314,6 +343,27 @@ class TournamentLobby(
             2 -> PassDirection.RIGHT
             else -> PassDirection.LEFT
         }
+    }
+
+    /**
+     * Get the next player in the pack-passing ring based on current pass direction.
+     */
+    fun getNextPlayerInPassDirection(playerId: EntityId): EntityId {
+        val index = playerOrder.indexOf(playerId)
+        if (index == -1) return playerId
+        val direction = getPassDirection()
+        val nextIndex = when (direction) {
+            PassDirection.LEFT -> (index + 1) % playerOrder.size
+            PassDirection.RIGHT -> (index - 1 + playerOrder.size) % playerOrder.size
+        }
+        return playerOrder[nextIndex]
+    }
+
+    /**
+     * Get pack counts per player (playerName → total packs held including current + queue).
+     */
+    fun getPlayerPackCounts(): Map<String, Int> {
+        return players.values.associate { it.identity.playerName to it.totalPackCount }
     }
 
     /**
@@ -475,12 +525,14 @@ class TournamentLobby(
                 boosterGenerator.generateBooster(setCodes)
             }
             playerState.currentPack = newPack
-            playerState.hasPicked = false
+            playerState.packQueue.clear()
         }
     }
 
     /**
      * Make a pick during draft. Supports picking multiple cards (Pick 2 mode).
+     * In async mode, the remaining cards are immediately passed to the next player
+     * (or queued if they already have a pack). The picker dequeues their next pack.
      */
     fun makePick(playerId: EntityId, cardNames: List<String>): PickResult {
         if (state != LobbyState.DRAFTING) {
@@ -489,10 +541,6 @@ class TournamentLobby(
 
         val playerState = players[playerId]
             ?: return PickResult.Error("Player not in lobby")
-
-        if (playerState.hasPicked) {
-            return PickResult.Error("Already picked from current pack")
-        }
 
         val currentPack = playerState.currentPack
             ?: return PickResult.Error("No pack available")
@@ -514,89 +562,68 @@ class TournamentLobby(
             pickedCards.add(remainingPack.removeAt(cardIndex))
         }
 
-        // Pick the cards
+        // Pick the cards and update pool
         val newPool = playerState.cardPool + pickedCards
-        val newPack = remainingPack.toList()
+        players[playerId] = playerState.copy(cardPool = newPool, currentPack = null)
+        val updatedPlayerState = players[playerId]!!
 
-        // Update player state
-        players[playerId] = playerState.copy(
-            cardPool = newPool,
-            currentPack = newPack
-        )
-        players[playerId]?.hasPicked = true
+        // Pass remaining cards to the next player in the ring
+        var passedToPlayerId: EntityId? = null
+        var recipientGotNewPack = false
 
-        // Check who is still waiting to pick
-        val waitingPlayers = players.values
-            .filter { !it.hasPicked }
-            .map { it.identity.playerName }
+        if (remainingPack.isNotEmpty()) {
+            val nextPlayerId = getNextPlayerInPassDirection(playerId)
+            val nextPlayerState = players[nextPlayerId]
+            if (nextPlayerState != null) {
+                passedToPlayerId = nextPlayerId
+                if (nextPlayerState.currentPack == null) {
+                    // Next player is idle — give them the pack directly
+                    nextPlayerState.currentPack = remainingPack.toList()
+                    recipientGotNewPack = true
+                } else {
+                    // Next player is busy — queue it
+                    nextPlayerState.packQueue.add(remainingPack.toList())
+                }
+            }
+        }
+
+        // Dequeue next pack for the picker if available
+        val pickerGotNewPack = if (updatedPlayerState.packQueue.isNotEmpty()) {
+            updatedPlayerState.currentPack = updatedPlayerState.packQueue.removeAt(0)
+            true
+        } else {
+            false
+        }
+
+        // Check if all packs in this round are exhausted
+        var newPackRound = false
+        var draftComplete = false
+        val allPacksExhausted = players.values.all { it.currentPack == null && it.packQueue.isEmpty() }
+
+        if (allPacksExhausted) {
+            if (currentPackNumber < boosterCount) {
+                // Start next pack round
+                currentPackNumber++
+                currentPickNumber = 1
+                distributeNewPacks()
+                newPackRound = true
+            } else {
+                // Draft complete
+                finishDraft()
+                draftComplete = true
+            }
+        }
 
         return PickResult.Success(
             pickedCards = pickedCards,
             totalPicked = newPool.size,
-            waitingForPlayers = waitingPlayers
+            passedToPlayerId = passedToPlayerId,
+            recipientGotNewPack = recipientGotNewPack,
+            pickerGotNewPack = pickerGotNewPack,
+            playerPackCounts = getPlayerPackCounts(),
+            newPackRound = newPackRound,
+            draftComplete = draftComplete
         )
-    }
-
-    /**
-     * Check if all players have made their pick for the current round.
-     */
-    fun allPlayersPicked(): Boolean {
-        return players.values.all { it.hasPicked }
-    }
-
-    /**
-     * Pass packs to the next player and advance the pick.
-     * Should be called after all players have picked.
-     *
-     * @return true if draft continues, false if pack is exhausted (need new pack or draft complete)
-     */
-    fun passPacks(): Boolean {
-        if (!allPlayersPicked()) return false
-
-        // Get remaining packs (after picks)
-        val packsByPlayer = players.mapValues { (_, state) ->
-            state.currentPack ?: emptyList()
-        }
-
-        // Check if packs are exhausted
-        val anyCardsRemaining = packsByPlayer.values.any { it.isNotEmpty() }
-        if (!anyCardsRemaining) {
-            // Pack exhausted, check if we need another pack
-            if (currentPackNumber < boosterCount) {
-                // Start next pack
-                currentPackNumber++
-                currentPickNumber = 1
-                distributeNewPacks()
-                return true
-            } else {
-                // Draft complete, transition to deck building
-                finishDraft()
-                return false
-            }
-        }
-
-        // Pass packs in the appropriate direction
-        val direction = getPassDirection()
-        val newPackAssignments = mutableMapOf<EntityId, List<CardDefinition>>()
-
-        for (i in playerOrder.indices) {
-            val currentPlayerId = playerOrder[i]
-            val nextIndex = when (direction) {
-                PassDirection.LEFT -> (i + 1) % playerOrder.size
-                PassDirection.RIGHT -> (i - 1 + playerOrder.size) % playerOrder.size
-            }
-            val nextPlayerId = playerOrder[nextIndex]
-            newPackAssignments[nextPlayerId] = packsByPlayer[currentPlayerId] ?: emptyList()
-        }
-
-        // Apply the new pack assignments
-        newPackAssignments.forEach { (playerId, pack) ->
-            players[playerId]?.currentPack = pack
-            players[playerId]?.hasPicked = false
-        }
-
-        currentPickNumber += picksPerRound
-        return true
     }
 
     /**
@@ -606,7 +633,7 @@ class TournamentLobby(
         // Clear pack state
         players.forEach { (_, state) ->
             state.currentPack = null
-            state.hasPicked = false
+            state.packQueue.clear()
         }
 
         state = LobbyState.DECK_BUILDING
@@ -632,10 +659,10 @@ class TournamentLobby(
     }
 
     /**
-     * Get the list of player IDs who haven't picked yet.
+     * Get the list of player IDs who currently have a pack to pick from.
      */
-    fun getPlayersWaitingToPick(): List<EntityId> {
-        return players.filterValues { !it.hasPicked }.keys.toList()
+    fun getPlayersWithPacks(): List<EntityId> {
+        return players.filterValues { it.currentPack != null }.keys.toList()
     }
 
     // =========================================================================

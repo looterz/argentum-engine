@@ -844,6 +844,7 @@ export interface DraftPackReceivedMessage {
   readonly passDirection: 'LEFT' | 'RIGHT'
   readonly picksPerRound: number  // Cards to pick this round (1 or 2)
   readonly pickedCards?: readonly SealedCardInfo[]  // Cards already picked (for reconnect)
+  readonly queuedPacks?: number  // Number of additional packs queued behind this one
 }
 
 /**
@@ -853,7 +854,7 @@ export interface DraftPickMadeMessage {
   readonly type: 'draftPickMade'
   readonly playerId: string
   readonly playerName: string
-  readonly waitingForPlayers: readonly string[]
+  readonly playerPackCounts: Readonly<Record<string, number>>  // playerName → total packs held
 }
 
 /**

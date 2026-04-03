@@ -328,7 +328,8 @@ export interface DraftState {
   timeRemaining: number
   passDirection: 'LEFT' | 'RIGHT'
   picksPerRound: number
-  waitingForPlayers: readonly string[]
+  queuedPacks: number
+  playerPackCounts: Readonly<Record<string, number>>
 }
 
 /**

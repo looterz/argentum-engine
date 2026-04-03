@@ -435,18 +435,19 @@ sealed interface ServerMessage {
         val timeRemainingSeconds: Int,
         val passDirection: String,     // "LEFT" or "RIGHT"
         val picksPerRound: Int = 1,    // Cards to pick this round (1 or 2)
-        val pickedCards: List<SealedCardInfo> = emptyList()  // Cards already picked (for reconnect)
+        val pickedCards: List<SealedCardInfo> = emptyList(),  // Cards already picked (for reconnect)
+        val queuedPacks: Int = 0       // Number of additional packs queued behind this one
     ) : ServerMessage
 
     /**
-     * Another player made a pick - broadcast to show who is still waiting.
+     * Another player made a pick - broadcast with per-player pack counts.
      */
     @Serializable
     @SerialName("draftPickMade")
     data class DraftPickMade(
         val playerId: String,
         val playerName: String,
-        val waitingForPlayers: List<String>
+        val playerPackCounts: Map<String, Int>  // playerName → total packs held (current + queue)
     ) : ServerMessage
 
     /**

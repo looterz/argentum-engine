@@ -44,7 +44,7 @@ fun TournamentLobby.toPersistent(): PersistentTournamentLobby {
                 token = playerState.identity.token,
                 cardPoolNames = playerState.cardPool.map { it.name },
                 currentPackNames = playerState.currentPack?.map { it.name },
-                hasPicked = playerState.hasPicked,
+                packQueueNames = playerState.packQueue.map { pack -> pack.map { it.name } },
                 submittedDeck = playerState.submittedDeck,
                 currentSpectatingGameId = playerState.identity.currentSpectatingGameId
             )
@@ -118,11 +118,16 @@ fun restoreTournamentLobby(
             cardRegistry.getCard(cardName)
         }
 
+        // Resolve queued packs for async draft
+        val packQueue = persistentPlayer.packQueueNames.map { packNames ->
+            packNames.mapNotNull { cardName -> cardRegistry.getCard(cardName) }
+        }.toMutableList()
+
         val playerState = LobbyPlayerState(
             identity = identity,
             cardPool = cardPool,
             currentPack = currentPack,
-            hasPicked = persistentPlayer.hasPicked,
+            packQueue = packQueue,
             submittedDeck = persistentPlayer.submittedDeck
         )
         lobby.players[playerId] = playerState

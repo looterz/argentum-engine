@@ -931,8 +931,8 @@ class LobbyHandler(
                 // Send first packs to all players (AI sessions will auto-pick via callbacks)
                 boosterDraftHandler.broadcastDraftPacks(lobby)
 
-                // Start the pick timer
-                boosterDraftHandler.startDraftTimer(lobby)
+                // Start per-player pick timers
+                boosterDraftHandler.startAllPlayerTimers(lobby)
             }
 
             TournamentFormat.WINSTON_DRAFT -> {
@@ -1165,48 +1165,22 @@ class LobbyHandler(
     private fun handleAiBoosterDraftPick(lobby: TournamentLobby, playerId: EntityId, cardNames: List<String>) {
         if (lobby.state != LobbyState.DRAFTING) return
 
-        val result = lobby.makePick(playerId, cardNames)
-        when (result) {
-            is com.wingedsheep.gameserver.lobby.PickResult.Success -> {
-                val playerState = lobby.players[playerId]
-                logger.info("AI ${playerState?.identity?.playerName} picked ${result.pickedCards.map { it.name }.joinToString(", ")} (${result.totalPicked} total)")
+        synchronized(lobby.draftLock) {
+            val playerState = lobby.players[playerId]
+            val identity = playerState?.identity ?: return
 
-                val ws = playerState?.identity?.webSocketSession
-                if (ws != null && ws.isOpen) {
-                    sender.send(ws, ServerMessage.DraftPickConfirmed(
-                        cardNames = result.pickedCards.map { it.name },
-                        totalPicked = result.totalPicked
-                    ))
+            val result = lobby.makePick(playerId, cardNames)
+            when (result) {
+                is com.wingedsheep.gameserver.lobby.PickResult.Success -> {
+                    boosterDraftHandler.processPickResult(lobby, playerId, identity, result)
                 }
-
-                // Broadcast pick made
-                val identity = playerState?.identity
-                if (identity != null) {
-                    val message = ServerMessage.DraftPickMade(
-                        playerId = identity.playerId.value,
-                        playerName = identity.playerName,
-                        waitingForPlayers = result.waitingForPlayers
-                    )
-                    lobby.players.forEach { (_, ps) ->
-                        val pws = ps.identity.webSocketSession
-                        if (pws != null && pws.isOpen) {
-                            sender.send(pws, message)
-                        }
+                is com.wingedsheep.gameserver.lobby.PickResult.Error -> {
+                    logger.warn("AI draft pick failed for {}: {}", playerId.value, result.message)
+                    // Fallback: auto-pick first cards
+                    val fallback = lobby.autoPickFirstCards(playerId)
+                    if (fallback is com.wingedsheep.gameserver.lobby.PickResult.Success) {
+                        boosterDraftHandler.processPickResult(lobby, playerId, identity, fallback)
                     }
-                }
-
-                lobbyRepository.saveLobby(lobby)
-
-                if (lobby.allPlayersPicked()) {
-                    boosterDraftHandler.processDraftRound(lobby)
-                }
-            }
-            is com.wingedsheep.gameserver.lobby.PickResult.Error -> {
-                logger.warn("AI draft pick failed for {}: {}", playerId.value, result.message)
-                // Fallback: auto-pick first cards
-                val fallback = lobby.autoPickFirstCards(playerId)
-                if (fallback is com.wingedsheep.gameserver.lobby.PickResult.Success && lobby.allPlayersPicked()) {
-                    boosterDraftHandler.processDraftRound(lobby)
                 }
             }
         }
@@ -1528,9 +1502,10 @@ class LobbyHandler(
 
         logger.info("Host ${identity.playerName} stopped lobby $lobbyId")
 
-        // Cancel the pick timer if we're in drafting
+        // Cancel all timers if we're in drafting
         lobby.pickTimerJob?.cancel()
         lobby.pickTimerJob = null
+        lobby.cancelAllPlayerTimers()
 
         // Notify all players that the lobby was stopped
         lobby.players.forEach { (_, playerState) ->

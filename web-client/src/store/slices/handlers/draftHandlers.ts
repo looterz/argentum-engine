@@ -104,7 +104,8 @@ export function createDraftHandlers(set: SetState, _get: GetState): Pick<Message
                 timeRemaining: msg.timeRemainingSeconds,
                 passDirection: msg.passDirection,
                 picksPerRound: msg.picksPerRound,
-                waitingForPlayers: [],
+                queuedPacks: msg.queuedPacks ?? 0,
+                playerPackCounts: state.lobbyState.draftState?.playerPackCounts ?? {},
               },
             }
           : null,
@@ -116,7 +117,7 @@ export function createDraftHandlers(set: SetState, _get: GetState): Pick<Message
         lobbyState: state.lobbyState?.draftState
           ? {
               ...state.lobbyState,
-              draftState: { ...state.lobbyState.draftState, waitingForPlayers: msg.waitingForPlayers },
+              draftState: { ...state.lobbyState.draftState, playerPackCounts: msg.playerPackCounts },
             }
           : state.lobbyState,
       }))

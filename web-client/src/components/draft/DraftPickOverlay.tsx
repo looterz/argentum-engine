@@ -29,37 +29,32 @@ function DraftPicker({ draftState, settings }: { draftState: DraftState; setting
   const playerId = useGameStore((s) => s.playerId)
   const isHost = lobbyState?.isHost ?? false
 
-  // Calculate neighbors based on pass direction
-  const neighbors = useMemo(() => {
+  // Build ordered player list in pack-passing order with pack counts
+  const playerOrder = useMemo(() => {
     const players = lobbyState?.players ?? []
     if (players.length < 2 || !playerId) return null
 
     const myIndex = players.findIndex((p) => p.playerId === playerId)
     if (myIndex === -1) return null
 
+    // Order players in passing direction starting from "you"
+    // LEFT passes from i to i+1, RIGHT passes from i to i-1
     const n = players.length
-    const leftIndex = (myIndex - 1 + n) % n
-    const rightIndex = (myIndex + 1) % n
+    const step = draftState.passDirection === 'LEFT' ? 1 : -1
+    const ordered: Array<{ name: string; isYou: boolean; packCount: number }> = []
 
-    const leftPlayer = players[leftIndex]
-    const rightPlayer = players[rightIndex]
-
-    // Based on pass direction, determine who we're passing to and receiving from.
-    // Backend LEFT passes from index i to i+1 (rightPlayer), RIGHT passes to i-1 (leftPlayer).
-    const passingTo = draftState.passDirection === 'LEFT' ? rightPlayer : leftPlayer
-    const receivingFrom = draftState.passDirection === 'LEFT' ? leftPlayer : rightPlayer
-
-    return {
-      passingTo: passingTo ? {
-        name: passingTo.playerName,
-        isWaiting: draftState.waitingForPlayers.includes(passingTo.playerName),
-      } : null,
-      receivingFrom: receivingFrom ? {
-        name: receivingFrom.playerName,
-        isWaiting: draftState.waitingForPlayers.includes(receivingFrom.playerName),
-      } : null,
+    for (let i = 0; i < n; i++) {
+      const idx = ((myIndex + i * step) % n + n) % n
+      const p = players[idx]!
+      ordered.push({
+        name: p.playerName,
+        isYou: p.playerId === playerId,
+        packCount: draftState.playerPackCounts[p.playerName] ?? 0,
+      })
     }
-  }, [lobbyState?.players, playerId, draftState.passDirection, draftState.waitingForPlayers])
+
+    return ordered
+  }, [lobbyState?.players, playerId, draftState.passDirection, draftState.playerPackCounts])
 
   const [hoveredCard, setHoveredCard] = useState<SealedCardInfo | null>(null)
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null)
@@ -240,7 +235,7 @@ function DraftPicker({ draftState, settings }: { draftState: DraftState; setting
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           {/* Pack flow indicator */}
-          <PassDirectionIndicator neighbors={neighbors} />
+          <PassDirectionIndicator playerOrder={playerOrder} passDirection={draftState.passDirection} />
 
           {/* Timer - only show when player has a pack to pick from */}
           {draftState.currentPack.length > 0 ? (
@@ -338,9 +333,22 @@ function DraftPicker({ draftState, settings }: { draftState: DraftState; setting
             overflow: 'hidden',
           }}
         >
-          {/* Waiting indicator */}
-          {draftState.waitingForPlayers.length > 0 && (
-            <WaitingIndicator players={draftState.waitingForPlayers} />
+          {/* Queued packs indicator */}
+          {draftState.queuedPacks > 0 && draftState.currentPack.length > 0 && (
+            <div
+              style={{
+                padding: '8px 16px',
+                backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                borderBottom: '1px solid rgba(255, 152, 0, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              <span style={{ color: '#ff9800', fontSize: 13 }}>
+                {draftState.queuedPacks} more {draftState.queuedPacks === 1 ? 'pack' : 'packs'} queued
+              </span>
+            </div>
           )}
 
           {/* Pack cards grid */}
@@ -492,99 +500,159 @@ function PackPickIndicator({ packNumber, pickNumber, totalPacks }: { packNumber:
 }
 
 function PassDirectionIndicator({
-  neighbors,
+  playerOrder,
+  passDirection,
 }: {
-  neighbors: {
-    passingTo: { name: string; isWaiting: boolean } | null
-    receivingFrom: { name: string; isWaiting: boolean } | null
-  } | null
+  playerOrder: Array<{ name: string; isYou: boolean; packCount: number }> | null
+  passDirection: 'LEFT' | 'RIGHT'
 }) {
+  if (!playerOrder) return null
+
   return (
     <div
       style={{
         display: 'flex',
         alignItems: 'center',
         gap: 0,
-        padding: '4px 6px',
+        padding: '4px 8px',
         backgroundColor: '#2a2a2a',
         borderRadius: 6,
         border: '1px solid #444',
       }}
     >
-      {/* From player */}
-      {neighbors?.receivingFrom && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '2px 8px',
-            borderRadius: 4,
-            backgroundColor: 'rgba(255, 255, 255, 0.04)',
-          }}
-        >
-          <span
-            style={{
-              color: neighbors.receivingFrom.isWaiting ? '#ff9800' : '#4caf50',
-              fontSize: 11,
-              fontWeight: 600,
-              maxWidth: 100,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {neighbors.receivingFrom.name}
-            {neighbors.receivingFrom.isWaiting && ' ...'}
-          </span>
-        </div>
-      )}
-
-      {/* Arrow: from → you */}
-      <span style={{ color: '#666', fontSize: 13, padding: '0 4px' }}>→</span>
-
-      {/* You (center) */}
-      <div
+      {/* Direction label */}
+      <span
         style={{
-          padding: '2px 10px',
-          backgroundColor: 'rgba(79, 195, 247, 0.15)',
-          borderRadius: 4,
-          border: '1px solid rgba(79, 195, 247, 0.3)',
+          color: '#666',
+          fontSize: 10,
+          fontWeight: 600,
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          marginRight: 8,
+          whiteSpace: 'nowrap',
         }}
       >
-        <span style={{ color: '#4fc3f7', fontSize: 11, fontWeight: 700 }}>You</span>
-      </div>
+        Pass {passDirection === 'LEFT' ? 'L' : 'R'}
+      </span>
 
-      {/* Arrow: you → to */}
-      <span style={{ color: '#666', fontSize: 13, padding: '0 4px' }}>→</span>
+      {/* Player nodes in passing order */}
+      {playerOrder.map((player, i) => {
+        // 0 packs = idle/waiting, 1 = choosing, 2+ = packs queuing up
+        const isIdle = player.packCount === 0
+        const hasQueue = player.packCount > 1
 
-      {/* To player */}
-      {neighbors?.passingTo && (
+        return (
+          <div key={player.name} style={{ display: 'flex', alignItems: 'center' }}>
+            {/* Arrow between players */}
+            {i > 0 && (
+              <span style={{ color: '#555', fontSize: 11, padding: '0 2px', flexShrink: 0 }}>
+                {'\u203A'}
+              </span>
+            )}
+
+            {/* Player node */}
+            <div
+              style={{
+                padding: '2px 8px',
+                borderRadius: 4,
+                backgroundColor: player.isYou
+                  ? 'rgba(79, 195, 247, 0.15)'
+                  : isIdle
+                    ? 'rgba(255, 255, 255, 0.02)'
+                    : 'rgba(255, 255, 255, 0.04)',
+                border: player.isYou
+                  ? '1px solid rgba(79, 195, 247, 0.3)'
+                  : '1px solid transparent',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                opacity: isIdle && !player.isYou ? 0.5 : 1,
+              }}
+            >
+              {/* Pack stack indicator */}
+              <PackStackIcon count={player.packCount} />
+
+              <span
+                style={{
+                  color: player.isYou
+                    ? '#4fc3f7'
+                    : isIdle
+                      ? '#666'
+                      : hasQueue
+                        ? '#ff9800'
+                        : '#8bc34a',
+                  fontSize: 11,
+                  fontWeight: player.isYou ? 700 : 600,
+                  maxWidth: 80,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {player.isYou ? 'You' : player.name}
+              </span>
+            </div>
+          </div>
+        )
+      })}
+
+      {/* Wrap-around arrow back to first player */}
+      <span style={{ color: '#555', fontSize: 11, padding: '0 2px', flexShrink: 0 }}>
+        {'\u21BB'}
+      </span>
+    </div>
+  )
+}
+
+/** Visual indicator showing pack count as stacked card icons. */
+function PackStackIcon({ count }: { count: number }) {
+  if (count === 0) {
+    // Empty — no pack
+    return (
+      <div
+        style={{
+          width: 8,
+          height: 10,
+          borderRadius: 1,
+          border: '1px dashed #555',
+          flexShrink: 0,
+        }}
+      />
+    )
+  }
+
+  // Show stacked cards for count >= 1
+  return (
+    <div style={{ position: 'relative', width: 8 + Math.min(count - 1, 3) * 2, height: 12, flexShrink: 0 }}>
+      {Array.from({ length: Math.min(count, 4) }, (_, i) => (
         <div
+          key={i}
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '2px 8px',
-            borderRadius: 4,
-            backgroundColor: 'rgba(255, 255, 255, 0.04)',
+            position: 'absolute',
+            left: i * 2,
+            top: i === 0 ? 0 : 1,
+            width: 8,
+            height: 10,
+            borderRadius: 1,
+            backgroundColor: count > 1 ? '#ff9800' : '#4caf50',
+            border: '1px solid rgba(0,0,0,0.3)',
+          }}
+        />
+      ))}
+      {count > 1 && (
+        <span
+          style={{
+            position: 'absolute',
+            right: -2,
+            top: -4,
+            fontSize: 8,
+            fontWeight: 700,
+            color: '#ff9800',
+            lineHeight: 1,
           }}
         >
-          <span
-            style={{
-              color: neighbors.passingTo.isWaiting ? '#ff9800' : '#4caf50',
-              fontSize: 11,
-              fontWeight: 600,
-              maxWidth: 100,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {neighbors.passingTo.name}
-            {neighbors.passingTo.isWaiting && ' ...'}
-          </span>
-        </div>
+          {count}
+        </span>
       )}
     </div>
   )
@@ -629,25 +697,6 @@ function Timer({ seconds, warning }: { seconds: number; warning: boolean }) {
   )
 }
 
-function WaitingIndicator({ players }: { players: readonly string[] }) {
-  return (
-    <div
-      style={{
-        padding: '8px 16px',
-        backgroundColor: 'rgba(255, 152, 0, 0.1)',
-        borderBottom: '1px solid rgba(255, 152, 0, 0.3)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-      }}
-    >
-      <span style={{ color: '#ff9800', fontSize: 13 }}>Waiting for:</span>
-      <span style={{ color: '#ffcc80', fontSize: 13 }}>
-        {players.join(', ')}
-      </span>
-    </div>
-  )
-}
 
 function PackCard({
   card,

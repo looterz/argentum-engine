@@ -80,6 +80,13 @@ class LobbySharedContext(
         }
     }
 
+    fun sendTimerUpdateToPlayer(lobby: TournamentLobby, playerId: com.wingedsheep.sdk.model.EntityId, secondsRemaining: Int) {
+        val ws = lobby.players[playerId]?.identity?.webSocketSession
+        if (ws != null && ws.isOpen) {
+            sender.send(ws, ServerMessage.DraftTimerUpdate(secondsRemaining))
+        }
+    }
+
     fun cleanUpSpectatingState(identity: PlayerIdentity) {
         val spectatingGameId = identity.currentSpectatingGameId ?: return
         val gameSession = gameRepository.findById(spectatingGameId)
