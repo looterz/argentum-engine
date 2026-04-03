@@ -63,6 +63,7 @@ object BloomburrowSet {
         CoruscationMage,
         CrumbAndGetIt,
         CuriousForager,
+        DaringWaverider,
         DaggerfangDuo,
         DarkstarAugur,
         DazzlingDenial,

@@ -16,6 +16,7 @@ class LibraryExecutors(
         ShuffleLibraryExecutor(),
         GrantMayPlayFromExileExecutor(),
         GrantPlayWithoutPayingCostExecutor(),
+        GrantFreeCastTargetFromExileExecutor(),
         RevealUntilExecutor(),
         ExileFromTopRepeatingExecutor(),
         PutCreatureFromHandSharingTypeExecutor(),

@@ -330,6 +330,7 @@ constructors.
 | `TakeFromLinkedExileEffect`                                                         | (object)                                            | Put top card of linked exile pile into hand       |
 | `GrantMayPlayFromExileEffect`                                                       | `from`                                              | Grant play-from-exile permission to cards in collection |
 | `GrantPlayWithoutPayingCostEffect`                                                  | `from`                                              | Grant play-without-paying-cost to cards in collection  |
+| `GrantFreeCastTargetFromExileEffect`                                                | `target, exileAfterResolve`                         | Grant single target in exile free cast + optional exile-after-resolve |
 | `ExileFromTopRepeatingEffect`                                                       | `matchFilter, repeatIfManaValueAtLeast, damagePerCard` | Exile from top until match, put in hand, repeat if MV >= threshold, deal damage (Demonlord Belzenlok) |
 
 ### Mana

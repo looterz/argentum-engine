@@ -25,6 +25,7 @@ import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.engine.state.components.identity.MorphDataComponent
 import com.wingedsheep.engine.state.components.identity.MayPlayFromExileComponent
+import com.wingedsheep.engine.state.components.identity.ExileAfterResolveComponent
 import com.wingedsheep.engine.state.components.identity.PlayWithoutPayingCostComponent
 import com.wingedsheep.engine.state.components.identity.RevealedToComponent
 import com.wingedsheep.engine.state.components.identity.TextReplacementComponent
@@ -866,7 +867,8 @@ class StackResolver(
                 val pausedSelfExile = pausedCardDef?.script?.selfExileOnResolve == true
                 val pausedFlashbackExile = spellComponent.castFromZone == Zone.GRAVEYARD &&
                     pausedCardDef?.keywordAbilities?.any { it is KeywordAbility.Flashback } == true
-                val pausedDestZone = if (pausedSelfExile || pausedFlashbackExile) Zone.EXILE else Zone.GRAVEYARD
+                val pausedExileAfterResolve = effectResult.state.getEntity(spellId)?.has<ExileAfterResolveComponent>() == true
+                val pausedDestZone = if (pausedSelfExile || pausedFlashbackExile || pausedExileAfterResolve) Zone.EXILE else Zone.GRAVEYARD
                 val pausedDestZoneKey = ZoneKey(ownerId, pausedDestZone)
 
                 // Move spell to graveyard/exile even though effect is paused
@@ -899,13 +901,14 @@ class StackResolver(
             events.addAll(effectResult.events)
         }
 
-        // Move to graveyard (or exile if selfExileOnResolve or flashback)
+        // Move to graveyard (or exile if selfExileOnResolve, flashback, or ExileAfterResolveComponent)
         val ownerId = cardComponent?.ownerId ?: spellComponent.casterId
         val cardDef = cardComponent?.let { cardRegistry.getCard(it.name) }
         val selfExile = cardDef?.script?.selfExileOnResolve == true
         val flashbackExile = spellComponent.castFromZone == Zone.GRAVEYARD &&
             cardDef?.keywordAbilities?.any { it is KeywordAbility.Flashback } == true
-        val destinationZone = if (selfExile || flashbackExile) Zone.EXILE else Zone.GRAVEYARD
+        val exileAfterResolve = newState.getEntity(spellId)?.has<ExileAfterResolveComponent>() == true
+        val destinationZone = if (selfExile || flashbackExile || exileAfterResolve) Zone.EXILE else Zone.GRAVEYARD
         val destZoneKey = ZoneKey(ownerId, destinationZone)
 
         newState = newState.updateEntity(spellId) { c ->
@@ -939,7 +942,8 @@ class StackResolver(
         val cardDef = cardComponent?.let { cardRegistry.getCard(it.name) }
         val flashbackExile = spellComponent.castFromZone == Zone.GRAVEYARD &&
             cardDef?.keywordAbilities?.any { it is KeywordAbility.Flashback } == true
-        val destZone = if (flashbackExile) Zone.EXILE else Zone.GRAVEYARD
+        val exileAfterResolve = state.getEntity(spellId)?.has<ExileAfterResolveComponent>() == true
+        val destZone = if (flashbackExile || exileAfterResolve) Zone.EXILE else Zone.GRAVEYARD
         val destZoneKey = ZoneKey(ownerId, destZone)
 
         var newState = state.updateEntity(spellId) { c ->
@@ -1328,9 +1332,11 @@ class StackResolver(
         // Remove from stack
         var newState = state.removeFromStack(spellId)
 
-        // Put in graveyard
-        val graveyardZone = ZoneKey(ownerId, Zone.GRAVEYARD)
-        newState = newState.addToZone(graveyardZone, spellId)
+        // Put in graveyard (or exile if ExileAfterResolveComponent is present)
+        val exileAfterResolve = container.has<ExileAfterResolveComponent>()
+        val destZone = if (exileAfterResolve) Zone.EXILE else Zone.GRAVEYARD
+        val destZoneKey = ZoneKey(ownerId, destZone)
+        newState = newState.addToZone(destZoneKey, spellId)
 
         // Remove stack components
         newState = newState.updateEntity(spellId) { c ->
@@ -1345,7 +1351,7 @@ class StackResolver(
                     spellId,
                     cardComponent?.name ?: "Unknown",
                     null,
-                    Zone.GRAVEYARD,
+                    destZone,
                     ownerId
                 )
             )

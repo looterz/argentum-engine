@@ -37,6 +37,7 @@ import com.wingedsheep.sdk.scripting.effects.EachPlayerReturnsPermanentToHandEff
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.GrantMayPlayFromExileEffect
 import com.wingedsheep.sdk.scripting.effects.GrantPlayWithoutPayingCostEffect
+import com.wingedsheep.sdk.scripting.effects.GrantFreeCastTargetFromExileEffect
 import com.wingedsheep.sdk.scripting.effects.FightEffect
 import com.wingedsheep.sdk.scripting.effects.ForceSacrificeEffect
 import com.wingedsheep.sdk.scripting.effects.SacrificeTargetEffect
@@ -437,6 +438,17 @@ object Effects {
      * Card must still be in a playable zone (hand, or exile with GrantMayPlayFromExile).
      */
     fun GrantPlayWithoutPayingCost(from: String): Effect = GrantPlayWithoutPayingCostEffect(from)
+
+    /**
+     * Grant a single target entity in exile permission to be cast without paying its mana cost.
+     * Optionally marks the spell to be exiled instead of going to graveyard after resolution.
+     * Used for effects like "you may cast target card without paying its mana cost. If that
+     * spell would be put into a graveyard, exile it instead."
+     */
+    fun GrantFreeCastTargetFromExile(
+        target: EffectTarget = EffectTarget.ContextTarget(0),
+        exileAfterResolve: Boolean = false
+    ): Effect = GrantFreeCastTargetFromExileEffect(target, exileAfterResolve)
 
     /**
      * Put onto the battlefield.

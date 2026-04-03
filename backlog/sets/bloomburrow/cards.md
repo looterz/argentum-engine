@@ -2,12 +2,12 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 228 / 266
+**Implemented:** 229 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 34   |
-| Blue       | 41    | 33   |
+| Blue       | 41    | 34   |
 | Black      | 40    | 35   |
 | Red        | 41    | 34   |
 | Green      | 41    | 36   |
@@ -62,7 +62,7 @@
 - [x] Crumb and Get It
 - [x] Curious Forager
 - [x] Daggerfang Duo
-- [ ] Daring Waverider
+- [x] Daring Waverider
 - [x] Darkstar Augur
 - [x] Dawn's Truce
 - [x] Dazzling Denial

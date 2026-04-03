@@ -70,3 +70,14 @@ data class PlayWithoutPayingCostComponent(
     val controllerId: EntityId,
     val permanent: Boolean = false
 ) : Component
+
+/**
+ * Marks a spell so that if it would be put into a graveyard after resolving or being
+ * countered, it is exiled instead. Used by effects like Daring Waverider that grant
+ * one-shot free casts from exile with "exile it instead" clauses.
+ *
+ * The [StackResolver] checks for this component when determining the destination zone
+ * after a spell resolves or fizzles.
+ */
+@Serializable
+data object ExileAfterResolveComponent : Component

@@ -5,6 +5,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.ZonePlacement
 import com.wingedsheep.sdk.scripting.references.Player
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.targets.TargetRequirement
 import com.wingedsheep.sdk.scripting.text.TextReplacer
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
@@ -606,6 +607,33 @@ data class GrantPlayWithoutPayingCostEffect(
 ) : Effect {
     override val description: String =
         "Until end of turn, you may play the $from cards without paying their mana costs"
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
+}
+
+/**
+ * Grant a single target entity in exile permission to be cast without paying
+ * its mana cost. Adds MayPlayFromExileComponent and PlayWithoutPayingCostComponent
+ * to the target entity. Optionally marks the spell with ExileAfterResolveComponent
+ * so it goes to exile instead of graveyard after resolving or being countered.
+ *
+ * Unlike the collection-based [GrantMayPlayFromExileEffect] + [GrantPlayWithoutPayingCostEffect],
+ * this works on a single targeted entity referenced by [EffectTarget].
+ *
+ * @property target The entity in exile to grant free cast permission to
+ * @property exileAfterResolve If true, the spell will be exiled instead of going to
+ *   graveyard after resolution (like Flashback). Used for "exile it instead" clauses.
+ */
+@SerialName("GrantFreeCastTargetFromExile")
+@Serializable
+data class GrantFreeCastTargetFromExileEffect(
+    val target: EffectTarget = EffectTarget.ContextTarget(0),
+    val exileAfterResolve: Boolean = false
+) : Effect {
+    override val description: String = buildString {
+        append("You may cast ${target.description} without paying its mana cost")
+        if (exileAfterResolve) append(". If that spell would be put into a graveyard, exile it instead")
+    }
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
 }
