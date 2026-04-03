@@ -575,15 +575,16 @@ class CombatAdvisor(
             .filter { it !in blockedAttackers }
             .sortedByDescending { CombatMath.effectiveDamage(projected, it) }
 
-        // Life-scaled trade acceptance: at low life, accept worse blocking trades
+        // Life-scaled trade acceptance for blocking:
+        // When blocking, we're both killing the attacker AND preventing damage.
+        // The trade threshold accounts for the damage prevention value.
         val playerId = state.turnOrder.find { id ->
             validBlockers.any { projected.getController(it) == id }
         }
         val myLife = if (playerId != null) {
             state.getEntity(playerId)?.get<LifeTotalComponent>()?.life ?: 20
         } else 20
-        // diff: at 20 life = 35 (very conservative), at 5 life = 5 (trade almost evenly)
-        val diff = (myLife * 2) - 5
+        val tradeRatio = CombatMath.tradeWillingnessRatio(myLife)
 
         for (attacker in unblocked) {
             val aPower = projected.getPower(attacker) ?: 0
@@ -612,9 +613,10 @@ class CombatAdvisor(
                     val effectivelyKillThem = weKillThem && blockerDealsDamage
 
                     // Accept trade if: blocker survives, or blocker kills attacker and the trade
-                    // is acceptable given our life-scaled willingness (diff)
+                    // is acceptable given life-scaled willingness. For blocking, we also prevent
+                    // damage, so we're more willing to trade than when attacking.
                     (effectivelyKillThem && weSurvive) ||
-                        (effectivelyKillThem && blockerValue + diff < attackerValue)
+                        (effectivelyKillThem && blockerValue * tradeRatio <= attackerValue)
                 }
                 .minByOrNull { CombatMath.creatureValue(state, projected, it) }
 

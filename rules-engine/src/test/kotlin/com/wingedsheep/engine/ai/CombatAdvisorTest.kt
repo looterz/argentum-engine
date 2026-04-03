@@ -444,6 +444,237 @@ class CombatAdvisorTest : FunSpec({
     }
 
     // ═════════════════════════════════════════════════════════════════════
+    // Blocking: profitable blocks
+    // ═════════════════════════════════════════════════════════════════════
+
+    test("blocks 3/3 attacker with 4/5 that survives") {
+        // Reproduces the user's bug: Stickytongue Sentinel (3/3) attacks,
+        // opponent has Bellowing Saddlebrute (4/5) and Goblin Turncoat (2/1).
+        // The 4/5 should block and kill the 3/3 while surviving.
+        val saddlebrute = CardDefinition.creature(
+            name = "Bellowing Saddlebrute",
+            manaCost = ManaCost.parse("{3}{B}"),
+            subtypes = setOf(Subtype("Orc"), Subtype("Warrior")),
+            power = 4, toughness = 5
+        )
+        val turncoat = CardDefinition.creature(
+            name = "Goblin Turncoat",
+            manaCost = ManaCost.parse("{1}{B}"),
+            subtypes = setOf(Subtype("Goblin"), Subtype("Mercenary")),
+            power = 2, toughness = 1
+        )
+        val cards = listOf(bigGround, saddlebrute, turncoat)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        // P1 attacks with a 3/3
+        val attacker = driver.putCreatureOnBattlefield(p1, "Hill Giant")
+        driver.removeSummoningSickness(attacker)
+
+        // P2 has a 4/5 and a 2/1
+        val blocker45 = driver.putCreatureOnBattlefield(p2, "Bellowing Saddlebrute")
+        val blocker21 = driver.putCreatureOnBattlefield(p2, "Goblin Turncoat")
+        driver.removeSummoningSickness(blocker45)
+        driver.removeSummoningSickness(blocker21)
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(attacker to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        val legalAction = buildBlockAction(p2, listOf(blocker45, blocker21))
+        val result = advisor.chooseBlockers(driver.state, legalAction, p2) as DeclareBlockers
+
+        // The 4/5 should block: kills attacker and survives
+        result.blockers shouldContainKey blocker45
+        result.blockers[blocker45] shouldBe listOf(attacker)
+    }
+
+    test("blocks with smaller creature that can kill attacker in a trade") {
+        // 2/2 blocks a 2/2 — even trade, should block to prevent 2 damage
+        val cards = listOf(groundBlocker)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Grizzly Bears")
+        driver.removeSummoningSickness(attacker)
+
+        val blocker = driver.putCreatureOnBattlefield(p2, "Grizzly Bears")
+        driver.removeSummoningSickness(blocker)
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(attacker to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        val legalAction = buildBlockAction(p2, listOf(blocker))
+        val result = advisor.chooseBlockers(driver.state, legalAction, p2) as DeclareBlockers
+
+        // At 20 life, this is an even trade. In profit mode, we kill them and the diff
+        // should allow it. The blocker kills the attacker.
+        result.blockers shouldContainKey blocker
+    }
+
+    test("does not block when blocker would die without killing attacker") {
+        // 1/1 can't kill a 3/3 — chump blocking isn't profitable at 20 life
+        val cards = listOf(bigGround, smallCreature)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Hill Giant")
+        driver.removeSummoningSickness(attacker)
+
+        val blocker = driver.putCreatureOnBattlefield(p2, "Eager Cadet")
+        driver.removeSummoningSickness(blocker)
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(attacker to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        val legalAction = buildBlockAction(p2, listOf(blocker))
+        val result = advisor.chooseBlockers(driver.state, legalAction, p2) as DeclareBlockers
+
+        // At 20 life, shouldn't chump block a 3/3 with a 1/1
+        result.blockers shouldNotContainKey blocker
+    }
+
+    test("chump blocks when incoming damage is lethal") {
+        // At 3 life, a 3/3 is lethal — must chump block with 1/1
+        val cards = listOf(bigGround, smallCreature)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Hill Giant")
+        driver.removeSummoningSickness(attacker)
+
+        val blocker = driver.putCreatureOnBattlefield(p2, "Eager Cadet")
+        driver.removeSummoningSickness(blocker)
+
+        driver.replaceState(driver.state.withLifeTotal(p2, 3))
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(attacker to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        val legalAction = buildBlockAction(p2, listOf(blocker))
+        val result = advisor.chooseBlockers(driver.state, legalAction, p2) as DeclareBlockers
+
+        // Must chump block to survive
+        result.blockers shouldContainKey blocker
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    // Attacking: basic scenarios
+    // ═════════════════════════════════════════════════════════════════════
+
+    test("attacks with creature when opponent has no blockers") {
+        val cards = listOf(bigGround)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Hill Giant")
+        driver.removeSummoningSickness(attacker)
+
+        val legalAction = buildAttackAction(p1, listOf(attacker), listOf(p2))
+        val result = advisor.chooseAttackers(driver.state, legalAction, p1) as DeclareAttackers
+
+        result.attackers shouldContainKey attacker
+    }
+
+    test("attacks with creature when it survives all blockers") {
+        // 6/6 vs opponent's 2/2 — we survive any block and deal damage
+        val cards = listOf(bigCreature, groundBlocker)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Colossus")
+        driver.removeSummoningSickness(attacker)
+
+        val blocker = driver.putCreatureOnBattlefield(p2, "Grizzly Bears")
+        driver.removeSummoningSickness(blocker)
+
+        val legalAction = buildAttackAction(p1, listOf(attacker), listOf(p2))
+        val result = advisor.chooseAttackers(driver.state, legalAction, p1) as DeclareAttackers
+
+        result.attackers shouldContainKey attacker
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    // Strategist: combat actions not short-circuited
+    // ═════════════════════════════════════════════════════════════════════
+
+    test("Strategist delegates single DeclareAttackers to CombatAdvisor") {
+        val cards = listOf(bigGround)
+        val (driver, registry, _) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Hill Giant")
+        driver.removeSummoningSickness(attacker)
+
+        val simulator = GameSimulator(registry)
+        val evaluator = AIPlayer.defaultEvaluator()
+        val strategist = Strategist(simulator, evaluator)
+
+        val legalAction = buildAttackAction(p1, listOf(attacker), listOf(p2))
+        val chosen = strategist.chooseAction(driver.state, listOf(legalAction), p1)
+        val result = chosen.action as DeclareAttackers
+
+        // Should NOT return the default empty map — CombatAdvisor should populate it
+        result.attackers.size shouldBeGreaterThan 0
+    }
+
+    test("Strategist delegates single DeclareBlockers to CombatAdvisor") {
+        val cards = listOf(bigGround, groundBlocker)
+        val (driver, registry, _) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        // P1 attacks with 2/2
+        val attacker = driver.putCreatureOnBattlefield(p1, "Grizzly Bears")
+        driver.removeSummoningSickness(attacker)
+
+        // P2 has 3/3 that can kill and survive
+        val blocker = driver.putCreatureOnBattlefield(p2, "Hill Giant")
+        driver.removeSummoningSickness(blocker)
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(attacker to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        val simulator = GameSimulator(registry)
+        val evaluator = AIPlayer.defaultEvaluator()
+        val strategist = Strategist(simulator, evaluator)
+
+        val legalAction = buildBlockAction(p2, listOf(blocker))
+        val chosen = strategist.chooseAction(driver.state, listOf(legalAction), p2)
+        val result = chosen.action as DeclareBlockers
+
+        // 3/3 should block the 2/2 (kills it and survives)
+        result.blockers shouldContainKey blocker
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
     // Full game: AI plays correctly through combat
     // ═════════════════════════════════════════════════════════════════════
 

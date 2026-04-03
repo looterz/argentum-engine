@@ -26,13 +26,15 @@ class Strategist(
         legalActions: List<LegalAction>,
         playerId: EntityId
     ): LegalAction {
-        if (legalActions.size == 1) return legalActions.first()
-
-        // Combat declaration steps are exclusive
+        // Combat declaration steps need the CombatAdvisor to fill in attacker/blocker maps
+        // even when there's only one legal action (which is the common case — the enumerator
+        // returns a single DeclareAttackers/DeclareBlockers with an empty default map).
         val combatAction = legalActions.find { it.actionType == "DeclareAttackers" || it.actionType == "DeclareBlockers" }
-        if (combatAction != null && legalActions.all { it.actionType == combatAction.actionType }) {
+        if (combatAction != null) {
             return handleCombatDeclaration(state, combatAction, playerId)
         }
+
+        if (legalActions.size == 1) return legalActions.first()
 
         val pass = legalActions.find { it.actionType == "PassPriority" }
         val affordable = legalActions.filter { it.affordable && !it.isManaAbility && it.actionType != "PassPriority" }
