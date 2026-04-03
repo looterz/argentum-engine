@@ -2,7 +2,9 @@ package com.wingedsheep.engine.legalactions.enumerators
 
 import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.core.PlayLand
+import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.legalactions.ActionEnumerator
+import com.wingedsheep.engine.legalactions.AdditionalCostData
 import com.wingedsheep.engine.legalactions.EnumerationContext
 import com.wingedsheep.engine.legalactions.LegalAction
 import com.wingedsheep.engine.state.ZoneKey
@@ -12,6 +14,7 @@ import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.MayPlayFromExileComponent
 import com.wingedsheep.engine.state.components.identity.WarpExiledComponent
 import com.wingedsheep.engine.state.components.player.MayCastCreaturesFromGraveyardWithForageComponent
+import com.wingedsheep.engine.state.components.identity.PlayWithAdditionalCostComponent
 import com.wingedsheep.engine.state.components.identity.PlayWithoutPayingCostComponent
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.sdk.core.Subtype
@@ -215,6 +218,8 @@ class CastFromZoneEnumerator : ActionEnumerator {
             val exileComponent = container.get<MayPlayFromExileComponent>() ?: continue
             if (exileComponent.controllerId != playerId) continue
             val playForFree = container.get<PlayWithoutPayingCostComponent>()?.controllerId == playerId
+            val runtimeAdditionalCost = container.get<PlayWithAdditionalCostComponent>()
+                ?.takeIf { it.controllerId == playerId }
             val cardComponent = container.get<CardComponent>() ?: continue
 
             // Land in exile
@@ -267,7 +272,14 @@ class CastFromZoneEnumerator : ActionEnumerator {
                         context.manaSolver.canPay(state, playerId, effectiveCost)
                     }
 
-                    if (hasCorrectTiming && meetsRestrictions && canAfford) {
+                    // Build additional cost info from runtime component
+                    val exileAdditionalCostInfo = runtimeAdditionalCost?.let { comp ->
+                        buildRuntimeAdditionalCostInfo(state, playerId, comp)
+                    }
+                    val canPayAdditionalCost = exileAdditionalCostInfo == null ||
+                        checkRuntimeAdditionalCostAffordability(state, playerId, runtimeAdditionalCost!!)
+
+                    if (hasCorrectTiming && meetsRestrictions && canAfford && canPayAdditionalCost) {
                         val targetReqs = buildList {
                             addAll(cardDef?.script?.targetRequirements ?: emptyList())
                             cardDef?.script?.auraTarget?.let { add(it) }
@@ -291,7 +303,8 @@ class CastFromZoneEnumerator : ActionEnumerator {
                                         targetDescription = firstReq.description,
                                         targetRequirements = if (targetInfos.size > 1) targetInfos else null,
                                         manaCostString = costString,
-                                        sourceZone = "EXILE"
+                                        sourceZone = "EXILE",
+                                        additionalCostInfo = exileAdditionalCostInfo
                                     )
                                 )
                             }
@@ -302,7 +315,8 @@ class CastFromZoneEnumerator : ActionEnumerator {
                                     description = "Cast ${cardComponent.name}",
                                     action = CastSpell(playerId, cardId),
                                     manaCostString = costString,
-                                    sourceZone = "EXILE"
+                                    sourceZone = "EXILE",
+                                    additionalCostInfo = exileAdditionalCostInfo
                                 )
                             )
                         }
@@ -1268,5 +1282,49 @@ class CastFromZoneEnumerator : ActionEnumerator {
                 }
             }
         }
+    }
+
+    // =========================================================================
+    // Runtime additional cost helpers (PlayWithAdditionalCostComponent)
+    // =========================================================================
+
+    private fun buildRuntimeAdditionalCostInfo(
+        state: GameState,
+        playerId: EntityId,
+        component: PlayWithAdditionalCostComponent
+    ): AdditionalCostData? {
+        val cost = component.additionalCosts.firstOrNull() ?: return null
+        return when (cost) {
+            is com.wingedsheep.sdk.scripting.AdditionalCost.DiscardCards -> {
+                val handCards = state.getZone(ZoneKey(playerId, Zone.HAND))
+                AdditionalCostData(
+                    description = cost.description,
+                    costType = "DiscardCard",
+                    validDiscardTargets = handCards.toList(),
+                    discardCount = cost.count
+                )
+            }
+            else -> AdditionalCostData(
+                description = cost.description,
+                costType = "Other"
+            )
+        }
+    }
+
+    private fun checkRuntimeAdditionalCostAffordability(
+        state: GameState,
+        playerId: EntityId,
+        component: PlayWithAdditionalCostComponent
+    ): Boolean {
+        for (cost in component.additionalCosts) {
+            when (cost) {
+                is com.wingedsheep.sdk.scripting.AdditionalCost.DiscardCards -> {
+                    val handSize = state.getZone(ZoneKey(playerId, Zone.HAND)).size
+                    if (handSize < cost.count) return false
+                }
+                else -> {} // Other cost types can be added as needed
+            }
+        }
+        return true
     }
 }

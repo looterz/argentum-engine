@@ -2,6 +2,7 @@ package com.wingedsheep.sdk.scripting.effects
 
 import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.scripting.AdditionalCost
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.ZonePlacement
 import com.wingedsheep.sdk.scripting.references.Player
@@ -607,6 +608,30 @@ data class GrantPlayWithoutPayingCostEffect(
 ) : Effect {
     override val description: String =
         "Until end of turn, you may play the $from cards without paying their mana costs"
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
+}
+
+/**
+ * Grant "play with an additional cost" to all cards in a named collection.
+ * Used with [GrantMayPlayFromExileEffect] + [GrantPlayWithoutPayingCostEffect]
+ * to model "may cast by paying [cost] rather than its mana cost" — the mana is
+ * waived by PlayWithoutPayingCost, while this adds a runtime additional cost.
+ *
+ * Used by The Infamous Cruelclaw ("You may cast that card by discarding a card
+ * rather than paying its mana cost").
+ *
+ * @property from Name of the collection containing the card(s)
+ * @property additionalCost The additional cost that must be paid when casting
+ */
+@SerialName("GrantPlayWithAdditionalCost")
+@Serializable
+data class GrantPlayWithAdditionalCostEffect(
+    val from: String,
+    val additionalCost: AdditionalCost
+) : Effect {
+    override val description: String =
+        "Until end of turn, casting the $from cards requires: ${additionalCost.description}"
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
 }

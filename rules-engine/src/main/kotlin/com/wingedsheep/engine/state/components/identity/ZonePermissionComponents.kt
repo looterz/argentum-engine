@@ -72,6 +72,24 @@ data class PlayWithoutPayingCostComponent(
 ) : Component
 
 /**
+ * Marks a card in exile as requiring an additional cost when cast.
+ * Used with [MayPlayFromExileComponent] + [PlayWithoutPayingCostComponent] to model
+ * "may cast by paying [cost] rather than its mana cost" — the mana is waived,
+ * but this non-mana cost must still be paid.
+ *
+ * Used by The Infamous Cruelclaw ("may cast that card by discarding a card
+ * rather than paying its mana cost").
+ *
+ * @param controllerId The player who has this cost obligation when casting.
+ * @param additionalCosts The costs that must be paid (e.g., discard a card).
+ */
+@Serializable
+data class PlayWithAdditionalCostComponent(
+    val controllerId: EntityId,
+    val additionalCosts: List<com.wingedsheep.sdk.scripting.AdditionalCost>
+) : Component
+
+/**
  * Marks a spell so that if it would be put into a graveyard after resolving or being
  * countered, it is exiled instead. Used by effects like Daring Waverider that grant
  * one-shot free casts from exile with "exile it instead" clauses.

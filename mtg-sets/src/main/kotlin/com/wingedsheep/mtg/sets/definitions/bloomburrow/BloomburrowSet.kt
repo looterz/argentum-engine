@@ -240,6 +240,7 @@ object BloomburrowSet {
         TeapotSlinger,
         TempestAngler,
         TenderWildguide,
+        TheInfamousCruelclaw,
         ThistledownPlayers,
         TidecallerMentor,
         ThornplateIntimidator,

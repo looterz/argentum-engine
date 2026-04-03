@@ -40,6 +40,7 @@ import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.MayPlayFromExileComponent
+import com.wingedsheep.engine.state.components.identity.PlayWithAdditionalCostComponent
 import com.wingedsheep.engine.state.components.identity.PlayWithoutPayingCostComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
@@ -165,6 +166,15 @@ class CastSpellHandler(
             if (additionalCostError != null) {
                 return additionalCostError
             }
+        }
+
+        // Validate runtime additional costs from PlayWithAdditionalCostComponent (e.g., The Infamous Cruelclaw)
+        val runtimeAdditionalCostComponent = state.getEntity(action.cardId)
+            ?.get<PlayWithAdditionalCostComponent>()
+            ?.takeIf { it.controllerId == action.playerId }
+        if (runtimeAdditionalCostComponent != null) {
+            val runtimeCostError = validateAdditionalCosts(state, runtimeAdditionalCostComponent.additionalCosts, action)
+            if (runtimeCostError != null) return runtimeCostError
         }
 
         // Validate kicker/offspring: card must have Kicker, KickerWithAdditionalCost, or Offspring keyword ability
@@ -699,6 +709,7 @@ class CastSpellHandler(
 
         // Collect all additional costs: script costs + kicker additional cost (if kicked)
         // + self-alternative cost's additional costs (if using alternative cost)
+        // + runtime additional costs from PlayWithAdditionalCostComponent
         // Per-mode additional costs override card-level costs when present
         val allAdditionalCosts = buildList {
             if (cardDef != null) addAll(resolveAdditionalCostsForMode(cardDef, action))
@@ -712,6 +723,11 @@ class CastSpellHandler(
                 val selfAltCost = cardDef.script.selfAlternativeCost
                 if (selfAltCost != null) addAll(selfAltCost.additionalCosts)
             }
+            // Runtime additional costs from entity component (e.g., The Infamous Cruelclaw)
+            val runtimeCostComp = currentState.getEntity(action.cardId)
+                ?.get<PlayWithAdditionalCostComponent>()
+                ?.takeIf { it.controllerId == action.playerId }
+            if (runtimeCostComp != null) addAll(runtimeCostComp.additionalCosts)
         }
 
         if (allAdditionalCosts.isNotEmpty() && action.additionalCostPayment != null) {
