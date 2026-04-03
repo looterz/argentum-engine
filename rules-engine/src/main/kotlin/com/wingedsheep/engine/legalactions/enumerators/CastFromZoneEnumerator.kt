@@ -1051,6 +1051,15 @@ class CastFromZoneEnumerator : ActionEnumerator {
         if (state.activePlayerId != playerId) return
 
         val graveyardCards = state.getZone(ZoneKey(playerId, Zone.GRAVEYARD))
+
+        // Check if forage can be paid at all (Food on battlefield)
+        val hasFood = state.getBattlefield().any { permId ->
+            val permContainer = state.getEntity(permId) ?: return@any false
+            val permCard = permContainer.get<CardComponent>() ?: return@any false
+            val permController = permContainer.get<ControllerComponent>()?.playerId
+            permController == playerId && permCard.typeLine.hasSubtype(Subtype.FOOD)
+        }
+
         for (cardId in graveyardCards) {
             val container = state.getEntity(cardId) ?: continue
             val cardComponent = container.get<CardComponent>() ?: continue
@@ -1059,6 +1068,10 @@ class CastFromZoneEnumerator : ActionEnumerator {
             if (!cardComponent.typeLine.isCreature) continue
 
             val cardDef = context.cardRegistry.getCard(cardComponent.name) ?: continue
+
+            // Don't offer forage if it can't be paid (< 3 other graveyard cards and no Food)
+            val otherGraveyardCards = graveyardCards.filter { it != cardId }
+            if (otherGraveyardCards.size < 3 && !hasFood) continue
 
             if (context.cantCastSpells) {
                 result.add(
@@ -1083,21 +1096,7 @@ class CastFromZoneEnumerator : ActionEnumerator {
 
             val effectiveCost = context.costCalculator.calculateEffectiveCost(state, cardDef, playerId)
             val costString = effectiveCost.toString()
-            val canAffordMana = context.manaSolver.canPay(state, playerId, effectiveCost)
-
-            // Check forage affordability: 3+ cards in graveyard (excluding the card being cast)
-            // or a Food artifact on the battlefield
-            val otherGraveyardCards = graveyardCards.filter { it != cardId }
-            val canForageByExile = otherGraveyardCards.size >= 3
-            val canForageBySacrifice = state.getBattlefield().any { permId ->
-                val permContainer = state.getEntity(permId) ?: return@any false
-                val permCard = permContainer.get<CardComponent>() ?: return@any false
-                val permController = permContainer.get<ControllerComponent>()?.playerId
-                permController == playerId && permCard.typeLine.hasSubtype(Subtype.FOOD)
-            }
-            val canAffordForage = canForageByExile || canForageBySacrifice
-
-            val affordable = canAffordMana && canAffordForage
+            val affordable = context.manaSolver.canPay(state, playerId, effectiveCost)
 
             if (affordable) {
                 val targetReqs = buildList {
