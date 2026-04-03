@@ -98,6 +98,11 @@ class CombatAdvisor(
 
     /**
      * Build a DeclareBlockers action choosing which creatures block which attackers.
+     *
+     * Uses a three-pass escalation system inspired by Forge:
+     * - Pass 1 (Normal): good blocks → gang blocks → profit trades
+     * - Pass 2 (Emergency): if still lethal, clear and re-run with chump blocks + trades first
+     * - Pass 3 (Desperate): if still lethal, clear and prioritize chump blocks above all else
      */
     fun chooseBlockers(
         state: GameState,
@@ -118,16 +123,12 @@ class CombatAdvisor(
         }
 
         val myLife = state.getEntity(playerId)?.get<LifeTotalComponent>()?.life ?: 20
-        // Use effective damage (lifelink counts double) for lethal check
-        val incomingEffectiveDamage = attackers.sumOf { CombatMath.effectiveDamage(projected, it) }
-        val incomingRawDamage = attackers.sumOf { (projected.getPower(it) ?: 0).coerceAtLeast(0) }
-        val isLethal = incomingRawDamage >= myLife
 
         val blockerMap = mutableMapOf<EntityId, List<EntityId>>()
-
-        // Handle mandatory blockers first
         val assignedBlockers = mutableSetOf<EntityId>()
         val blockedAttackers = mutableSetOf<EntityId>()
+
+        // Handle mandatory blockers (preserved across all passes)
         for ((blockerId, mustBlockAttackers) in mandatory) {
             if (mustBlockAttackers.isNotEmpty()) {
                 blockerMap[blockerId] = listOf(mustBlockAttackers.first())
@@ -136,13 +137,90 @@ class CombatAdvisor(
             }
         }
 
-        if (isLethal) {
-            assignBlocksForSurvival(state, projected, validBlockers, attackers, assignedBlockers, blockedAttackers, blockerMap)
-        } else {
-            assignBlocksForProfit(state, projected, validBlockers, attackers, assignedBlockers, blockedAttackers, blockerMap)
+        // ── Pass 1 (Normal): good blocks, then gang blocks, then profit trades ──
+        assignBlocksForProfit(state, projected, validBlockers, attackers, assignedBlockers, blockedAttackers, blockerMap)
+        assignGangBlocks(state, projected, validBlockers, attackers, assignedBlockers, blockedAttackers, blockerMap)
+
+        if (!isLifeInDanger(state, projected, attackers, blockerMap, myLife)) {
+            return DeclareBlockers(playerId, blockerMap)
         }
 
+        // ── Pass 2 (Emergency): clear non-mandatory blocks, chump + trade + good blocks ──
+        clearNonMandatoryBlocks(mandatory, blockerMap, assignedBlockers, blockedAttackers)
+        makeChumpBlocks(state, projected, validBlockers, attackers, assignedBlockers, blockedAttackers, blockerMap)
+        assignBlocksForProfit(state, projected, validBlockers, attackers, assignedBlockers, blockedAttackers, blockerMap)
+        assignGangBlocks(state, projected, validBlockers, attackers, assignedBlockers, blockedAttackers, blockerMap)
+        reinforceBlocksAgainstTrample(state, projected, validBlockers, attackers, assignedBlockers, blockerMap)
+
+        if (!isLifeInDanger(state, projected, attackers, blockerMap, myLife)) {
+            return DeclareBlockers(playerId, blockerMap)
+        }
+
+        // ── Pass 3 (Desperate): clear and prioritize chump blocks, then survival blocks ──
+        clearNonMandatoryBlocks(mandatory, blockerMap, assignedBlockers, blockedAttackers)
+        assignBlocksForSurvival(state, projected, validBlockers, attackers, assignedBlockers, blockedAttackers, blockerMap)
+        makeChumpBlocks(state, projected, validBlockers, attackers, assignedBlockers, blockedAttackers, blockerMap)
+        reinforceBlocksAgainstTrample(state, projected, validBlockers, attackers, assignedBlockers, blockerMap)
+
         return DeclareBlockers(playerId, blockerMap)
+    }
+
+    /**
+     * Check if unblocked damage would kill us after current blocking assignments.
+     */
+    private fun isLifeInDanger(
+        state: GameState,
+        projected: ProjectedState,
+        attackers: List<EntityId>,
+        blockerMap: Map<EntityId, List<EntityId>>,
+        myLife: Int
+    ): Boolean {
+        val blockedAttackerIds = blockerMap.values.flatten().toSet()
+        var incomingDamage = 0
+        for (attacker in attackers) {
+            val aPower = projected.getPower(attacker) ?: 0
+            if (aPower <= 0) continue
+            if (attacker !in blockedAttackerIds) {
+                // Unblocked — full damage
+                incomingDamage += aPower
+            } else {
+                // Blocked — only trample overflow gets through
+                val aKeywords = projected.getKeywords(attacker)
+                if (Keyword.TRAMPLE.name in aKeywords) {
+                    // Find all blockers assigned to this attacker
+                    val blockers = blockerMap.entries
+                        .filter { (_, targets) -> attacker in targets }
+                        .map { it.key }
+                    val totalToughness = blockers.sumOf { projected.getToughness(it) ?: 0 }
+                    val hasDeathtouch = Keyword.DEATHTOUCH.name in aKeywords
+                    val lethalToBlockers = if (hasDeathtouch) blockers.size else totalToughness
+                    incomingDamage += (aPower - lethalToBlockers).coerceAtLeast(0)
+                }
+            }
+        }
+        return incomingDamage >= myLife
+    }
+
+    /**
+     * Clear all non-mandatory block assignments for re-evaluation in escalation passes.
+     */
+    private fun clearNonMandatoryBlocks(
+        mandatory: Map<EntityId, List<EntityId>>,
+        blockerMap: MutableMap<EntityId, List<EntityId>>,
+        assignedBlockers: MutableSet<EntityId>,
+        blockedAttackers: MutableSet<EntityId>
+    ) {
+        val mandatoryBlockerIds = mandatory.keys
+        val toRemove = blockerMap.keys.filter { it !in mandatoryBlockerIds }
+        for (blockerId in toRemove) {
+            val targets = blockerMap.remove(blockerId) ?: continue
+            assignedBlockers.remove(blockerId)
+            // Only unmark attacker if no other blocker is assigned to it
+            for (target in targets) {
+                val stillBlocked = blockerMap.values.any { target in it }
+                if (!stillBlocked) blockedAttackers.remove(target)
+            }
+        }
     }
 
     // ── Lethal Analysis ─────────────────────────────────────────────────
@@ -355,44 +433,75 @@ class CombatAdvisor(
     }
 
     /**
-     * Remove attackers from the map to retain enough blockers for defense against crackback.
+     * Holdback via counterattack simulation (inspired by Forge's notNeededAsBlockers).
+     *
+     * For each potential attacker, simulates removing it from the blocking pool and
+     * checks if the opponent's crackback becomes lethal. Only retains creatures whose
+     * absence from the blocking pool would cost more life than the damage they'd deal
+     * by attacking.
      */
     private fun retainDefenders(
         state: GameState,
         projected: ProjectedState,
         playerId: EntityId,
         opponentId: EntityId,
-        opponentCreatures: List<EntityId>,
+        opponentCrackbackCreatures: List<EntityId>,
         attackerMap: MutableMap<EntityId, EntityId>,
         myLife: Int
     ) {
-        // Estimate how much damage gets through if we block with remaining (non-attacking) creatures
+        if (opponentCrackbackCreatures.isEmpty()) return // no crackback threat
+
         val myAllCreatures = projected.getBattlefieldControlledBy(playerId)
             .filter { projected.isCreature(it) }
-        val nonAttackers = myAllCreatures.filter { it !in attackerMap }
 
-        // How much crackback damage gets through with current defenders?
-        val crackbackThrough = CombatMath.calculateDamageThroughOptimalBlocking(
-            state, projected, opponentCreatures, nonAttackers
+        // Vigilance creatures count as blockers even when attacking — skip them
+        val nonVigilanceAttackers = attackerMap.keys.filter {
+            Keyword.VIGILANCE.name !in projected.getKeywords(it)
+        }
+        if (nonVigilanceAttackers.isEmpty()) return
+
+        // Baseline crackback: how much damage gets through with ALL our creatures as blockers
+        // (including the ones we've declared as attackers, who won't actually be able to block)
+        val vigilanceAttackers = attackerMap.keys.filter {
+            Keyword.VIGILANCE.name in projected.getKeywords(it)
+        }
+        val nonAttackingBlockers = myAllCreatures.filter { it !in attackerMap } + vigilanceAttackers
+        val baselineCrackback = CombatMath.calculateDamageThroughOptimalBlocking(
+            state, projected, opponentCrackbackCreatures, nonAttackingBlockers
         )
 
-        if (crackbackThrough < myLife) return // we're safe
+        if (baselineCrackback < myLife) return // even without holdbacks, we survive
 
-        // Pull back attackers starting with the least valuable until we survive crackback
-        // Keep evasive attackers (they're most likely to deal damage) and vigilance creatures
-        val pullBackCandidates = attackerMap.keys
-            .filter {
-                Keyword.VIGILANCE.name !in projected.getKeywords(it) &&
-                    !CombatMath.isEvasive(state, projected, it, CombatMath.getOpponentUntappedCreatures(state, projected, opponentId))
-            }
-            .sortedBy { CombatMath.creatureValue(state, projected, it) }
+        // For each non-vigilance attacker, compute the marginal life cost of sending it
+        // vs. the damage it would deal. Pull back those where defensive value > offensive value.
+        data class AttackerCost(val entityId: EntityId, val offensiveValue: Int, val defensiveCost: Int)
+
+        val costs = nonVigilanceAttackers.map { attackerId ->
+            val attackerPower = (projected.getPower(attackerId) ?: 0).coerceAtLeast(0)
+
+            // Simulate: what if this creature stayed back to block?
+            val blockersWithThisCreature = nonAttackingBlockers + attackerId
+            val crackbackWith = CombatMath.calculateDamageThroughOptimalBlocking(
+                state, projected, opponentCrackbackCreatures, blockersWithThisCreature
+            )
+            val lifeSaved = baselineCrackback - crackbackWith
+
+            AttackerCost(attackerId, attackerPower, lifeSaved)
+        }
+
+        // Pull back creatures where staying to block saves more life than attacking deals damage
+        // Sort by net value (defensive - offensive) descending to pull back the best defenders first
+        val pullBackCandidates = costs
+            .filter { it.defensiveCost > it.offensiveValue }
+            .sortedByDescending { it.defensiveCost - it.offensiveValue }
 
         for (candidate in pullBackCandidates) {
-            attackerMap.remove(candidate)
-            // Recalculate
-            val updatedNonAttackers = myAllCreatures.filter { it !in attackerMap }
+            attackerMap.remove(candidate.entityId)
+
+            // Recalculate to check if we've pulled back enough
+            val updatedBlockers = myAllCreatures.filter { it !in attackerMap || Keyword.VIGILANCE.name in projected.getKeywords(it) }
             val updatedCrackback = CombatMath.calculateDamageThroughOptimalBlocking(
-                state, projected, opponentCreatures, updatedNonAttackers
+                state, projected, opponentCrackbackCreatures, updatedBlockers
             )
             if (updatedCrackback < myLife) break
         }
@@ -513,11 +622,36 @@ class CombatAdvisor(
                 blockerMap[singleBlocker] = listOf(attacker)
                 assignedBlockers.add(singleBlocker)
                 blockedAttackers.add(attacker)
-                continue
             }
+            // Gang blocks are handled in a separate pass (assignGangBlocks)
+        }
+    }
 
-            // ── Try gang-block ──
-            if (aHasDeathtouch) continue // double-blocking into deathtouch loses both creatures
+    /**
+     * Extract gang-block assignments from the profit-mode flow into a separate pass.
+     * Called independently so it can be re-ordered in the escalation passes.
+     */
+    private fun assignGangBlocks(
+        state: GameState,
+        projected: ProjectedState,
+        validBlockers: List<EntityId>,
+        attackers: List<EntityId>,
+        assignedBlockers: MutableSet<EntityId>,
+        blockedAttackers: MutableSet<EntityId>,
+        blockerMap: MutableMap<EntityId, List<EntityId>>
+    ) {
+        val unblocked = attackers
+            .filter { it !in blockedAttackers }
+            .sortedByDescending { CombatMath.effectiveDamage(projected, it) }
+
+        for (attacker in unblocked) {
+            val aKeywords = projected.getKeywords(attacker)
+            if (Keyword.DEATHTOUCH.name in aKeywords) continue
+
+            val aPower = projected.getPower(attacker) ?: 0
+            val aToughness = projected.getToughness(attacker) ?: 0
+            val aHasFirstStrike = Keyword.FIRST_STRIKE.name in aKeywords || Keyword.DOUBLE_STRIKE.name in aKeywords
+            val attackerValue = CombatMath.creatureValue(state, projected, attacker)
 
             val available = validBlockers.filter { it !in assignedBlockers }
             if (available.size < 2) continue
@@ -529,6 +663,108 @@ class CombatAdvisor(
                     assignedBlockers.add(blocker)
                 }
                 blockedAttackers.add(attacker)
+            }
+        }
+    }
+
+    /**
+     * Chump blocking with trample redirection (inspired by Forge).
+     *
+     * When chump blocking is needed to survive, assigns the least valuable creature
+     * to block each unblocked attacker. Smart optimization: if the attacker has trample,
+     * the chump is redirected to a non-trample attacker dealing similar damage, since
+     * chump blocking a trampler is nearly useless (all damage overflows).
+     */
+    private fun makeChumpBlocks(
+        state: GameState,
+        projected: ProjectedState,
+        validBlockers: List<EntityId>,
+        attackers: List<EntityId>,
+        assignedBlockers: MutableSet<EntityId>,
+        blockedAttackers: MutableSet<EntityId>,
+        blockerMap: MutableMap<EntityId, List<EntityId>>
+    ) {
+        // Sort unblocked attackers by effective damage descending (block biggest threats first)
+        val unblocked = attackers
+            .filter { it !in blockedAttackers }
+            .sortedByDescending { CombatMath.effectiveDamage(projected, it) }
+
+        // Separate trample vs non-trample for redirection
+        val nonTrampleUnblocked = unblocked.filter {
+            Keyword.TRAMPLE.name !in projected.getKeywords(it)
+        }.toMutableList()
+
+        for (attacker in unblocked) {
+            val available = validBlockers
+                .filter { it !in assignedBlockers }
+                .sortedBy { CombatMath.creatureValue(state, projected, it) }
+
+            if (available.isEmpty()) break
+
+            val chumpBlocker = available.first()
+            val aKeywords = projected.getKeywords(attacker)
+            val hasTrample = Keyword.TRAMPLE.name in aKeywords
+
+            if (hasTrample && nonTrampleUnblocked.isNotEmpty()) {
+                // Redirect: chump block a non-trample attacker instead (where it actually prevents damage)
+                val redirectTarget = nonTrampleUnblocked.first()
+                blockerMap[chumpBlocker] = listOf(redirectTarget)
+                assignedBlockers.add(chumpBlocker)
+                blockedAttackers.add(redirectTarget)
+                nonTrampleUnblocked.remove(redirectTarget)
+            } else {
+                // No redirection possible — chump block this attacker
+                blockerMap[chumpBlocker] = listOf(attacker)
+                assignedBlockers.add(chumpBlocker)
+                blockedAttackers.add(attacker)
+                nonTrampleUnblocked.remove(attacker)
+            }
+        }
+    }
+
+    /**
+     * Add extra bodies to soak trample damage on already-blocked tramplers.
+     */
+    private fun reinforceBlocksAgainstTrample(
+        state: GameState,
+        projected: ProjectedState,
+        validBlockers: List<EntityId>,
+        attackers: List<EntityId>,
+        assignedBlockers: MutableSet<EntityId>,
+        blockerMap: MutableMap<EntityId, List<EntityId>>
+    ) {
+        // Find trample attackers that are already blocked but still deal overflow damage
+        val tramplers = attackers.filter { attacker ->
+            val aKeywords = projected.getKeywords(attacker)
+            Keyword.TRAMPLE.name in aKeywords &&
+                blockerMap.values.any { attacker in it }
+        }
+
+        for (trampler in tramplers) {
+            val aPower = projected.getPower(trampler) ?: 0
+            val aKeywords = projected.getKeywords(trampler)
+            val hasDeathtouch = Keyword.DEATHTOUCH.name in aKeywords
+
+            // Find current blockers assigned to this trampler
+            val currentBlockers = blockerMap.entries
+                .filter { (_, targets) -> trampler in targets }
+                .map { it.key }
+            val currentToughness = currentBlockers.sumOf { projected.getToughness(it) ?: 0 }
+            val lethalNeeded = if (hasDeathtouch) currentBlockers.size else currentToughness
+
+            // If damage still overflows, add more blockers
+            if (aPower > lethalNeeded) {
+                val available = validBlockers
+                    .filter { it !in assignedBlockers }
+                    .sortedBy { CombatMath.creatureValue(state, projected, it) }
+
+                var absorbed = lethalNeeded
+                for (blocker in available) {
+                    if (absorbed >= aPower) break
+                    blockerMap[blocker] = listOf(trampler)
+                    assignedBlockers.add(blocker)
+                    absorbed += if (hasDeathtouch) 1 else (projected.getToughness(blocker) ?: 0)
+                }
             }
         }
     }
