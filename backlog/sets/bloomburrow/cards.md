@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 234 / 266
+**Implemented:** 235 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -12,7 +12,7 @@
 | Red        | 41    | 35   |
 | Green      | 41    | 36   |
 | Multicolor | 39    | 32   |
-| Colorless  | 9     | 8    |
+| Colorless  | 9     | 9    |
 | Land       | 15    | 14   |
 
 ---
@@ -251,7 +251,7 @@
 - [x] Thought Shucker
 - [ ] Thought-Stalker Warlock
 - [x] Three Tree City
-- [ ] Three Tree Mascot
+- [x] Three Tree Mascot
 - [x] Three Tree Rootweaver
 - [x] Three Tree Scribe
 - [x] Thundertrap Trainer

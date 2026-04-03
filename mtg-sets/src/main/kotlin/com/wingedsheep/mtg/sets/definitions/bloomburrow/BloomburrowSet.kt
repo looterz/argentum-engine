@@ -224,6 +224,7 @@ object BloomburrowSet {
         ThornvaultForager,
         ThoughtShucker,
         ThreeTreeCity,
+        ThreeTreeMascot,
         ThreeTreeRootweaver,
         ThreeTreeScribe,
         TreeguardDuo,
