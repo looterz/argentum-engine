@@ -2,6 +2,7 @@ package com.wingedsheep.engine.handlers.effects.token
 
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.core.ZoneChangeEvent
+import com.wingedsheep.engine.event.DelayedTriggeredAbility
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
@@ -18,6 +19,9 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.CreatureStats
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.effects.CreateTokenCopyOfSourceEffect
+import com.wingedsheep.sdk.scripting.effects.MoveToZoneEffect
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import java.util.UUID
 import kotlin.reflect.KClass
 
 /**
@@ -89,6 +93,23 @@ class CreateTokenCopyOfSourceExecutor(
             // Add to battlefield
             val battlefieldZone = ZoneKey(controllerId, Zone.BATTLEFIELD)
             newState = newState.addToZone(battlefieldZone, tokenId)
+        }
+
+        // If exileAtStep is set, create delayed triggers to exile each created token
+        val exileStep = effect.exileAtStep
+        if (exileStep != null) {
+            val sourceName = sourceCard.name
+            for (tokenId in createdTokens) {
+                val delayedTrigger = DelayedTriggeredAbility(
+                    id = UUID.randomUUID().toString(),
+                    effect = MoveToZoneEffect(EffectTarget.SpecificEntity(tokenId), Zone.EXILE),
+                    fireAtStep = exileStep,
+                    sourceId = sourceId,
+                    sourceName = sourceName,
+                    controllerId = controllerId
+                )
+                newState = newState.addDelayedTrigger(delayedTrigger)
+            }
         }
 
         val events = createdTokens.map { tokenId ->

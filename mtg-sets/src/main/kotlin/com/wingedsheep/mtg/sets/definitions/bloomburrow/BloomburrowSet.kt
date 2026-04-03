@@ -230,6 +230,7 @@ object BloomburrowSet {
         SteampathCharger,
         StormcatchMentor,
         StormchasersTalent,
+        Stormsplitter,
         SunshowerDruid,
         SunspineLynx,
         TakeOutTheTrash,

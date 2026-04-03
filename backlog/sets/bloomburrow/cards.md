@@ -2,14 +2,14 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 256 / 266
+**Implemented:** 257 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 39   |
 | Blue       | 41    | 40   |
 | Black      | 40    | 37   |
-| Red        | 41    | 39   |
+| Red        | 41    | 40   |
 | Green      | 41    | 37   |
 | Multicolor | 39    | 37   |
 | Colorless  | 9     | 9    |
@@ -234,7 +234,7 @@
 - [x] Stocking the Pantry
 - [x] Stormcatch Mentor
 - [x] Stormchaser's Talent
-- [ ] Stormsplitter
+- [x] Stormsplitter
 - [x] Sugar Coat
 - [x] Sunshower Druid
 - [x] Sunspine Lynx

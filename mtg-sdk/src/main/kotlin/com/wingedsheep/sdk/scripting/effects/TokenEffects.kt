@@ -185,7 +185,9 @@ data class CreateTokenCopyOfSourceEffect(
     /** Override the token's base power (null = copy source's power) */
     val overridePower: Int? = null,
     /** Override the token's base toughness (null = copy source's toughness) */
-    val overrideToughness: Int? = null
+    val overrideToughness: Int? = null,
+    /** If set, create delayed triggers to exile the created tokens at this step. */
+    val exileAtStep: Step? = null
 ) : Effect {
     override val description: String = buildString {
         append("Create ")
@@ -193,6 +195,9 @@ data class CreateTokenCopyOfSourceEffect(
         else append("$count tokens that are copies of this creature")
         if (overridePower != null && overrideToughness != null) {
             append(", except it's $overridePower/$overrideToughness")
+        }
+        if (exileAtStep != null) {
+            append(". Exile ${if (count == 1) "it" else "them"} at the beginning of the next ${exileAtStep.displayName}")
         }
     }
 
