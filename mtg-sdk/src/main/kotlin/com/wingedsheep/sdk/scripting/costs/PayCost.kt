@@ -191,6 +191,26 @@ sealed interface PayCost : TextReplaceable<PayCost> {
         }
     }
 
+    /**
+     * Choose one of several costs to pay.
+     * "...unless they sacrifice a nonland permanent or discard a card"
+     *
+     * The player chooses which cost to pay (or accepts the consequence).
+     *
+     * @property options The available cost options
+     */
+    @SerialName("Choice")
+    @Serializable
+    data class Choice(
+        val options: List<PayCost>
+    ) : PayCost {
+        override val description: String = options.joinToString(" or ") { it.description }
+        override fun applyTextReplacement(replacer: TextReplacer): PayCost {
+            val newOptions = options.map { it.applyTextReplacement(replacer) }
+            return if (newOptions.zip(options).any { (a, b) -> a !== b }) copy(options = newOptions) else this
+        }
+    }
+
     @SerialName("ReturnToHand")
     @Serializable
     data class ReturnToHand(

@@ -133,6 +133,7 @@ val engineSerializersModule = SerializersModule {
         subclass(BlockerOrderContinuation::class)
         subclass(AttackerOrderContinuation::class)
         subclass(PayOrSufferContinuation::class)
+        subclass(PayOrSufferChoiceContinuation::class)
         subclass(ChooseColorProtectionContinuation::class)
         subclass(ChooseColorProtectionTargetContinuation::class)
         subclass(ChooseFromCreatureTypeContinuation::class)

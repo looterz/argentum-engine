@@ -87,8 +87,30 @@ enum class PayOrSufferCostType {
     SACRIFICE,
     PAY_LIFE,
     MANA,
-    EXILE
+    EXILE,
+    CHOICE
 }
+
+/**
+ * Resume after player picks which cost option to pay for a multi-option "pay or suffer" effect.
+ *
+ * Used when PayCost.Choice gives the player multiple avoidance options.
+ * The player chooses via ChooseOptionDecision, then we delegate to the chosen sub-cost.
+ *
+ * @property options The available cost options (same order as the ChooseOptionDecision)
+ * @property sufferEffect The effect to execute if the player declines all options
+ */
+@Serializable
+data class PayOrSufferChoiceContinuation(
+    override val decisionId: String,
+    val playerId: EntityId,
+    val sourceId: EntityId,
+    val sourceName: String,
+    val options: List<PayCost>,
+    val sufferEffect: Effect,
+    val targets: List<ChosenTarget> = emptyList(),
+    val namedTargets: Map<String, ChosenTarget> = emptyMap()
+) : ContinuationFrame
 
 /**
  * Resume after a player decides whether to pay a cost for "any player may [cost]" effects.

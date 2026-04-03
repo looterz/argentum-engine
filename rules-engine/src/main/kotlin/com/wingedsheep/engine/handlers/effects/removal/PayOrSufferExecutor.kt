@@ -71,6 +71,7 @@ class PayOrSufferExecutor(
             is PayCost.PayLife -> handlePayLifeCost(state, effect, context, cost, sourceId, sourceCard.name, payingPlayerId)
             is PayCost.Mana -> handleManaCost(state, effect, context, cost, sourceId, sourceCard.name, payingPlayerId)
             is PayCost.Exile -> handleExileCost(state, effect, context, cost, sourceId, sourceCard.name, payingPlayerId)
+            is PayCost.Choice -> handleChoiceCost(state, effect, context, cost, sourceId, sourceCard.name, payingPlayerId)
             is PayCost.ReturnToHand -> ExecutionResult.error(state, "ReturnToHand payment for PayOrSuffer not yet implemented")
             is PayCost.RevealCard -> ExecutionResult.error(state, "RevealCard payment for PayOrSuffer not yet implemented")
         }
@@ -462,6 +463,103 @@ class PayOrSufferExecutor(
                 )
             )
         )
+    }
+
+    /**
+     * Handle a choice cost - player picks which cost to pay from multiple options.
+     */
+    private fun handleChoiceCost(
+        state: GameState,
+        effect: PayOrSufferEffect,
+        context: EffectContext,
+        cost: PayCost.Choice,
+        sourceId: EntityId,
+        sourceName: String,
+        payingPlayerId: EntityId
+    ): ExecutionResult {
+        // Build available options: only include costs the player can actually pay
+        val availableOptions = mutableListOf<Pair<Int, String>>()
+        for ((index, option) in cost.options.withIndex()) {
+            if (canPayCost(state, payingPlayerId, option, sourceId)) {
+                availableOptions.add(index to option.description.replaceFirstChar { it.uppercase() })
+            }
+        }
+
+        // Always add the suffer option
+        val sufferDescription = effect.suffer.description.replaceFirstChar { it.uppercase() }
+
+        val optionLabels = availableOptions.map { it.second } + sufferDescription
+
+        // If no avoidance options are available, automatically suffer
+        if (availableOptions.isEmpty()) {
+            return executeSufferEffect(state, effect.suffer, context)
+        }
+
+        val decisionId = UUID.randomUUID().toString()
+        val prompt = "Choose one:"
+
+        val decision = ChooseOptionDecision(
+            id = decisionId,
+            playerId = payingPlayerId,
+            prompt = prompt,
+            context = DecisionContext(
+                sourceId = sourceId,
+                sourceName = sourceName,
+                phase = DecisionPhase.RESOLUTION
+            ),
+            options = optionLabels
+        )
+
+        val continuation = PayOrSufferChoiceContinuation(
+            decisionId = decisionId,
+            playerId = payingPlayerId,
+            sourceId = sourceId,
+            sourceName = sourceName,
+            options = availableOptions.map { cost.options[it.first] },
+            sufferEffect = effect.suffer,
+            targets = context.targets,
+            namedTargets = context.pipeline.namedTargets
+        )
+
+        val stateWithDecision = state.withPendingDecision(decision)
+        val stateWithContinuation = stateWithDecision.pushContinuation(continuation)
+
+        return ExecutionResult.paused(
+            stateWithContinuation,
+            decision,
+            listOf(
+                DecisionRequestedEvent(
+                    decisionId = decisionId,
+                    playerId = payingPlayerId,
+                    decisionType = "CHOOSE_OPTION",
+                    prompt = prompt
+                )
+            )
+        )
+    }
+
+    /**
+     * Check if a player can pay a specific cost.
+     */
+    private fun canPayCost(
+        state: GameState,
+        playerId: EntityId,
+        cost: PayCost,
+        sourceId: EntityId
+    ): Boolean {
+        return when (cost) {
+            is PayCost.Discard -> findValidCardsInHand(state, playerId, cost.filter).size >= cost.count
+            is PayCost.Sacrifice -> findValidPermanentsOnBattlefield(state, playerId, cost.filter, sourceId).size >= cost.count
+            is PayCost.PayLife -> {
+                val life = state.getEntity(playerId)?.get<com.wingedsheep.engine.state.components.identity.LifeTotalComponent>()?.life ?: 0
+                life > cost.amount
+            }
+            is PayCost.Mana -> ManaSolver(cardRegistry).canPay(state, playerId, cost.cost)
+            is PayCost.Exile -> findValidCardsInZone(state, playerId, cost.filter, cost.zone).size >= cost.count
+            is PayCost.Choice -> cost.options.any { canPayCost(state, playerId, it, sourceId) }
+            is PayCost.ReturnToHand -> false
+            is PayCost.RevealCard -> false
+        }
     }
 
     /**

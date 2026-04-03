@@ -212,6 +212,7 @@ object BloomburrowSet {
         StarfallInvocation,
         StarforgedSword,
         StarscapeCleric,
+        StarseerMentor,
         SteampathCharger,
         StormcatchMentor,
         StormchasersTalent,

@@ -21,6 +21,7 @@ import com.wingedsheep.engine.state.components.player.ManaPoolComponent
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.costs.PayCost
+import com.wingedsheep.sdk.scripting.effects.PayOrSufferEffect
 
 class SacrificeAndPayContinuationResumer(
     private val services: com.wingedsheep.engine.core.EngineServices
@@ -30,6 +31,7 @@ class SacrificeAndPayContinuationResumer(
         resumer(SacrificeContinuation::class, ::resumeSacrifice),
         resumer(ExileMultiZoneContinuation::class, ::resumeExileMultiZone),
         resumer(PayOrSufferContinuation::class, ::resumePayOrSuffer),
+        resumer(PayOrSufferChoiceContinuation::class, ::resumePayOrSufferChoice),
         resumer(AnyPlayerMayPayContinuation::class, ::resumeAnyPlayerMayPay),
         resumer(UntapChoiceContinuation::class, ::resumeUntapChoice)
     )
@@ -125,7 +127,54 @@ class SacrificeAndPayContinuationResumer(
             PayOrSufferCostType.PAY_LIFE -> resumePayOrSufferPayLife(state, continuation, response, checkForMore)
             PayOrSufferCostType.MANA -> resumePayOrSufferMana(state, continuation, response, checkForMore)
             PayOrSufferCostType.EXILE -> resumePayOrSufferExile(state, continuation, response, checkForMore)
+            PayOrSufferCostType.CHOICE -> ExecutionResult.error(state, "Choice cost type should be handled by PayOrSufferChoiceContinuation, not PayOrSufferContinuation")
         }
+    }
+
+    /**
+     * Resume after player picks which cost to pay from a multi-option PayOrSufferEffect.
+     */
+    fun resumePayOrSufferChoice(
+        state: GameState,
+        continuation: PayOrSufferChoiceContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        if (response !is OptionChosenResponse) {
+            return ExecutionResult.error(state, "Expected option choice response for pay or suffer choice")
+        }
+
+        val chosenIndex = response.optionIndex
+
+        // Last option is always the suffer effect
+        if (chosenIndex >= continuation.options.size) {
+            // Player chose the suffer option
+            val context = EffectContext(
+                sourceId = continuation.sourceId,
+                controllerId = continuation.playerId,
+                opponentId = null,
+                targets = continuation.targets,
+                pipeline = PipelineState(namedTargets = continuation.namedTargets)
+            )
+            val result = services.effectExecutorRegistry.execute(state, continuation.sufferEffect, context)
+            return if (result.isPaused) result else checkForMore(result.state, result.events.toList())
+        }
+
+        // Player chose a cost option — create a single-cost PayOrSufferEffect and execute it
+        val chosenCost = continuation.options[chosenIndex]
+        val singleCostEffect = PayOrSufferEffect(
+            cost = chosenCost,
+            suffer = continuation.sufferEffect
+        )
+        val context = EffectContext(
+            sourceId = continuation.sourceId,
+            controllerId = continuation.playerId,
+            opponentId = null,
+            targets = continuation.targets,
+            pipeline = PipelineState(namedTargets = continuation.namedTargets)
+        )
+        val result = services.effectExecutorRegistry.execute(state, singleCostEffect, context)
+        return if (result.isPaused) result else checkForMore(result.state, result.events.toList())
     }
 
     /**

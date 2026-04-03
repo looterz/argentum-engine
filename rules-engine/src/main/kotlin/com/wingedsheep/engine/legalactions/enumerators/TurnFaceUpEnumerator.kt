@@ -172,6 +172,9 @@ class TurnFaceUpEnumerator : ActionEnumerator {
                         )
                     }
                 }
+                is PayCost.Choice -> {
+                    // Choice morph costs not supported
+                }
             }
         }
 
