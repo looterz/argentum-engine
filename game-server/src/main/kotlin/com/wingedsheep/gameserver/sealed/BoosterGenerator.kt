@@ -171,7 +171,7 @@ class BoosterGenerator(
             setName = BloomburrowSet.SET_NAME,
             cards = BloomburrowSet.allCards,
             basicLands = BloomburrowSet.basicLands,
-            incomplete = true,
+            incomplete = false,
             totalSetSize = 272
         )
 
