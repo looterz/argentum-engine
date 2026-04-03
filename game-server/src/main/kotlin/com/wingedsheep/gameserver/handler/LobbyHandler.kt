@@ -1401,72 +1401,9 @@ class LobbyHandler(
      * Heuristic fallback: pick the best 2 colors, include on-color cards, add correct basics.
      */
     private fun buildHeuristicSealedDeck(pool: List<com.wingedsheep.sdk.model.CardDefinition>): Map<String, Int> {
-        val deck = mutableMapOf<String, Int>()
-
-        val nonLands = pool.filter { !it.typeLine.isLand }
-        val poolLands = pool.filter { it.typeLine.isLand && !it.typeLine.isBasicLand }
-
-        // Score each color by the quality/count of cards
-        val colorScores = mutableMapOf<com.wingedsheep.sdk.core.Color, Double>()
-        for (card in nonLands) {
-            for (color in card.colors) {
-                colorScores[color] = (colorScores[color] ?: 0.0) + 1.0 + (if (card.typeLine.isCreature) 0.5 else 0.0)
-            }
-        }
-
-        // Pick top 2 colors
-        val bestColors = colorScores.entries.sortedByDescending { it.value }.take(2).map { it.key }.toSet()
-        logger.info("AI heuristic: best colors = {}", bestColors.joinToString(", ") { it.name })
-
-        // Select on-color + colorless cards
-        val candidates = nonLands.filter { card ->
-            card.colors.isEmpty() || card.colors.all { it in bestColors }
-        }.sortedWith(compareBy({ it.cmc }, { if (it.typeLine.isCreature) 0 else 1 }))
-
-        val spells = candidates.take(23)
-        for (card in spells) {
-            deck[card.name] = (deck[card.name] ?: 0) + 1
-        }
-
-        // Add on-color non-basic lands
-        for (land in poolLands) {
-            // Simple heuristic: include dual/special lands
-            deck[land.name] = (deck[land.name] ?: 0) + 1
-        }
-
-        // Fill to 40 with basic lands split by color
-        val totalSpells = deck.values.sum()
-        val landsNeeded = (40 - totalSpells).coerceAtLeast(0)
-
-        val colorToLand = mapOf(
-            com.wingedsheep.sdk.core.Color.WHITE to "Plains",
-            com.wingedsheep.sdk.core.Color.BLUE to "Island",
-            com.wingedsheep.sdk.core.Color.BLACK to "Swamp",
-            com.wingedsheep.sdk.core.Color.RED to "Mountain",
-            com.wingedsheep.sdk.core.Color.GREEN to "Forest"
-        )
-
-        if (bestColors.size >= 2) {
-            val land1 = colorToLand[bestColors.first()] ?: "Forest"
-            val land2 = colorToLand[bestColors.last()] ?: "Forest"
-            // Count mana symbols to split lands proportionally
-            val color1count = spells.sumOf { card -> card.colors.count { it == bestColors.first() } }
-            val color2count = spells.sumOf { card -> card.colors.count { it == bestColors.last() } }
-            val total = (color1count + color2count).coerceAtLeast(1)
-            val land1count = (landsNeeded * color1count / total).coerceAtLeast(1)
-            val land2count = landsNeeded - land1count
-            deck[land1] = (deck[land1] ?: 0) + land1count
-            deck[land2] = (deck[land2] ?: 0) + land2count
-        } else if (bestColors.size == 1) {
-            val land = colorToLand[bestColors.first()] ?: "Forest"
-            deck[land] = (deck[land] ?: 0) + landsNeeded
-        } else {
-            deck["Forest"] = (deck["Forest"] ?: 0) + landsNeeded
-        }
-
+        val deck = com.wingedsheep.engine.ai.buildHeuristicSealedDeck(pool)
         logger.info("AI heuristic deck ({} cards): {}", deck.values.sum(),
             deck.entries.sortedByDescending { it.value }.joinToString(", ") { "${it.value}x ${it.key}" })
-
         return deck
     }
 

@@ -5,6 +5,7 @@ import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.legalactions.LegalAction
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.EntityId
 
 /**
@@ -85,7 +86,28 @@ class AIPlayer(
             // Choose and execute an action
             val action = chooseAction(current)
             val result = processor.process(current, action)
-            if (result.error != null) break
+            if (result.error != null) {
+                // Action was illegal — submit a safe fallback action
+                val fallback = when (current.step) {
+                    Step.DECLARE_ATTACKERS -> DeclareAttackers(playerId, emptyMap())
+                    Step.DECLARE_BLOCKERS -> {
+                        // Build minimal valid blocker map from mandatory assignments
+                        val legalActions = simulator.getLegalActions(current, playerId)
+                        val blockerAction = legalActions.find { it.actionType == "DeclareBlockers" }
+                        val mandatory = blockerAction?.mandatoryBlockerAssignments ?: emptyMap()
+                        val blockerMap = mandatory.mapValues { (_, targets) ->
+                            if (targets.isNotEmpty()) listOf(targets.first()) else emptyList()
+                        }
+                        DeclareBlockers(playerId, blockerMap)
+                    }
+                    else -> PassPriority(playerId)
+                }
+                val fallbackResult = processor.process(current, fallback)
+                if (fallbackResult.error != null) break
+                current = fallbackResult.state
+                iterations++
+                break
+            }
             current = result.state
             iterations++
 

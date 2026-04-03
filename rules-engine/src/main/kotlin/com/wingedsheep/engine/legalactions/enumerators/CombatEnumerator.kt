@@ -53,10 +53,11 @@ class CombatEnumerator : ActionEnumerator {
                 val validAttackers = context.turnManager.getValidAttackers(state, playerId)
                 val projected = context.projected
                 val opponents = state.turnOrder.filter { it != playerId }
-                val validAttackTargets = state.getBattlefield().filter { entityId ->
+                val opponentPlaneswalkers = state.getBattlefield().filter { entityId ->
                     projected.isPlaneswalker(entityId) &&
                         projected.getController(entityId) in opponents
                 }
+                val validAttackTargets = opponents + opponentPlaneswalkers
                 val mandatoryAttackers = context.turnManager.getMandatoryAttackers(state, playerId)
                 return listOf(LegalAction(
                     actionType = "DeclareAttackers",

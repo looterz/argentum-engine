@@ -21,6 +21,9 @@ tasks.withType<Test>().configureEach {
     // Increase heap size for Spring Boot integration tests with WebSocket connections
     maxHeapSize = "2g"
 
+    // Forward the "benchmark" flag so benchmark tests can check it
+    systemProperty("benchmark", System.getProperty("benchmark") ?: "false")
+
     // Log information about all test results, not only the failed ones.
     testLogging {
         events(
@@ -28,5 +31,6 @@ tasks.withType<Test>().configureEach {
             TestLogEvent.PASSED,
             TestLogEvent.SKIPPED
         )
+        showStandardStreams = System.getProperty("benchmark") == "true"
     }
 }

@@ -514,6 +514,7 @@ class CombatAdvisor(
                 if (aPower <= 0) continue
 
                 for (blocker in available) {
+                    if (!CombatMath.canBeBlockedBy(state, projected, attacker, blocker)) continue
                     val reduction = CombatMath.effectiveDamagePrevented(projected, attacker, blocker)
                     if (reduction > bestReduction) {
                         bestReduction = reduction
@@ -537,6 +538,17 @@ class CombatAdvisor(
      * Profit mode: look for favorable trades, accounting for first strike, lifelink,
      * and life-scaled trade willingness. At low life, accepts worse trades to prevent damage.
      */
+    /** Return unassigned blockers that can legally block [attacker] (evasion check). */
+    private fun availableBlockersFor(
+        state: GameState,
+        projected: ProjectedState,
+        attacker: EntityId,
+        validBlockers: List<EntityId>,
+        assignedBlockers: Set<EntityId>
+    ): List<EntityId> {
+        return validBlockers.filter { it !in assignedBlockers && CombatMath.canBeBlockedBy(state, projected, attacker, it) }
+    }
+
     private fun assignBlocksForProfit(
         state: GameState,
         projected: ProjectedState,
@@ -571,8 +583,7 @@ class CombatAdvisor(
             val attackerValue = CombatMath.creatureValue(state, projected, attacker)
 
             // ── Try single blocker first ──
-            val singleBlocker = validBlockers
-                .filter { it !in assignedBlockers }
+            val singleBlocker = availableBlockersFor(state, projected, attacker, validBlockers, assignedBlockers)
                 .filter { blockerId ->
                     val bPower = projected.getPower(blockerId) ?: 0
                     val bToughness = projected.getToughness(blockerId) ?: 0
@@ -631,7 +642,7 @@ class CombatAdvisor(
             val aHasFirstStrike = Keyword.FIRST_STRIKE.name in aKeywords || Keyword.DOUBLE_STRIKE.name in aKeywords
             val attackerValue = CombatMath.creatureValue(state, projected, attacker)
 
-            val available = validBlockers.filter { it !in assignedBlockers }
+            val available = availableBlockersFor(state, projected, attacker, validBlockers, assignedBlockers)
             if (available.size < 2) continue
 
             val gangBlock = findProfitableGangBlock(state, projected, attacker, aPower, aToughness, aHasFirstStrike, attackerValue, available)
@@ -673,11 +684,10 @@ class CombatAdvisor(
         }.toMutableList()
 
         for (attacker in unblocked) {
-            val available = validBlockers
-                .filter { it !in assignedBlockers }
+            val available = availableBlockersFor(state, projected, attacker, validBlockers, assignedBlockers)
                 .sortedBy { CombatMath.creatureValue(state, projected, it) }
 
-            if (available.isEmpty()) break
+            if (available.isEmpty()) continue
 
             val chumpBlocker = available.first()
             val aKeywords = projected.getKeywords(attacker)
@@ -732,8 +742,7 @@ class CombatAdvisor(
 
             // If damage still overflows, add more blockers
             if (aPower > lethalNeeded) {
-                val available = validBlockers
-                    .filter { it !in assignedBlockers }
+                val available = availableBlockersFor(state, projected, trampler, validBlockers, assignedBlockers)
                     .sortedBy { CombatMath.creatureValue(state, projected, it) }
 
                 var absorbed = lethalNeeded
