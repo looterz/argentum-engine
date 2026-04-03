@@ -205,6 +205,7 @@ object BloomburrowSet {
         SazacapsBrew,
         ScalesOfShale,
         ScavengersTalent,
+        Scrapshooter,
         SeasonOfGathering,
         SeasonOfLoss,
         SeasonOfTheBold,

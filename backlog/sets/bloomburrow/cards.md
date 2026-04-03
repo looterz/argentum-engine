@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 265 / 266
+**Implemented:** 266 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -10,7 +10,7 @@
 | Blue       | 41    | 41   |
 | Black      | 40    | 38   |
 | Red        | 41    | 40   |
-| Green      | 41    | 40   |
+| Green      | 41    | 41   |
 | Multicolor | 39    | 39   |
 | Colorless  | 9     | 9    |
 | Land       | 15    | 15   |
@@ -203,7 +203,7 @@
 - [x] Sazacap's Brew
 - [x] Scales of Shale
 - [x] Scavenger's Talent
-- [ ] Scrapshooter
+- [x] Scrapshooter
 - [x] Season of Gathering
 - [x] Season of Loss
 - [x] Season of Weaving
