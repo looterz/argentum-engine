@@ -57,6 +57,7 @@ object BloomburrowSet {
         CarrotCake,
         CinderingCutthroat,
         ClifftopLookout,
+        CoilingRebirth,
         ClementTheWorrywort,
         ConductElectricity,
         ConsumedByGreed,

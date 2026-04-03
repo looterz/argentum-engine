@@ -2,13 +2,13 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 263 / 266
+**Implemented:** 264 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 39   |
 | Blue       | 41    | 41   |
-| Black      | 40    | 37   |
+| Black      | 40    | 38   |
 | Red        | 41    | 40   |
 | Green      | 41    | 40   |
 | Multicolor | 39    | 39   |
@@ -53,7 +53,7 @@
 - [x] Cindering Cutthroat
 - [x] Clement, the Worrywort
 - [x] Clifftop Lookout
-- [ ] Coiling Rebirth
+- [x] Coiling Rebirth
 - [x] Conduct Electricity
 - [x] Consumed by Greed
 - [x] Corpseberry Cultivator

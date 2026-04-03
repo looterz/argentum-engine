@@ -80,6 +80,7 @@ import com.wingedsheep.sdk.scripting.effects.TapUntapEffect
 import com.wingedsheep.sdk.scripting.effects.ZonePlacement
 import com.wingedsheep.sdk.scripting.effects.CreateTokenCopyOfEquippedCreatureEffect
 import com.wingedsheep.sdk.scripting.effects.CreateTokenCopyOfSourceEffect
+import com.wingedsheep.sdk.scripting.effects.CreateTokenCopyOfTargetEffect
 import com.wingedsheep.sdk.scripting.effects.CreateTokenEffect
 import com.wingedsheep.sdk.scripting.effects.CreatePredefinedTokenEffect
 import com.wingedsheep.sdk.scripting.effects.CounterCondition
@@ -758,6 +759,17 @@ object Effects {
         overrideToughness: Int? = null
     ): Effect =
         CreateTokenCopyOfSourceEffect(count, overridePower, overrideToughness)
+
+    /**
+     * Create a token that's a copy of a targeted permanent.
+     * "Create a token that's a copy of target creature, except it's 1/1."
+     */
+    fun CreateTokenCopyOfTarget(
+        target: EffectTarget,
+        count: Int = 1,
+        overridePower: Int? = null,
+        overrideToughness: Int? = null
+    ): Effect = CreateTokenCopyOfTargetEffect(target, DynamicAmount.Fixed(count), overridePower, overrideToughness)
 
     /**
      * Create a token that's a copy of the equipped creature.
