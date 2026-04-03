@@ -2,13 +2,13 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 243 / 266
+**Implemented:** 244 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 37   |
 | Blue       | 41    | 39   |
-| Black      | 40    | 35   |
+| Black      | 40    | 36   |
 | Red        | 41    | 35   |
 | Green      | 41    | 37   |
 | Multicolor | 39    | 34   |
@@ -249,7 +249,7 @@
 - [x] Thornplate Intimidator
 - [x] Thornvault Forager
 - [x] Thought Shucker
-- [ ] Thought-Stalker Warlock
+- [x] Thought-Stalker Warlock
 - [x] Three Tree City
 - [x] Three Tree Mascot
 - [x] Three Tree Rootweaver
