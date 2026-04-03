@@ -4,20 +4,22 @@ import com.wingedsheep.engine.ai.evaluation.BoardEvaluator
 import com.wingedsheep.engine.core.DeclareAttackers
 import com.wingedsheep.engine.core.DeclareBlockers
 import com.wingedsheep.engine.core.GameAction
+import com.wingedsheep.engine.core.PassPriority
 import com.wingedsheep.engine.legalactions.LegalAction
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.core.Phase
 import com.wingedsheep.sdk.model.EntityId
 
 /**
  * Specialized advisor for attack and block decisions.
  *
- * Uses pure heuristic analysis (NOT simulation) because the simulator can't
- * resolve through combat phases — it would see "creatures tapped, no damage
- * dealt" and always prefer not attacking.
+ * Per-creature attack decisions use simulation: declare this creature attacking,
+ * predict the opponent's block using [chooseBlockers], resolve combat damage,
+ * and compare the resulting board evaluation to not attacking.
  */
 class CombatAdvisor(
     private val simulator: GameSimulator,
@@ -77,7 +79,11 @@ class CombatAdvisor(
         val tradeRatio = CombatMath.tradeWillingnessRatio(myLife)
 
         val attackerMap = mutableMapOf<EntityId, EntityId>()
+        val simulationDeadline = System.currentTimeMillis() + 2000 // 2 second budget
         for (entityId in validAttackers) {
+            // If we've exceeded the time budget, fall back to fast-path only (no more simulations)
+            if (System.currentTimeMillis() > simulationDeadline) break
+
             val target = chooseAttackTarget(
                 state, projected, entityId, opponentId, opponentCreatures,
                 opponentLife, planeswalkerTargets, aggression,
@@ -276,100 +282,94 @@ class CombatAdvisor(
         tradeRatio: Double
     ): EntityId? {
         val power = projected.getPower(entityId) ?: 0
-        val toughness = projected.getToughness(entityId) ?: 0
         val keywords = projected.getKeywords(entityId)
-        val myValue = CombatMath.creatureValue(state, projected, entityId)
 
         if (power <= 0) return null
 
         val isEvasive = CombatMath.isEvasive(state, projected, entityId, opponentCreatures)
 
-        // ── Always attack: no downside (any aggression level >= 1) ──
+        // ── Fast paths: always attack (any aggression >= 1) ──
         if (Keyword.VIGILANCE.name in keywords) {
             return chooseBestTarget(state, projected, entityId, opponentId, planeswalkerTargets, isEvasive)
         }
         if (Keyword.INDESTRUCTIBLE.name in keywords) {
             return chooseBestTarget(state, projected, entityId, opponentId, planeswalkerTargets, isEvasive)
         }
-
-        // ── No blockers: always attack ──
         if (opponentCreatures.isEmpty()) {
             return chooseBestTarget(state, projected, entityId, opponentId, planeswalkerTargets, isEvasive)
         }
-
-        // ── Evasive: always attack (any aggression level >= 1) ──
         if (isEvasive) {
             return chooseBestTarget(state, projected, entityId, opponentId, planeswalkerTargets, true)
         }
 
-        // ── Deathtouch: always trades up (aggression >= 2) ──
-        if (Keyword.DEATHTOUCH.name in keywords && aggression >= 2) return opponentId
+        if (aggression <= 1) return null // Only evasive/no-downside (handled above)
+        if (aggression >= 5) return opponentId // All-out attack
 
-        // ── Level 1: only evasive/no-downside creatures (handled above) ──
-        if (aggression <= 1) return null
+        // ── Simulate: attack with this creature, let opponent block, resolve combat ──
+        val baselineScore = evaluator.evaluate(state, projected, state.turnOrder.find { it != opponentId }!!)
+        val postCombatState = simulateSingleAttack(state, entityId, opponentId)
+            ?: return null // simulation failed → don't attack
 
-        // ── First/double strike: contextual — only if we have an advantage ──
-        if (Keyword.FIRST_STRIKE.name in keywords || Keyword.DOUBLE_STRIKE.name in keywords) {
-            val validBlockers = CombatMath.getValidBlockersFor(state, projected, entityId, opponentCreatures)
-            val bestBlocker = validBlockers.minByOrNull { CombatMath.creatureValue(state, projected, it) }
-            if (bestBlocker == null) return opponentId
-            val blockerKillsUs = CombatMath.wouldKillInCombat(state, projected, bestBlocker, entityId)
-            if (!blockerKillsUs) return opponentId
-            val weKillBlockerFirst = CombatMath.wouldKillInCombat(state, projected, entityId, bestBlocker)
-            if (weKillBlockerFirst) return opponentId
-            // First strike doesn't help — fall through to normal evaluation
+        val postCombatScore = evaluator.evaluate(
+            postCombatState, postCombatState.projectedState,
+            state.turnOrder.find { it != opponentId }!!
+        )
+
+        // Aggression determines how much worse we're willing to accept
+        val threshold = when {
+            aggression >= 4 -> -1.0
+            aggression >= 3 -> -0.3
+            else -> 0.0 // Aggression 2: only if board improves or stays equal
         }
 
-        // ── Level 5: all-out attack ──
-        if (aggression >= 5) return opponentId
+        return if (postCombatScore - baselineScore >= threshold) opponentId else null
+    }
 
-        // ── Analyze the best blocker they could assign ──
-        val validBlockers = CombatMath.getValidBlockersFor(state, projected, entityId, opponentCreatures)
-        val bestBlocker = findCheapestEffectiveBlocker(state, projected, entityId, validBlockers, trickToughnessBonus)
+    /**
+     * Simulate a single creature attacking: declare it as attacker, pass priority
+     * through to declare blockers, let the blocking AI choose blocks, then resolve
+     * through combat damage to get the post-combat state.
+     *
+     * Returns the post-combat GameState, or null if the simulation fails.
+     */
+    private fun simulateSingleAttack(
+        state: GameState,
+        attackerId: EntityId,
+        opponentId: EntityId
+    ): GameState? {
+        val playerId = state.turnOrder.find { it != opponentId } ?: return null
+        val attackAction = DeclareAttackers(playerId, mapOf(attackerId to opponentId))
+        var current = simulator.simulate(state, attackAction).state
 
-        if (bestBlocker == null) {
-            // No blocker can kill us → always attack at aggression >= 2
-            return opponentId
+        // Drive through combat: pass priority, handle blockers, resolve damage.
+        // Only enumerate legal actions when we expect a DeclareBlockers step (for the opponent).
+        // Otherwise just pass priority directly to avoid expensive enumeration.
+        var iterations = 0
+        var needsBlockerCheck = true
+        while (iterations < 50 && !current.gameOver && current.pendingDecision == null) {
+            iterations++
+            val priorityPlayer = current.priorityPlayerId ?: break
+
+            if (needsBlockerCheck && priorityPlayer == opponentId) {
+                // Opponent has priority — check if this is the declare blockers step
+                val legalActions = simulator.getLegalActions(current, opponentId)
+                val blockAction = legalActions.find { it.actionType == "DeclareBlockers" }
+                if (blockAction != null) {
+                    val blockerAction = chooseBlockers(current, blockAction, opponentId)
+                    current = simulator.simulate(current, blockerAction).state
+                    needsBlockerCheck = false // Blockers already declared, no need to check again
+                    continue
+                }
+            }
+
+            // Pass priority to advance through combat steps
+            current = simulator.simulate(current, PassPriority(priorityPlayer)).state
+
+            // Stop once we've left combat
+            if (current.phase != Phase.COMBAT) break
         }
 
-        val bPower = (projected.getPower(bestBlocker) ?: 0) + trickPowerBonus
-        val bKeywords = projected.getKeywords(bestBlocker)
-        val canKillUs = bPower >= toughness || Keyword.DEATHTOUCH.name in bKeywords
-        val bToughness = (projected.getToughness(bestBlocker) ?: 0) + trickToughnessBonus
-        val weKillThem = power >= bToughness || Keyword.DEATHTOUCH.name in keywords
-        val blockerValue = CombatMath.creatureValue(state, projected, bestBlocker)
-
-        if (!canKillUs) {
-            // They can't kill us → always attack at aggression >= 2
-            return opponentId
-        }
-
-        // They can potentially kill us — use aggression level + life-scaled trade willingness
-        if (weKillThem) {
-            // Mutual trade: use life-scaled willingness
-            // tradeRatio controls how much more valuable we require the blocker to be
-            if (blockerValue >= myValue * tradeRatio) return opponentId
-
-            // At aggression 4+, accept any mutual trade
-            if (aggression >= 4) return opponentId
-
-            // At aggression 3, accept if the trade is close
-            if (aggression >= 3 && blockerValue >= myValue * 0.4) return opponentId
-        } else {
-            // We die, they survive — bad trade. Only at aggression 4+ and if creature is expendable
-            if (aggression >= 4 && myValue <= 3.0) return opponentId
-        }
-
-        // At aggression 3+, still attack if we significantly outnumber them (board pressure)
-        if (aggression >= 3) {
-            val myCreatureCount = projected.getBattlefieldControlledBy(
-                state.turnOrder.find { it != opponentId } ?: return null
-            ).count { projected.isCreature(it) }
-            val theirCreatureCount = opponentCreatures.size
-            if (myCreatureCount >= theirCreatureCount + 2) return opponentId
-        }
-
-        return null
+        return current
     }
 
     /**
@@ -406,30 +406,6 @@ class CombatAdvisor(
         }
 
         return opponentId
-    }
-
-    /**
-     * Find the opponent's cheapest creature that can kill our attacker, factoring in combat tricks.
-     */
-    private fun findCheapestEffectiveBlocker(
-        state: GameState,
-        projected: ProjectedState,
-        attacker: EntityId,
-        validBlockers: List<EntityId>,
-        trickToughnessBonus: Int
-    ): EntityId? {
-        val toughness = projected.getToughness(attacker) ?: 0
-        val keywords = projected.getKeywords(attacker)
-
-        return validBlockers.filter { blocker ->
-            val bPower = projected.getPower(blocker) ?: 0
-            val bKeywords = projected.getKeywords(blocker)
-            // Can this blocker kill us (accounting for possible combat trick pumping it)?
-            val canKillUs = (bPower >= toughness) || Keyword.DEATHTOUCH.name in bKeywords
-            // Even without enough power now, a trick might pump it enough
-            val trickCouldKillUs = (bPower + trickToughnessBonus) >= toughness
-            canKillUs || trickCouldKillUs
-        }.minByOrNull { CombatMath.creatureValue(state, projected, it) }
     }
 
     /**
