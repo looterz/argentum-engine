@@ -292,6 +292,8 @@ export enum CounterType {
   INDESTRUCTIBLE = 'INDESTRUCTIBLE',
   STASH = 'STASH',
   BLIGHT = 'BLIGHT',
+  COIN = 'COIN',
+  FLOOD = 'FLOOD',
 }
 
 export const CounterTypeDisplayNames: Record<CounterType, string> = {
@@ -314,6 +316,8 @@ export const CounterTypeDisplayNames: Record<CounterType, string> = {
   [CounterType.INDESTRUCTIBLE]: 'Indestructible',
   [CounterType.STASH]: 'Stash',
   [CounterType.BLIGHT]: 'Blight',
+  [CounterType.COIN]: 'Coin',
+  [CounterType.FLOOD]: 'Flood',
 }
 
 /**

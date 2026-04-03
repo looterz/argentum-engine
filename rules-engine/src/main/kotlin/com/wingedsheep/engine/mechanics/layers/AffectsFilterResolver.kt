@@ -147,6 +147,15 @@ internal class AffectsFilterResolver {
                         (counters?.getCount(counterType) ?: 0) > 0
                 }.toSet()
             }
+            is AffectsFilter.LandsWithCounter -> {
+                val counterType = parseCounterType(filter.counterType) ?: return emptySet()
+                state.getBattlefield().filter { entityId ->
+                    val container = state.getEntity(entityId) ?: return@filter false
+                    val card = container.get<CardComponent>() ?: return@filter false
+                    val counters = container.get<CountersComponent>()
+                    card.typeLine.isLand && (counters?.getCount(counterType) ?: 0) > 0
+                }.toSet()
+            }
             is AffectsFilter.ChosenCreatureTypeCreatures -> {
                 val chosenType = state.getEntity(sourceId)
                     ?.get<ChosenCreatureTypeComponent>()?.creatureType

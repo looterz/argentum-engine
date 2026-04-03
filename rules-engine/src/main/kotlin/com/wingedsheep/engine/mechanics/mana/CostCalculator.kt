@@ -13,6 +13,8 @@ import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.CharacteristicValue
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.core.Subtype
+import com.wingedsheep.engine.state.components.battlefield.CountersComponent
+import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.scripting.CostReductionSource
 import com.wingedsheep.sdk.scripting.FaceDownSpellCostReduction
 import com.wingedsheep.sdk.scripting.GameObjectFilter
@@ -21,6 +23,7 @@ import com.wingedsheep.sdk.scripting.IncreaseMorphCost
 import com.wingedsheep.sdk.scripting.IncreaseSpellCostByFilter
 import com.wingedsheep.sdk.scripting.IncreaseSpellCostByPlayerSpellsCast
 import com.wingedsheep.sdk.scripting.KeywordAbility
+import com.wingedsheep.sdk.scripting.ReduceFirstSpellOfTypeColoredCost
 import com.wingedsheep.sdk.scripting.ReduceSpellCostByFilter
 import com.wingedsheep.sdk.scripting.ReduceSpellColoredCostBySubtype
 import com.wingedsheep.sdk.scripting.ReduceSpellCostBySubtype
@@ -119,6 +122,9 @@ class CostCalculator(
                 val graveyardCount = countGraveyardCardsMatchingFilter(state, playerId, source.filter)
                 val exileCount = countExileCardsMatchingFilter(state, playerId, source.filter)
                 (graveyardCount + exileCount) * source.amountPerCard
+            }
+            is CostReductionSource.PermanentsWithCounterYouControl -> {
+                countPermanentsWithCounter(state, playerId, source.filter, source.counterType)
             }
         }
     }
@@ -259,6 +265,31 @@ class CostCalculator(
     }
 
     /**
+     * Count permanents matching a filter that have a specific counter type.
+     * Uses projected state for type/subtype checks.
+     */
+    private fun countPermanentsWithCounter(
+        state: GameState,
+        playerId: EntityId,
+        filter: GameObjectFilter,
+        counterType: String
+    ): Int {
+        val projectedState = state.projectedState
+        val ct = CounterType.entries.find { it.name.equals(counterType, ignoreCase = true) }
+            ?: return 0
+        return state.getBattlefield(playerId).count { entityId ->
+            val container = state.getEntity(entityId) ?: return@count false
+            val card = container.get<CardComponent>() ?: return@count false
+            val counters = container.get<CountersComponent>()
+            if ((counters?.getCount(ct) ?: 0) <= 0) return@count false
+            val cardDef = cardRegistry.getCard(card.cardDefinitionId) ?: return@count false
+            filter.cardPredicates.all { predicate ->
+                matchesBattlefieldPredicate(entityId, cardDef, predicate, projectedState)
+            }
+        }
+    }
+
+    /**
      * Count unique colors among permanents controlled by a player.
      * Used for Vivid cost reduction.
      */
@@ -365,9 +396,8 @@ class CostCalculator(
     }
 
     /**
-     * Apply colored cost reductions from battlefield permanents with ReduceSpellColoredCostBySubtype.
-     * Removes specific colored mana symbols from the spell's cost.
-     * Only reduces colored mana, never generic mana.
+     * Apply colored cost reductions from battlefield permanents.
+     * Handles ReduceSpellColoredCostBySubtype and ReduceFirstSpellOfTypeColoredCost.
      */
     private fun applyColoredCostReductions(
         state: GameState,
@@ -376,11 +406,33 @@ class CostCalculator(
         currentCost: ManaCost
     ): ManaCost {
         val spellSubtypes = cardDef.typeLine.subtypes
-        if (spellSubtypes.isEmpty()) return currentCost
+        var cost = currentCost
 
-        // Collect all colored mana symbols to remove
-        val symbolsToRemove = mutableListOf<ManaSymbol>()
+        // Phase 1: ReduceSpellColoredCostBySubtype — no overflow (excess is dropped)
+        if (spellSubtypes.isNotEmpty()) {
+            val symbolsToRemove = mutableListOf<ManaSymbol>()
+            for (entityId in state.getBattlefield(casterId)) {
+                val container = state.getEntity(entityId) ?: continue
+                val card = container.get<CardComponent>() ?: continue
+                val permanentDef = cardRegistry.getCard(card.cardDefinitionId) ?: continue
+                val classLevel = container.get<ClassLevelComponent>()?.currentLevel
 
+                for (ability in permanentDef.script.effectiveStaticAbilities(classLevel)) {
+                    if (ability is ReduceSpellColoredCostBySubtype &&
+                        Subtype.of(ability.subtype) in spellSubtypes
+                    ) {
+                        val reductionCost = ManaCost.parse(ability.manaReduction)
+                        symbolsToRemove.addAll(reductionCost.symbols.filterIsInstance<ManaSymbol.Colored>())
+                    }
+                }
+            }
+            if (symbolsToRemove.isNotEmpty()) {
+                cost = reduceColoredCost(cost, symbolsToRemove)
+            }
+        }
+
+        // Phase 2: ReduceFirstSpellOfTypeColoredCost — with overflow to generic
+        val overflowSymbols = mutableListOf<ManaSymbol>()
         for (entityId in state.getBattlefield(casterId)) {
             val container = state.getEntity(entityId) ?: continue
             val card = container.get<CardComponent>() ?: continue
@@ -388,18 +440,26 @@ class CostCalculator(
             val classLevel = container.get<ClassLevelComponent>()?.currentLevel
 
             for (ability in permanentDef.script.effectiveStaticAbilities(classLevel)) {
-                if (ability is ReduceSpellColoredCostBySubtype &&
-                    Subtype.of(ability.subtype) in spellSubtypes
+                if (ability is ReduceFirstSpellOfTypeColoredCost &&
+                    matchesCardDefinition(cardDef, ability.spellFilter)
                 ) {
-                    val reductionCost = ManaCost.parse(ability.manaReduction)
-                    symbolsToRemove.addAll(reductionCost.symbols.filterIsInstance<ManaSymbol.Colored>())
+                    val castCount = state.spellTypesCastThisTurn[casterId]?.get(ability.spellCategory) ?: 0
+                    if (castCount == 0) {
+                        val units = evaluateReduction(state, ability.countSource, casterId)
+                        val reductionSymbol = ManaCost.parse(ability.manaReductionPerUnit)
+                        val coloredSymbols = reductionSymbol.symbols.filterIsInstance<ManaSymbol.Colored>()
+                        repeat(units) {
+                            overflowSymbols.addAll(coloredSymbols)
+                        }
+                    }
                 }
             }
         }
+        if (overflowSymbols.isNotEmpty()) {
+            cost = reduceColoredCostWithOverflow(cost, overflowSymbols)
+        }
 
-        if (symbolsToRemove.isEmpty()) return currentCost
-
-        return reduceColoredCost(currentCost, symbolsToRemove)
+        return cost
     }
 
     /**
@@ -418,6 +478,30 @@ class CostCalculator(
         }
 
         return ManaCost(remainingSymbols)
+    }
+
+    /**
+     * Remove colored mana symbols from a cost, with overflow to generic reduction.
+     * First removes matching colored symbols; excess that can't match reduces generic mana.
+     * Used for Eluge: "{U} less for each flood-counter land" — if more {U} reductions
+     * than blue pips, excess reduces generic cost.
+     */
+    private fun reduceColoredCostWithOverflow(cost: ManaCost, symbolsToRemove: List<ManaSymbol>): ManaCost {
+        val remainingSymbols = cost.symbols.toMutableList()
+        var overflowReduction = 0
+
+        for (symbolToRemove in symbolsToRemove) {
+            val index = remainingSymbols.indexOfFirst { it == symbolToRemove }
+            if (index >= 0) {
+                remainingSymbols.removeAt(index)
+            } else {
+                // Colored symbol couldn't be removed — overflow to generic reduction
+                overflowReduction++
+            }
+        }
+
+        val result = ManaCost(remainingSymbols)
+        return if (overflowReduction > 0) reduceGenericCost(result, overflowReduction) else result
     }
 
     /**

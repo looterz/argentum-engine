@@ -2,12 +2,12 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 250 / 266
+**Implemented:** 251 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 38   |
-| Blue       | 41    | 39   |
+| Blue       | 41    | 40   |
 | Black      | 40    | 36   |
 | Red        | 41    | 38   |
 | Green      | 41    | 37   |
@@ -77,7 +77,7 @@
 - [x] Druid of the Spade
 - [x] Early Winter
 - [x] Eddymurk Crab
-- [ ] Eluge, the Shoreless Sea
+- [x] Eluge, the Shoreless Sea
 - [x] Emberheart Challenger
 - [x] Essence Channeler
 - [x] Fabled Passage

@@ -16,6 +16,7 @@ import com.wingedsheep.sdk.scripting.PreventDamage
 import com.wingedsheep.sdk.scripting.ReplaceDamageWithCounters
 import com.wingedsheep.sdk.scripting.PreventLifeGain
 import com.wingedsheep.sdk.scripting.AddCreatureTypeByCounter
+import com.wingedsheep.sdk.scripting.AddLandTypeByCounter
 import com.wingedsheep.sdk.scripting.CantBeBlocked
 import com.wingedsheep.sdk.scripting.CantAttack
 import com.wingedsheep.sdk.scripting.CantBlock
@@ -466,6 +467,14 @@ class StaticAbilityHandler(
                     sublayer = null,
                     modification = Modification.AddSubtype(ability.creatureType),
                     affectsFilter = AffectsFilter.CreaturesWithCounter(ability.counterType)
+                )
+            }
+            is AddLandTypeByCounter -> {
+                ContinuousEffectData(
+                    layer = Layer.TYPE,
+                    sublayer = null,
+                    modification = Modification.AddSubtype(ability.landType),
+                    affectsFilter = AffectsFilter.LandsWithCounter(ability.counterType)
                 )
             }
             is GrantSubtype -> {

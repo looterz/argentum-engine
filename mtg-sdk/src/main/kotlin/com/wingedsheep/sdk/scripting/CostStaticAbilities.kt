@@ -214,6 +214,52 @@ sealed interface CostReductionSource {
     ) : CostReductionSource {
         override val description: String = "the number of ${filter.description} cards you own in exile and in your graveyard"
     }
+
+    /**
+     * Reduces cost by number of permanents you control matching a filter that have a specific counter.
+     * Used for Eluge: "costs {U} less for each land you control with a flood counter on it."
+     *
+     * @property filter The filter permanents must match (e.g., Land)
+     * @property counterType The counter type permanents must have (e.g., "flood")
+     */
+    @SerialName("PermanentsWithCounterYouControl")
+    @Serializable
+    data class PermanentsWithCounterYouControl(
+        val filter: GameObjectFilter,
+        val counterType: String
+    ) : CostReductionSource {
+        override val description: String = "${filter.description} you control with a $counterType counter on it"
+    }
+}
+
+/**
+ * Reduces the colored mana cost of the first spell of a type you cast each turn,
+ * by a per-unit mana symbol multiplied by a dynamic count.
+ * Used for Eluge: "The first instant or sorcery spell you cast each turn costs {U} less
+ * for each land you control with a flood counter on it."
+ *
+ * This is a battlefield-based static ability. The engine checks the player's spell type
+ * cast count to determine "first of type" eligibility, then evaluates the count source
+ * and applies colored mana reduction.
+ *
+ * @property spellFilter The filter that spells must match (card predicates only)
+ * @property spellCategory The spell category for "first of type" tracking (e.g., "INSTANT_OR_SORCERY")
+ * @property manaReductionPerUnit The colored mana symbol to remove per unit (e.g., "{U}")
+ * @property countSource How the number of reduction units is determined
+ */
+@SerialName("ReduceFirstSpellOfTypeColoredCost")
+@Serializable
+data class ReduceFirstSpellOfTypeColoredCost(
+    val spellFilter: GameObjectFilter,
+    val spellCategory: String,
+    val manaReductionPerUnit: String,
+    val countSource: CostReductionSource
+) : StaticAbility {
+    override val description: String = "The first ${spellCategory.lowercase().replace('_', ' ')} spell you cast each turn costs $manaReductionPerUnit less to cast for each ${countSource.description}"
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newFilter = spellFilter.applyTextReplacement(replacer)
+        return if (newFilter !== spellFilter) copy(spellFilter = newFilter) else this
+    }
 }
 
 /**

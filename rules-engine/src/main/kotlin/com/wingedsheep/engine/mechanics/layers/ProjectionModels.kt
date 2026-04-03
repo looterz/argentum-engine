@@ -132,6 +132,15 @@ sealed interface AffectsFilter {
     }
 
     /**
+     * All lands that have a specific counter type.
+     * Used for Eluge: "Each land with a flood counter on it is an Island."
+     */
+    @Serializable
+    data class LandsWithCounter(val counterType: String) : AffectsFilter {
+        override fun applyTextReplacement(replacer: TextReplacer): AffectsFilter = this
+    }
+
+    /**
      * All face-down creatures.
      * Used for Ixidor, Reality Sculptor: "Face-down creatures get +1/+1."
      */

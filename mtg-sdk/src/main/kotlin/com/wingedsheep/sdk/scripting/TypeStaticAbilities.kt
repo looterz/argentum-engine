@@ -109,6 +109,29 @@ data class AddCreatureTypeByCounter(
 }
 
 /**
+ * Adds a basic land type to all lands that have a specific counter type, in addition to their other types.
+ * Used for Eluge, the Shoreless Sea: "It's an Island in addition to its other types for as long as it has a flood counter on it."
+ *
+ * This is a Layer 4 (type-changing) continuous effect that adds a land subtype.
+ * Unlike SetEnchantedLandType, this does NOT replace existing land subtypes.
+ *
+ * @property landType The basic land type to add (e.g., "Island", "Plains")
+ * @property counterType The counter type that lands must have
+ */
+@SerialName("AddLandTypeByCounter")
+@Serializable
+data class AddLandTypeByCounter(
+    val landType: String,
+    val counterType: String
+) : StaticAbility {
+    override val description: String =
+        "Each land with a $counterType counter on it is ${
+            if (landType.first().lowercaseChar() in "aeiou") "an" else "a"
+        } $landType in addition to its other types"
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
+}
+
+/**
  * Causes the target permanent to lose all abilities.
  * Used for Deep Freeze: "Enchanted creature loses all other abilities."
  * Also used for Humility, Overwhelming Splendor, and similar effects.

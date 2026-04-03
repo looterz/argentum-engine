@@ -1027,6 +1027,7 @@ Set via `staticAbility { ability = ... }`:
 ### Type & Subtype
 
 - `AddCreatureTypeByCounter(creatureType, counterType)` — add type when counter present
+- `AddLandTypeByCounter(landType, counterType)` — add basic land type to all lands with counter (e.g., flood counters → Island)
 - `GrantSupertype(supertype, target)` — grant a supertype (e.g., "LEGENDARY") via Layer 4 continuous effect
 - `SetEnchantedLandType(landType)` — set enchanted land's type
 
@@ -1069,6 +1070,7 @@ Set via `staticAbility { ability = ... }`:
 - `FaceDownSpellCostReduction(reductionSource)` — face-down spell cost reduction
 - `ReduceSpellCostBySubtype(subtype, amount)` — reduce generic cost per subtype
 - `ReduceSpellColoredCostBySubtype(subtype, manaReduction)` — reduce colored mana cost per subtype (e.g., Edgewalker: `"{W}{B}"`)
+- `ReduceFirstSpellOfTypeColoredCost(spellFilter, spellCategory, manaReductionPerUnit, countSource)` — reduce first spell of type each turn by colored mana per dynamic count, overflow to generic (e.g., Eluge: first instant/sorcery costs {U} less per flood-counter land)
 - `ReduceSpellCostByFilter(filter, amount)` — reduce spell cost for spells matching a GameObjectFilter
 - `ReduceFaceDownCastingCost(amount)` — reduce face-down casting cost
 - `GrantAlternativeCastingCost(cost: String)` — grants an alternative mana cost for all spells cast by this permanent's controller (e.g., Jodah: `"{W}{U}{B}{R}{G}"`)
@@ -1086,7 +1088,7 @@ Set via `staticAbility { ability = ... }`:
 
 ### CostReductionSource values
 
-`ColorsAmongPermanentsYouControl`, `Fixed(amount)`, `CreaturesYouControl`, `TotalPowerYouControl`, `ArtifactsYouControl`, `FixedIfControlFilter(amount, filter)` — fixed reduction if you control a permanent matching the GameObjectFilter (e.g., "costs {1} less if you control a Wizard"), `CardsInGraveyardMatchingFilter(filter, amountPerCard = 1)` — reduces by amountPerCard for each card in your graveyard matching the filter (e.g., "costs {1} less for each instant and sorcery card in your graveyard"), `CardsInGraveyardAndExileMatchingFilter(filter, amountPerCard = 1)` — reduces by amountPerCard for each card you own in exile and in your graveyard matching the filter (e.g., "costs {1} less for each creature card you own in exile and in your graveyard")
+`ColorsAmongPermanentsYouControl`, `Fixed(amount)`, `CreaturesYouControl`, `TotalPowerYouControl`, `ArtifactsYouControl`, `FixedIfControlFilter(amount, filter)` — fixed reduction if you control a permanent matching the GameObjectFilter (e.g., "costs {1} less if you control a Wizard"), `CardsInGraveyardMatchingFilter(filter, amountPerCard = 1)` — reduces by amountPerCard for each card in your graveyard matching the filter (e.g., "costs {1} less for each instant and sorcery card in your graveyard"), `CardsInGraveyardAndExileMatchingFilter(filter, amountPerCard = 1)` — reduces by amountPerCard for each card you own in exile and in your graveyard matching the filter (e.g., "costs {1} less for each creature card you own in exile and in your graveyard"), `PermanentsWithCounterYouControl(filter, counterType)` — reduces by number of permanents you control matching filter that have the specified counter (e.g., "for each land you control with a flood counter")
 
 ---
 
