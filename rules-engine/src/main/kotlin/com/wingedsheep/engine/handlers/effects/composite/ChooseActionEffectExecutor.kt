@@ -109,29 +109,40 @@ class ChooseActionEffectExecutor(
         state: GameState,
         playerId: com.wingedsheep.sdk.model.EntityId,
         check: FeasibilityCheck?
-    ): Boolean {
-        if (check == null) return true
+    ): Boolean = checkFeasibility(state, playerId, check, predicateEvaluator)
+}
 
-        return when (check) {
-            is FeasibilityCheck.ControlsPermanentMatching -> {
-                val matching = BattlefieldFilterUtils.findMatchingOnBattlefield(
-                    state,
-                    check.filter.youControl(),
-                    PredicateContext(controllerId = playerId)
-                )
-                matching.size >= check.count
-            }
-            is FeasibilityCheck.HasCardsInZone -> {
-                val zoneKey = ZoneKey(playerId, check.zone)
-                val cards = state.getZone(zoneKey)
-                if (check.filter == com.wingedsheep.sdk.scripting.GameObjectFilter.Any) {
-                    cards.size >= check.count
-                } else {
-                    val context = PredicateContext(controllerId = playerId)
-                    cards.count { cardId ->
-                        predicateEvaluator.matches(state, cardId, check.filter, context)
-                    } >= check.count
-                }
+/**
+ * Check whether a [FeasibilityCheck] is satisfied for the given player.
+ * Shared by [ChooseActionEffectExecutor], [MayEffectExecutor], and [ReflexiveTriggerEffectExecutor].
+ */
+internal fun checkFeasibility(
+    state: GameState,
+    playerId: com.wingedsheep.sdk.model.EntityId,
+    check: FeasibilityCheck?,
+    predicateEvaluator: PredicateEvaluator = PredicateEvaluator()
+): Boolean {
+    if (check == null) return true
+
+    return when (check) {
+        is FeasibilityCheck.ControlsPermanentMatching -> {
+            val matching = BattlefieldFilterUtils.findMatchingOnBattlefield(
+                state,
+                check.filter.youControl(),
+                PredicateContext(controllerId = playerId)
+            )
+            matching.size >= check.count
+        }
+        is FeasibilityCheck.HasCardsInZone -> {
+            val zoneKey = ZoneKey(playerId, check.zone)
+            val cards = state.getZone(zoneKey)
+            if (check.filter == com.wingedsheep.sdk.scripting.GameObjectFilter.Any) {
+                cards.size >= check.count
+            } else {
+                val context = PredicateContext(controllerId = playerId)
+                cards.count { cardId ->
+                    predicateEvaluator.matches(state, cardId, check.filter, context)
+                } >= check.count
             }
         }
     }

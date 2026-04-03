@@ -5,6 +5,7 @@ import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.sdk.scripting.effects.ChooseActionEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.MayEffect
 import java.util.UUID
@@ -35,6 +36,15 @@ class MayEffectExecutor(
             if (!inRequiredZone) {
                 return ExecutionResult.success(state) // Action impossible, skip silently
             }
+        }
+
+        // If the inner effect is a ChooseActionEffect with no feasible choices, skip the decision
+        if (effect.effect is ChooseActionEffect) {
+            val chooseEffect = effect.effect as ChooseActionEffect
+            val anyFeasible = chooseEffect.choices.any { choice ->
+                checkFeasibility(state, context.controllerId, choice.feasibilityCheck)
+            }
+            if (!anyFeasible) return ExecutionResult.success(state)
         }
 
         val playerId = context.controllerId

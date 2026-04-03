@@ -7,6 +7,7 @@ import com.wingedsheep.engine.handlers.TargetFinder
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.sdk.scripting.effects.ChooseActionEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.ReflexiveTriggerEffect
@@ -65,6 +66,15 @@ class ReflexiveTriggerEffectExecutor(
         effect: ReflexiveTriggerEffect,
         context: EffectContext
     ): ExecutionResult {
+        // If the action is a ChooseActionEffect with no feasible choices, skip the decision
+        if (effect.action is ChooseActionEffect) {
+            val chooseEffect = effect.action as ChooseActionEffect
+            val anyFeasible = chooseEffect.choices.any { choice ->
+                checkFeasibility(state, context.controllerId, choice.feasibilityCheck)
+            }
+            if (!anyFeasible) return ExecutionResult.success(state)
+        }
+
         val playerId = context.controllerId
         val sourceName = context.sourceId?.let { sourceId ->
             state.getEntity(sourceId)?.get<CardComponent>()?.name

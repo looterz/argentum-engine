@@ -330,12 +330,7 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                                 else -> {}
                             }
                         }
-                        if (!costCanBePaid) {
-                            // If forage can't be paid, skip entirely rather than showing greyed-out
-                            val hasForage = compositeCost.costs.any { it is AbilityCost.Forage }
-                            if (hasForage) continue
-                            costAffordable = false
-                        }
+                        if (!costCanBePaid) costAffordable = false
                     }
                     else -> {}
                 }
