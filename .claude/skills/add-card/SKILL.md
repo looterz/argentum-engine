@@ -88,11 +88,15 @@ If the card needs effects, keywords, triggers, conditions, or static abilities t
 - **4.3 Register Executor** in `{Category}Executors.kt`
 - **4.4 Add DSL Facade** in `mtg-sdk/.../dsl/Effects.kt`
 - **4.5 Add Keyword** (if needed) in `mtg-sdk/.../core/Keyword.kt` + `web-client/src/types/enums.ts` (enum + KeywordDisplayNames) + `web-client/src/assets/icons/keywords/index.ts` if icon needed
-- **4.5b Add Counter Type** (if needed) — counter types span 4 layers and ALL must be updated:
+- **4.5b Add Counter Type** (if needed) — counter types span **5 layers** and ALL must be updated:
   1. `mtg-sdk/.../core/CounterType.kt` — add enum value + `Counters` string constant
   2. `rules-engine/.../mechanics/layers/StateProjector.kt` — add to `KEYWORD_COUNTER_MAP` if it's a keyword counter (flying, indestructible, trample, etc.) so it grants the keyword via projected state
   3. `web-client/src/types/enums.ts` — add to `CounterType` enum + `CounterTypeDisplayNames`
-  4. `web-client/src/assets/icons/keywords/index.ts` — add to `counterManaClass` (use `ability-<keyword>` for keyword counters, `counter-<style>` for others)
+  4. `web-client/src/assets/icons/keywords/index.ts` — add to `counterManaClass` (use `ability-<keyword>` for keyword counters, `counter-<style>` for others). Note: mana-font has specific counter icons like `counter-flood`, `counter-lore`, `counter-bolt`, `counter-charge`, etc.
+  5. **Frontend counter badge visualization** — each counter type needs explicit wiring in 3 files (there is NO generic counter renderer):
+     - `web-client/src/components/game/board/shared.ts` — add `getXxxCounters(card)` helper function
+     - `web-client/src/components/game/board/styles.ts` — add `xxxCounterBadge` style (position absolute, top/right, themed colors)
+     - `web-client/src/components/game/card/GameCard.tsx` — import the helper, add a `{/* Xxx counter badge */}` JSX block (follow the pattern of existing counter badges like `blightCounterBadge`)
 - **4.6 Add Static Ability** (if needed) in `mtg-sdk/.../scripting/StaticAbility.kt`
 - **4.7 Add Replacement Effect** (if needed) in `mtg-sdk/.../scripting/ReplacementEffect.kt`
 - **4.8 Add Trigger** (if needed) in `mtg-sdk/.../scripting/trigger/` + facade in `mtg-sdk/.../dsl/Triggers.kt`
