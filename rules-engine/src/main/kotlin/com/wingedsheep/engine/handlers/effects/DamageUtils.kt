@@ -33,6 +33,7 @@ import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.DamageCantBePrevented
 import com.wingedsheep.sdk.scripting.DoubleDamage
+import com.wingedsheep.sdk.scripting.ModifyDamageAmount
 import com.wingedsheep.sdk.scripting.PreventDamage
 import com.wingedsheep.sdk.scripting.PreventLifeGain
 import com.wingedsheep.sdk.scripting.ReplaceDamageWithCounters
@@ -651,6 +652,52 @@ object DamageUtils {
                 if (!recipientMatches) continue
 
                 amplifiedAmount *= 2
+            }
+        }
+
+        // Check for ModifyDamageAmount replacement effects (Valley Flamecaller)
+        for (entityId in state.getBattlefield()) {
+            val container = state.getEntity(entityId) ?: continue
+            val replacementComponent = container.get<ReplacementEffectSourceComponent>() ?: continue
+            val sourceControllerId = container.get<ControllerComponent>()?.playerId ?: continue
+
+            for (effect in replacementComponent.replacementEffects) {
+                if (effect !is ModifyDamageAmount) continue
+
+                val damageEvent = effect.appliesTo
+                if (damageEvent !is com.wingedsheep.sdk.scripting.GameEvent.DamageEvent) continue
+
+                // Check if the damage source matches the source filter
+                val sourceMatches = when (val sourceFilter = damageEvent.source) {
+                    is SourceFilter.Any -> true
+                    is SourceFilter.Matching -> {
+                        if (sourceId == null) false
+                        else {
+                            val context = PredicateContext(controllerId = sourceControllerId)
+                            predicateEvaluator.matchesWithProjection(state, projected, sourceId, sourceFilter.filter, context)
+                        }
+                    }
+                    else -> false
+                }
+                if (!sourceMatches) continue
+
+                // Check if the target matches the recipient filter
+                val recipientMatches = when (val recipient = damageEvent.recipient) {
+                    is RecipientFilter.Any -> true
+                    is RecipientFilter.Matching -> {
+                        val context = PredicateContext(controllerId = sourceControllerId)
+                        predicateEvaluator.matchesWithProjection(state, projected, targetId, recipient.filter, context)
+                    }
+                    is RecipientFilter.CreatureYouControl -> {
+                        val isCreature = state.getEntity(targetId)?.get<CardComponent>()?.typeLine?.isCreature == true
+                        val isControlled = state.getEntity(targetId)?.get<ControllerComponent>()?.playerId == sourceControllerId
+                        isCreature && isControlled
+                    }
+                    else -> false
+                }
+                if (!recipientMatches) continue
+
+                amplifiedAmount += effect.modifier
             }
         }
 

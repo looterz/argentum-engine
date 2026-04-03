@@ -1120,6 +1120,7 @@ Used in card definitions for effects that intercept events before they happen:
 - `PreventDamage(amount?, appliesTo)` — Fog, protection (null = prevent all)
 - `RedirectDamage(redirectTo, appliesTo)` — Pariah
 - `DoubleDamage(appliesTo)` — Furnace of Rath
+- `ModifyDamageAmount(modifier, appliesTo)` — Valley Flamecaller (add fixed amount to damage from matching sources)
 - `ReplaceDamageWithCounters(counterType, sacrificeThreshold?, appliesTo)` — Force Bubble (damage → counters on this permanent, sacrifice at threshold)
 - `DamageCantBePrevented(appliesTo)` — Sunspine Lynx, Leyline of Punishment. All damage is treated as though it can't be prevented (protection, prevention shields, etc. are ignored).
 

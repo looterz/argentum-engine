@@ -228,6 +228,7 @@ object BloomburrowSet {
         TreeguardDuo,
         TreetopSentries,
         ThundertrapTrainer,
+        ValleyFlamecaller,
         ValleyFloodcaller,
         ValleyMightcaller,
         ValleyQuestcaller,

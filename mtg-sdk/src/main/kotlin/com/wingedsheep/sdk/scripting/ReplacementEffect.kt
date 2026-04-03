@@ -377,6 +377,27 @@ data class DoubleDamage(
     }
 }
 
+/**
+ * Modify damage dealt by a fixed amount.
+ * Example: Valley Flamecaller ("If a Lizard, Mouse, Otter, or Raccoon you control would deal
+ * damage to a permanent or player, it deals that much damage plus 1 instead.")
+ */
+@SerialName("ModifyDamageAmount")
+@Serializable
+data class ModifyDamageAmount(
+    val modifier: Int,
+    override val appliesTo: GameEvent
+) : ReplacementEffect {
+    override val description: String = buildString {
+        append("If ${appliesTo.description}, it deals that much damage plus $modifier instead")
+    }
+
+    override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
+        val newAppliesTo = appliesTo.applyTextReplacement(replacer)
+        return if (newAppliesTo !== appliesTo) copy(appliesTo = newAppliesTo) else this
+    }
+}
+
 // =============================================================================
 // Draw Replacement Effects
 // =============================================================================
