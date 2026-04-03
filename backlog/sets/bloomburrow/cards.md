@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 238 / 266
+**Implemented:** 239 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -10,7 +10,7 @@
 | Blue       | 41    | 37   |
 | Black      | 40    | 35   |
 | Red        | 41    | 35   |
-| Green      | 41    | 36   |
+| Green      | 41    | 37   |
 | Multicolor | 39    | 33   |
 | Colorless  | 9     | 9    |
 | Land       | 15    | 14   |
@@ -23,7 +23,7 @@
 - [x] Alania, Divergent Storm
 - [x] Artist's Talent
 - [x] Azure Beastbinder
-- [ ] Bakersbane Duo
+- [x] Bakersbane Duo
 - [x] Bandit's Talent
 - [x] Banishing Light
 - [x] Bark-Knuckle Boxer

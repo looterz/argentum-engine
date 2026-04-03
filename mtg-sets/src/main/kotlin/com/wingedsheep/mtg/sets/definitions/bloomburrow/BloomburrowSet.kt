@@ -30,6 +30,7 @@ object BloomburrowSet {
         AgateBladeAssassin,
         ArtistsTalent,
         AzureBeastbinder,
+        BakersbaneDuo,
         BanditsTalent,
         BanishingLight,
         BarkKnuckleBoxer,
