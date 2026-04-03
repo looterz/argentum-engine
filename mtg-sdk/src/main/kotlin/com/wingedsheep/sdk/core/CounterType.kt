@@ -26,7 +26,8 @@ enum class CounterType {
     SUPPLY,
     FLYING,
     STASH,
-    BLIGHT
+    BLIGHT,
+    COIN
 }
 
 /**
@@ -54,4 +55,5 @@ object Counters {
     const val FLYING = "flying"
     const val STASH = "stash"
     const val BLIGHT = "blight"
+    const val COIN = "coin"
 }

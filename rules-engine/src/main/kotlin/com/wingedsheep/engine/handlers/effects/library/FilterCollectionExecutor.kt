@@ -94,6 +94,15 @@ class FilterCollectionExecutor : EffectExecutor<FilterCollectionEffect> {
                 }
             }
 
+            is CollectionFilter.ManaValueEquals -> {
+                val exactManaValue = amountEvaluator.evaluate(state, filter.value, context)
+                cards.partition { cardId ->
+                    val cardComponent = state.getEntity(cardId)?.get<CardComponent>()
+                    val manaValue = cardComponent?.manaValue ?: 0
+                    manaValue == exactManaValue
+                }
+            }
+
             is CollectionFilter.ExcludeEntity -> {
                 val excludedId = resolveEntityReference(filter.entity, context)
                 cards.partition { it != excludedId }

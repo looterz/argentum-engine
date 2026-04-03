@@ -846,7 +846,8 @@ abilities from atomic primitives.
 
 Filters: `CollectionFilter.MatchesFilter(filter)`, `CollectionFilter.ExcludeSubtypesFromStored(key)`,
 `CollectionFilter.SharesSubtypeWithSacrificed`, `CollectionFilter.GreatestPower` — keep only creatures with highest power,
-`CollectionFilter.ManaValueAtMost(max: DynamicAmount)` — keep only cards with mana value ≤ dynamic amount (e.g., X value)
+`CollectionFilter.ManaValueAtMost(max: DynamicAmount)` — keep only cards with mana value ≤ dynamic amount (e.g., X value),
+`CollectionFilter.ManaValueEquals(value: DynamicAmount)` — keep only cards with mana value exactly equal to dynamic amount (e.g., counters on source)
 
 Sources: `CardSource.TopOfLibrary(count, player)`, `CardSource.FromZone(zone, player, filter)`,
 `CardSource.FromVariable(name)`, `CardSource.ControlledPermanents(player, filter)`,

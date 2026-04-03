@@ -695,6 +695,19 @@ sealed interface CollectionFilter {
     data class ManaValueAtMost(val max: DynamicAmount) : CollectionFilter
 
     /**
+     * Keep only entities whose mana value equals a dynamic amount.
+     * The amount is resolved at execution time from the effect context.
+     *
+     * Used for "instant or sorcery with mana value equal to the number of
+     * counters on this artifact" effects like Wishing Well.
+     *
+     * @property value The exact mana value to match (resolved dynamically)
+     */
+    @SerialName("ManaValueEquals")
+    @Serializable
+    data class ManaValueEquals(val value: DynamicAmount) : CollectionFilter
+
+    /**
      * Exclude the entity referenced by [entity] from the collection.
      * Used for "another" constraints (e.g., "return another creature card").
      *
