@@ -2,12 +2,12 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 230 / 266
+**Implemented:** 231 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 34   |
-| Blue       | 41    | 35   |
+| Blue       | 41    | 36   |
 | Black      | 40    | 35   |
 | Red        | 41    | 34   |
 | Green      | 41    | 36   |
@@ -166,7 +166,7 @@
 - [x] Nocturnal Hunger
 - [x] Oakhollow Village
 - [x] Osteomancer Adept
-- [ ] Otterball Antics
+- [x] Otterball Antics
 - [x] Overprotect
 - [ ] Parting Gust
 - [x] Patchwork Banner

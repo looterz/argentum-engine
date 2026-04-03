@@ -157,6 +157,7 @@ object BloomburrowSet {
         Overprotect,
         OakhollowVillage,
         OsteomancerAdept,
+        OtterballAntics,
         PearlOfWisdom,
         PeerlessRecycling,
         PondProphet,

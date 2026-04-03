@@ -12,9 +12,11 @@ import com.wingedsheep.engine.state.ZoneKey
 import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
+import com.wingedsheep.engine.state.components.battlefield.CountersComponent
 import com.wingedsheep.engine.state.components.combat.AttackingComponent
 import com.wingedsheep.engine.state.components.identity.TokenComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.sdk.core.CounterType
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.TypeLine
@@ -116,6 +118,24 @@ class CreateTokenExecutor(
                 container = staticAbilityHandler.addContinuousEffectComponentFromAbilities(
                     container, effect.staticAbilities
                 )
+            }
+            if (effect.initialCounters.isNotEmpty()) {
+                var counters = CountersComponent()
+                for ((counterTypeStr, amount) in effect.initialCounters) {
+                    val counterType = try {
+                        CounterType.valueOf(
+                            counterTypeStr.uppercase()
+                                .replace(' ', '_')
+                                .replace('+', 'P')
+                                .replace('-', 'M')
+                                .replace("/", "_")
+                        )
+                    } catch (e: IllegalArgumentException) {
+                        CounterType.PLUS_ONE_PLUS_ONE
+                    }
+                    counters = counters.withAdded(counterType, amount)
+                }
+                container = container.with(counters)
             }
 
             newState = newState.withEntity(tokenId, container)

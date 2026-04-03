@@ -87,7 +87,9 @@ data class CreateTokenEffect(
     val artifactToken: Boolean = false,
     val staticAbilities: List<StaticAbility> = emptyList(),
     val triggeredAbilities: List<TriggeredAbility> = emptyList(),
-    val exileAtStep: Step? = null
+    val exileAtStep: Step? = null,
+    /** Counters to place on the token when it enters the battlefield. */
+    val initialCounters: Map<String, Int> = emptyMap()
 ) : Effect {
     constructor(
         count: Int,
