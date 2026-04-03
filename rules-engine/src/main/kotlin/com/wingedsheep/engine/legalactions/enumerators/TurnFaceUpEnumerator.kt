@@ -91,7 +91,7 @@ class TurnFaceUpEnumerator : ActionEnumerator {
                                 action = TurnFaceUp(playerId, entityId),
                                 additionalCostInfo = AdditionalCostData(
                                     description = cost.description,
-                                    costType = "Sacrifice",
+                                    costType = "BouncePermanent",
                                     validSacrificeTargets = validTargets,
                                     sacrificeCount = cost.count
                                 )
@@ -109,7 +109,7 @@ class TurnFaceUpEnumerator : ActionEnumerator {
                                 action = TurnFaceUp(playerId, entityId),
                                 additionalCostInfo = AdditionalCostData(
                                     description = cost.description,
-                                    costType = "Sacrifice",
+                                    costType = "SacrificePermanent",
                                     validSacrificeTargets = validTargets,
                                     sacrificeCount = cost.count
                                 )

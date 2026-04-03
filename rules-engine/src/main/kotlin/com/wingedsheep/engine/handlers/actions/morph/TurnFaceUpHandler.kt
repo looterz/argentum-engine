@@ -532,15 +532,12 @@ class TurnFaceUpHandler(
         excludeEntityId: EntityId
     ): List<EntityId> {
         val projected = state.projectedState
-        val playerBattlefield = ZoneKey(playerId, Zone.BATTLEFIELD)
         val predicateContext = PredicateContext(controllerId = playerId)
 
-        return state.getZone(playerBattlefield).filter { entityId ->
+        return projected.getBattlefieldControlledBy(playerId).filter { entityId ->
             if (entityId == excludeEntityId) return@filter false
             val container = state.getEntity(entityId) ?: return@filter false
             container.get<CardComponent>() ?: return@filter false
-            val controllerId = container.get<ControllerComponent>()?.playerId
-            if (controllerId != playerId) return@filter false
 
             predicateEvaluator.matchesWithProjection(state, projected, entityId, cost.filter, predicateContext)
         }
@@ -559,15 +556,12 @@ class TurnFaceUpHandler(
         excludeEntityId: EntityId
     ): List<EntityId> {
         val projected = state.projectedState
-        val playerBattlefield = ZoneKey(playerId, Zone.BATTLEFIELD)
         val predicateContext = PredicateContext(controllerId = playerId)
 
-        return state.getZone(playerBattlefield).filter { entityId ->
+        return projected.getBattlefieldControlledBy(playerId).filter { entityId ->
             if (entityId == excludeEntityId) return@filter false
             val container = state.getEntity(entityId) ?: return@filter false
             container.get<CardComponent>() ?: return@filter false
-            val controllerId = container.get<ControllerComponent>()?.playerId
-            if (controllerId != playerId) return@filter false
 
             predicateEvaluator.matchesWithProjection(state, projected, entityId, cost.filter, predicateContext)
         }
