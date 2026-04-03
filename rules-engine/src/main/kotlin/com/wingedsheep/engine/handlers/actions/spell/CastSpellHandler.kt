@@ -8,6 +8,8 @@ import com.wingedsheep.engine.core.DecisionPhase
 import com.wingedsheep.engine.core.DecisionRequestedEvent
 import com.wingedsheep.engine.core.EngineServices
 import com.wingedsheep.engine.core.ExecutionResult
+import com.wingedsheep.engine.core.LifeChangedEvent
+import com.wingedsheep.engine.core.LifeChangeReason
 import com.wingedsheep.engine.core.CardsDiscardedEvent
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.ManaSpentEvent
@@ -40,6 +42,7 @@ import com.wingedsheep.engine.state.components.identity.ControllerComponent
 import com.wingedsheep.engine.state.components.identity.MayPlayFromExileComponent
 import com.wingedsheep.engine.state.components.identity.PlayWithoutPayingCostComponent
 import com.wingedsheep.engine.state.components.player.ManaPoolComponent
+import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.engine.state.components.player.ManaSpentOnSpellsThisTurnComponent
 import com.wingedsheep.sdk.core.CardType
 import com.wingedsheep.sdk.core.Color
@@ -117,7 +120,9 @@ class CastSpellHandler(
             zoneResolver.hasFlashbackPermission(state, action.playerId, action.cardId)
         val hasWarpFromExile = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback &&
             zoneResolver.hasWarpFromExilePermission(state, action.playerId, action.cardId)
-        if (!inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasWarpFromExile) {
+        val hasGraveyardLifeCost = !inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasWarpFromExile &&
+            action.graveyardLifeCost > 0 && action.cardId in state.getZone(ZoneKey(action.playerId, Zone.GRAVEYARD))
+        if (!inHand && !onTopOfLibrary && !mayPlayFromExile && !mayCastFromZone && !mayCastFromGraveyard && !hasFlashback && !hasWarpFromExile && !hasGraveyardLifeCost) {
             return "Card is not in your hand"
         }
 
@@ -893,6 +898,18 @@ class CastSpellHandler(
                     ?: ManaSpentOnSpellsThisTurnComponent()
                 container.with(existing.copy(totalSpent = existing.totalSpent + manaSpentThisCast))
             }
+        }
+
+        // Pay additional life cost (e.g., Festival of Embers graveyard casting)
+        if (action.graveyardLifeCost > 0) {
+            val currentLife = currentState.getEntity(action.playerId)
+                ?.get<LifeTotalComponent>()?.life ?: 0
+            val newLife = currentLife - action.graveyardLifeCost
+            currentState = currentState.updateEntity(action.playerId) { container ->
+                container.with(LifeTotalComponent(newLife))
+            }
+            events.add(LifeChangedEvent(action.playerId, currentLife, newLife, LifeChangeReason.LIFE_LOSS))
+            currentState = com.wingedsheep.engine.handlers.effects.DamageUtils.markLifeLostThisTurn(currentState, action.playerId)
         }
 
         // Compute target requirements for resolution-time re-validation (Rule 608.2b)

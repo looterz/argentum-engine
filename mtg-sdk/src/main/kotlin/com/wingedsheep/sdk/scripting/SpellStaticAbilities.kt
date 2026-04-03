@@ -95,3 +95,31 @@ data class GrantMayCastFromLinkedExile(
     override val description: String = "You may cast ${filter.description} cards exiled with this permanent."
     override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
 }
+
+/**
+ * You may cast spells matching [filter] from your graveyard by paying [lifeCost] life
+ * in addition to their other costs. Only during your turn if [duringYourTurnOnly] is true.
+ *
+ * Used for Festival of Embers ("During your turn, you may cast instant and sorcery spells
+ * from your graveyard by paying 1 life in addition to their other costs.")
+ *
+ * @property filter The filter that spells must match (e.g., instant/sorcery)
+ * @property lifeCost The life cost to pay in addition to other costs
+ * @property duringYourTurnOnly If true, only castable during your turn
+ */
+@SerialName("MayCastFromGraveyardWithLifeCost")
+@Serializable
+data class MayCastFromGraveyardWithLifeCost(
+    val filter: GameObjectFilter,
+    val lifeCost: Int = 1,
+    val duringYourTurnOnly: Boolean = false
+) : StaticAbility {
+    override val description: String = buildString {
+        if (duringYourTurnOnly) append("During your turn, y") else append("Y")
+        append("ou may cast ${filter.description} spells from your graveyard by paying $lifeCost life in addition to their other costs")
+    }
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility {
+        val newFilter = filter.applyTextReplacement(replacer)
+        return if (newFilter !== filter) copy(filter = newFilter) else this
+    }
+}

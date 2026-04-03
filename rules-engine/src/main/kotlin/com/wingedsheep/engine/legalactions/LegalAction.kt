@@ -71,7 +71,10 @@ data class LegalAction(
     val maxRepeatableActivations: Int? = null,
 
     // Forage (graveyard casting with forage cost, applies finality counter)
-    val requiresForage: Boolean = false
+    val requiresForage: Boolean = false,
+
+    // Additional life cost (e.g., Festival of Embers graveyard casting)
+    val additionalLifeCost: Int = 0
 )
 
 /**

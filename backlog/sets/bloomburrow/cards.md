@@ -2,14 +2,14 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 245 / 266
+**Implemented:** 246 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 37   |
 | Blue       | 41    | 39   |
 | Black      | 40    | 36   |
-| Red        | 41    | 35   |
+| Red        | 41    | 36   |
 | Green      | 41    | 37   |
 | Multicolor | 39    | 35   |
 | Colorless  | 9     | 9    |
@@ -85,7 +85,7 @@
 - [x] Fecund Greenshell
 - [x] Feed the Cycle
 - [x] Fell
-- [ ] Festival of Embers
+- [x] Festival of Embers
 - [x] Finch Formation
 - [x] Finneas, Ace Archer
 - [x] Fireglass Mentor

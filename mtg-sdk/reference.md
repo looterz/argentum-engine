@@ -1047,6 +1047,7 @@ Set via `staticAbility { ability = ... }`:
 - `PlayLandsAndCastFilteredFromTopOfLibrary(spellFilter: GameObjectFilter)` — play lands + cast spells matching filter from top of library (e.g., MV 4+)
 - `LookAtTopOfLibrary` — look at top card of your library any time (private, controller only)
 - `MayCastSelfFromZones(zones: List<Zone>)` — intrinsic permission to cast this card from specified zones (e.g., graveyard, exile)
+- `MayCastFromGraveyardWithLifeCost(filter, lifeCost, duringYourTurnOnly)` — controller may cast matching spells from graveyard by paying life (e.g., Festival of Embers)
 - `MayPlayPermanentsFromGraveyard` — during each of your turns, play a land and cast a permanent spell of each type from your graveyard (Muldrotha). Tracks per-type usage via `GraveyardPlayPermissionUsedComponent` on the source permanent, cleared at end of turn.
 - `GrantMayCastFromLinkedExile(filter: GameObjectFilter)` — you may cast cards exiled with this permanent that match the filter (e.g., Rona, Disciple of Gix). Works with LinkedExileComponent.
 - `LookAtFaceDownCreatures` — look at face-down creatures you don't control any time
