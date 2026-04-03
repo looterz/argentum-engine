@@ -191,6 +191,7 @@ object BloomburrowSet {
         QuaketuskBoar,
         RaccoonRallier,
         RabbitResponse,
+        RalCracklingWit,
         RabidGnaw,
         RavineRaider,
         RepelCalamity,

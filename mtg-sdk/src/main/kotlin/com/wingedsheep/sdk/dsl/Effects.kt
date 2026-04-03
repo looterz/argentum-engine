@@ -46,6 +46,7 @@ import com.wingedsheep.sdk.scripting.effects.ExchangeControlEffect
 import com.wingedsheep.sdk.scripting.effects.ExchangeLifeAndPowerEffect
 import com.wingedsheep.sdk.scripting.effects.GainControlByMostOfSubtypeEffect
 import com.wingedsheep.sdk.scripting.effects.GiftGivenEffect
+import com.wingedsheep.sdk.scripting.effects.GrantSpellKeywordEffect
 import com.wingedsheep.sdk.scripting.effects.GainControlEffect
 import com.wingedsheep.sdk.scripting.effects.GainLifeEffect
 import com.wingedsheep.sdk.scripting.effects.GrantExileOnLeaveEffect
@@ -1421,4 +1422,17 @@ object Effects {
      * Add this to gift modes so that "whenever you give a gift" triggers fire.
      */
     fun GiftGiven(): Effect = GiftGivenEffect
+
+    // =========================================================================
+    // Spell Keyword Grants
+    // =========================================================================
+
+    /**
+     * Grant a keyword to spells of a certain type that the controller casts.
+     * Used for emblems like "Instant and sorcery spells you cast have storm."
+     */
+    fun GrantSpellKeyword(
+        keyword: com.wingedsheep.sdk.core.Keyword,
+        spellFilter: com.wingedsheep.sdk.scripting.events.SpellTypeFilter
+    ): Effect = GrantSpellKeywordEffect(keyword, spellFilter)
 }

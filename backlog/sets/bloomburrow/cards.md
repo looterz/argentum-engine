@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 264 / 266
+**Implemented:** 265 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -188,7 +188,7 @@
 - [x] Rabbit Response
 - [x] Rabid Gnaw
 - [x] Raccoon Rallier
-- [ ] Ral, Crackling Wit
+- [x] Ral, Crackling Wit
 - [x] Ravine Raider
 - [x] Repel Calamity
 - [x] Reptilian Recruiter

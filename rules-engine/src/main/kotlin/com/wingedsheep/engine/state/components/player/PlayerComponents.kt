@@ -3,8 +3,10 @@ package com.wingedsheep.engine.state.components.player
 import com.wingedsheep.engine.state.Component
 import com.wingedsheep.sdk.core.Color
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.scripting.effects.ManaRestriction
 import com.wingedsheep.sdk.scripting.events.SourceFilter
+import com.wingedsheep.sdk.scripting.events.SpellTypeFilter
 import kotlinx.serialization.Serializable
 
 /**
@@ -474,3 +476,27 @@ data class DamageBonusComponent(
     val sourceFilter: SourceFilter = SourceFilter.Any,
     val removeOn: PlayerEffectRemoval = PlayerEffectRemoval.EndOfTurn
 ) : Component
+
+/**
+ * Component granting additional keywords to spells a player casts.
+ * Applied by emblems like Ral's "Instant and sorcery spells you cast have storm."
+ *
+ * @param grants List of keyword grants, each specifying which keyword is granted
+ *   and which spell types it applies to
+ */
+@Serializable
+data class GrantedSpellKeywordsComponent(
+    val grants: List<SpellKeywordGrant>
+) : Component
+
+/**
+ * A single keyword grant for spells of a specific type.
+ *
+ * @param keyword The keyword to grant (e.g., STORM)
+ * @param spellFilter Which spells get the keyword (e.g., INSTANT_OR_SORCERY)
+ */
+@Serializable
+data class SpellKeywordGrant(
+    val keyword: Keyword,
+    val spellFilter: SpellTypeFilter
+)

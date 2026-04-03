@@ -65,7 +65,9 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.PlayFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.scripting.events.SpellTypeFilter
 import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils.toEntityId
+import com.wingedsheep.engine.state.components.player.GrantedSpellKeywordsComponent
 import com.wingedsheep.engine.state.components.stack.TriggeredAbilityOnStackComponent
 import kotlin.reflect.KClass
 
@@ -1041,7 +1043,23 @@ class CastSpellHandler(
         }
 
         // Handle Storm keyword: create a Storm triggered ability on the stack
-        if (!action.castFaceDown && stormCount > 0 && cardDef != null && cardDef.hasKeyword(Keyword.STORM)) {
+        // Check both the card's own keywords and any granted spell keywords (e.g., Ral's storm emblem)
+        val hasStormFromGrant = run {
+            val playerContainer = currentCastState.getEntity(action.playerId)
+            val grants = playerContainer?.get<GrantedSpellKeywordsComponent>()?.grants ?: emptyList()
+            grants.any { grant ->
+                grant.keyword == Keyword.STORM && when (grant.spellFilter) {
+                    SpellTypeFilter.ANY -> true
+                    SpellTypeFilter.CREATURE -> cardComponent.typeLine.isCreature
+                    SpellTypeFilter.NONCREATURE -> !cardComponent.typeLine.isCreature
+                    SpellTypeFilter.INSTANT_OR_SORCERY -> cardComponent.typeLine.isInstant || cardComponent.typeLine.isSorcery
+                    SpellTypeFilter.ENCHANTMENT -> cardComponent.typeLine.isEnchantment
+                    SpellTypeFilter.HISTORIC -> cardComponent.typeLine.isHistoric
+                }
+            }
+        }
+        if (!action.castFaceDown && stormCount > 0 && cardDef != null &&
+            (cardDef.hasKeyword(Keyword.STORM) || hasStormFromGrant)) {
             val spellEffect = cardDef.script.spellEffect
             if (spellEffect != null) {
                 val stormEffect = StormCopyEffect(

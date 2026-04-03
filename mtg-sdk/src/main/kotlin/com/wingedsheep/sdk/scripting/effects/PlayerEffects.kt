@@ -1,8 +1,10 @@
 package com.wingedsheep.sdk.scripting.effects
 
+import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.scripting.Duration
 import com.wingedsheep.sdk.scripting.TriggeredAbility
 import com.wingedsheep.sdk.scripting.events.SourceFilter
+import com.wingedsheep.sdk.scripting.events.SpellTypeFilter
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.text.TextReplacer
@@ -320,6 +322,25 @@ data class GrantDamageBonusEffect(
 @Serializable
 data object GiftGivenEffect : Effect {
     override val description: String = "Give a gift"
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
+}
+
+/**
+ * Grant a keyword to spells of a certain type that the controller casts.
+ * Used for emblems like Ral's "Instant and sorcery spells you cast have storm."
+ *
+ * @property keyword The keyword to grant (e.g., STORM)
+ * @property spellFilter Which spell types get the keyword (e.g., INSTANT_OR_SORCERY)
+ */
+@SerialName("GrantSpellKeyword")
+@Serializable
+data class GrantSpellKeywordEffect(
+    val keyword: Keyword,
+    val spellFilter: SpellTypeFilter
+) : Effect {
+    override val description: String =
+        "${spellFilter.name.lowercase().replace('_', ' ')} spells you cast have ${keyword.displayName.lowercase()}"
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
 }

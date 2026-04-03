@@ -17,6 +17,7 @@ class PlayerExecutors(
         CreatePermanentGlobalTriggeredAbilityExecutor(),
         GiftGivenExecutor(),
         GrantCastCreaturesFromGraveyardWithForageExecutor(),
+        GrantSpellKeywordExecutor(),
         GrantDamageBonusExecutor(),
         GrantHexproofExecutor(),
         GrantShroudExecutor(),

@@ -605,6 +605,10 @@ constructors.
 - `Effects.GiftGiven()` — emit GiftGivenEvent; add to gift modes so triggers fire
 - `GiftGivenEffect` — data object, no state change, just emits event
 
+### Spell Keyword Grants
+
+- `Effects.GrantSpellKeyword(keyword: Keyword, spellFilter: SpellTypeFilter)` — permanently grant a keyword to spells of a type the controller casts. Used for Ral's storm emblem. Adds `GrantedSpellKeywordsComponent` to the player.
+
 ### Life
 
 - `Triggers.YouGainLife` / `Triggers.AnyPlayerGainsLife`
