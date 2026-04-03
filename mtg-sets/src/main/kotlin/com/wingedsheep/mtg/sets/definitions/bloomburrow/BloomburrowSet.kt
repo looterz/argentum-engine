@@ -212,6 +212,7 @@ object BloomburrowSet {
         SunspineLynx,
         TakeOutTheTrash,
         TangleTumbler,
+        TeapotSlinger,
         TempestAngler,
         TenderWildguide,
         ThistledownPlayers,

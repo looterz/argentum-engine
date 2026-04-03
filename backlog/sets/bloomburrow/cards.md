@@ -2,14 +2,14 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 227 / 266
+**Implemented:** 228 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
 | White      | 40    | 34   |
 | Blue       | 41    | 33   |
 | Black      | 40    | 35   |
-| Red        | 41    | 33   |
+| Red        | 41    | 34   |
 | Green      | 41    | 36   |
 | Multicolor | 39    | 31   |
 | Colorless  | 9     | 8    |
@@ -241,7 +241,7 @@
 - [x] Swamp
 - [x] Take Out the Trash
 - [x] Tangle Tumbler
-- [ ] Teapot Slinger
+- [x] Teapot Slinger
 - [x] Tempest Angler
 - [x] Tender Wildguide
 - [ ] The Infamous Cruelclaw
