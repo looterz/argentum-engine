@@ -1,7 +1,6 @@
 package com.wingedsheep.engine.ai
 
 import com.wingedsheep.engine.ai.evaluation.BoardEvaluator
-import com.wingedsheep.engine.ai.evaluation.BoardPresence
 import com.wingedsheep.engine.core.DeclareAttackers
 import com.wingedsheep.engine.core.DeclareBlockers
 import com.wingedsheep.engine.core.GameAction
@@ -9,7 +8,6 @@ import com.wingedsheep.engine.legalactions.LegalAction
 import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
-import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.model.EntityId
@@ -27,6 +25,10 @@ class CombatAdvisor(
 ) {
     /**
      * Build a DeclareAttackers action choosing which creatures to send in.
+     *
+     * Uses a global aggression level (0-5) to gate per-creature attack decisions,
+     * inspired by Forge's combat AI. The aggression level is derived from race analysis
+     * (life-to-damage ratios) and attritional attack simulation.
      */
     fun chooseAttackers(
         state: GameState,
@@ -53,40 +55,42 @@ class CombatAdvisor(
             return DeclareAttackers(playerId, validAttackers.associateWith { opponentId })
         }
 
-        // ── Race clock: determine aggression level ──
         val myLife = state.getEntity(playerId)?.get<LifeTotalComponent>()?.life ?: 20
-        val myTurnsToKill = CombatMath.turnsToKill(state, projected, playerId, opponentId, opponentCreatures)
-        val theirBlockers = opponentCreatures
         val myCreatures = projected.getBattlefieldControlledBy(playerId)
             .filter { projected.isCreature(it) && state.getEntity(it)?.has<TappedComponent>() != true }
-        val theirTurnsToKill = CombatMath.turnsToKill(state, projected, opponentId, playerId, myCreatures)
-        val isAheadOnClock = myTurnsToKill < theirTurnsToKill
+
+        // ── Global aggression level (0-5) ──
+        val aggression = CombatMath.calculateAggressionLevel(
+            state, projected, playerId, opponentId, myCreatures, opponentCreatures
+        )
+
+        // At aggression 0, don't attack at all
+        if (aggression == 0) return DeclareAttackers(playerId, emptyMap())
 
         // ── Combat trick estimation ──
         val (trickPowerBonus, trickToughnessBonus) = CombatMath.estimateCombatTrickBonus(state, projected, opponentId)
 
-        // ── Defense budget: estimate crackback danger ──
-        val opponentAllCreatures = projected.getBattlefieldControlledBy(opponentId)
-            .filter { projected.isCreature(it) }
-        val opponentCrackbackPower = opponentAllCreatures
-            .sumOf { (projected.getPower(it) ?: 0).coerceAtLeast(0) }
-        val crackbackIsLethal = opponentCrackbackPower >= myLife
+        // ── Crackback estimation using creatures that can actually attack ──
+        val opponentCrackbackCreatures = CombatMath.getCreaturesThatCanAttack(state, projected, opponentId)
+
+        // ── Life-scaled trade willingness ──
+        val tradeRatio = CombatMath.tradeWillingnessRatio(myLife)
 
         val attackerMap = mutableMapOf<EntityId, EntityId>()
         for (entityId in validAttackers) {
             val target = chooseAttackTarget(
                 state, projected, entityId, opponentId, opponentCreatures,
-                opponentLife, planeswalkerTargets, isAheadOnClock, crackbackIsLethal,
-                trickPowerBonus, trickToughnessBonus
+                opponentLife, planeswalkerTargets, aggression,
+                trickPowerBonus, trickToughnessBonus, tradeRatio
             )
             if (target != null) {
                 attackerMap[entityId] = target
             }
         }
 
-        // ── Defense budget: if crackback is lethal, hold back enough blockers ──
-        if (crackbackIsLethal && attackerMap.isNotEmpty()) {
-            retainDefenders(state, projected, playerId, opponentId, opponentAllCreatures, attackerMap, myLife)
+        // ── Defense budget: retain blockers against crackback ──
+        if (attackerMap.isNotEmpty()) {
+            retainDefenders(state, projected, playerId, opponentId, opponentCrackbackCreatures, attackerMap, myLife)
         }
 
         return DeclareAttackers(playerId, attackerMap)
@@ -170,8 +174,15 @@ class CombatAdvisor(
     // ── Attack decision ─────────────────────────────────────────────────
 
     /**
-     * Decide whether a creature should attack and what to target.
-     * Returns the target EntityId (player or planeswalker) or null to not attack.
+     * Decide whether a creature should attack based on the global aggression level.
+     *
+     * Aggression levels gate which creatures are sent:
+     * - 5: Everything attacks (alpha strike / attritional win)
+     * - 4: Attack if we survive or trade reasonably (life-scaled)
+     * - 3: Attack if safe, evasive, or decent trade
+     * - 2: Attack only if safe or evasive
+     * - 1: Only evasive / no-downside creatures
+     * - 0: Nothing attacks (handled in chooseAttackers)
      */
     private fun chooseAttackTarget(
         state: GameState,
@@ -181,10 +192,10 @@ class CombatAdvisor(
         opponentCreatures: List<EntityId>,
         opponentLife: Int,
         planeswalkerTargets: List<EntityId>,
-        isAheadOnClock: Boolean,
-        crackbackIsLethal: Boolean,
+        aggression: Int,
         trickPowerBonus: Int,
-        trickToughnessBonus: Int
+        trickToughnessBonus: Int,
+        tradeRatio: Double
     ): EntityId? {
         val power = projected.getPower(entityId) ?: 0
         val toughness = projected.getToughness(entityId) ?: 0
@@ -195,7 +206,7 @@ class CombatAdvisor(
 
         val isEvasive = CombatMath.isEvasive(state, projected, entityId, opponentCreatures)
 
-        // ── Always attack: no downside ──
+        // ── Always attack: no downside (any aggression level >= 1) ──
         if (Keyword.VIGILANCE.name in keywords) {
             return chooseBestTarget(state, projected, entityId, opponentId, planeswalkerTargets, isEvasive)
         }
@@ -208,68 +219,79 @@ class CombatAdvisor(
             return chooseBestTarget(state, projected, entityId, opponentId, planeswalkerTargets, isEvasive)
         }
 
-        // ── Evasive: always attack ──
+        // ── Evasive: always attack (any aggression level >= 1) ──
         if (isEvasive) {
             return chooseBestTarget(state, projected, entityId, opponentId, planeswalkerTargets, true)
         }
 
-        // ── Deathtouch: always trades up ──
-        if (Keyword.DEATHTOUCH.name in keywords) return opponentId
+        // ── Deathtouch: always trades up (aggression >= 2) ──
+        if (Keyword.DEATHTOUCH.name in keywords && aggression >= 2) return opponentId
+
+        // ── Level 1: only evasive/no-downside creatures (handled above) ──
+        if (aggression <= 1) return null
 
         // ── First/double strike: contextual — only if we have an advantage ──
         if (Keyword.FIRST_STRIKE.name in keywords || Keyword.DOUBLE_STRIKE.name in keywords) {
             val validBlockers = CombatMath.getValidBlockersFor(state, projected, entityId, opponentCreatures)
-            // Attack if no blocker can kill us, or we can kill any blocker before it hits back
             val bestBlocker = validBlockers.minByOrNull { CombatMath.creatureValue(state, projected, it) }
             if (bestBlocker == null) return opponentId
             val blockerKillsUs = CombatMath.wouldKillInCombat(state, projected, bestBlocker, entityId)
             if (!blockerKillsUs) return opponentId
-            // We have first strike — do we kill the blocker before it hits us?
             val weKillBlockerFirst = CombatMath.wouldKillInCombat(state, projected, entityId, bestBlocker)
             if (weKillBlockerFirst) return opponentId
-            // First strike doesn't save us against this blocker — fall through to normal evaluation
+            // First strike doesn't help — fall through to normal evaluation
         }
 
-        // ── Low life opponent: be aggressive ──
-        if (opponentLife <= 8 && !crackbackIsLethal) return opponentId
+        // ── Level 5: all-out attack ──
+        if (aggression >= 5) return opponentId
 
-        // ── Ahead on race clock: be aggressive ──
-        if (isAheadOnClock && !crackbackIsLethal) return opponentId
-
-        // ── Core heuristic: attack if expected value is positive ──
+        // ── Analyze the best blocker they could assign ──
         val validBlockers = CombatMath.getValidBlockersFor(state, projected, entityId, opponentCreatures)
         val bestBlocker = findCheapestEffectiveBlocker(state, projected, entityId, validBlockers, trickToughnessBonus)
 
-        if (bestBlocker != null) {
-            val bPower = (projected.getPower(bestBlocker) ?: 0) + trickPowerBonus
-            val bToughness = (projected.getToughness(bestBlocker) ?: 0) + trickToughnessBonus
-            val bKeywords = projected.getKeywords(bestBlocker)
-            val canKillUs = bPower >= toughness || Keyword.DEATHTOUCH.name in bKeywords
-            val weKillThem = power >= bToughness || Keyword.DEATHTOUCH.name in keywords
-            val blockerValue = CombatMath.creatureValue(state, projected, bestBlocker)
+        if (bestBlocker == null) {
+            // No blocker can kill us → always attack at aggression >= 2
+            return opponentId
+        }
 
-            if (!canKillUs) {
-                // They can't kill us → always attack
-                return opponentId
-            }
+        val bPower = (projected.getPower(bestBlocker) ?: 0) + trickPowerBonus
+        val bKeywords = projected.getKeywords(bestBlocker)
+        val canKillUs = bPower >= toughness || Keyword.DEATHTOUCH.name in bKeywords
+        val bToughness = (projected.getToughness(bestBlocker) ?: 0) + trickToughnessBonus
+        val weKillThem = power >= bToughness || Keyword.DEATHTOUCH.name in keywords
+        val blockerValue = CombatMath.creatureValue(state, projected, bestBlocker)
 
-            if (weKillThem && blockerValue >= myValue * 0.8) {
-                // Good trade
-                return opponentId
-            }
+        if (!canKillUs) {
+            // They can't kill us → always attack at aggression >= 2
+            return opponentId
+        }
 
-            // They can kill us and it's a bad trade — check board state
+        // They can potentially kill us — use aggression level + life-scaled trade willingness
+        if (weKillThem) {
+            // Mutual trade: use life-scaled willingness
+            // tradeRatio controls how much more valuable we require the blocker to be
+            if (blockerValue >= myValue * tradeRatio) return opponentId
+
+            // At aggression 4+, accept any mutual trade
+            if (aggression >= 4) return opponentId
+
+            // At aggression 3, accept if the trade is close
+            if (aggression >= 3 && blockerValue >= myValue * 0.4) return opponentId
+        } else {
+            // We die, they survive — bad trade. Only at aggression 4+ and if creature is expendable
+            if (aggression >= 4 && myValue <= 3.0) return opponentId
+        }
+
+        // At aggression 3+, still attack if we significantly outnumber them (board pressure)
+        if (aggression >= 3) {
             val myCreatureCount = projected.getBattlefieldControlledBy(
                 state.turnOrder.find { it != opponentId } ?: return null
             ).count { projected.isCreature(it) }
-            if (myCreatureCount >= 3 && !crackbackIsLethal) return opponentId
-
-            // Bad trade and crackback is dangerous — don't attack
-            return null
+            val theirCreatureCount = opponentCreatures.size
+            if (myCreatureCount >= theirCreatureCount + 2) return opponentId
         }
 
-        // No blocker can kill us → attack
-        return opponentId
+        return null
     }
 
     /**
@@ -427,7 +449,8 @@ class CombatAdvisor(
     }
 
     /**
-     * Profit mode: look for favorable trades, accounting for first strike and lifelink.
+     * Profit mode: look for favorable trades, accounting for first strike, lifelink,
+     * and life-scaled trade willingness. At low life, accepts worse trades to prevent damage.
      */
     private fun assignBlocksForProfit(
         state: GameState,
@@ -442,6 +465,16 @@ class CombatAdvisor(
         val unblocked = attackers
             .filter { it !in blockedAttackers }
             .sortedByDescending { CombatMath.effectiveDamage(projected, it) }
+
+        // Life-scaled trade acceptance: at low life, accept worse blocking trades
+        val playerId = state.turnOrder.find { id ->
+            validBlockers.any { projected.getController(it) == id }
+        }
+        val myLife = if (playerId != null) {
+            state.getEntity(playerId)?.get<LifeTotalComponent>()?.life ?: 20
+        } else 20
+        // diff: at 20 life = 35 (very conservative), at 5 life = 5 (trade almost evenly)
+        val diff = (myLife * 2) - 5
 
         for (attacker in unblocked) {
             val aPower = projected.getPower(attacker) ?: 0
@@ -469,7 +502,10 @@ class CombatAdvisor(
                     val blockerDealsDamage = CombatMath.blockerDealsDamage(state, projected, attacker, blockerId)
                     val effectivelyKillThem = weKillThem && blockerDealsDamage
 
-                    (effectivelyKillThem && weSurvive) || (effectivelyKillThem && attackerValue > blockerValue)
+                    // Accept trade if: blocker survives, or blocker kills attacker and the trade
+                    // is acceptable given our life-scaled willingness (diff)
+                    (effectivelyKillThem && weSurvive) ||
+                        (effectivelyKillThem && blockerValue + diff < attackerValue)
                 }
                 .minByOrNull { CombatMath.creatureValue(state, projected, it) }
 

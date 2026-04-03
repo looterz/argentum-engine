@@ -342,8 +342,9 @@ object CombatMath {
     // ── Race Clock ──────────────────────────────────────────────────────
 
     /**
-     * Estimate how many turns until [attacker] can kill [defender] with evasive creatures.
-     * Returns Int.MAX_VALUE if no evasive damage is available.
+     * Estimate how many turns until [attacker] can kill [defender] using damage through optimal blocking.
+     * Uses total expected damage (evasive + trample overflow + unblockable surplus) rather than
+     * only evasive damage, so the race clock is meaningful even with ground creatures.
      */
     fun turnsToKill(
         state: GameState,
@@ -356,9 +357,183 @@ object CombatMath {
             ?.get<com.wingedsheep.engine.state.components.identity.LifeTotalComponent>()?.life ?: 20
         val myCreatures = projected.getBattlefieldControlledBy(attackerPlayer)
             .filter { projected.isCreature(it) && !state.getEntity(it)!!.has<TappedComponent>() }
-        val evasiveDamage = calculateEvasiveDamage(state, projected, myCreatures, opponentBlockers)
-        if (evasiveDamage <= 0) return Int.MAX_VALUE
-        return (defenderLife + evasiveDamage - 1) / evasiveDamage // ceiling division
+        val damageThrough = calculateDamageThroughOptimalBlocking(state, projected, myCreatures, opponentBlockers)
+        if (damageThrough <= 0) return Int.MAX_VALUE
+        return (defenderLife + damageThrough - 1) / damageThrough // ceiling division
+    }
+
+    // ── Aggression Analysis ───────────────────────────────────────────
+
+    /**
+     * Aggression level (0-5) inspired by Forge's combat AI.
+     * Compares how fast each player can kill the other using a life-to-damage ratio.
+     *
+     * - 5: All-out attack (attritional win or dominant race)
+     * - 4: Aggressive (winning the race, willing to trade)
+     * - 3: Moderate (slightly ahead or even, attack with expendable creatures)
+     * - 2: Cautious (slightly behind, only safe attacks)
+     * - 1: Defensive (only evasive/unblockable creatures)
+     * - 0: Full defense (hold everything back)
+     */
+    fun calculateAggressionLevel(
+        state: GameState,
+        projected: ProjectedState,
+        playerId: EntityId,
+        opponentId: EntityId,
+        myCreatures: List<EntityId>,
+        opponentBlockers: List<EntityId>
+    ): Int {
+        val myLife = state.getEntity(playerId)?.get<com.wingedsheep.engine.state.components.identity.LifeTotalComponent>()?.life ?: 20
+        val opponentLife = state.getEntity(opponentId)?.get<com.wingedsheep.engine.state.components.identity.LifeTotalComponent>()?.life ?: 20
+
+        val myDamageThrough = calculateDamageThroughOptimalBlocking(state, projected, myCreatures, opponentBlockers)
+        val opponentAttackers = getCreaturesThatCanAttack(state, projected, opponentId)
+        val myBlockers = myCreatures // all untapped creatures can block
+        val theirDamageThrough = calculateDamageThroughOptimalBlocking(state, projected, opponentAttackers, myBlockers)
+
+        // Evasive-only damage (guaranteed regardless of blocks)
+        val myEvasiveDamage = calculateEvasiveDamage(state, projected, myCreatures, opponentBlockers)
+
+        // Race ratio: how many turns until I kill them vs they kill me
+        // Higher ratio = safer for me
+        val myLifeToTheirDamage = if (theirDamageThrough > 0) myLife.toDouble() / theirDamageThrough else 99.0
+        val theirLifeToMyDamage = if (myDamageThrough > 0) opponentLife.toDouble() / myDamageThrough else 99.0
+        val ratioDiff = myLifeToTheirDamage - theirLifeToMyDamage
+
+        // Attritional analysis
+        val attritionalWin = simulateAttritionalAttack(state, projected, playerId, opponentId, opponentBlockers)
+
+        // Creature count advantage
+        val myCount = myCreatures.size
+        val theirCount = opponentBlockers.size
+        val outnumber = myCount - theirCount
+
+        return when {
+            // Level 5: we win the attrition war AND we're not losing the race
+            ratioDiff > 0 && attritionalWin -> 5
+            // Level 4: winning the race significantly, or opponent is very low
+            ratioDiff >= 1.0 || (opponentLife <= 8 && myEvasiveDamage > 0) -> 4
+            // Level 3: roughly even or slightly ahead, especially with more creatures
+            ratioDiff >= 0 || outnumber >= 2 -> 3
+            // Level 2: slightly behind but not desperate
+            ratioDiff >= -1.5 || outnumber >= 1 -> 2
+            // Level 1: behind on the race, only evasive attacks make sense
+            myEvasiveDamage > 0 -> 1
+            // Level 0: we're losing badly — hunker down
+            else -> 0
+        }
+    }
+
+    /**
+     * Simulate a war of attrition: we repeatedly send our weakest creature to attack,
+     * they block and kill it with their best creature. After each round, check if we
+     * deal enough evasive + overflow damage to eventually win.
+     *
+     * Returns true if attritional attacking wins before we run out of creatures.
+     */
+    fun simulateAttritionalAttack(
+        state: GameState,
+        projected: ProjectedState,
+        playerId: EntityId,
+        opponentId: EntityId,
+        opponentBlockers: List<EntityId>
+    ): Boolean {
+        val opponentLife = state.getEntity(opponentId)
+            ?.get<com.wingedsheep.engine.state.components.identity.LifeTotalComponent>()?.life ?: 20
+
+        val myCreatures = projected.getBattlefieldControlledBy(playerId)
+            .filter { projected.isCreature(it) && state.getEntity(it)?.has<TappedComponent>() != true }
+            .sortedBy { creatureValue(state, projected, it) }
+            .toMutableList()
+        val theirBlockers = opponentBlockers.toMutableList()
+
+        var remainingLife = opponentLife
+        var rounds = 0
+        val maxRounds = 10
+
+        while (myCreatures.isNotEmpty() && rounds < maxRounds) {
+            rounds++
+
+            // Calculate damage through optimal blocking this round
+            val damageThrough = calculateDamageThroughOptimalBlocking(state, projected, myCreatures, theirBlockers)
+            remainingLife -= damageThrough
+
+            if (remainingLife <= 0) return true
+
+            // Simulate: opponent kills our weakest non-evasive attacker with their best blocker
+            val expendable = myCreatures.firstOrNull { !isEvasive(state, projected, it, theirBlockers) }
+            if (expendable != null) {
+                myCreatures.remove(expendable)
+                // The blocker that killed our creature might also die (mutual trade)
+                val killer = theirBlockers.firstOrNull {
+                    canBeBlockedBy(state, projected, expendable, it) &&
+                        wouldKillInCombat(state, projected, it, expendable)
+                }
+                if (killer != null && wouldKillInCombat(state, projected, expendable, killer)) {
+                    theirBlockers.remove(killer) // mutual kill
+                }
+            } else {
+                // All our creatures are evasive — just check if we win by evasion alone
+                break
+            }
+        }
+
+        // After attrition, check if remaining evasive damage finishes them off
+        if (myCreatures.isNotEmpty() && remainingLife > 0) {
+            val evasiveDmg = calculateEvasiveDamage(state, projected, myCreatures, theirBlockers)
+            if (evasiveDmg > 0) {
+                val turnsLeft = (remainingLife + evasiveDmg - 1) / evasiveDmg
+                return turnsLeft <= 3
+            }
+        }
+
+        return remainingLife <= 0
+    }
+
+    /**
+     * Get creatures controlled by [playerId] that can actually attack
+     * (not tapped, no summoning sickness unless haste, no defender).
+     */
+    fun getCreaturesThatCanAttack(
+        state: GameState,
+        projected: ProjectedState,
+        playerId: EntityId
+    ): List<EntityId> {
+        return projected.getBattlefieldControlledBy(playerId).filter { entityId ->
+            projected.isCreature(entityId) &&
+                state.getEntity(entityId)?.has<TappedComponent>() != true &&
+                !projected.cantAttack(entityId) &&
+                Keyword.DEFENDER.name !in projected.getKeywords(entityId) &&
+                (state.getEntity(entityId)?.has<com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent>() != true ||
+                    Keyword.HASTE.name in projected.getKeywords(entityId))
+        }
+    }
+
+    /**
+     * Life-scaled trade willingness threshold, inspired by Forge's `diff` variable.
+     *
+     * At high life, we're conservative (only trade when the blocker is significantly
+     * more valuable). At low life, we accept even trades or slight downtrades because
+     * every point of damage matters more.
+     *
+     * Returns a ratio: our creature's value must be <= blockerValue * ratio to accept the trade.
+     * Higher ratio = more willing to trade (e.g., 1.5 means we'll trade our 6-value creature
+     * for their 4-value blocker).
+     */
+    fun tradeWillingnessRatio(myLife: Int): Double {
+        // At 20 life: 0.5 (only accept trades where blocker >= 50% our value)
+        // At 10 life: 0.75 (accept trades where blocker >= 75% our value)
+        // At 5 life:  1.0 (accept even trades)
+        // At 3 life:  1.3 (accept slight downtrades)
+        return when {
+            myLife >= 20 -> 0.5
+            myLife >= 15 -> 0.6
+            myLife >= 10 -> 0.75
+            myLife >= 7 -> 0.9
+            myLife >= 5 -> 1.0
+            myLife >= 3 -> 1.3
+            else -> 1.5 // desperate — accept bad trades
+        }
     }
 
     // ── Combat Trick Estimation ─────────────────────────────────────────
@@ -380,9 +555,13 @@ object CombatMath {
 
         if (cardsInHand == 0) return 0 to 0
 
+        // Conservative estimate: most combat tricks cost 1-2 mana and give +2/+2 or +3/+3.
+        // But assuming the worst case every time makes the AI too passive — discount by
+        // the probability the opponent actually has a trick (roughly 1-in-4 cards).
         return when {
-            untappedLands >= 3 -> 3 to 3
-            untappedLands >= 1 -> 2 to 2
+            untappedLands >= 3 && cardsInHand >= 3 -> 2 to 2
+            untappedLands >= 2 && cardsInHand >= 2 -> 1 to 1
+            untappedLands >= 1 -> 1 to 1
             else -> 0 to 0
         }
     }
