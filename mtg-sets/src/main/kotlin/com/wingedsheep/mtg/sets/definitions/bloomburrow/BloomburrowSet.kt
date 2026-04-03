@@ -246,6 +246,7 @@ object BloomburrowSet {
         WildfireHowl,
         WickTheWhorledMind,
         WicksPatrol,
+        WandertaleMentor,
         WishingWell,
         YgraEaterOfAll,
         ZoralineCosmosCaller,

@@ -2,7 +2,7 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 231 / 266
+**Implemented:** 232 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
@@ -11,7 +11,7 @@
 | Black      | 40    | 35   |
 | Red        | 41    | 34   |
 | Green      | 41    | 36   |
-| Multicolor | 39    | 31   |
+| Multicolor | 39    | 32   |
 | Colorless  | 9     | 8    |
 | Land       | 15    | 14   |
 
@@ -268,7 +268,7 @@
 - [ ] Veteran Guardmouse
 - [x] Vinereap Mentor
 - [x] Vren, the Relentless
-- [ ] Wandertale Mentor
+- [x] Wandertale Mentor
 - [x] War Squeak
 - [x] Warren Elder
 - [x] Warren Warleader
