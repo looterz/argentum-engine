@@ -1,0 +1,925 @@
+{
+  "Agate Assault": {
+    "gameCount": 937,
+    "winRate": 0.5422
+  },
+  "Agate-Blade Assassin": {
+    "gameCount": 945,
+    "winRate": 0.5714
+  },
+  "Alania's Pathmaker": {
+    "gameCount": 598,
+    "winRate": 0.5234
+  },
+  "Alania, Divergent Storm": {
+    "gameCount": 86
+  },
+  "Artist's Talent": {
+    "gameCount": 49
+  },
+  "Azure Beastbinder": {
+    "gameCount": 300
+  },
+  "Bakersbane Duo": {
+    "gameCount": 1938,
+    "gihWinRate": 0.6056,
+    "winRate": 0.5893
+  },
+  "Bandit's Talent": {
+    "gameCount": 287
+  },
+  "Banishing Light": {
+    "gameCount": 1479,
+    "gihWinRate": 0.5712,
+    "winRate": 0.5666
+  },
+  "Bark-Knuckle Boxer": {
+    "gameCount": 664,
+    "winRate": 0.5858
+  },
+  "Barkform Harvester": {
+    "gameCount": 316
+  },
+  "Baylen, the Haymaker": {
+    "gameCount": 73
+  },
+  "Bellowing Crier": {
+    "gameCount": 999,
+    "winRate": 0.5816
+  },
+  "Beza, the Bounding Spring": {
+    "gameCount": 115
+  },
+  "Blacksmith's Talent": {
+    "gameCount": 386
+  },
+  "Blooming Blast": {
+    "gameCount": 307
+  },
+  "Bonebind Orator": {
+    "gameCount": 1410,
+    "gihWinRate": 0.6029,
+    "winRate": 0.5965
+  },
+  "Bonecache Overseer": {
+    "gameCount": 496
+  },
+  "Brambleguard Captain": {
+    "gameCount": 337
+  },
+  "Brambleguard Veteran": {
+    "gameCount": 505,
+    "winRate": 0.604
+  },
+  "Brave-Kin Duo": {
+    "gameCount": 707,
+    "winRate": 0.57
+  },
+  "Brazen Collector": {
+    "gameCount": 413
+  },
+  "Brightblade Stoat": {
+    "gameCount": 553,
+    "winRate": 0.5949
+  },
+  "Builder's Talent": {
+    "gameCount": 410
+  },
+  "Bumbleflower's Sharepot": {
+    "gameCount": 653,
+    "winRate": 0.5666
+  },
+  "Burrowguard Mentor": {
+    "gameCount": 754,
+    "winRate": 0.5875
+  },
+  "Bushy Bodyguard": {
+    "gameCount": 556,
+    "winRate": 0.5827
+  },
+  "Byway Barterer": {
+    "gameCount": 249
+  },
+  "Cache Grab": {
+    "gameCount": 1507,
+    "gihWinRate": 0.5789,
+    "winRate": 0.5693
+  },
+  "Calamitous Tide": {
+    "gameCount": 421
+  },
+  "Camellia, the Seedmiser": {
+    "gameCount": 235
+  },
+  "Caretaker's Talent": {
+    "gameCount": 219
+  },
+  "Carrot Cake": {
+    "gameCount": 1989,
+    "gihWinRate": 0.6015,
+    "winRate": 0.5958
+  },
+  "Cindering Cutthroat": {
+    "gameCount": 632,
+    "winRate": 0.5791
+  },
+  "Clement, the Worrywort": {
+    "gameCount": 246
+  },
+  "Clifftop Lookout": {
+    "gameCount": 350
+  },
+  "Coiling Rebirth": {
+    "gameCount": 154
+  },
+  "Conduct Electricity": {
+    "gameCount": 423
+  },
+  "Consumed by Greed": {
+    "gameCount": 848,
+    "winRate": 0.5979
+  },
+  "Corpseberry Cultivator": {
+    "gameCount": 924,
+    "winRate": 0.5465
+  },
+  "Coruscation Mage": {
+    "gameCount": 400
+  },
+  "Cruelclaw's Heist": {
+    "gameCount": 103
+  },
+  "Crumb and Get It": {
+    "gameCount": 1229,
+    "winRate": 0.572
+  },
+  "Curious Forager": {
+    "gameCount": 798,
+    "winRate": 0.5802
+  },
+  "Daggerfang Duo": {
+    "gameCount": 1465,
+    "gihWinRate": 0.5859,
+    "winRate": 0.5877
+  },
+  "Daring Waverider": {
+    "gameCount": 466
+  },
+  "Darkstar Augur": {
+    "gameCount": 327
+  },
+  "Dawn's Truce": {
+    "gameCount": 42
+  },
+  "Dazzling Denial": {
+    "gameCount": 856,
+    "winRate": 0.5619
+  },
+  "Dewdrop Cure": {
+    "gameCount": 130
+  },
+  "Dire Downdraft": {
+    "gameCount": 1535,
+    "gihWinRate": 0.6271,
+    "winRate": 0.5863
+  },
+  "Diresight": {
+    "gameCount": 532,
+    "winRate": 0.5244
+  },
+  "Dour Port-Mage": {
+    "gameCount": 356
+  },
+  "Downwind Ambusher": {
+    "gameCount": 907,
+    "winRate": 0.5733
+  },
+  "Dragonhawk, Fate's Tempest": {
+    "gameCount": 127
+  },
+  "Dreamdew Entrancer": {
+    "gameCount": 341
+  },
+  "Driftgloom Coyote": {
+    "gameCount": 572,
+    "winRate": 0.5594
+  },
+  "Druid of the Spade": {
+    "gameCount": 818,
+    "winRate": 0.5721
+  },
+  "Early Winter": {
+    "gameCount": 744,
+    "winRate": 0.5349
+  },
+  "Eddymurk Crab": {
+    "gameCount": 534,
+    "winRate": 0.5955
+  },
+  "Eluge, the Shoreless Sea": {
+    "gameCount": 61
+  },
+  "Emberheart Challenger": {
+    "gameCount": 225
+  },
+  "Essence Channeler": {
+    "gameCount": 165
+  },
+  "Fabled Passage": {
+    "gameCount": 236
+  },
+  "Feather of Flight": {
+    "gameCount": 519,
+    "winRate": 0.6031
+  },
+  "Fecund Greenshell": {
+    "gameCount": 406
+  },
+  "Feed the Cycle": {
+    "gameCount": 857,
+    "winRate": 0.6079
+  },
+  "Fell": {
+    "gameCount": 778,
+    "winRate": 0.5835
+  },
+  "Festival of Embers": {
+    "gameCount": 8
+  },
+  "Finch Formation": {
+    "gameCount": 243
+  },
+  "Finneas, Ace Archer": {
+    "gameCount": 215
+  },
+  "Fireglass Mentor": {
+    "gameCount": 425
+  },
+  "Flamecache Gecko": {
+    "gameCount": 424
+  },
+  "Flowerfoot Swordmaster": {
+    "gameCount": 367
+  },
+  "For the Common Good": {
+    "gameCount": 1
+  },
+  "Fountainport": {
+    "gameCount": 293
+  },
+  "Fountainport Bell": {
+    "gameCount": 1075,
+    "winRate": 0.5637
+  },
+  "Frilled Sparkshooter": {
+    "gameCount": 274
+  },
+  "Galewind Moose": {
+    "gameCount": 824,
+    "winRate": 0.5777
+  },
+  "Gev, Scaled Scorch": {
+    "gameCount": 182
+  },
+  "Glarb, Calamity's Augur": {
+    "gameCount": 156
+  },
+  "Glidedive Duo": {
+    "gameCount": 1730,
+    "gihWinRate": 0.5843,
+    "winRate": 0.596
+  },
+  "Gossip's Talent": {
+    "gameCount": 147
+  },
+  "Harnesser of Storms": {
+    "gameCount": 210
+  },
+  "Harvestrite Host": {
+    "gameCount": 813,
+    "winRate": 0.5953
+  },
+  "Hazardroot Herbalist": {
+    "gameCount": 142
+  },
+  "Hazel's Nocturne": {
+    "gameCount": 577,
+    "winRate": 0.6083
+  },
+  "Head of the Homestead": {
+    "gameCount": 1632,
+    "gihWinRate": 0.5978,
+    "winRate": 0.6036
+  },
+  "Heaped Harvest": {
+    "gameCount": 895,
+    "winRate": 0.5553
+  },
+  "Heartfire Hero": {
+    "gameCount": 335
+  },
+  "Hearthborn Battler": {
+    "gameCount": 142
+  },
+  "Heirloom Epic": {
+    "gameCount": 136
+  },
+  "Helga, Skittish Seer": {
+    "gameCount": 80
+  },
+  "Hidden Grotto": {
+    "gameCount": 1132,
+    "winRate": 0.5742
+  },
+  "High Stride": {
+    "gameCount": 467
+  },
+  "Hired Claw": {
+    "gameCount": 197
+  },
+  "Hivespine Wolverine": {
+    "gameCount": 733,
+    "winRate": 0.5962
+  },
+  "Hoarder's Overflow": {
+    "gameCount": 63
+  },
+  "Honored Dreyleader": {
+    "gameCount": 394
+  },
+  "Hop to It": {
+    "gameCount": 588,
+    "winRate": 0.5765
+  },
+  "Hugs, Grisly Guardian": {
+    "gameCount": 44
+  },
+  "Hunter's Talent": {
+    "gameCount": 957,
+    "winRate": 0.6207
+  },
+  "Huskburster Swarm": {
+    "gameCount": 277
+  },
+  "Innkeeper's Talent": {
+    "gameCount": 299
+  },
+  "Into the Flood Maw": {
+    "gameCount": 436
+  },
+  "Intrepid Rabbit": {
+    "gameCount": 1834,
+    "gihWinRate": 0.6156,
+    "winRate": 0.6052
+  },
+  "Iridescent Vinelasher": {
+    "gameCount": 207
+  },
+  "Jackdaw Savior": {
+    "gameCount": 166
+  },
+  "Jolly Gerbils": {
+    "gameCount": 396
+  },
+  "Junkblade Bruiser": {
+    "gameCount": 479
+  },
+  "Kastral, the Windcrested": {
+    "gameCount": 247
+  },
+  "Keen-Eyed Curator": {
+    "gameCount": 346
+  },
+  "Kindlespark Duo": {
+    "gameCount": 391
+  },
+  "Kindred Charge": {
+    "gameCount": 3
+  },
+  "Kitnap": {
+    "gameCount": 343
+  },
+  "Kitsa, Otterball Elite": {
+    "gameCount": 131
+  },
+  "Knightfisher": {
+    "gameCount": 204
+  },
+  "Ledger Shredder": {
+    "gameCount": 39
+  },
+  "Lifecreed Duo": {
+    "gameCount": 1182,
+    "winRate": 0.555
+  },
+  "Lightshell Duo": {
+    "gameCount": 961,
+    "winRate": 0.5515
+  },
+  "Lilypad Village": {
+    "gameCount": 289
+  },
+  "Lilysplash Mentor": {
+    "gameCount": 645,
+    "winRate": 0.5891
+  },
+  "Long River Lurker": {
+    "gameCount": 523,
+    "winRate": 0.5966
+  },
+  "Long River's Pull": {
+    "gameCount": 302
+  },
+  "Longstalk Brawl": {
+    "gameCount": 1753,
+    "gihWinRate": 0.6115,
+    "winRate": 0.5898
+  },
+  "Lumra, Bellow of the Woods": {
+    "gameCount": 111
+  },
+  "Lunar Convocation": {
+    "gameCount": 121
+  },
+  "Lupinflower Village": {
+    "gameCount": 393
+  },
+  "Mabel's Mettle": {
+    "gameCount": 249
+  },
+  "Mabel, Heir to Cragflame": {
+    "gameCount": 193
+  },
+  "Maha, Its Feathers Night": {
+    "gameCount": 95
+  },
+  "Manifold Mouse": {
+    "gameCount": 203
+  },
+  "Might of the Meek": {
+    "gameCount": 579,
+    "winRate": 0.5492
+  },
+  "Mind Drill Assailant": {
+    "gameCount": 356
+  },
+  "Mind Spiral": {
+    "gameCount": 640,
+    "winRate": 0.5406
+  },
+  "Mindwhisker": {
+    "gameCount": 735,
+    "winRate": 0.6163
+  },
+  "Mistbreath Elder": {
+    "gameCount": 202
+  },
+  "Mockingbird": {
+    "gameCount": 233
+  },
+  "Moonrise Cleric": {
+    "gameCount": 1038,
+    "winRate": 0.5472
+  },
+  "Moonstone Harbinger": {
+    "gameCount": 341
+  },
+  "Mouse Trapper": {
+    "gameCount": 283
+  },
+  "Mudflat Village": {
+    "gameCount": 577,
+    "winRate": 0.5546
+  },
+  "Muerra, Trash Tactician": {
+    "gameCount": 123
+  },
+  "Nettle Guard": {
+    "gameCount": 1037,
+    "winRate": 0.5333
+  },
+  "Nightwhorl Hermit": {
+    "gameCount": 181
+  },
+  "Nocturnal Hunger": {
+    "gameCount": 1876,
+    "gihWinRate": 0.5893,
+    "winRate": 0.5896
+  },
+  "Oakhollow Village": {
+    "gameCount": 377
+  },
+  "Osteomancer Adept": {
+    "gameCount": 367
+  },
+  "Otterball Antics": {
+    "gameCount": 244
+  },
+  "Overprotect": {
+    "gameCount": 790,
+    "winRate": 0.5835
+  },
+  "Parting Gust": {
+    "gameCount": 244
+  },
+  "Patchwork Banner": {
+    "gameCount": 859,
+    "winRate": 0.5984
+  },
+  "Pawpatch Formation": {
+    "gameCount": 371
+  },
+  "Pawpatch Recruit": {
+    "gameCount": 286
+  },
+  "Pearl of Wisdom": {
+    "gameCount": 896,
+    "winRate": 0.5458
+  },
+  "Peerless Recycling": {
+    "gameCount": 173
+  },
+  "Persistent Marshstalker": {
+    "gameCount": 384
+  },
+  "Pileated Provisioner": {
+    "gameCount": 368
+  },
+  "Playful Shove": {
+    "gameCount": 366
+  },
+  "Plumecreed Escort": {
+    "gameCount": 677,
+    "winRate": 0.6292
+  },
+  "Plumecreed Mentor": {
+    "gameCount": 271
+  },
+  "Polliwallop": {
+    "gameCount": 1942,
+    "gihWinRate": 0.617,
+    "winRate": 0.6112
+  },
+  "Pond Prophet": {
+    "gameCount": 1906,
+    "gihWinRate": 0.6402,
+    "winRate": 0.6018
+  },
+  "Portent of Calamity": {
+    "gameCount": 67
+  },
+  "Psychic Whorl": {
+    "gameCount": 238
+  },
+  "Quaketusk Boar": {
+    "gameCount": 438
+  },
+  "Rabbit Response": {
+    "gameCount": 780,
+    "winRate": 0.5769
+  },
+  "Rabid Gnaw": {
+    "gameCount": 506,
+    "winRate": 0.6166
+  },
+  "Raccoon Rallier": {
+    "gameCount": 525,
+    "winRate": 0.581
+  },
+  "Ral, Crackling Wit": {
+    "gameCount": 57
+  },
+  "Rat Colony": {
+    "gameCount": 3
+  },
+  "Ravine Raider": {
+    "gameCount": 696,
+    "winRate": 0.5733
+  },
+  "Repel Calamity": {
+    "gameCount": 553,
+    "winRate": 0.5949
+  },
+  "Reptilian Recruiter": {
+    "gameCount": 188
+  },
+  "Rockface Village": {
+    "gameCount": 333
+  },
+  "Rottenmouth Viper": {
+    "gameCount": 149
+  },
+  "Roughshod Duo": {
+    "gameCount": 784,
+    "winRate": 0.574
+  },
+  "Run Away Together": {
+    "gameCount": 593,
+    "winRate": 0.5717
+  },
+  "Rust-Shield Rampager": {
+    "gameCount": 1029,
+    "winRate": 0.5637
+  },
+  "Ruthless Negotiation": {
+    "gameCount": 581,
+    "winRate": 0.6282
+  },
+  "Salvation Swan": {
+    "gameCount": 221
+  },
+  "Savor": {
+    "gameCount": 2444,
+    "gihWinRate": 0.6118,
+    "winRate": 0.5933
+  },
+  "Sazacap's Brew": {
+    "gameCount": 408
+  },
+  "Scales of Shale": {
+    "gameCount": 1010,
+    "winRate": 0.605
+  },
+  "Scavenger's Talent": {
+    "gameCount": 284
+  },
+  "Scrapshooter": {
+    "gameCount": 303
+  },
+  "Season of Gathering": {
+    "gameCount": 174
+  },
+  "Season of Loss": {
+    "gameCount": 184
+  },
+  "Season of Weaving": {
+    "gameCount": 117
+  },
+  "Season of the Bold": {
+    "gameCount": 54
+  },
+  "Season of the Burrow": {
+    "gameCount": 140
+  },
+  "Seasoned Warrenguard": {
+    "gameCount": 481
+  },
+  "Seedglaive Mentor": {
+    "gameCount": 279
+  },
+  "Seedpod Squire": {
+    "gameCount": 481
+  },
+  "Shore Up": {
+    "gameCount": 880,
+    "winRate": 0.5455
+  },
+  "Shoreline Looter": {
+    "gameCount": 980,
+    "winRate": 0.5959
+  },
+  "Short Bow": {
+    "gameCount": 316
+  },
+  "Shrike Force": {
+    "gameCount": 370
+  },
+  "Sinister Monolith": {
+    "gameCount": 249
+  },
+  "Skyskipper Duo": {
+    "gameCount": 791,
+    "winRate": 0.5803
+  },
+  "Sonar Strike": {
+    "gameCount": 899,
+    "winRate": 0.5617
+  },
+  "Spellgyre": {
+    "gameCount": 463
+  },
+  "Splash Lasher": {
+    "gameCount": 582,
+    "winRate": 0.5842
+  },
+  "Splash Portal": {
+    "gameCount": 481
+  },
+  "Star Charter": {
+    "gameCount": 311
+  },
+  "Starfall Invocation": {
+    "gameCount": 168
+  },
+  "Starforged Sword": {
+    "gameCount": 82
+  },
+  "Stargaze": {
+    "gameCount": 155
+  },
+  "Starlit Soothsayer": {
+    "gameCount": 415
+  },
+  "Starscape Cleric": {
+    "gameCount": 427
+  },
+  "Starseer Mentor": {
+    "gameCount": 327
+  },
+  "Steampath Charger": {
+    "gameCount": 605,
+    "winRate": 0.5901
+  },
+  "Stickytongue Sentinel": {
+    "gameCount": 1571,
+    "gihWinRate": 0.6316,
+    "winRate": 0.6104
+  },
+  "Stocking the Pantry": {
+    "gameCount": 83
+  },
+  "Stormcatch Mentor": {
+    "gameCount": 199
+  },
+  "Stormchaser's Talent": {
+    "gameCount": 182
+  },
+  "Stormsplitter": {
+    "gameCount": 9
+  },
+  "Sugar Coat": {
+    "gameCount": 611,
+    "winRate": 0.6056
+  },
+  "Sunshower Druid": {
+    "gameCount": 1143,
+    "gihWinRate": 0.5909,
+    "winRate": 0.5748
+  },
+  "Sunspine Lynx": {
+    "gameCount": 133
+  },
+  "Sword of Fire and Ice": {
+    "gameCount": 19
+  },
+  "Swords to Plowshares": {
+    "gameCount": 17
+  },
+  "Sylvan Tutor": {
+    "gameCount": 5
+  },
+  "Take Out the Trash": {
+    "gameCount": 1353,
+    "gihWinRate": 0.6453,
+    "winRate": 0.6098
+  },
+  "Tangle Tumbler": {
+    "gameCount": 111
+  },
+  "Teapot Slinger": {
+    "gameCount": 247
+  },
+  "Tempest Angler": {
+    "gameCount": 424
+  },
+  "Tender Wildguide": {
+    "gameCount": 341
+  },
+  "The Infamous Cruelclaw": {
+    "gameCount": 67
+  },
+  "Thistledown Players": {
+    "gameCount": 513,
+    "winRate": 0.6043
+  },
+  "Thornplate Intimidator": {
+    "gameCount": 637,
+    "winRate": 0.5338
+  },
+  "Thornvault Forager": {
+    "gameCount": 258
+  },
+  "Thought Shucker": {
+    "gameCount": 424
+  },
+  "Thought-Stalker Warlock": {
+    "gameCount": 1079,
+    "winRate": 0.6274
+  },
+  "Three Tree City": {
+    "gameCount": 61
+  },
+  "Three Tree Mascot": {
+    "gameCount": 838,
+    "winRate": 0.5632
+  },
+  "Three Tree Rootweaver": {
+    "gameCount": 1190,
+    "gihWinRate": 0.5869,
+    "winRate": 0.5622
+  },
+  "Three Tree Scribe": {
+    "gameCount": 466
+  },
+  "Thundertrap Trainer": {
+    "gameCount": 263
+  },
+  "Tidecaller Mentor": {
+    "gameCount": 501,
+    "winRate": 0.6048
+  },
+  "Toski, Bearer of Secrets": {
+    "gameCount": 11
+  },
+  "Treeguard Duo": {
+    "gameCount": 2179,
+    "gihWinRate": 0.6064,
+    "winRate": 0.5934
+  },
+  "Treetop Sentries": {
+    "gameCount": 1155,
+    "winRate": 0.5835
+  },
+  "Uncharted Haven": {
+    "gameCount": 1775,
+    "gihWinRate": 0.5729,
+    "winRate": 0.5707
+  },
+  "Valley Flamecaller": {
+    "gameCount": 178
+  },
+  "Valley Floodcaller": {
+    "gameCount": 154
+  },
+  "Valley Mightcaller": {
+    "gameCount": 398
+  },
+  "Valley Questcaller": {
+    "gameCount": 283
+  },
+  "Valley Rally": {
+    "gameCount": 104
+  },
+  "Valley Rotcaller": {
+    "gameCount": 246
+  },
+  "Veteran Guardmouse": {
+    "gameCount": 468
+  },
+  "Vinereap Mentor": {
+    "gameCount": 614,
+    "winRate": 0.5977
+  },
+  "Vren, the Relentless": {
+    "gameCount": 292
+  },
+  "Wandertale Mentor": {
+    "gameCount": 256
+  },
+  "War Squeak": {
+    "gameCount": 220
+  },
+  "Warren Elder": {
+    "gameCount": 1511,
+    "gihWinRate": 0.5556,
+    "winRate": 0.5824
+  },
+  "Warren Warleader": {
+    "gameCount": 126
+  },
+  "Waterspout Warden": {
+    "gameCount": 326
+  },
+  "Wax-Wane Witness": {
+    "gameCount": 536,
+    "winRate": 0.5616
+  },
+  "Wear Down": {
+    "gameCount": 22
+  },
+  "Whiskerquill Scribe": {
+    "gameCount": 347
+  },
+  "Whiskervale Forerunner": {
+    "gameCount": 185
+  },
+  "Wick's Patrol": {
+    "gameCount": 1023,
+    "winRate": 0.6012
+  },
+  "Wick, the Whorled Mind": {
+    "gameCount": 138
+  },
+  "Wildfire Howl": {
+    "gameCount": 100
+  },
+  "Wishing Well": {
+    "gameCount": 64
+  },
+  "Ygra, Eater of All": {
+    "gameCount": 166
+  },
+  "Zoraline, Cosmos Caller": {
+    "gameCount": 245
+  }
+}
