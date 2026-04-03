@@ -151,6 +151,7 @@ object BloomburrowSet {
         NettleGuard,
         NightwhorlHermit,
         PawpatchRecruit,
+        PartingGust,
         PatchworkBanner,
         PawpatchFormation,
         PileatedProvisioner,

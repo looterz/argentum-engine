@@ -2,11 +2,11 @@
 
 **Set Size:** 266 cards
 **Release Date:** August 2, 2024
-**Implemented:** 233 / 266
+**Implemented:** 234 / 266
 
 | Color      | Total | Done |
 |------------|-------|------|
-| White      | 40    | 34   |
+| White      | 40    | 35   |
 | Blue       | 41    | 36   |
 | Black      | 40    | 35   |
 | Red        | 41    | 35   |
@@ -168,7 +168,7 @@
 - [x] Osteomancer Adept
 - [x] Otterball Antics
 - [x] Overprotect
-- [ ] Parting Gust
+- [x] Parting Gust
 - [x] Patchwork Banner
 - [x] Pawpatch Formation
 - [x] Pawpatch Recruit
