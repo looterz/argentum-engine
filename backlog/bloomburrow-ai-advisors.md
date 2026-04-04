@@ -106,7 +106,7 @@ Cards are grouped by type. Status:
 - [x] **Dazzling Denial** — CounterspellAdvisor (hold for opponent's spells)
 - [x] **Dire Downdraft** — InstantRemovalAdvisor (instant tuck removal, hold for opponent's turn)
 - [x] **Early Winter** — InstantRemovalAdvisor (modal exile creature/enchantment)
-- [ ] **Feed the Cycle** — Creature recursion instant. Review targeting
+- [x] **Feed the Cycle** — InstantRemovalAdvisor (instant destroy, hold for opponent's turn)
 - [x] **Hazel's Nocturne** — GraveyardRetrievalAdvisor (always return max creatures)
 - [x] **High Stride** — CombatTrickAdvisor (hold for combat)
 - [x] **Into the Flood Maw** — GiftBounceAdvisor (gift mode simulation)
@@ -116,7 +116,7 @@ Cards are grouped by type. Status:
 - [x] **Nocturnal Hunger** — GiftRemovalAdvisor (life + hand-aware gift decision)
 - [x] **Overprotect** — CombatTrickAdvisor (hold for combat)
 - [x] **Parting Gust** — GiftRemovalAdvisor (permanent vs temporary exile)
-- [ ] **Pawpatch Formation** — Modal: destroy flyer / destroy enchantment / draw + food
+- [x] **Pawpatch Formation** — ModalRemovalAdvisor (lighter hold: removal + draw/Food fallback)
 - [x] **Peerless Recycling** — GiftValueAdvisor (gift mode simulation)
 - [x] **Polliwallop** — BiteSpellAdvisor (joint target: creature × opponent creature)
 - [x] **Rabbit Response** — CombatTrickAdvisor (team pump, hold for combat)

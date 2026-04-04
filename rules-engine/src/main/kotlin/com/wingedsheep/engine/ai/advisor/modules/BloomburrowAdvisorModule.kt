@@ -37,6 +37,7 @@ class BloomburrowAdvisorModule : CardAdvisorModule {
         registry.register(GraveyardRetrievalAdvisor)
         registry.register(BiteSpellAdvisor)
         registry.register(FlashCreatureAdvisor)
+        registry.register(ModalRemovalAdvisor)
     }
 }
 
@@ -184,6 +185,7 @@ object InstantRemovalAdvisor : CardAdvisor {
         "Early Winter",
         "Conduct Electricity",
         "Dire Downdraft",
+        "Feed the Cycle",
     )
 
     override fun evaluateCast(context: CastContext): Double? {
@@ -198,6 +200,41 @@ object InstantRemovalAdvisor : CardAdvisor {
         // of removing an attacker mid-combat.
         if (isOwnMainPhase(state, playerId)) {
             return context.defaultScore - 3.0
+        }
+
+        return null
+    }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Modal removal/utility — lighter hold than pure removal
+// ═════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Instants with both removal and non-removal modes (e.g., Pawpatch Formation:
+ * destroy flyer / destroy enchantment / draw + Food).
+ *
+ * Holding for opponent's turn is ideal when removal targets exist, but the
+ * non-removal mode is a fine main-phase play. Use a lighter penalty than
+ * pure InstantRemovalAdvisor (-1.5 vs -3.0) so the AI doesn't over-hold
+ * when it could just draw a card.
+ */
+object ModalRemovalAdvisor : CardAdvisor {
+    override val cardNames = setOf(
+        "Pawpatch Formation",
+    )
+
+    override fun evaluateCast(context: CastContext): Double? {
+        val state = context.state
+        val playerId = context.playerId
+
+        // During combat or opponent's turn: let simulation decide
+        if (isCombatStep(state) || isOpponentsTurn(state, playerId)) return null
+
+        // Own main phase: light penalty — holding is better if removal targets
+        // appear, but the non-removal mode is fine to cast now
+        if (isOwnMainPhase(state, playerId)) {
+            return context.defaultScore - 1.5
         }
 
         return null
