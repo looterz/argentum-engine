@@ -28,7 +28,7 @@ interface CardAdvisor {
     val cardNames: Set<String>
 
     /**
-     * Adjust the score for casting this spell.
+     * Adjust the score for casting this spell or activated ability.
      *
      * Called during [Strategist]'s Phase 1 scoring after the default 1-ply
      * simulation has already been computed (available as [CastContext.defaultScore]).
@@ -48,6 +48,20 @@ interface CardAdvisor {
      * Return null to fall through to default behavior.
      */
     fun respondToDecision(context: AdvisorDecisionContext): DecisionResponse? = null
+
+    /**
+     * Score penalty for attacking with this creature.
+     *
+     * Called by [CombatAdvisor] for each valid attacker whose card name
+     * matches this advisor. The penalty is subtracted from the attack
+     * evaluation score, making it harder for the creature to pass the
+     * aggression threshold.
+     *
+     * Return a positive value to disincentivize attacking (e.g., 10.0
+     * makes it very unlikely to attack, but a lethal alpha strike can
+     * still override). Return 0.0 or null to use the default combat logic.
+     */
+    fun attackPenalty(state: GameState, projected: ProjectedState, entityId: EntityId, playerId: EntityId): Double? = null
 }
 
 /**

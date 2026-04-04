@@ -1,5 +1,6 @@
 package com.wingedsheep.engine.ai
 
+import com.wingedsheep.engine.ai.advisor.CardAdvisorRegistry
 import com.wingedsheep.engine.ai.evaluation.BoardEvaluator
 import com.wingedsheep.engine.core.DeclareAttackers
 import com.wingedsheep.engine.core.DeclareBlockers
@@ -10,6 +11,7 @@ import com.wingedsheep.engine.mechanics.layers.ProjectedState
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
+import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Phase
@@ -25,7 +27,8 @@ import com.wingedsheep.sdk.model.EntityId
 class CombatAdvisor(
     private val simulator: GameSimulator,
     private val evaluator: BoardEvaluator,
-    private val cardRegistry: CardRegistry? = null
+    private val cardRegistry: CardRegistry? = null,
+    private val advisorRegistry: CardAdvisorRegistry = CardAdvisorRegistry()
 ) {
     /**
      * Build a DeclareAttackers action choosing which creatures to send in.
@@ -324,7 +327,11 @@ class CombatAdvisor(
             else -> 0.0 // Aggression 2: only if board improves or stays equal
         }
 
-        return if (postCombatScore - baselineScore >= threshold) opponentId else null
+        // Card-specific attack penalty (e.g., Goblin Sharpshooter prefers not to attack)
+        val attackingPlayerId = state.turnOrder.find { it != opponentId }!!
+        val penalty = getAttackPenalty(state, projected, entityId, attackingPlayerId)
+
+        return if (postCombatScore - baselineScore - penalty >= threshold) opponentId else null
     }
 
     /**
@@ -831,5 +838,17 @@ class CombatAdvisor(
         return state.getBattlefield().filter { entityId ->
             state.getEntity(entityId)?.has<com.wingedsheep.engine.state.components.combat.AttackingComponent>() == true
         }
+    }
+
+    /** Look up card-specific attack penalty from the advisor registry. Returns 0.0 if none. */
+    private fun getAttackPenalty(
+        state: GameState,
+        projected: ProjectedState,
+        entityId: EntityId,
+        playerId: EntityId
+    ): Double {
+        val cardName = state.getEntity(entityId)?.get<CardComponent>()?.name ?: return 0.0
+        val advisor = advisorRegistry.getAdvisor(cardName) ?: return 0.0
+        return advisor.attackPenalty(state, projected, entityId, playerId) ?: 0.0
     }
 }

@@ -147,7 +147,7 @@ class AIPlayer(
 
             val simulator = GameSimulator(cardRegistry)
             val evaluator = defaultEvaluator()
-            val combatAdvisor = CombatAdvisor(simulator, evaluator, cardRegistry)
+            val combatAdvisor = CombatAdvisor(simulator, evaluator, cardRegistry, advisorRegistry)
             return AIPlayer(
                 playerId = playerId,
                 simulator = simulator,

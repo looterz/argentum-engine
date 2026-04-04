@@ -2,6 +2,7 @@ package com.wingedsheep.gameserver.ai
 
 import com.wingedsheep.engine.ai.AIPlayer
 import com.wingedsheep.engine.ai.advisor.modules.BloomburrowAdvisorModule
+import com.wingedsheep.engine.ai.advisor.modules.OnslaughtAdvisorModule
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
@@ -32,7 +33,7 @@ class EngineAiController(
 
     private val aiPlayer = AIPlayer.create(
         cardRegistry, playerId,
-        advisorModules = listOf(BloomburrowAdvisorModule())
+        advisorModules = listOf(BloomburrowAdvisorModule(), OnslaughtAdvisorModule())
     )
 
     override fun chooseAction(
