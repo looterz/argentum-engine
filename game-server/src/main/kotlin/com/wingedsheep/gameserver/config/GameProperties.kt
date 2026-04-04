@@ -7,7 +7,8 @@ data class GameProperties(
     val handSmoother: HandSmootherProperties = HandSmootherProperties(),
     val sets: SetsProperties = SetsProperties(),
     val admin: AdminProperties = AdminProperties(),
-    val ai: AiProperties = AiProperties()
+    val ai: AiProperties = AiProperties(),
+    val debugMode: Boolean = false
 )
 
 data class HandSmootherProperties(

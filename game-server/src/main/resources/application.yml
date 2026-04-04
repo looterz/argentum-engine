@@ -14,6 +14,7 @@ cache:
     key-prefix: "argentum:"
 
 game:
+  debug-mode: ${GAME_DEBUG_MODE:false}
   dev-endpoints:
     # Enable development endpoints for manual testing. NEVER enable in production.
     enabled: ${GAME_DEV_ENDPOINTS_ENABLED:false}

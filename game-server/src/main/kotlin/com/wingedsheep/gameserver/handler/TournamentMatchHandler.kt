@@ -432,7 +432,8 @@ class TournamentMatchHandler(
 
         val gameSession = GameSession(
             cardRegistry = cardRegistry,
-            useHandSmoother = gameProperties.handSmoother.enabled
+            useHandSmoother = gameProperties.handSmoother.enabled,
+            debugMode = gameProperties.debugMode
         )
         val ps1 = player1State.identity.toPlayerSession()
         val ps2 = player2State.identity.toPlayerSession()

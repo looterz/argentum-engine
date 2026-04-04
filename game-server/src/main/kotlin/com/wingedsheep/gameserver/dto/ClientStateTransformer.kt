@@ -44,7 +44,8 @@ import com.wingedsheep.sdk.scripting.conditions.Condition
  * - Prevents information leakage by only including relevant data
  */
 class ClientStateTransformer(
-    private val cardRegistry: CardRegistry
+    private val cardRegistry: CardRegistry,
+    private val debugMode: Boolean = false
 ) {
 
 
@@ -249,7 +250,7 @@ class ClientStateTransformer(
     private fun isZoneVisibleTo(zoneKey: ZoneKey, viewingPlayerId: EntityId): Boolean {
         return when (zoneKey.zoneType) {
             Zone.LIBRARY -> false
-            Zone.HAND -> zoneKey.ownerId == viewingPlayerId
+            Zone.HAND -> debugMode || zoneKey.ownerId == viewingPlayerId
             Zone.BATTLEFIELD,
             Zone.GRAVEYARD,
             Zone.STACK,

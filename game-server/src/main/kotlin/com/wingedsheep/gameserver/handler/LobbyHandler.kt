@@ -343,7 +343,8 @@ class LobbyHandler(
         logger.info("Starting game from sealed session: ${sealedSession.sessionId}")
         val gameSession = GameSession(
             cardRegistry = cardRegistry,
-            useHandSmoother = gameProperties.handSmoother.enabled
+            useHandSmoother = gameProperties.handSmoother.enabled,
+            debugMode = gameProperties.debugMode
         )
 
         sealedSession.players.forEach { (playerId, playerState) ->

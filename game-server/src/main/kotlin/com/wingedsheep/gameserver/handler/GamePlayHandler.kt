@@ -95,7 +95,9 @@ class GamePlayHandler(
         }
 
         // Pick a shared set for quick games so both players draft from the same pool
-        val quickGameSetCode = if (message.deckList.isEmpty()) deckGenerator.randomSetCode() else null
+        val quickGameSetCode = if (message.deckList.isEmpty()) {
+            message.setCode ?: deckGenerator.randomSetCode()
+        } else null
 
         val deckList = if (quickGameSetCode != null) {
             val randomDeck = deckGenerator.generate(quickGameSetCode)
@@ -107,8 +109,10 @@ class GamePlayHandler(
 
         val gameSession = GameSession(
             cardRegistry = cardRegistry,
-            useHandSmoother = gameProperties.handSmoother.enabled
+            useHandSmoother = gameProperties.handSmoother.enabled,
+            debugMode = gameProperties.debugMode
         )
+        gameSession.quickGameSetCode = quickGameSetCode
         gameSession.addPlayer(playerSession, deckList)
 
         // Store player info for persistence
@@ -238,8 +242,9 @@ class GamePlayHandler(
         }
 
         val deckList = if (message.deckList.isEmpty()) {
-            val randomDeck = deckGenerator.generate()
-            logger.info("Generated random deck for ${playerSession.playerName}: ${randomDeck.entries.take(5)}... (${randomDeck.values.sum()} cards)")
+            val setCode = gameSession.quickGameSetCode ?: deckGenerator.randomSetCode()
+            val randomDeck = deckGenerator.generate(setCode)
+            logger.info("Generated random deck for ${playerSession.playerName} from set $setCode: ${randomDeck.entries.take(5)}... (${randomDeck.values.sum()} cards)")
             randomDeck
         } else {
             message.deckList

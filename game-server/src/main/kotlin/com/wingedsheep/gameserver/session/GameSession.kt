@@ -51,8 +51,9 @@ class GameSession(
         sessionId: String = UUID.randomUUID().toString(),
         cardRegistry: CardRegistry,
         stateTransformer: ClientStateTransformer = ClientStateTransformer(cardRegistry),
-        useHandSmoother: Boolean = false
-    ) : this(sessionId, EngineServices(cardRegistry), stateTransformer, useHandSmoother)
+        useHandSmoother: Boolean = false,
+        debugMode: Boolean = false
+    ) : this(sessionId, EngineServices(cardRegistry), if (debugMode) ClientStateTransformer(cardRegistry, debugMode = true) else stateTransformer, useHandSmoother)
 
     private val cardRegistry: CardRegistry get() = services.cardRegistry
     // Lock for synchronizing state modifications to prevent lost updates
@@ -72,6 +73,10 @@ class GameSession(
     /** State saved when the active player passes priority in precombat main, used to undo combat entry */
     @Volatile
     private var preCombatState: GameState? = null
+    /** Set code used for quick game deck generation (so joining player uses the same set) */
+    @Volatile
+    var quickGameSetCode: String? = null
+
     private val players = mutableMapOf<EntityId, PlayerSession>()
     private val deckLists = mutableMapOf<EntityId, List<String>>()
     private val spectators = mutableSetOf<PlayerSession>()

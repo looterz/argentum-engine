@@ -2,6 +2,7 @@
 # Defaults to Ollama for AI. Start with: just ollama-up && just ollama-pull qwen3.6-plus
 
 game:
+  debug-mode: true
   sets:
     bloomburrow-enabled: true
     edge-of-eternities-enabled: true
