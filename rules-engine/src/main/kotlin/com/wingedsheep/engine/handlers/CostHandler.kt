@@ -3,8 +3,11 @@ package com.wingedsheep.engine.handlers
 import com.wingedsheep.engine.core.ExecutionResult
 import com.wingedsheep.engine.core.GameEvent
 import com.wingedsheep.engine.core.CardsDiscardedEvent
+import com.wingedsheep.engine.core.LifeChangedEvent
+import com.wingedsheep.engine.core.LifeChangeReason
 import com.wingedsheep.engine.core.PermanentsSacrificedEvent
 import com.wingedsheep.engine.core.ZoneChangeEvent
+import com.wingedsheep.engine.handlers.effects.DamageUtils
 import com.wingedsheep.engine.mechanics.mana.ManaPool
 import com.wingedsheep.engine.mechanics.mana.SpellPaymentContext
 import com.wingedsheep.engine.state.GameState
@@ -214,10 +217,15 @@ class CostHandler(
             is AbilityCost.PayLife -> {
                 val currentLife = state.getEntity(controllerId)?.get<LifeTotalComponent>()?.life
                     ?: return CostPaymentResult.failure("Player has no life total")
-                val newState = state.updateEntity(controllerId) { container ->
-                    container.with(LifeTotalComponent(currentLife - cost.amount))
+                val newLife = currentLife - cost.amount
+                var newState = state.updateEntity(controllerId) { container ->
+                    container.with(LifeTotalComponent(newLife))
                 }
-                CostPaymentResult.success(newState, manaPool)
+                newState = DamageUtils.markLifeLostThisTurn(newState, controllerId)
+                CostPaymentResult.success(
+                    newState, manaPool,
+                    events = listOf(LifeChangedEvent(controllerId, currentLife, newLife, LifeChangeReason.PAYMENT))
+                )
             }
             is AbilityCost.Sacrifice, is AbilityCost.SacrificeChosenCreatureType -> {
                 val requiredCount = when (cost) {
