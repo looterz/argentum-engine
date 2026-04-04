@@ -270,4 +270,118 @@ class ConditionalManaTest : FunSpec({
             castResult.isSuccess shouldBe true
         }
     }
+
+    context("mixed colorless-unrestricted and colored-restricted sources") {
+
+        // Oakhollow Village pattern: unrestricted {C} + restricted {G} (creature spells only)
+        val villageStyleLand = card("Village Style Land") {
+            typeLine = "Land"
+
+            activatedAbility {
+                cost = AbilityCost.Tap
+                effect = AddColorlessManaEffect(1)
+                manaAbility = true
+                timing = TimingRule.ManaAbility
+            }
+
+            activatedAbility {
+                cost = AbilityCost.Tap
+                effect = AddManaEffect(Color.GREEN, restriction = ManaRestriction.CreatureSpellsOnly)
+                manaAbility = true
+                timing = TimingRule.ManaAbility
+            }
+        }
+
+        val greenSorcery = card("Green Sorcery") {
+            manaCost = "{G}"
+            typeLine = "Sorcery"
+
+            spell {
+                effect = Effects.DrawCards(1)
+            }
+        }
+
+        val greenCreature = card("Green Test Creature") {
+            manaCost = "{G}"
+            typeLine = "Creature — Beast"
+            power = 2
+            toughness = 2
+        }
+
+        test("restricted colored mana cannot be used for ineligible spells even when source has unrestricted colorless") {
+            val driver = createDriver(listOf(villageStyleLand, greenSorcery))
+            driver.initMirrorMatch(
+                deck = Deck.of("Forest" to 20),
+                skipMulligans = true
+            )
+
+            val activePlayer = driver.activePlayer!!
+            driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+            // Only mana source is the village-style land (unrestricted {C} + restricted {G})
+            driver.putPermanentOnBattlefield(activePlayer, "Village Style Land")
+
+            val sorceryId = driver.putCardInHand(activePlayer, "Green Sorcery")
+
+            // Should FAIL: the green ability is creature-only, and the colorless ability can't pay {G}
+            val castResult = driver.submit(
+                CastSpell(
+                    playerId = activePlayer,
+                    cardId = sorceryId,
+                    paymentStrategy = PaymentStrategy.AutoPay
+                )
+            )
+            castResult.isSuccess shouldBe false
+        }
+
+        test("restricted colored mana CAN be used for eligible spells from mixed source") {
+            val driver = createDriver(listOf(villageStyleLand, greenCreature))
+            driver.initMirrorMatch(
+                deck = Deck.of("Forest" to 20),
+                skipMulligans = true
+            )
+
+            val activePlayer = driver.activePlayer!!
+            driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+            driver.putPermanentOnBattlefield(activePlayer, "Village Style Land")
+
+            val creatureId = driver.putCardInHand(activePlayer, "Green Test Creature")
+
+            // Should SUCCEED: green creature can use the creature-only green mana
+            val castResult = driver.submit(
+                CastSpell(
+                    playerId = activePlayer,
+                    cardId = creatureId,
+                    paymentStrategy = PaymentStrategy.AutoPay
+                )
+            )
+            castResult.isSuccess shouldBe true
+        }
+
+        test("unrestricted colorless from mixed source can still pay generic costs") {
+            val driver = createDriver(listOf(villageStyleLand, testCreature))
+            driver.initMirrorMatch(
+                deck = Deck.of("Forest" to 20),
+                skipMulligans = true
+            )
+
+            val activePlayer = driver.activePlayer!!
+            driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+            driver.putPermanentOnBattlefield(activePlayer, "Village Style Land")
+
+            val creatureId = driver.putCardInHand(activePlayer, "Test Creature")
+
+            // Should SUCCEED: {1} generic cost can be paid with unrestricted colorless mana
+            val castResult = driver.submit(
+                CastSpell(
+                    playerId = activePlayer,
+                    cardId = creatureId,
+                    paymentStrategy = PaymentStrategy.AutoPay
+                )
+            )
+            castResult.isSuccess shouldBe true
+        }
+    }
 })

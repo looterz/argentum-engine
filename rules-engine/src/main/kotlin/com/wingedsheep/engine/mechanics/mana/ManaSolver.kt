@@ -67,8 +67,22 @@ data class ManaSource(
     /** Color of the bonus mana */
     val bonusManaColor: Color? = null,
     /** Mana spending restriction (e.g., "only for instant/sorcery"). Null = unrestricted. */
-    val restriction: ManaRestriction? = null
-)
+    val restriction: ManaRestriction? = null,
+    /** Per-color mana restrictions. Colors not in this map are unrestricted. */
+    val colorRestrictions: Map<Color, ManaRestriction> = emptyMap()
+) {
+    /**
+     * Returns the set of colors this source can produce for a given spell context.
+     * Filters out colors whose restriction is not satisfied.
+     */
+    fun availableColorsFor(spellContext: SpellPaymentContext?): Set<Color> {
+        if (colorRestrictions.isEmpty() || spellContext == null) return producesColors
+        return producesColors.filter { color ->
+            val restriction = colorRestrictions[color]
+            restriction == null || restriction.isSatisfiedBy(spellContext)
+        }.toSet()
+    }
+}
 
 /**
  * Result of solving mana payment.
@@ -145,10 +159,10 @@ class ManaSolver(
         // Analyze hand to inform smart tapping decisions
         val handRequirements = analyzeHandRequirements(state, playerId)
 
-        // Count available sources per color for hand-awareness
+        // Count available sources per color for hand-awareness (respecting per-color restrictions)
         val availableSourcesByColor = mutableMapOf<Color, Int>()
         for (color in Color.entries) {
-            availableSourcesByColor[color] = availableSources.count { it.producesColors.contains(color) }
+            availableSourcesByColor[color] = availableSources.count { it.availableColorsFor(spellContext).contains(color) }
         }
 
         // Track which sources we've used
@@ -201,7 +215,7 @@ class ManaSolver(
                     // Try bonus mana first
                     if (spendBonusMana(symbol.color)) continue
 
-                    val source = findBestSourceForColor(remainingSources, symbol.color, handRequirements, availableSourcesByColor)
+                    val source = findBestSourceForColor(remainingSources, symbol.color, handRequirements, availableSourcesByColor, spellContext)
                         ?: return null // Can't pay this colored cost
 
                     manaProduced[source.entityId] = ManaProduction(color = symbol.color, amount = source.manaAmount)
@@ -216,8 +230,8 @@ class ManaSolver(
                     if (spendBonusMana(symbol.color2)) continue
 
                     // Try first color, then second - use priority to pick the best
-                    val source1 = findBestSourceForColor(remainingSources, symbol.color1, handRequirements, availableSourcesByColor)
-                    val source2 = findBestSourceForColor(remainingSources, symbol.color2, handRequirements, availableSourcesByColor)
+                    val source1 = findBestSourceForColor(remainingSources, symbol.color1, handRequirements, availableSourcesByColor, spellContext)
+                    val source2 = findBestSourceForColor(remainingSources, symbol.color2, handRequirements, availableSourcesByColor, spellContext)
 
                     val source = when {
                         source1 == null && source2 == null -> return null
@@ -231,7 +245,8 @@ class ManaSolver(
                         }
                     }
 
-                    val colorUsed = if (source.producesColors.contains(symbol.color1))
+                    val availableColors = source.availableColorsFor(spellContext)
+                    val colorUsed = if (availableColors.contains(symbol.color1))
                         symbol.color1 else symbol.color2
                     manaProduced[source.entityId] = ManaProduction(color = colorUsed, amount = source.manaAmount)
                     useSource(source, colorUsed)
@@ -241,7 +256,7 @@ class ManaSolver(
                     if (spendBonusMana(symbol.color)) continue
 
                     // For now, always pay with mana (not life)
-                    val source = findBestSourceForColor(remainingSources, symbol.color, handRequirements, availableSourcesByColor)
+                    val source = findBestSourceForColor(remainingSources, symbol.color, handRequirements, availableSourcesByColor, spellContext)
                         ?: return null
 
                     manaProduced[source.entityId] = ManaProduction(color = symbol.color, amount = source.manaAmount)
@@ -296,8 +311,9 @@ class ManaSolver(
                 remainingSources.minByOrNull { calculateTapPriority(it, handRequirements, availableSourcesByColor) }
             } ?: return null
 
-            // For generic costs, use the first available color or colorless
-            val colorToUse = source.producesColors.firstOrNull()
+            // For generic costs, prefer unrestricted colors, then colorless
+            val colorToUse = source.availableColorsFor(spellContext).firstOrNull()
+                ?: source.producesColors.firstOrNull()
             manaProduced[source.entityId] = if (colorToUse != null) {
                 ManaProduction(color = colorToUse, amount = source.manaAmount)
             } else {
@@ -504,6 +520,8 @@ class ManaSolver(
             var hasUnrestrictedAbility = false
             var commonRestriction: ManaRestriction? = null
             var firstRestrictionSeen = false
+            // Track per-color restrictions (for sources with mixed restricted/unrestricted abilities)
+            val perColorRestrictions = mutableMapOf<Color, ManaRestriction?>()
 
             for (ability in manaAbilities) {
                 // Detect pain cost in mana abilities
@@ -546,9 +564,11 @@ class ManaSolver(
                 if (abilityHasPainCost) minPainAmount = minOf(minPainAmount, abilityPainAmount)
 
                 // Accumulate production from effect
+                val effectColors = mutableSetOf<Color>()
                 val effectRestriction: ManaRestriction? = when (val effect = ability.effect) {
                     is AddManaEffect -> {
                         combinedColors.add(effect.color)
+                        effectColors.add(effect.color)
                         val manaAmount = (effect.amount as? DynamicAmount.Fixed)?.amount ?: 1
                         maxManaAmount = maxOf(maxManaAmount, manaAmount)
                         effect.restriction
@@ -561,6 +581,7 @@ class ManaSolver(
                     }
                     is AddAnyColorManaEffect -> {
                         combinedColors.addAll(Color.entries)
+                        effectColors.addAll(Color.entries)
                         val manaAmount = (effect.amount as? DynamicAmount.Fixed)?.amount ?: 1
                         maxManaAmount = maxOf(maxManaAmount, manaAmount)
                         effect.restriction
@@ -573,7 +594,10 @@ class ManaSolver(
                             if (predicateEvaluator.matchesWithProjection(state, projected, bfId, effect.filter, predCtx)) {
                                 val colors = projected.getColors(bfId)
                                 for (colorName in colors) {
-                                    Color.entries.find { it.name == colorName }?.let { combinedColors.add(it) }
+                                    Color.entries.find { it.name == colorName }?.let {
+                                        combinedColors.add(it)
+                                        effectColors.add(it)
+                                    }
                                 }
                             }
                         }
@@ -587,6 +611,7 @@ class ManaSolver(
                             ?.get<ChosenColorComponent>()?.color
                         if (chosenColor != null) {
                             combinedColors.add(chosenColor)
+                            effectColors.add(chosenColor)
                             val manaAmount = (effect.amount as? DynamicAmount.Fixed)?.amount ?: 1
                             maxManaAmount = maxOf(maxManaAmount, manaAmount)
                         }
@@ -594,11 +619,29 @@ class ManaSolver(
                     }
                     is AddDynamicManaEffect -> {
                         combinedColors.addAll(effect.allowedColors)
+                        effectColors.addAll(effect.allowedColors)
                         val manaAmount = (effect.amountSource as? DynamicAmount.Fixed)?.amount ?: 1
                         maxManaAmount = maxOf(maxManaAmount, manaAmount)
                         effect.restriction
                     }
                     else -> null
+                }
+
+                // Track per-color restrictions: null means unrestricted
+                for (color in effectColors) {
+                    val existing = perColorRestrictions[color]
+                    if (existing == null && color in perColorRestrictions) {
+                        // Already have an unrestricted ability for this color — stays unrestricted
+                    } else if (effectRestriction == null) {
+                        // This ability is unrestricted for this color
+                        perColorRestrictions[color] = null
+                    } else if (existing == null && color !in perColorRestrictions) {
+                        // First ability for this color — record its restriction
+                        perColorRestrictions[color] = effectRestriction
+                    } else if (existing != null && existing != effectRestriction) {
+                        // Different restriction — treat as unrestricted (player can choose)
+                        perColorRestrictions[color] = null
+                    }
                 }
 
                 // Track restriction for the combined source
@@ -623,6 +666,11 @@ class ManaSolver(
                 // Determine combined restriction: unrestricted if any ability is unrestricted
                 val sourceRestriction = if (hasUnrestrictedAbility) null else commonRestriction
 
+                // Build the per-color restrictions map (only include restricted colors)
+                val restrictedColors = perColorRestrictions
+                    .filter { (_, restriction) -> restriction != null }
+                    .mapValues { (_, restriction) -> restriction!! }
+
                 return@mapNotNull ManaSource(
                     entityId = entityId,
                     name = card.name,
@@ -636,7 +684,8 @@ class ManaSolver(
                     painAmount = painAmount,
                     canAttack = canAttack,
                     manaAmount = maxManaAmount,
-                    restriction = sourceRestriction
+                    restriction = sourceRestriction,
+                    colorRestrictions = restrictedColors
                 )
             }
 
@@ -795,15 +844,17 @@ class ManaSolver(
     /**
      * Finds the best source to produce a specific color.
      * Uses priority-based selection to pick the optimal source.
+     * Respects per-color mana restrictions when a spell context is provided.
      */
     private fun findBestSourceForColor(
         sources: List<ManaSource>,
         color: Color,
         handRequirements: Map<Color, Int>,
-        availableSourcesByColor: Map<Color, Int>
+        availableSourcesByColor: Map<Color, Int>,
+        spellContext: SpellPaymentContext? = null
     ): ManaSource? {
         return sources
-            .filter { it.producesColors.contains(color) }
+            .filter { it.availableColorsFor(spellContext).contains(color) }
             .minByOrNull { calculateTapPriority(it, handRequirements, availableSourcesByColor) }
     }
 
