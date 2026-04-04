@@ -3,8 +3,6 @@ package com.wingedsheep.engine.ai.advisor.modules
 import com.wingedsheep.engine.ai.advisor.*
 import com.wingedsheep.engine.ai.evaluation.BoardPresence
 import com.wingedsheep.engine.core.*
-import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
-import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
 import com.wingedsheep.engine.state.GameState
@@ -26,6 +24,7 @@ class BloomburrowAdvisorModule : CardAdvisorModule {
         registry.register(CombatTrickAdvisor)
         registry.register(InstantRemovalAdvisor)
         registry.register(CounterspellAdvisor)
+        registry.register(SpellgyreAdvisor)
         registry.register(BoardWipeAdvisor)
         registry.register(GiftRemovalAdvisor)
         registry.register(GiftBoardWipeAdvisor)
@@ -34,6 +33,8 @@ class BloomburrowAdvisorModule : CardAdvisorModule {
         registry.register(GiftCardDrawAdvisor)
         registry.register(GiftProtectionAdvisor)
         registry.register(GiftBounceAdvisor)
+        registry.register(GiftValueAdvisor)
+        registry.register(GraveyardRetrievalAdvisor)
     }
 }
 
@@ -67,15 +68,51 @@ private fun creatureBoardValue(state: GameState, projected: ProjectedState, play
 private fun creatureCount(projected: ProjectedState, playerId: EntityId): Int =
     projected.getBattlefieldControlledBy(playerId).count { projected.isCreature(it) }
 
-/** Whether the player has untapped creatures (potential blockers / attack threats). */
-private fun hasUntappedCreatures(state: GameState, projected: ProjectedState, playerId: EntityId): Boolean =
-    projected.getBattlefieldControlledBy(playerId).any { entityId ->
-        projected.isCreature(entityId) && state.getEntity(entityId)?.get<TappedComponent>() == null
-    }
-
 /** Get player's life total. */
 private fun lifeTotal(state: GameState, playerId: EntityId): Int =
     state.getEntity(playerId)?.get<LifeTotalComponent>()?.life ?: 0
+
+/** Get player's hand size. */
+private fun handSize(state: GameState, playerId: EntityId): Int =
+    state.getZone(playerId, Zone.HAND).size
+
+/**
+ * Context-sensitive gift penalty. Giving a card to an empty-handed opponent
+ * is devastating; giving one to an opponent with 5+ cards barely matters.
+ */
+private fun giftPenalty(state: GameState, playerId: EntityId): Double {
+    val opponentId = state.getOpponent(playerId) ?: return 1.5
+    val oppHand = handSize(state, opponentId)
+    return when {
+        oppHand == 0 -> 4.0   // hellbent opponent — huge cost to give them a card
+        oppHand == 1 -> 2.5   // nearly empty — still very costly
+        oppHand <= 3 -> 1.5   // moderate hand — standard penalty
+        else -> 1.0           // full hand — still a real card
+    }
+}
+
+/** Simulate both gift modes and pick best, applying context-sensitive gift penalty. */
+private fun pickBestGiftMode(context: AdvisorDecisionContext, decision: ChooseModeDecision): DecisionResponse? {
+    if (decision.modes.size != 2) return null
+    val available = decision.modes.filter { it.available }
+    if (available.size <= 1) {
+        return ModesChosenResponse(decision.id, listOf(available.first().index))
+    }
+
+    val penalty = giftPenalty(context.state, context.playerId)
+    val scores = available.map { mode ->
+        val result = context.simulator.simulateDecision(
+            context.state,
+            ModesChosenResponse(decision.id, listOf(mode.index))
+        )
+        val score = context.evaluator.evaluate(result.state, result.state.projectedState, context.playerId)
+        // Apply gift penalty to mode 2 (gift mode is always index 1)
+        val adjusted = if (mode.index == 1) score - penalty else score
+        mode to adjusted
+    }
+    val best = scores.maxBy { it.second }
+    return ModesChosenResponse(decision.id, listOf(best.first.index))
+}
 
 // ═════════════════════════════════════════════════════════════════════════════
 // Combat Tricks — hold for combat, don't waste on main phase
@@ -125,7 +162,7 @@ object CombatTrickAdvisor : CardAdvisor {
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// Instant Removal — prefer opponent's turn or combat
+// Instant Removal — prefer opponent's turn or combat, but allow clearing blockers
 // ═════════════════════════════════════════════════════════════════════════════
 
 /**
@@ -162,18 +199,15 @@ object InstantRemovalAdvisor : CardAdvisor {
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
-// Counterspells — hold for opponent's turn, never cast proactively
+// Counterspells — hold for opponent's turn
 // ═════════════════════════════════════════════════════════════════════════════
 
 /**
- * Counterspells must be held for the opponent's spells. The AI sometimes
- * sees the "draw 2" mode on Spellgyre during its own turn and casts it,
- * wasting a potential counter.
+ * Pure counterspells (no alternate mode). Must be held for opponent's spells.
  */
 object CounterspellAdvisor : CardAdvisor {
     override val cardNames = setOf(
         "Dazzling Denial",
-        "Spellgyre",
     )
 
     override fun evaluateCast(context: CastContext): Double? {
@@ -197,13 +231,49 @@ object CounterspellAdvisor : CardAdvisor {
     }
 }
 
+/**
+ * Spellgyre: modal — counter spell OR surveil 2 + draw 2.
+ *
+ * Unlike pure counterspells, the draw mode is a fine play on your own turn
+ * when you're low on cards. But generally hold for the counter option.
+ */
+object SpellgyreAdvisor : CardAdvisor {
+    override val cardNames = setOf("Spellgyre")
+
+    override fun evaluateCast(context: CastContext): Double? {
+        val state = context.state
+        val playerId = context.playerId
+
+        // Opponent's turn with something on the stack: always allow (might counter)
+        if (isOpponentsTurn(state, playerId) && state.stack.isNotEmpty()) return null
+
+        // Own main phase: only allow when very low on cards (0-1 in hand)
+        // and ahead on board — otherwise hold the counter
+        if (isOwnMainPhase(state, playerId)) {
+            val myHand = handSize(state, playerId)
+            if (myHand <= 1) {
+                return context.defaultScore - 2.0  // still penalized but not blocked
+            }
+            return context.passScore - 2.0  // block it — hold the counter
+        }
+
+        // Opponent's turn, nothing on stack: hold it
+        if (isOpponentsTurn(state, playerId) && state.stack.isEmpty()) {
+            return context.passScore - 1.0
+        }
+
+        return null
+    }
+}
+
 // ═════════════════════════════════════════════════════════════════════════════
-// Board Wipes — only cast when behind on board
+// Board Wipes — only cast when behind on board, consider hand for rebuilding
 // ═════════════════════════════════════════════════════════════════════════════
 
 /**
- * Board wipes destroy our own creatures too. Only worthwhile when the
- * opponent's board is significantly more valuable than ours.
+ * Board wipes destroy our own creatures too. Worthwhile when:
+ * - Opponent's board is significantly better than ours, OR
+ * - We have cards in hand to rebuild and opponent doesn't
  */
 object BoardWipeAdvisor : CardAdvisor {
     override val cardNames = setOf(
@@ -220,38 +290,36 @@ object BoardWipeAdvisor : CardAdvisor {
         val myBoardValue = creatureBoardValue(state, projected, playerId)
         val oppBoardValue = creatureBoardValue(state, projected, opponentId)
 
-        // Ahead or even on board: don't wipe
-        if (oppBoardValue <= myBoardValue * 1.2) {
+        val myHand = handSize(state, playerId)
+        val oppHand = handSize(state, opponentId)
+
+        // Hand advantage: having cards to rebuild while opponent is empty
+        // shifts the calculus — wiping at parity is fine if we can rebuild
+        val handEdge = (myHand - oppHand).coerceIn(-3, 3) * 1.0
+
+        // Ahead on board and no hand advantage: don't wipe
+        if (oppBoardValue <= myBoardValue * 1.2 && handEdge <= 0) {
             return context.passScore - 2.0
         }
 
-        // Behind on board: bonus scales with how far behind we are
+        // Behind on board: bonus scales with deficit + hand edge
         val deficit = oppBoardValue - myBoardValue
-        return context.defaultScore + deficit * 0.3
+        return context.defaultScore + deficit * 0.3 + handEdge
     }
 }
 
-// ════════════════════════════════════════════════════════════════════════��════
-// Gift Cards — evaluate whether the enhanced effect is worth the gift
-//
-// Gift cards are modal: mode 1 = base effect, mode 2 = enhanced effect but
-// opponent draws a card (or gets a Food token). The AI needs to weigh the
-// upgrade against giving the opponent card advantage.
+// ═════════════════════════════════════════════════════════════════════════════
+// Gift Cards — context-sensitive penalty scaling with opponent's hand size
 // ═════════════════════════════════════════════════════════════════════════════
 
 /**
- * Gift removal spells (Nocturnal Hunger, Parting Gust).
- *
- * Mode 1: removal with a downside (lose life, temporary exile).
- * Mode 2 (gift): clean removal but opponent gets a token/card.
- *
- * Generally prefer the gift mode when the target is high-value (worth
- * more than a card), and the non-gift mode for small threats.
+ * Gift removal (Nocturnal Hunger, Parting Gust, Consumed by Greed).
  */
 object GiftRemovalAdvisor : CardAdvisor {
     override val cardNames = setOf(
         "Nocturnal Hunger",
         "Parting Gust",
+        "Consumed by Greed",
     )
 
     override fun respondToDecision(context: AdvisorDecisionContext): DecisionResponse? {
@@ -260,34 +328,45 @@ object GiftRemovalAdvisor : CardAdvisor {
 
         val state = context.state
         val playerId = context.playerId
-        val opponentId = state.getOpponent(playerId) ?: return null
 
-        // Evaluate opponent's board — if they have strong creatures,
-        // the permanent removal of gift mode is worth the card they draw
-        val oppCreatureCount = creatureCount(context.projected, opponentId)
-        val myLife = lifeTotal(state, playerId)
-
-        // For Nocturnal Hunger: mode 1 = destroy + lose 2 life, mode 2 = gift + destroy (no life loss)
-        // For Parting Gust: mode 1 = temporary exile, mode 2 = gift + permanent exile
-        val preferGift = when (context.sourceCardName) {
-            "Nocturnal Hunger" -> myLife <= 8  // avoid life loss when low
-            "Parting Gust" -> true  // permanent exile almost always better than temporary
-            else -> false
+        // For Parting Gust: permanent exile (gift) is almost always better
+        // than temporary exile (base), unless opponent is hellbent
+        if (context.sourceCardName == "Parting Gust") {
+            val opponentId = state.getOpponent(playerId) ?: return null
+            val oppHand = handSize(state, opponentId)
+            if (oppHand == 0) {
+                // Don't give a hellbent opponent a card for marginal upside
+                val available = decision.modes.filter { it.available }
+                return ModesChosenResponse(decision.id, listOf(available.first().index))
+            }
         }
 
-        val modeIndex = if (preferGift) 1 else 0
-        val available = decision.modes.filter { it.available }
-        val chosen = available.getOrNull(modeIndex) ?: available.first()
-        return ModesChosenResponse(decision.id, listOf(chosen.index))
+        // For Nocturnal Hunger: mode 1 = destroy + lose 2 life, mode 2 = gift + destroy (no life loss)
+        // Consider both life and opponent hand
+        if (context.sourceCardName == "Nocturnal Hunger") {
+            val myLife = lifeTotal(state, playerId)
+            val opponentId = state.getOpponent(playerId) ?: return null
+            val oppHand = handSize(state, opponentId)
+
+            val preferGift = when {
+                myLife <= 5 -> true                    // low life — avoid losing 2
+                myLife <= 8 && oppHand >= 3 -> true    // medium life, opponent has cards anyway
+                oppHand == 0 -> false                  // opponent hellbent — don't gift
+                else -> false                          // healthy — take the 2 life hit
+            }
+            val modeIndex = if (preferGift) 1 else 0
+            val available = decision.modes.filter { it.available }
+            val chosen = available.getOrNull(modeIndex) ?: available.first()
+            return ModesChosenResponse(decision.id, listOf(chosen.index))
+        }
+
+        // For others: simulate both with context-sensitive gift penalty
+        return pickBestGiftMode(context, decision)
     }
 }
 
 /**
  * Gift board wipes (Starfall Invocation, Wildfire Howl).
- *
- * Mode 2 (gift) on Starfall Invocation lets you return a creature from your
- * graveyard after the wipe — very powerful when behind.
- * Mode 2 (gift) on Wildfire Howl adds a targeted damage + the opponent draws.
  *
  * Prefer gift mode when far behind (the extra value outweighs the card),
  * use base mode when the wipe alone is sufficient.
@@ -300,32 +379,14 @@ object GiftBoardWipeAdvisor : CardAdvisor {
 
     override fun respondToDecision(context: AdvisorDecisionContext): DecisionResponse? {
         val decision = context.decision as? ChooseModeDecision ?: return null
-        if (decision.modes.size != 2) return null
-
-        val state = context.state
-        val playerId = context.playerId
-        val opponentId = state.getOpponent(playerId) ?: return null
-
-        val myBoardValue = creatureBoardValue(state, context.projected, playerId)
-        val oppBoardValue = creatureBoardValue(state, context.projected, opponentId)
-        val deficit = oppBoardValue - myBoardValue
-
-        // Gift mode when far behind — the extra value is worth the card
-        val preferGift = deficit > 6.0
-
-        val modeIndex = if (preferGift) 1 else 0
-        val available = decision.modes.filter { it.available }
-        val chosen = available.getOrNull(modeIndex) ?: available.first()
-        return ModesChosenResponse(decision.id, listOf(chosen.index))
+        return pickBestGiftMode(context, decision)
     }
 }
 
 /**
  * Gift combat tricks (Crumb and Get It, Valley Rally).
  *
- * Mode 2 (gift) gives a Food token to opponent but enhances the trick
- * (indestructible, first strike). Prefer gift when the creature would
- * die without it, skip gift when the base pump is enough to win combat.
+ * Hold for combat (timing), then simulate both modes for the gift decision.
  */
 object GiftCombatTrickAdvisor : CardAdvisor {
     override val cardNames = setOf(
@@ -334,29 +395,12 @@ object GiftCombatTrickAdvisor : CardAdvisor {
     )
 
     override fun evaluateCast(context: CastContext): Double? {
-        // Same timing logic as regular combat tricks
         return CombatTrickAdvisor.evaluateCast(context)
     }
 
     override fun respondToDecision(context: AdvisorDecisionContext): DecisionResponse? {
         val decision = context.decision as? ChooseModeDecision ?: return null
-        if (decision.modes.size != 2) return null
-
-        // Simulate both modes and pick the better outcome
-        val available = decision.modes.filter { it.available }
-        if (available.size <= 1) {
-            return ModesChosenResponse(decision.id, listOf(available.first().index))
-        }
-
-        val scores = available.map { mode ->
-            val result = context.simulator.simulateDecision(
-                context.state,
-                ModesChosenResponse(decision.id, listOf(mode.index))
-            )
-            mode to context.evaluator.evaluate(result.state, result.state.projectedState, context.playerId)
-        }
-        val best = scores.maxBy { it.second }
-        return ModesChosenResponse(decision.id, listOf(best.first.index))
+        return pickBestGiftMode(context, decision)
     }
 }
 
@@ -364,8 +408,7 @@ object GiftCombatTrickAdvisor : CardAdvisor {
  * Gift counterspell (Long River's Pull).
  *
  * Mode 1: counter creature spell only. Mode 2 (gift): counter any spell.
- * Always use gift mode when countering a non-creature spell (only option).
- * For creature spells, prefer non-gift mode to avoid giving opponent a card.
+ * For creature spells, prefer non-gift mode unless opponent has full hand.
  */
 object GiftCounterspellAdvisor : CardAdvisor {
     override val cardNames = setOf(
@@ -373,7 +416,6 @@ object GiftCounterspellAdvisor : CardAdvisor {
     )
 
     override fun evaluateCast(context: CastContext): Double? {
-        // Same hold-for-opponent's-turn logic as regular counterspells
         return CounterspellAdvisor.evaluateCast(context)
     }
 
@@ -386,11 +428,7 @@ object GiftCounterspellAdvisor : CardAdvisor {
             return ModesChosenResponse(decision.id, listOf(available.first().index))
         }
 
-        // Mode 1 (index 0) counters creature spells only — cheaper/no gift
-        // Mode 2 (index 1) counters any spell but gifts opponent a card
-        // Default to non-gift mode. The engine will only offer mode 1 if the
-        // target is a creature spell, so if we're here with both available,
-        // the target is a creature spell and mode 1 is preferred.
+        // Both modes available means target is a creature spell — prefer non-gift
         val chosen = available.first()
         return ModesChosenResponse(decision.id, listOf(chosen.index))
     }
@@ -399,10 +437,7 @@ object GiftCounterspellAdvisor : CardAdvisor {
 /**
  * Gift card draw (Mind Spiral, Sazacap's Brew).
  *
- * These are sorcery-speed so timing isn't the issue — the question is
- * whether giving the opponent a card/token is worth the enhanced effect.
- * Generally prefer gift mode when ahead on board (can afford to give
- * opponent resources) or when the upgrade is large.
+ * Simulate both modes with context-sensitive gift penalty.
  */
 object GiftCardDrawAdvisor : CardAdvisor {
     override val cardNames = setOf(
@@ -412,41 +447,15 @@ object GiftCardDrawAdvisor : CardAdvisor {
 
     override fun respondToDecision(context: AdvisorDecisionContext): DecisionResponse? {
         val decision = context.decision as? ChooseModeDecision ?: return null
-        if (decision.modes.size != 2) return null
-
-        // Simulate both modes — card draw decisions are hard to heuristic
-        val available = decision.modes.filter { it.available }
-        if (available.size <= 1) {
-            return ModesChosenResponse(decision.id, listOf(available.first().index))
-        }
-
-        val scores = available.map { mode ->
-            val result = context.simulator.simulateDecision(
-                context.state,
-                ModesChosenResponse(decision.id, listOf(mode.index))
-            )
-            mode to context.evaluator.evaluate(result.state, result.state.projectedState, context.playerId)
-        }
-
-        // Slightly penalize gift mode (opponent gets a card) since simulation
-        // can't fully account for the future value of that card
-        val adjusted = scores.map { (mode, score) ->
-            val penalty = if (mode.index == 1) 1.5 else 0.0
-            mode to (score - penalty)
-        }
-        val best = adjusted.maxBy { it.second }
-        return ModesChosenResponse(decision.id, listOf(best.first.index))
+        return pickBestGiftMode(context, decision)
     }
 }
 
 /**
  * Gift protection spell (Dawn's Truce).
  *
- * Mode 1: hexproof for your creatures until end of turn.
- * Mode 2 (gift): hexproof + indestructible but opponent draws.
- *
- * Prefer gift mode when facing lethal or a board wipe — indestructible
- * is a huge upgrade. Otherwise use base mode to deny opponent cards.
+ * Hold for opponent's turn (reactive). Gift mode gives indestructible
+ * which is worth a card when protecting significant board presence.
  */
 object GiftProtectionAdvisor : CardAdvisor {
     override val cardNames = setOf(
@@ -454,13 +463,11 @@ object GiftProtectionAdvisor : CardAdvisor {
     )
 
     override fun evaluateCast(context: CastContext): Double? {
-        // Protection should be held for opponent's turn (reactive)
         val state = context.state
         val playerId = context.playerId
 
         if (isOpponentsTurn(state, playerId)) return null
 
-        // Own turn: penalize (hold for opponent's removal/combat)
         if (isOwnMainPhase(state, playerId)) {
             return context.passScore - 2.0
         }
@@ -470,31 +477,14 @@ object GiftProtectionAdvisor : CardAdvisor {
 
     override fun respondToDecision(context: AdvisorDecisionContext): DecisionResponse? {
         val decision = context.decision as? ChooseModeDecision ?: return null
-        if (decision.modes.size != 2) return null
-
-        val available = decision.modes.filter { it.available }
-        if (available.size <= 1) {
-            return ModesChosenResponse(decision.id, listOf(available.first().index))
-        }
-
-        val state = context.state
-        val playerId = context.playerId
-        val myCreatureValue = creatureBoardValue(state, context.projected, playerId)
-
-        // If we have significant board presence, indestructible is very valuable
-        // (protects more total value) — worth giving opponent a card
-        val preferGift = myCreatureValue > 8.0
-        val modeIndex = if (preferGift) 1 else 0
-        val chosen = available.getOrNull(modeIndex) ?: available.first()
-        return ModesChosenResponse(decision.id, listOf(chosen.index))
+        return pickBestGiftMode(context, decision)
     }
 }
 
 /**
- * Gift bounce spells (Into the Flood Maw, Run Away Together).
+ * Gift bounce spells (Into the Flood Maw).
  *
- * Mode 1: bounce creature. Mode 2 (gift): bounce nonland permanent + token.
- * Prefer gift when targeting a high-value non-creature permanent.
+ * Simulate both modes with context-sensitive gift penalty.
  */
 object GiftBounceAdvisor : CardAdvisor {
     override val cardNames = setOf(
@@ -503,28 +493,66 @@ object GiftBounceAdvisor : CardAdvisor {
 
     override fun respondToDecision(context: AdvisorDecisionContext): DecisionResponse? {
         val decision = context.decision as? ChooseModeDecision ?: return null
-        if (decision.modes.size != 2) return null
+        return pickBestGiftMode(context, decision)
+    }
+}
 
-        val available = decision.modes.filter { it.available }
-        if (available.size <= 1) {
-            return ModesChosenResponse(decision.id, listOf(available.first().index))
+/**
+ * Gift value spells — cards where the gift mode gives strictly more value
+ * (extra targets, extra cards returned) and the decision is purely about
+ * whether the upgrade is worth giving the opponent a card.
+ *
+ * Covers: Blooming Blast, Coiling Rebirth, Dewdrop Cure, Peerless Recycling,
+ * Wear Down, Cruelclaw's Heist.
+ */
+object GiftValueAdvisor : CardAdvisor {
+    override val cardNames = setOf(
+        "Blooming Blast",
+        "Coiling Rebirth",
+        "Dewdrop Cure",
+        "Peerless Recycling",
+        "Wear Down",
+        "Cruelclaw's Heist",
+    )
+
+    override fun respondToDecision(context: AdvisorDecisionContext): DecisionResponse? {
+        val decision = context.decision as? ChooseModeDecision ?: return null
+        return pickBestGiftMode(context, decision)
+    }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Graveyard Retrieval — always return creatures when possible
+// ═════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Cards that return creatures from graveyard to hand (Hazel's Nocturne, etc.).
+ *
+ * The generic AI sometimes chooses 0 targets on "up to N" graveyard retrieval
+ * because the 1-ply simulation doesn't fully value cards in hand. Getting
+ * creatures back is almost always correct — override to select the maximum.
+ */
+object GraveyardRetrievalAdvisor : CardAdvisor {
+    override val cardNames = setOf(
+        "Hazel's Nocturne",
+    )
+
+    override fun respondToDecision(context: AdvisorDecisionContext): DecisionResponse? {
+        val decision = context.decision as? ChooseTargetsDecision ?: return null
+        if (decision.targetRequirements.size != 1) return null
+
+        val req = decision.targetRequirements.first()
+        val targets = decision.legalTargets[req.index] ?: return null
+        if (targets.isEmpty()) return null
+
+        // Select up to maxTargets creatures, preferring higher mana value
+        val state = context.state
+        val ranked = targets.sortedByDescending { entityId ->
+            val card = state.getEntity(entityId)?.get<CardComponent>()
+            card?.manaValue ?: 0
         }
 
-        // Simulate both — the wider targeting of gift mode (nonland permanent
-        // vs creature) might hit something more valuable
-        val scores = available.map { mode ->
-            val result = context.simulator.simulateDecision(
-                context.state,
-                ModesChosenResponse(decision.id, listOf(mode.index))
-            )
-            mode to context.evaluator.evaluate(result.state, result.state.projectedState, context.playerId)
-        }
-        // Small penalty for gift mode
-        val adjusted = scores.map { (mode, score) ->
-            val penalty = if (mode.index == 1) 1.0 else 0.0
-            mode to (score - penalty)
-        }
-        val best = adjusted.maxBy { it.second }
-        return ModesChosenResponse(decision.id, listOf(best.first.index))
+        val count = req.maxTargets.coerceAtMost(ranked.size)
+        return TargetsResponse(decision.id, mapOf(req.index to ranked.take(count)))
     }
 }
