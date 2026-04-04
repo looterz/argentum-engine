@@ -1406,6 +1406,112 @@ class CombatAdvisorTest : FunSpec({
     }
 
     // ═════════════════════════════════════════════════════════════════════
+    // Menace
+    // ═════════════════════════════════════════════════════════════════════
+
+    test("menace attacker treated as evasive when opponent has only one blocker") {
+        // Menace requires 2+ blockers. With only 1 opponent creature, it can't be blocked.
+        val menaceCreature = CardDefinition.creature(
+            name = "Boggart Brute", manaCost = ManaCost.parse("{2}{R}"),
+            subtypes = setOf(Subtype("Goblin")), power = 3, toughness = 2,
+            keywords = setOf(Keyword.MENACE)
+        )
+        val cards = listOf(menaceCreature, groundBlocker)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Boggart Brute")
+        driver.removeSummoningSickness(attacker)
+
+        // Only one blocker — can't block menace
+        val blocker = driver.putCreatureOnBattlefield(p2, "Grizzly Bears")
+        driver.removeSummoningSickness(blocker)
+
+        val legalAction = buildAttackAction(p1, listOf(attacker), listOf(p2))
+        val result = advisor.chooseAttackers(driver.state, legalAction, p1) as DeclareAttackers
+
+        // Menace is effectively evasive with only 1 blocker — should attack
+        result.attackers shouldContainKey attacker
+    }
+
+    test("does not single-block a menace attacker") {
+        // Blocking menace requires 2 creatures. A single blocker assignment is illegal.
+        // The AI should not assign a single blocker to a menace creature.
+        val menaceCreature = CardDefinition.creature(
+            name = "Boggart Brute", manaCost = ManaCost.parse("{2}{R}"),
+            subtypes = setOf(Subtype("Goblin")), power = 3, toughness = 2,
+            keywords = setOf(Keyword.MENACE)
+        )
+        val cards = listOf(menaceCreature, smallCreature)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Boggart Brute")
+        driver.removeSummoningSickness(attacker)
+
+        // Only one blocker available — can't legally block menace
+        val blocker = driver.putCreatureOnBattlefield(p2, "Eager Cadet")
+        driver.removeSummoningSickness(blocker)
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(attacker to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        val legalAction = buildBlockAction(p2, listOf(blocker))
+        val result = advisor.chooseBlockers(driver.state, legalAction, p2) as DeclareBlockers
+
+        // Single blocker can't block menace — must not assign
+        val blockersOfMenace = result.blockers.entries
+            .filter { (_, targets) -> attacker in targets }
+            .map { it.key }
+        blockersOfMenace.size shouldBe 0
+    }
+
+    test("double-blocks menace attacker when two blockers available") {
+        // Two blockers can legally block a menace creature together.
+        val menaceCreature = CardDefinition.creature(
+            name = "Boggart Brute", manaCost = ManaCost.parse("{2}{R}"),
+            subtypes = setOf(Subtype("Goblin")), power = 3, toughness = 2,
+            keywords = setOf(Keyword.MENACE)
+        )
+        val cards = listOf(menaceCreature, groundBlocker)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Boggart Brute")
+        driver.removeSummoningSickness(attacker)
+
+        val blk1 = driver.putCreatureOnBattlefield(p2, "Grizzly Bears")
+        val blk2 = driver.putCreatureOnBattlefield(p2, "Grizzly Bears")
+        driver.removeSummoningSickness(blk1)
+        driver.removeSummoningSickness(blk2)
+
+        driver.replaceState(driver.state.withLifeTotal(p2, 3))
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(attacker to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        val legalAction = buildBlockAction(p2, listOf(blk1, blk2))
+        val result = advisor.chooseBlockers(driver.state, legalAction, p2) as DeclareBlockers
+
+        // At 3 life facing 3 damage, P2 must double-block to survive
+        val blockersOfMenace = result.blockers.entries
+            .filter { (_, targets) -> attacker in targets }
+            .map { it.key }
+        blockersOfMenace.size shouldBe 2
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
     // Mandatory attackers and blockers
     // ═════════════════════════════════════════════════════════════════════
 
