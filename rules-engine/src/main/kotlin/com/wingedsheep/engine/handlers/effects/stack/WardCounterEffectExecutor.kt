@@ -1,8 +1,12 @@
 package com.wingedsheep.engine.handlers.effects.stack
 
-import com.wingedsheep.engine.core.CounterUnlessPaysContinuation
+import com.wingedsheep.engine.core.CounterUnlessPaysManaSelectionContinuation
+import com.wingedsheep.engine.core.DecisionContext
+import com.wingedsheep.engine.core.DecisionPhase
+import com.wingedsheep.engine.core.DecisionRequestedEvent
 import com.wingedsheep.engine.core.ExecutionResult
-import com.wingedsheep.engine.handlers.DecisionHandler
+import com.wingedsheep.engine.core.ManaSourceOption
+import com.wingedsheep.engine.core.SelectManaSourcesDecision
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.mechanics.mana.ManaSolver
@@ -24,8 +28,9 @@ import kotlin.reflect.KClass
  * When a ward trigger resolves, this executor:
  * 1. Finds the spell/ability that targeted the warded permanent (via targetingSourceEntityId)
  * 2. Checks if it's still on the stack
- * 3. Offers the spell/ability's controller the choice to pay the ward cost
- * 4. If they can't or won't pay, counters the spell/ability
+ * 3. If the opponent can't pay, counters immediately
+ * 4. Otherwise shows a SelectManaSourcesDecision (with canDecline=true) so the
+ *    opponent can manually choose which lands to tap — or decline to have it countered
  */
 class WardCounterEffectExecutor(
     private val cardRegistry: CardRegistry
@@ -56,41 +61,67 @@ class WardCounterEffectExecutor(
 
         val manaCost = ManaCost.parse(effect.manaCost)
 
-        // Check if the player can pay
+        // Check if the player can pay at all
         val manaSolver = ManaSolver(cardRegistry)
         if (!manaSolver.canPay(state, payingPlayerId, manaCost)) {
             // Can't pay — counter immediately
             return counterSpellOrAbility(state, spellEntityId, container)
         }
 
-        // Offer the choice to pay
-        val decisionHandler = DecisionHandler()
-        val decisionResult = decisionHandler.createYesNoDecision(
-            state = state,
+        // Show mana source selection with option to decline
+        val sources = manaSolver.findAvailableManaSources(state, payingPlayerId)
+        val sourceOptions = sources.map { source ->
+            ManaSourceOption(
+                entityId = source.entityId,
+                name = source.name,
+                producesColors = source.producesColors,
+                producesColorless = source.producesColorless
+            )
+        }
+
+        val solution = manaSolver.solve(state, payingPlayerId, manaCost)
+        val autoPaySuggestion = solution?.sources?.map { it.entityId } ?: emptyList()
+
+        val decisionId = java.util.UUID.randomUUID().toString()
+        val decision = SelectManaSourcesDecision(
+            id = decisionId,
             playerId = payingPlayerId,
-            sourceId = context.sourceId,
-            sourceName = "Ward",
-            prompt = "Pay $manaCost to prevent your spell from being countered by ward?",
-            yesText = "Pay $manaCost",
-            noText = "Don't pay"
+            prompt = "Pay $manaCost for ward or your spell will be countered",
+            context = DecisionContext(
+                sourceId = context.sourceId,
+                sourceName = "Ward",
+                phase = DecisionPhase.RESOLUTION
+            ),
+            availableSources = sourceOptions,
+            requiredCost = manaCost.toString(),
+            autoPaySuggestion = autoPaySuggestion,
+            canDecline = true
         )
 
-        val continuation = CounterUnlessPaysContinuation(
-            decisionId = decisionResult.pendingDecision!!.id,
+        val continuation = CounterUnlessPaysManaSelectionContinuation(
+            decisionId = decisionId,
             payingPlayerId = payingPlayerId,
             spellEntityId = spellEntityId,
             manaCost = manaCost,
-            sourceId = context.sourceId,
-            sourceName = "Ward",
+            availableSources = sourceOptions,
+            autoPaySuggestion = autoPaySuggestion,
             controllerId = context.controllerId
         )
 
-        val stateWithContinuation = decisionResult.state.pushContinuation(continuation)
+        val stateWithDecision = state.withPendingDecision(decision)
+        val stateWithContinuation = stateWithDecision.pushContinuation(continuation)
 
         return ExecutionResult.paused(
             stateWithContinuation,
-            decisionResult.pendingDecision,
-            decisionResult.events
+            decision,
+            listOf(
+                DecisionRequestedEvent(
+                    decisionId = decisionId,
+                    playerId = payingPlayerId,
+                    decisionType = "SELECT_MANA_SOURCES",
+                    prompt = decision.prompt
+                )
+            )
         )
     }
 

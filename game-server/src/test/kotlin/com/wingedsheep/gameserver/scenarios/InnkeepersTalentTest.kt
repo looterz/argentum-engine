@@ -146,7 +146,7 @@ class InnkeepersTalentTest : ScenarioTestBase() {
                 }
             }
 
-            test("ward counters spell when opponent chooses not to pay") {
+            test("ward counters spell when opponent declines to pay") {
                 val game = scenario()
                     .withPlayers("Player", "Opponent")
                     .withCardOnBattlefield(1, "Innkeeper's Talent", classLevel = 2)
@@ -172,14 +172,14 @@ class InnkeepersTalentTest : ScenarioTestBase() {
                     castResult.error shouldBe null
                 }
 
-                // Ward trigger resolves → "pay {1}?" decision
+                // Ward trigger resolves → mana source selection decision
                 game.resolveStack()
-                withClue("Should have a pending decision for ward payment") {
+                withClue("Should have a mana source selection decision for ward") {
                     game.state.pendingDecision shouldNotBe null
                 }
 
-                // Opponent chooses not to pay
-                game.answerYesNo(false)
+                // Opponent declines to pay (empty source selection)
+                game.submitManaSourcesDecision()
 
                 // Carbonize should have been countered
                 game.resolveStack()
@@ -215,14 +215,14 @@ class InnkeepersTalentTest : ScenarioTestBase() {
                     castResult.error shouldBe null
                 }
 
-                // Ward trigger resolves → "pay {1}?" decision
+                // Ward trigger resolves → mana source selection decision
                 game.resolveStack()
-                withClue("Should have a pending decision for ward payment") {
+                withClue("Should have a mana source selection decision for ward") {
                     game.state.pendingDecision shouldNotBe null
                 }
 
-                // Opponent pays {1}
-                game.answerYesNo(true)
+                // Opponent auto-pays {1}
+                game.submitManaSourcesAutoPay()
 
                 // Carbonize resolves — Hired Claw takes 3 damage and should die
                 game.resolveStack()

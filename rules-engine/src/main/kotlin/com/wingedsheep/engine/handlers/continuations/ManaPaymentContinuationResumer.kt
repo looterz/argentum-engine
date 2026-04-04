@@ -16,6 +16,7 @@ class ManaPaymentContinuationResumer(
 
     override fun resumers(): List<ContinuationResumer<*>> = listOf(
         resumer(CounterUnlessPaysContinuation::class, ::resumeCounterUnlessPays),
+        resumer(CounterUnlessPaysManaSelectionContinuation::class, ::resumeCounterUnlessPaysManaSelection),
         resumer(ChangeSpellTargetContinuation::class, ::resumeChangeSpellTarget),
         resumer(MayPayManaContinuation::class, ::resumeMayPayMana),
         resumer(MayPayManaTriggerContinuation::class, ::resumeMayPayManaTrigger),
@@ -113,6 +114,118 @@ class ManaPaymentContinuationResumer(
             }
             return checkForMore(counterResult.newState, counterResult.events)
         }
+    }
+
+    /**
+     * Resume after the controller selects mana sources to pay a "counter unless pays" cost.
+     */
+    fun resumeCounterUnlessPaysManaSelection(
+        state: GameState,
+        continuation: CounterUnlessPaysManaSelectionContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        if (response !is ManaSourcesSelectedResponse) {
+            return ExecutionResult.error(state, "Expected mana sources selected response")
+        }
+
+        // If the player declined (no sources selected and not auto-pay), counter the spell
+        if (!response.autoPay && response.selectedSources.isEmpty()) {
+            val counterResult = if (continuation.exileOnCounter) {
+                services.stackResolver.counterSpellToExile(
+                    state, continuation.spellEntityId,
+                    grantFreeCast = false,
+                    controllerId = continuation.controllerId ?: continuation.payingPlayerId
+                )
+            } else {
+                services.stackResolver.counterSpell(state, continuation.spellEntityId)
+            }
+            return checkForMore(counterResult.newState, counterResult.events)
+        }
+
+        val playerId = continuation.payingPlayerId
+        val playerEntity = state.getEntity(playerId)
+            ?: return ExecutionResult.error(state, "Paying player not found")
+
+        val manaPoolComponent = playerEntity.get<ManaPoolComponent>()
+            ?: return ExecutionResult.error(state, "Player has no mana pool")
+
+        val manaPool = ManaPool(
+            manaPoolComponent.white, manaPoolComponent.blue, manaPoolComponent.black,
+            manaPoolComponent.red, manaPoolComponent.green, manaPoolComponent.colorless
+        )
+
+        val partialResult = manaPool.payPartial(continuation.manaCost)
+        val remainingCost = partialResult.remainingCost
+        var currentPool = manaPool
+        var currentState = state
+        val events = mutableListOf<GameEvent>()
+
+        if (!remainingCost.isEmpty()) {
+            if (response.autoPay) {
+                val manaSolver = ManaSolver(services.cardRegistry)
+                val solution = manaSolver.solve(currentState, playerId, remainingCost)
+                    ?: return ExecutionResult.error(state, "Cannot pay mana cost with auto-pay")
+
+                for (source in solution.sources) {
+                    currentState = currentState.updateEntity(source.entityId) { c ->
+                        c.with(TappedComponent)
+                    }
+                    events.add(TappedEvent(source.entityId, source.name))
+                }
+                for ((_, production) in solution.manaProduced) {
+                    currentPool = if (production.color != null) {
+                        currentPool.add(production.color, production.amount)
+                    } else {
+                        currentPool.addColorless(production.colorless)
+                    }
+                }
+            } else {
+                val sourceMap = continuation.availableSources.associateBy { it.entityId }
+                for (sourceId in response.selectedSources) {
+                    val source = sourceMap[sourceId]
+                        ?: return ExecutionResult.error(state, "Selected source $sourceId is not a valid mana source")
+
+                    currentState = currentState.updateEntity(sourceId) { c ->
+                        c.with(TappedComponent)
+                    }
+                    events.add(TappedEvent(sourceId, source.name))
+
+                    if (source.producesColors.isNotEmpty()) {
+                        currentPool = currentPool.add(source.producesColors.first())
+                    } else if (source.producesColorless) {
+                        currentPool = currentPool.addColorless(1)
+                    }
+                }
+            }
+        }
+
+        val newPool = currentPool.pay(continuation.manaCost)
+        if (newPool == null) {
+            // Payment failed — counter the spell
+            val counterResult = if (continuation.exileOnCounter) {
+                services.stackResolver.counterSpellToExile(
+                    state, continuation.spellEntityId,
+                    grantFreeCast = false,
+                    controllerId = continuation.controllerId ?: continuation.payingPlayerId
+                )
+            } else {
+                services.stackResolver.counterSpell(state, continuation.spellEntityId)
+            }
+            return checkForMore(counterResult.newState, counterResult.events)
+        }
+
+        currentState = currentState.updateEntity(playerId) { container ->
+            container.with(
+                ManaPoolComponent(
+                    white = newPool.white, blue = newPool.blue, black = newPool.black,
+                    red = newPool.red, green = newPool.green, colorless = newPool.colorless
+                )
+            )
+        }
+
+        // Spell resolves normally — don't counter it
+        return checkForMore(currentState, events)
     }
 
     /**

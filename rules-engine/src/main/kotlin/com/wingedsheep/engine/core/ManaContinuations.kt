@@ -98,6 +98,31 @@ data class MayPayManaTriggerContinuation(
 ) : ContinuationFrame
 
 /**
+ * Resume after the controller selects mana sources to pay a "counter unless pays" cost.
+ * After payment, the spell resolves normally. If the player selected invalid sources,
+ * the spell is countered.
+ *
+ * @property payingPlayerId The spell's controller who is paying
+ * @property spellEntityId The spell that will be countered if payment fails
+ * @property manaCost The mana cost to pay
+ * @property availableSources Available mana sources the player can choose from
+ * @property autoPaySuggestion Pre-computed auto-tap suggestion
+ * @property exileOnCounter Whether to exile the spell if countered
+ * @property controllerId The controller of the counter effect
+ */
+@Serializable
+data class CounterUnlessPaysManaSelectionContinuation(
+    override val decisionId: String,
+    val payingPlayerId: EntityId,
+    val spellEntityId: EntityId,
+    val manaCost: ManaCost,
+    val availableSources: List<ManaSourceOption>,
+    val autoPaySuggestion: List<EntityId>,
+    val exileOnCounter: Boolean = false,
+    val controllerId: EntityId? = null
+) : ContinuationFrame
+
+/**
  * Resume after the controller selects mana sources to pay a cost for a triggered
  * ability that also requires targets.
  *
