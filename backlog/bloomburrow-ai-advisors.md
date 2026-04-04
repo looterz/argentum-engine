@@ -98,13 +98,13 @@ Cards are grouped by type. Status:
 ### Instants
 
 - [x] **Blooming Blast** — GiftValueAdvisor (gift mode simulation)
-- [ ] **Cache Grab** — Mill 4, choose permanent. May need graveyard selection help
+- [x] **Cache Grab** — N/A (generic SelectCardsDecision handler picks best permanent from milled cards)
 - [x] **Conduct Electricity** — InstantRemovalAdvisor (hold for opponent's turn)
 - [x] **Consumed by Greed** — GiftRemovalAdvisor (gift mode with sacrifice)
 - [x] **Crumb and Get It** — GiftCombatTrickAdvisor (hold for combat + gift mode)
 - [x] **Dawn's Truce** — GiftProtectionAdvisor (hold for opponent's turn + gift mode)
 - [x] **Dazzling Denial** — CounterspellAdvisor (hold for opponent's spells)
-- [ ] **Dire Downdraft** — Conditional removal. Generic AI may handle fine
+- [x] **Dire Downdraft** — InstantRemovalAdvisor (instant tuck removal, hold for opponent's turn)
 - [x] **Early Winter** — InstantRemovalAdvisor (modal exile creature/enchantment)
 - [ ] **Feed the Cycle** — Creature recursion instant. Review targeting
 - [x] **Hazel's Nocturne** — GraveyardRetrievalAdvisor (always return max creatures)

@@ -8,6 +8,7 @@ import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.legalactions.LegalAction
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.model.EntityId
 
 /**
@@ -68,8 +69,17 @@ class Strategist(
             scored
         }
 
+        // On the opponent's end step, unspent mana is about to be wasted.
+        // Reduce the pass threshold so the AI is more willing to use instants
+        // rather than letting mana evaporate.
+        val adjustedPassScore = if (state.activePlayerId != playerId && state.step == Step.END) {
+            passScore - 1.5
+        } else {
+            passScore
+        }
+
         val best = finalScored.maxByOrNull { it.second }
-        return if (best != null && best.second > passScore) {
+        return if (best != null && best.second > adjustedPassScore) {
             best.first
         } else {
             pass ?: legalActions.first()

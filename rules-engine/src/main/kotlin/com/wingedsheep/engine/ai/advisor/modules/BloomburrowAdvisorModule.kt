@@ -183,6 +183,7 @@ object InstantRemovalAdvisor : CardAdvisor {
         "Take Out the Trash",
         "Early Winter",
         "Conduct Electricity",
+        "Dire Downdraft",
     )
 
     override fun evaluateCast(context: CastContext): Double? {
