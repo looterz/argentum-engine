@@ -21,13 +21,16 @@ export function CardPreview() {
   // All hooks must be called before any early return
   const cardActions = useCardLegalActions(hoveredCardId)
   const card = hoveredCardId && gameState ? gameState.cards[hoveredCardId] ?? null : null
-  const effectiveCostInfo = useMemo(() => {
+  const manaCostInfo = useMemo(() => {
     if (!card?.manaCost) return null
     const castAction = cardActions.find((a) =>
       a.action.type === 'CastSpell' && a.actionType !== 'CastFaceDown' && a.actionType !== 'CastWithKicker' && a.actionType !== 'CastSpellMode'
     )
     const effectiveCost = castAction?.manaCostString
-    if (effectiveCost == null || effectiveCost === card.manaCost) return null
+    // No cast action or cost unchanged — show base cost without modification indicator
+    if (effectiveCost == null || effectiveCost === card.manaCost) {
+      return { baseCost: card.manaCost, effectiveCost: null, isReduced: false, isIncreased: false }
+    }
     const countSymbols = (cost: string) => {
       const symbols = cost.match(/\{([^}]+)\}/g) ?? []
       return symbols.reduce((total, s) => {
@@ -39,7 +42,8 @@ export function CardPreview() {
     const baseMV = countSymbols(card.manaCost)
     const effectiveMV = countSymbols(effectiveCost)
     return {
-      cost: effectiveCost === '' ? '{0}' : effectiveCost,
+      baseCost: card.manaCost,
+      effectiveCost: effectiveCost === '' ? '{0}' : effectiveCost,
       isReduced: effectiveMV < baseMV,
       isIncreased: effectiveMV > baseMV,
     }
@@ -74,7 +78,7 @@ export function CardPreview() {
   // Estimate extra height for positioning
   let extraHeight = 0
   const GAP = 8
-  if (effectiveCostInfo) extraHeight += 36 + GAP
+  if (manaCostInfo) extraHeight += 36 + GAP
   if (hasStatModifications) extraHeight += 80 + GAP
   if (card.keywords.length > 0 || (card.abilityFlags && card.abilityFlags.length > 0)) extraHeight += 40 + GAP
 
@@ -86,8 +90,8 @@ export function CardPreview() {
       rulings={card.rulings}
       extraHeight={extraHeight}
     >
-      {/* Effective mana cost panel (shown when cost is modified by reductions/increases) */}
-      {effectiveCostInfo && (
+      {/* Mana cost panel — always shown, with modification indicator when cost changes */}
+      {manaCostInfo && (
         <div style={{
           ...styles.cardPreviewStatsBox,
           display: 'flex',
@@ -96,27 +100,35 @@ export function CardPreview() {
           gap: 8,
           padding: '6px 12px',
         }}>
-          <span style={{
-            color: '#888',
-            fontSize: 12,
-            textDecoration: 'line-through',
-            display: 'flex',
-            alignItems: 'center',
-          }}>
-            <ManaCost cost={card.manaCost} size={14} gap={1} />
-          </span>
-          <span style={{ color: '#888', fontSize: 14 }}>&rarr;</span>
-          <span style={{
-            display: 'flex',
-            alignItems: 'center',
-            filter: effectiveCostInfo.isReduced
-              ? 'drop-shadow(0 0 3px rgba(0, 200, 80, 0.5))'
-              : effectiveCostInfo.isIncreased
-                ? 'drop-shadow(0 0 3px rgba(255, 68, 68, 0.5))'
-                : 'none',
-          }}>
-            <ManaCost cost={effectiveCostInfo.cost} size={16} gap={1} />
-          </span>
+          {manaCostInfo.effectiveCost ? (
+            <>
+              <span style={{
+                color: '#888',
+                fontSize: 12,
+                textDecoration: 'line-through',
+                display: 'flex',
+                alignItems: 'center',
+              }}>
+                <ManaCost cost={manaCostInfo.baseCost} size={14} gap={1} />
+              </span>
+              <span style={{ color: '#888', fontSize: 14 }}>&rarr;</span>
+              <span style={{
+                display: 'flex',
+                alignItems: 'center',
+                filter: manaCostInfo.isReduced
+                  ? 'drop-shadow(0 0 3px rgba(0, 200, 80, 0.5))'
+                  : manaCostInfo.isIncreased
+                    ? 'drop-shadow(0 0 3px rgba(255, 68, 68, 0.5))'
+                    : 'none',
+              }}>
+                <ManaCost cost={manaCostInfo.effectiveCost} size={16} gap={1} />
+              </span>
+            </>
+          ) : (
+            <span style={{ display: 'flex', alignItems: 'center' }}>
+              <ManaCost cost={manaCostInfo.baseCost} size={16} gap={1} />
+            </span>
+          )}
         </div>
       )}
 
