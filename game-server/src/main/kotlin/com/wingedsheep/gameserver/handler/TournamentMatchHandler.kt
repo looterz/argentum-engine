@@ -714,6 +714,41 @@ class TournamentMatchHandler(
     }
 
     fun autoReadyAiPlayers(lobby: TournamentLobby, tournament: TournamentManager) {
+        val lock = ctx.roundLocks.computeIfAbsent(lobby.lobbyId) { Any() }
+        synchronized(lock) {
+            autoReadyAiPlayersLocked(lobby, tournament)
+        }
+    }
+
+    private fun autoReadyAiPlayersLocked(lobby: TournamentLobby, tournament: TournamentManager) {
+        // Check if there are any AI players with submitted decks to ready up
+        val hasAiPlayersToReady = lobby.players.any { (playerId, ps) ->
+            aiGameManager.isAiPlayer(playerId) && ps.hasSubmittedDeck && playerId !in lobby.getReadyPlayerIds()
+        }
+        if (!hasAiPlayersToReady) return
+
+        // Ensure the round is initialized so matches can be found and started
+        if (lobby.allDecksSubmitted() && (tournament.currentRound == null || tournament.currentRound?.isComplete == true)) {
+            val round = tournament.startNextRound()
+            if (round != null) {
+                for (match in round.matches) {
+                    if (match.isBye && match.isComplete) {
+                        val byePlayerState = lobby.players[match.player1Id]
+                        val byeWs = byePlayerState?.identity?.webSocketSession
+                        if (byeWs != null && byeWs.isOpen) {
+                            ctx.sender.send(byeWs, ServerMessage.TournamentBye(
+                                lobbyId = lobby.lobbyId,
+                                round = round.roundNumber
+                            ))
+                            spectatingHandler.sendActiveMatchesToPlayer(byePlayerState.identity, byeWs)
+                        }
+                    }
+                }
+                ctx.lobbyRepository.saveTournament(lobby.lobbyId, tournament)
+                logger.info("Prepared round ${round.roundNumber} for tournament ${lobby.lobbyId}")
+            }
+        }
+
         for ((playerId, playerState) in lobby.players) {
             if (!aiGameManager.isAiPlayer(playerId)) continue
             if (!playerState.hasSubmittedDeck) continue
@@ -723,6 +758,23 @@ class TournamentMatchHandler(
                 logger.info("AI ${playerState.identity.playerName} auto-ready for next round")
                 tryStartMatchForPlayer(lobby, tournament, playerState.identity)
             }
+        }
+
+        // Auto-ready human players whose next opponent is AI (no reason to wait)
+        for ((playerId, playerState) in lobby.players) {
+            if (aiGameManager.isAiPlayer(playerId)) continue
+            if (!playerState.hasSubmittedDeck) continue
+            if (playerId in lobby.getReadyPlayerIds()) continue
+
+            val nextMatch = tournament.getNextMatchForPlayer(playerId) ?: continue
+            val (_, match) = nextMatch
+            val opponentId = if (match.player1Id == playerId) match.player2Id else match.player1Id
+            if (opponentId == null || !aiGameManager.isAiPlayer(opponentId)) continue
+
+            lobby.markPlayerReady(playerId)
+            logger.info("Auto-readied ${playerState.identity.playerName} (opponent is AI)")
+            broadcastReadyStatus(lobby, playerState.identity)
+            tryStartMatchForPlayer(lobby, tournament, playerState.identity)
         }
     }
 
