@@ -1,10 +1,12 @@
+import { useMemo } from 'react'
 import { useGameStore } from '@/store/gameStore.ts'
-import { selectGameState } from '@/store/selectors.ts'
+import { selectGameState, useCardLegalActions } from '@/store/selectors.ts'
 import { getCardImageUrl } from '@/utils/cardImages.ts'
 import { useResponsiveContext, handleImageError, getCounterStatModifier, hasStatCounters, getTokenFrameGradient, getTokenFrameTextColor, getPTColor } from '../board/shared'
 import { styles } from '../board/styles'
 import { counterManaClass } from '@/assets/icons/keywords'
 import { HoverCardPreview } from '../../ui/HoverCardPreview'
+import { ManaCost } from '../../ui/ManaSymbols'
 
 /**
  * Game board card preview — wraps the shared HoverCardPreview with
@@ -16,9 +18,33 @@ export function CardPreview() {
   const gameState = useGameStore(selectGameState)
   const responsive = useResponsiveContext()
 
-  if (!hoveredCardId || !gameState) return null
+  // All hooks must be called before any early return
+  const cardActions = useCardLegalActions(hoveredCardId)
+  const card = hoveredCardId && gameState ? gameState.cards[hoveredCardId] ?? null : null
+  const effectiveCostInfo = useMemo(() => {
+    if (!card?.manaCost) return null
+    const castAction = cardActions.find((a) =>
+      a.action.type === 'CastSpell' && a.actionType !== 'CastFaceDown' && a.actionType !== 'CastWithKicker' && a.actionType !== 'CastSpellMode'
+    )
+    const effectiveCost = castAction?.manaCostString
+    if (effectiveCost == null || effectiveCost === card.manaCost) return null
+    const countSymbols = (cost: string) => {
+      const symbols = cost.match(/\{([^}]+)\}/g) ?? []
+      return symbols.reduce((total, s) => {
+        const inner = s.slice(1, -1)
+        const num = parseInt(inner, 10)
+        return total + (isNaN(num) ? 1 : num)
+      }, 0)
+    }
+    const baseMV = countSymbols(card.manaCost)
+    const effectiveMV = countSymbols(effectiveCost)
+    return {
+      cost: effectiveCost === '' ? '{0}' : effectiveCost,
+      isReduced: effectiveMV < baseMV,
+      isIncreased: effectiveMV > baseMV,
+    }
+  }, [cardActions, card?.manaCost])
 
-  const card = gameState.cards[hoveredCardId]
   if (!card) return null
 
   // On mobile, show the fullscreen overlay (game-specific behaviour)
@@ -48,6 +74,7 @@ export function CardPreview() {
   // Estimate extra height for positioning
   let extraHeight = 0
   const GAP = 8
+  if (effectiveCostInfo) extraHeight += 36 + GAP
   if (hasStatModifications) extraHeight += 80 + GAP
   if (card.keywords.length > 0 || (card.abilityFlags && card.abilityFlags.length > 0)) extraHeight += 40 + GAP
 
@@ -59,6 +86,40 @@ export function CardPreview() {
       rulings={card.rulings}
       extraHeight={extraHeight}
     >
+      {/* Effective mana cost panel (shown when cost is modified by reductions/increases) */}
+      {effectiveCostInfo && (
+        <div style={{
+          ...styles.cardPreviewStatsBox,
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 8,
+          padding: '6px 12px',
+        }}>
+          <span style={{
+            color: '#888',
+            fontSize: 12,
+            textDecoration: 'line-through',
+            display: 'flex',
+            alignItems: 'center',
+          }}>
+            <ManaCost cost={card.manaCost} size={14} gap={1} />
+          </span>
+          <span style={{ color: '#888', fontSize: 14 }}>&rarr;</span>
+          <span style={{
+            display: 'flex',
+            alignItems: 'center',
+            filter: effectiveCostInfo.isReduced
+              ? 'drop-shadow(0 0 3px rgba(0, 200, 80, 0.5))'
+              : effectiveCostInfo.isIncreased
+                ? 'drop-shadow(0 0 3px rgba(255, 68, 68, 0.5))'
+                : 'none',
+          }}>
+            <ManaCost cost={effectiveCostInfo.cost} size={16} gap={1} />
+          </span>
+        </div>
+      )}
+
       {/* Stats box (for creatures with modifications) */}
       {card.power !== null && card.toughness !== null && hasStatModifications && (
         <div style={styles.cardPreviewStatsBox}>

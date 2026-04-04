@@ -1,9 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useGameStore } from '@/store/gameStore.ts'
 import { useHasLegalActions } from '@/store/selectors.ts'
 import type { ClientCard, EntityId } from '@/types'
 import { getCardImageUrl, getScryfallFallbackUrl, MORPH_FACE_DOWN_IMAGE_URL } from '@/utils/cardImages.ts'
 import { useInteraction } from '@/hooks/useInteraction.ts'
+import { ManaCost } from '@/components/ui/ManaSymbols.tsx'
 import {
   useResponsiveContext,
   hasMultipleCastingOptions,
@@ -274,6 +275,37 @@ export function GameCard({
     playableActions.length === 1 && (playableActions[0]?.action.type === 'CycleCard' || playableActions[0]?.action.type === 'TypecycleCard')
   const shouldShowCastModal = playableActions.length > 1 || (hasMultiplePotentialOptions && playableActions.length > 0) || isCyclingLandWithoutPlayLand
   const canDragToPlay = inHand && playableAction && !isInCombatMode && !isInTargetingMode
+
+  // Determine mana cost display for cards in hand (always show, highlight changes)
+  const handCostInfo = useMemo(() => {
+    if (!inHand || faceDown || !card.manaCost) return null
+    // Find the normal CastSpell action (not morph, not kicked, not mode)
+    const castAction = playableActions.find((a) =>
+      a.action.type === 'CastSpell' && a.actionType !== 'CastFaceDown' && a.actionType !== 'CastWithKicker' && a.actionType !== 'CastSpellMode'
+    )
+    const effectiveCost = castAction?.manaCostString
+    // If no cast action available, show base cost as-is
+    if (effectiveCost == null) return { cost: card.manaCost, isReduced: false, isIncreased: false }
+    // Compare with the card's base mana cost
+    if (effectiveCost === card.manaCost) return { cost: card.manaCost, isReduced: false, isIncreased: false }
+    // Count total mana symbols to determine if cost went up or down
+    const countSymbols = (cost: string) => {
+      const symbols = cost.match(/\{([^}]+)\}/g) ?? []
+      return symbols.reduce((total, s) => {
+        const inner = s.slice(1, -1)
+        const num = parseInt(inner, 10)
+        return total + (isNaN(num) ? 1 : num)
+      }, 0)
+    }
+    const baseMV = countSymbols(card.manaCost)
+    const effectiveMV = countSymbols(effectiveCost)
+    const displayCost = effectiveCost === '' ? '{0}' : effectiveCost
+    return {
+      cost: displayCost,
+      isReduced: effectiveMV < baseMV,
+      isIncreased: effectiveMV > baseMV,
+    }
+  }, [inHand, faceDown, playableActions, card.manaCost])
 
   // Handle mouse/touch down - start dragging for attackers, blockers, or hand cards
   const handlePointerDown = useCallback((e: React.MouseEvent | React.TouchEvent) => {
@@ -1304,6 +1336,35 @@ export function GameCard({
       {/* Playable indicator glow effect (only outside combat mode) */}
       {isPlayable && !isSelected && (
         <div style={styles.playableGlow} />
+      )}
+
+      {/* Mana cost overlay for cards in hand — always shown, color-coded when modified */}
+      {handCostInfo && (
+        <div style={{
+          position: 'absolute',
+          top: responsive.isMobile ? 2 : 4,
+          right: responsive.isMobile ? 2 : 4,
+          backgroundColor: handCostInfo.isReduced || handCostInfo.isIncreased
+            ? 'rgba(0, 0, 0, 0.85)'
+            : 'rgba(0, 0, 0, 0.7)',
+          padding: responsive.isMobile ? '1px 3px' : '2px 5px',
+          borderRadius: 4,
+          border: `1px solid ${
+            handCostInfo.isReduced ? 'rgba(0, 200, 80, 0.5)'
+            : handCostInfo.isIncreased ? 'rgba(255, 68, 68, 0.5)'
+            : 'rgba(255, 255, 255, 0.3)'
+          }`,
+          boxShadow: handCostInfo.isReduced ? '0 0 6px rgba(0, 200, 80, 0.3)'
+            : handCostInfo.isIncreased ? '0 0 6px rgba(255, 68, 68, 0.3)'
+            : 'none',
+          pointerEvents: 'none',
+          zIndex: 10,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+        }}>
+          <ManaCost cost={handCostInfo.cost} size={responsive.isMobile ? 10 : 13} gap={1} />
+        </div>
       )}
 
       {/* Count badge for grouped cards */}
