@@ -10,6 +10,8 @@ import com.wingedsheep.sdk.core.AbilityFlag
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.CanOnlyBlockCreaturesWithKeyword
+import com.wingedsheep.sdk.scripting.CantBeBlockedByPower
+import com.wingedsheep.sdk.scripting.CantBeBlockedByPowerOrLess
 import com.wingedsheep.sdk.scripting.CantBlockCreaturesWithGreaterPower
 import com.wingedsheep.sdk.scripting.StaticTarget
 
@@ -88,8 +90,28 @@ object CombatMath {
             if (Keyword.PLAINSWALK.name in aKeywords && defenderLands.any { projected.hasSubtype(it, "Plains") }) return false
         }
 
-        // Blocker-side restrictions (e.g., "can block only creatures with flying")
+        // Attacker-side power restrictions (e.g., "can't be blocked by creatures with power 2 or less")
         if (cardRegistry != null) {
+            val attackerCard = state.getEntity(attacker)?.get<CardComponent>()
+            if (attackerCard != null) {
+                val attackerDef = cardRegistry.getCard(attackerCard.cardDefinitionId)
+                if (attackerDef != null) {
+                    val bPower = projected.getPower(blocker) ?: 0
+                    for (ability in attackerDef.staticAbilities) {
+                        when (ability) {
+                            is CantBeBlockedByPower -> {
+                                if (ability.target == StaticTarget.SourceCreature && bPower >= ability.minPower) return false
+                            }
+                            is CantBeBlockedByPowerOrLess -> {
+                                if (ability.target == StaticTarget.SourceCreature && bPower <= ability.maxPower) return false
+                            }
+                            else -> {}
+                        }
+                    }
+                }
+            }
+
+            // Blocker-side restrictions (e.g., "can block only creatures with flying")
             val blockerCard = state.getEntity(blocker)?.get<CardComponent>()
             if (blockerCard != null) {
                 val cardDef = cardRegistry.getCard(blockerCard.cardDefinitionId)
@@ -103,8 +125,8 @@ object CombatMath {
                             is CantBlockCreaturesWithGreaterPower -> {
                                 if (ability.target == StaticTarget.SourceCreature) {
                                     val aPower = projected.getPower(attacker) ?: 0
-                                    val bPower = projected.getPower(blocker) ?: 0
-                                    if (aPower > bPower) return false
+                                    val bPower2 = projected.getPower(blocker) ?: 0
+                                    if (aPower > bPower2) return false
                                 }
                             }
                             else -> {}
@@ -541,7 +563,11 @@ object CombatMath {
         }
         if (killer != null) {
             attackers.remove(expendable)
-            if (wouldKillInCombat(state, projected, expendable, killer)) {
+            // Only a mutual kill if the attacker can actually deal damage to the blocker.
+            // If the blocker has first strike and kills the attacker first, attacker never
+            // deals regular damage — blocker survives.
+            val attackerDealsDamage = survivesFirstStrike(state, projected, killer, expendable)
+            if (attackerDealsDamage && wouldKillInCombat(state, projected, expendable, killer)) {
                 blockers.remove(killer) // mutual kill
             }
         }

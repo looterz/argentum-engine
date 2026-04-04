@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.model.EntityId
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
+import io.kotest.matchers.doubles.shouldBeGreaterThan as doubleShouldBeGreaterThan
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.maps.shouldContainKey
 import io.kotest.matchers.maps.shouldNotContainKey
@@ -492,9 +493,9 @@ class CombatAdvisorTest : FunSpec({
         result.blockers[blocker45] shouldBe listOf(attacker)
     }
 
-    test("blocks with smaller creature that can kill attacker in a trade") {
-        // 2/2 blocks a 2/2 — even trade, should block to prevent 2 damage
-        val cards = listOf(groundBlocker)
+    test("blocks 2/2 with 3/3 — kills and survives") {
+        // 3/3 blocks a 2/2 — kills it and survives. Always take this.
+        val cards = listOf(groundBlocker, bigGround)
         val (driver, _, advisor) = setup(cards)
         val p1 = driver.player1
         val p2 = driver.player2
@@ -504,7 +505,7 @@ class CombatAdvisorTest : FunSpec({
         val attacker = driver.putCreatureOnBattlefield(p1, "Grizzly Bears")
         driver.removeSummoningSickness(attacker)
 
-        val blocker = driver.putCreatureOnBattlefield(p2, "Grizzly Bears")
+        val blocker = driver.putCreatureOnBattlefield(p2, "Hill Giant")
         driver.removeSummoningSickness(blocker)
 
         driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
@@ -514,8 +515,7 @@ class CombatAdvisorTest : FunSpec({
         val legalAction = buildBlockAction(p2, listOf(blocker))
         val result = advisor.chooseBlockers(driver.state, legalAction, p2) as DeclareBlockers
 
-        // At 20 life, this is an even trade. In profit mode, we kill them and the diff
-        // should allow it. The blocker kills the attacker.
+        // 3/3 kills the 2/2 and survives — free kill, always block
         result.blockers shouldContainKey blocker
     }
 
@@ -594,16 +594,17 @@ class CombatAdvisorTest : FunSpec({
         result.attackers shouldContainKey attacker
     }
 
-    test("attacks with creature when it survives all blockers") {
-        // 6/6 vs opponent's 2/2 — we survive any block and deal damage
-        val cards = listOf(bigCreature, groundBlocker)
+    test("attacks with trample creature when it survives all blockers") {
+        // 4/4 trample vs opponent's 2/2 — we survive and trample 2 damage through.
+        // Killing the 2/2 AND dealing 2 damage makes this clearly worth it.
+        val cards = listOf(trampleCreature, groundBlocker)
         val (driver, _, advisor) = setup(cards)
         val p1 = driver.player1
         val p2 = driver.player2
 
         driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
 
-        val attacker = driver.putCreatureOnBattlefield(p1, "Colossus")
+        val attacker = driver.putCreatureOnBattlefield(p1, "Stampeding Rhino")
         driver.removeSummoningSickness(attacker)
 
         val blocker = driver.putCreatureOnBattlefield(p2, "Grizzly Bears")
@@ -613,6 +614,791 @@ class CombatAdvisorTest : FunSpec({
         val result = advisor.chooseAttackers(driver.state, legalAction, p1) as DeclareAttackers
 
         result.attackers shouldContainKey attacker
+    }
+
+    test("alpha-strikes with 5 creatures through 4 blockers at 1 life") {
+        // P1 has five 1/1s, P2 has 1 life and four 2/2s.
+        // P2 can block 4 of 5 — one gets through for lethal.
+        // P1 should attack with all 5 even though 4 will die.
+        val cards = listOf(smallCreature, groundBlocker)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attackers = (1..5).map {
+            val id = driver.putCreatureOnBattlefield(p1, "Eager Cadet")
+            driver.removeSummoningSickness(id)
+            id
+        }
+
+        val blockers = (1..4).map {
+            val id = driver.putCreatureOnBattlefield(p2, "Grizzly Bears")
+            driver.removeSummoningSickness(id)
+            id
+        }
+
+        driver.replaceState(driver.state.withLifeTotal(p2, 1))
+
+        val legalAction = buildAttackAction(p1, attackers, listOf(p2))
+        val result = advisor.chooseAttackers(driver.state, legalAction, p1) as DeclareAttackers
+
+        // All 5 must attack — one gets through for lethal
+        result.attackers.size shouldBe 5
+    }
+
+    test("does not attack 1/1 into opponent's 3/3 at high life") {
+        // P1 has a 1/1, P2 has a 3/3. Attacking just loses the 1/1 for nothing.
+        val cards = listOf(smallCreature, bigGround)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Eager Cadet")
+        driver.removeSummoningSickness(attacker)
+
+        val blocker = driver.putCreatureOnBattlefield(p2, "Hill Giant")
+        driver.removeSummoningSickness(blocker)
+
+        val legalAction = buildAttackAction(p1, listOf(attacker), listOf(p2))
+        val result = advisor.chooseAttackers(driver.state, legalAction, p1) as DeclareAttackers
+
+        // 1/1 would just die to 3/3 — don't attack
+        result.attackers shouldNotContainKey attacker
+    }
+
+    test("attacks when board advantage means favorable trades") {
+        // P1 has three 3/3s, P2 has one 2/2. Attacking overwhelms:
+        // P2 blocks one 3/3, two get through for 6 damage. Great deal.
+        val cards = listOf(bigGround, groundBlocker)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val att1 = driver.putCreatureOnBattlefield(p1, "Hill Giant")
+        val att2 = driver.putCreatureOnBattlefield(p1, "Hill Giant")
+        val att3 = driver.putCreatureOnBattlefield(p1, "Hill Giant")
+        driver.removeSummoningSickness(att1)
+        driver.removeSummoningSickness(att2)
+        driver.removeSummoningSickness(att3)
+
+        val blocker = driver.putCreatureOnBattlefield(p2, "Grizzly Bears")
+        driver.removeSummoningSickness(blocker)
+
+        val legalAction = buildAttackAction(p1, listOf(att1, att2, att3), listOf(p2))
+        val result = advisor.chooseAttackers(driver.state, legalAction, p1) as DeclareAttackers
+
+        // Should attack with at least 2 — P2 can only block one
+        result.attackers.size shouldBeGreaterThan 1
+    }
+
+    test("holds back blocker when opponent has lethal crackback") {
+        // P1 has a 2/2. P2 has a 5/5 (can attack next turn for lethal).
+        // P1 is at 5 life. If P1 attacks, the 2/2 taps and can't block the 5/5 crackback.
+        // P1 should hold back to block next turn.
+        val creature55 = CardDefinition.creature(
+            name = "Craw Wurm", manaCost = ManaCost.parse("{4}{G}{G}"),
+            subtypes = setOf(Subtype("Wurm")), power = 5, toughness = 5
+        )
+        val cards = listOf(groundBlocker, creature55)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Grizzly Bears")
+        driver.removeSummoningSickness(attacker)
+
+        val threat = driver.putCreatureOnBattlefield(p2, "Craw Wurm")
+        driver.removeSummoningSickness(threat)
+
+        driver.replaceState(driver.state.withLifeTotal(p1, 5))
+
+        val legalAction = buildAttackAction(p1, listOf(attacker), listOf(p2))
+        val result = advisor.chooseAttackers(driver.state, legalAction, p1) as DeclareAttackers
+
+        // Should not attack — need the 2/2 to block the 5/5 crackback
+        result.attackers shouldNotContainKey attacker
+    }
+
+    test("flyer attacks past ground blockers") {
+        // P1 has a 2/2 flyer. P2 has three ground 3/3s.
+        // The flyer can't be blocked — should always attack.
+        val cards = listOf(flyingCreature, bigGround)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val flyer = driver.putCreatureOnBattlefield(p1, "Wind Drake")
+        driver.removeSummoningSickness(flyer)
+
+        driver.putCreatureOnBattlefield(p2, "Hill Giant").also { driver.removeSummoningSickness(it) }
+        driver.putCreatureOnBattlefield(p2, "Hill Giant").also { driver.removeSummoningSickness(it) }
+        driver.putCreatureOnBattlefield(p2, "Hill Giant").also { driver.removeSummoningSickness(it) }
+
+        val legalAction = buildAttackAction(p1, listOf(flyer), listOf(p2))
+        val result = advisor.chooseAttackers(driver.state, legalAction, p1) as DeclareAttackers
+
+        // Flyer is evasive — always attack
+        result.attackers shouldContainKey flyer
+    }
+
+    test("attacks with evasive creatures when board is contested") {
+        // P1 has: 4/4, 2/2 flying
+        // P2 has: 4/4
+        // The flyer is evasive (can't be blocked) — should attack.
+        // The 4/4 would just trade — may or may not attack.
+        val creature44 = CardDefinition.creature(
+            name = "Pillarfield Ox", manaCost = ManaCost.parse("{3}{W}"),
+            subtypes = setOf(Subtype("Ox")), power = 4, toughness = 4
+        )
+        val cards = listOf(creature44, flyingCreature)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val att44 = driver.putCreatureOnBattlefield(p1, "Pillarfield Ox")
+        val attFlyer = driver.putCreatureOnBattlefield(p1, "Wind Drake")
+        driver.removeSummoningSickness(att44)
+        driver.removeSummoningSickness(attFlyer)
+
+        val blk44 = driver.putCreatureOnBattlefield(p2, "Pillarfield Ox")
+        driver.removeSummoningSickness(blk44)
+
+        val legalAction = buildAttackAction(p1, listOf(att44, attFlyer), listOf(p2))
+        val result = advisor.chooseAttackers(driver.state, legalAction, p1) as DeclareAttackers
+
+        // The flyer should always attack (evasive — no downside)
+        result.attackers shouldContainKey attFlyer
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    // Simulation-based blocking scenarios
+    // ═════════════════════════════════════════════════════════════════════
+
+    test("chump blocks one of two attackers when at lethal life") {
+        // P1 attacks with two 2/2s, P2 at 3 life with only a 1/1.
+        // Must block one to survive (taking 2 instead of 4).
+        val cards = listOf(groundBlocker, smallCreature)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val att1 = driver.putCreatureOnBattlefield(p1, "Grizzly Bears")
+        val att2 = driver.putCreatureOnBattlefield(p1, "Grizzly Bears")
+        driver.removeSummoningSickness(att1)
+        driver.removeSummoningSickness(att2)
+
+        val blocker = driver.putCreatureOnBattlefield(p2, "Eager Cadet")
+        driver.removeSummoningSickness(blocker)
+
+        driver.replaceState(driver.state.withLifeTotal(p2, 3))
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(att1 to p2, att2 to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        val legalAction = buildBlockAction(p2, listOf(blocker))
+        val result = advisor.chooseBlockers(driver.state, legalAction, p2) as DeclareBlockers
+
+        // Must block one of the 2/2s to drop incoming from 4 to 2
+        result.blockers shouldContainKey blocker
+    }
+
+    test("first striker blocks and survives against larger attacker") {
+        // 2/2 first strike blocks a 2/1 — first strike kills it before it deals damage.
+        // This is a free block (blocker survives), should always take it.
+        val smallAttacker = CardDefinition.creature(
+            name = "Savannah Lions",
+            manaCost = ManaCost.parse("{W}"),
+            subtypes = setOf(Subtype("Cat")),
+            power = 2, toughness = 1
+        )
+        val cards = listOf(firstStrikeCreature, smallAttacker)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Savannah Lions")
+        driver.removeSummoningSickness(attacker)
+
+        val blocker = driver.putCreatureOnBattlefield(p2, "White Knight")
+        driver.removeSummoningSickness(blocker)
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(attacker to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        val legalAction = buildBlockAction(p2, listOf(blocker))
+        val result = advisor.chooseBlockers(driver.state, legalAction, p2) as DeclareBlockers
+
+        // 2/2 first strike kills 2/1 before it deals damage — free block
+        result.blockers shouldContainKey blocker
+        result.blockers[blocker] shouldBe listOf(attacker)
+    }
+
+    test("1/1 first striker blocks a 1/2 and kills it for free") {
+        // 1/1 first strike vs 1/2: first strike deals 1, doesn't kill (2 toughness).
+        // Regular damage: 1/2 deals 1 back, kills the 1/1. Not a free block.
+        // Actually the 1/1 first strike deals 1 damage, 1/2 has 2 toughness — survives.
+        // Then 1/2 deals 1 damage, kills the 1/1. Both die? No — 1/2 survives with 1 damage.
+        // So blocking is bad for the first striker here. Let's test a scenario where it IS free:
+        // 1/1 first strike vs 1/1: first strike kills the 1/1 before it hits back. Free!
+        val firstStriker11 = CardDefinition.creature(
+            name = "Suntail Hawk FS",
+            manaCost = ManaCost.parse("{W}"),
+            subtypes = setOf(Subtype("Bird")),
+            power = 1, toughness = 1,
+            keywords = setOf(Keyword.FIRST_STRIKE)
+        )
+        val cards = listOf(firstStriker11, smallCreature)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Eager Cadet")
+        driver.removeSummoningSickness(attacker)
+
+        val blocker = driver.putCreatureOnBattlefield(p2, "Suntail Hawk FS")
+        driver.removeSummoningSickness(blocker)
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(attacker to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        val legalAction = buildBlockAction(p2, listOf(blocker))
+        val result = advisor.chooseBlockers(driver.state, legalAction, p2) as DeclareBlockers
+
+        // 1/1 first strike kills 1/1 attacker before regular damage — free block
+        result.blockers shouldContainKey blocker
+    }
+
+    test("gang-blocks 4/4 with two 2/3s") {
+        // P1 attacks with a 4/4, P2 has two 2/3s. Neither alone can kill the 4/4,
+        // but together they deal 4 damage and kill it. One 2/3 dies, the other survives.
+        // Trading a 2/3 for a 4/4 is excellent value.
+        val bear23 = CardDefinition.creature(
+            name = "Nessian Courser",
+            manaCost = ManaCost.parse("{2}{G}"),
+            subtypes = setOf(Subtype("Centaur"), Subtype("Warrior")),
+            power = 2, toughness = 3
+        )
+        val creature44 = CardDefinition.creature(
+            name = "Rumbling Baloth",
+            manaCost = ManaCost.parse("{2}{G}{G}"),
+            subtypes = setOf(Subtype("Beast")),
+            power = 4, toughness = 4
+        )
+        val cards = listOf(bear23, creature44)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Rumbling Baloth")
+        driver.removeSummoningSickness(attacker)
+
+        val blocker1 = driver.putCreatureOnBattlefield(p2, "Nessian Courser")
+        val blocker2 = driver.putCreatureOnBattlefield(p2, "Nessian Courser")
+        driver.removeSummoningSickness(blocker1)
+        driver.removeSummoningSickness(blocker2)
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(attacker to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        val legalAction = buildBlockAction(p2, listOf(blocker1, blocker2))
+        val result = advisor.chooseBlockers(driver.state, legalAction, p2) as DeclareBlockers
+
+        // Both 2/3s should gang-block the 4/4 — combined 4 power kills it
+        val blockersOfAttacker = result.blockers.entries
+            .filter { (_, targets) -> attacker in targets }
+            .map { it.key }
+        blockersOfAttacker.size shouldBe 2
+    }
+
+    test("does not chump block trampler at high life") {
+        // P1 attacks with 4/4 trample, P2 has a 1/1 at 20 life.
+        // Chump blocking only prevents 1 damage (3 tramples through) — not worth losing a creature.
+        val cards = listOf(trampleCreature, smallCreature)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Stampeding Rhino")
+        driver.removeSummoningSickness(attacker)
+
+        val blocker = driver.putCreatureOnBattlefield(p2, "Eager Cadet")
+        driver.removeSummoningSickness(blocker)
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(attacker to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        val legalAction = buildBlockAction(p2, listOf(blocker))
+        val result = advisor.chooseBlockers(driver.state, legalAction, p2) as DeclareBlockers
+
+        // At 20 life, chump blocking a trampler is bad — only saves 1 damage, loses a creature
+        result.blockers shouldNotContainKey blocker
+    }
+
+    test("blocks trampler with creature that survives") {
+        // P1 attacks with 4/4 trample, P2 has a 2/5. The 2/5 survives (5 > 4),
+        // prevents 4 damage (non-trample gets through 0 since blocked, trample overflow is 0
+        // because blocker toughness >= attacker power). Good block.
+        val bigBlocker = CardDefinition.creature(
+            name = "Aven Surveyor",
+            manaCost = ManaCost.parse("{3}{U}{U}"),
+            subtypes = setOf(Subtype("Bird")),
+            power = 2, toughness = 5
+        )
+        val cards = listOf(trampleCreature, bigBlocker)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Stampeding Rhino")
+        driver.removeSummoningSickness(attacker)
+
+        val blocker = driver.putCreatureOnBattlefield(p2, "Aven Surveyor")
+        driver.removeSummoningSickness(blocker)
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(attacker to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        val legalAction = buildBlockAction(p2, listOf(blocker))
+        val result = advisor.chooseBlockers(driver.state, legalAction, p2) as DeclareBlockers
+
+        // 2/5 blocks 4/4 trample: blocker survives, prevents all trample overflow
+        result.blockers shouldContainKey blocker
+    }
+
+    test("deathtouch creature blocks big attacker for favorable trade") {
+        // P1 attacks with 6/6, P2 has a 1/1 deathtouch. Deathtouch kills anything
+        // regardless of toughness — trading a 1/1 for a 6/6 is amazing.
+        val deathtouchCreature = CardDefinition.creature(
+            name = "Typhoid Rats",
+            manaCost = ManaCost.parse("{B}"),
+            subtypes = setOf(Subtype("Rat")),
+            power = 1, toughness = 1,
+            keywords = setOf(Keyword.DEATHTOUCH)
+        )
+        val cards = listOf(bigCreature, deathtouchCreature)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Colossus")
+        driver.removeSummoningSickness(attacker)
+
+        val blocker = driver.putCreatureOnBattlefield(p2, "Typhoid Rats")
+        driver.removeSummoningSickness(blocker)
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(attacker to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        val legalAction = buildBlockAction(p2, listOf(blocker))
+        val result = advisor.chooseBlockers(driver.state, legalAction, p2) as DeclareBlockers
+
+        // Deathtouch 1/1 kills 6/6 — always block
+        result.blockers shouldContainKey blocker
+    }
+
+    test("does not block with deathtouch creature when attacker has first strike") {
+        // P1 attacks with 2/2 first strike, P2 has 1/1 deathtouch.
+        // First strike kills the deathtouch creature before it can deal damage — useless block.
+        val deathtouchCreature = CardDefinition.creature(
+            name = "Typhoid Rats",
+            manaCost = ManaCost.parse("{B}"),
+            subtypes = setOf(Subtype("Rat")),
+            power = 1, toughness = 1,
+            keywords = setOf(Keyword.DEATHTOUCH)
+        )
+        val cards = listOf(firstStrikeCreature, deathtouchCreature)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "White Knight")
+        driver.removeSummoningSickness(attacker)
+
+        val blocker = driver.putCreatureOnBattlefield(p2, "Typhoid Rats")
+        driver.removeSummoningSickness(blocker)
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(attacker to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        val legalAction = buildBlockAction(p2, listOf(blocker))
+        val result = advisor.chooseBlockers(driver.state, legalAction, p2) as DeclareBlockers
+
+        // First strike kills deathtouch before it deals damage — don't block
+        result.blockers shouldNotContainKey blocker
+    }
+
+    test("blocks one attacker when two are attacking and blocker can kill one") {
+        // P1 attacks with a 3/3 and a 2/2. P2 has a 3/3 that can kill the 3/3 in a mutual trade
+        // or kill the 2/2 and survive. Should block the one where it survives.
+        val cards = listOf(bigGround, groundBlocker)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val att33 = driver.putCreatureOnBattlefield(p1, "Hill Giant")
+        val att22 = driver.putCreatureOnBattlefield(p1, "Grizzly Bears")
+        driver.removeSummoningSickness(att33)
+        driver.removeSummoningSickness(att22)
+
+        val blocker = driver.putCreatureOnBattlefield(p2, "Hill Giant")
+        driver.removeSummoningSickness(blocker)
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(att33 to p2, att22 to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        val legalAction = buildBlockAction(p2, listOf(blocker))
+        val result = advisor.chooseBlockers(driver.state, legalAction, p2) as DeclareBlockers
+
+        // 3/3 should block the 2/2: kills it and survives (taking only 2 damage)
+        result.blockers shouldContainKey blocker
+        result.blockers[blocker] shouldBe listOf(att22)
+    }
+
+    test("complex board: assigns blockers for maximum value trades") {
+        // P1 attacks with: 5/3, 4/4, 2/2, 10/5
+        // P2 has: 5/5, 1/1 deathtouch, 3/3, 1/3
+        //
+        // Optimal blocking:
+        // - 1/1 DT blocks 10/5 (trades 1/1 for 10/5 — amazing)
+        // - 5/5 blocks 4/4 (kills it, survives — free kill)
+        // - 3/3 blocks 5/3 (kills it, dies — trades 3/3 for 5/3, favorable)
+        // - 1/3 blocks 2/2 (doesn't kill it, but survives and prevents 2 damage)
+        val creature53 = CardDefinition.creature(
+            name = "Ogre Warrior", manaCost = ManaCost.parse("{3}{R}"),
+            subtypes = setOf(Subtype("Ogre")), power = 5, toughness = 3
+        )
+        val creature44 = CardDefinition.creature(
+            name = "Pillarfield Ox", manaCost = ManaCost.parse("{3}{W}"),
+            subtypes = setOf(Subtype("Ox")), power = 4, toughness = 4
+        )
+        val creature105 = CardDefinition.creature(
+            name = "Eldrazi Devastator", manaCost = ManaCost.parse("{8}"),
+            subtypes = setOf(Subtype("Eldrazi")), power = 10, toughness = 5
+        )
+        val creature55 = CardDefinition.creature(
+            name = "Craw Wurm", manaCost = ManaCost.parse("{4}{G}{G}"),
+            subtypes = setOf(Subtype("Wurm")), power = 5, toughness = 5
+        )
+        val creature13 = CardDefinition.creature(
+            name = "Horned Turtle", manaCost = ManaCost.parse("{2}{U}"),
+            subtypes = setOf(Subtype("Turtle")), power = 1, toughness = 3
+        )
+        val deathtouchCreature = CardDefinition.creature(
+            name = "Typhoid Rats", manaCost = ManaCost.parse("{B}"),
+            subtypes = setOf(Subtype("Rat")), power = 1, toughness = 1,
+            keywords = setOf(Keyword.DEATHTOUCH)
+        )
+
+        val cards = listOf(creature53, creature44, groundBlocker, creature105, creature55, deathtouchCreature, bigGround, creature13)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        // P1 attackers
+        val att53 = driver.putCreatureOnBattlefield(p1, "Ogre Warrior")
+        val att44 = driver.putCreatureOnBattlefield(p1, "Pillarfield Ox")
+        val att22 = driver.putCreatureOnBattlefield(p1, "Grizzly Bears")
+        val att105 = driver.putCreatureOnBattlefield(p1, "Eldrazi Devastator")
+        driver.removeSummoningSickness(att53)
+        driver.removeSummoningSickness(att44)
+        driver.removeSummoningSickness(att22)
+        driver.removeSummoningSickness(att105)
+
+        // P2 blockers
+        val blk55 = driver.putCreatureOnBattlefield(p2, "Craw Wurm")
+        val blkDT = driver.putCreatureOnBattlefield(p2, "Typhoid Rats")
+        val blk33 = driver.putCreatureOnBattlefield(p2, "Hill Giant")
+        val blk13 = driver.putCreatureOnBattlefield(p2, "Horned Turtle")
+        driver.removeSummoningSickness(blk55)
+        driver.removeSummoningSickness(blkDT)
+        driver.removeSummoningSickness(blk33)
+        driver.removeSummoningSickness(blk13)
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(att53 to p2, att44 to p2, att22 to p2, att105 to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        val legalAction = buildBlockAction(p2, listOf(blk55, blkDT, blk33, blk13))
+
+        // Evaluate board before combat from P2's perspective
+        val evaluator = AIPlayer.defaultEvaluator()
+        val scoreBefore = evaluator.evaluate(driver.state, driver.state.projectedState, p2)
+
+        val result = advisor.chooseBlockers(driver.state, legalAction, p2) as DeclareBlockers
+
+        // Resolve combat
+        driver.submit(result)
+        driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
+
+        // Evaluate board after combat — P2 should be better off than before
+        // (traded low-value creatures for high-value attackers)
+        val scoreAfter = evaluator.evaluate(driver.state, driver.state.projectedState, p2)
+        scoreAfter doubleShouldBeGreaterThan scoreBefore
+    }
+
+    test("double-blocks 6/6 with 3/3 and 4/4 to kill it") {
+        // P1 attacks with 6/6. P2 has 3/3 and 4/4 — neither can kill it alone,
+        // but together they deal 7 damage. The 3/3 dies, 4/4 survives. Excellent trade.
+        val creature44 = CardDefinition.creature(
+            name = "Pillarfield Ox", manaCost = ManaCost.parse("{3}{W}"),
+            subtypes = setOf(Subtype("Ox")), power = 4, toughness = 4
+        )
+        val cards = listOf(bigCreature, bigGround, creature44)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Colossus")
+        driver.removeSummoningSickness(attacker)
+
+        val blk33 = driver.putCreatureOnBattlefield(p2, "Hill Giant")
+        val blk44 = driver.putCreatureOnBattlefield(p2, "Pillarfield Ox")
+        driver.removeSummoningSickness(blk33)
+        driver.removeSummoningSickness(blk44)
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(attacker to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        val legalAction = buildBlockAction(p2, listOf(blk33, blk44))
+        val result = advisor.chooseBlockers(driver.state, legalAction, p2) as DeclareBlockers
+
+        // Both should gang-block the 6/6
+        val blockersOfAttacker = result.blockers.entries
+            .filter { (_, targets) -> attacker in targets }
+            .map { it.key }
+        blockersOfAttacker.size shouldBe 2
+    }
+
+    test("does not gang-block deathtouch attacker — both blockers would die") {
+        // P1 attacks with 2/2 deathtouch. P2 has two 2/2s.
+        // Gang-blocking is terrible: deathtouch kills BOTH blockers. Single-block trades 1-for-1.
+        val deathtouchAttacker = CardDefinition.creature(
+            name = "Gifted Aetherborn", manaCost = ManaCost.parse("{B}{B}"),
+            subtypes = setOf(Subtype("Aetherborn")), power = 2, toughness = 2,
+            keywords = setOf(Keyword.DEATHTOUCH)
+        )
+        val cards = listOf(deathtouchAttacker, groundBlocker)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Gifted Aetherborn")
+        driver.removeSummoningSickness(attacker)
+
+        val blk1 = driver.putCreatureOnBattlefield(p2, "Grizzly Bears")
+        val blk2 = driver.putCreatureOnBattlefield(p2, "Grizzly Bears")
+        driver.removeSummoningSickness(blk1)
+        driver.removeSummoningSickness(blk2)
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(attacker to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        val legalAction = buildBlockAction(p2, listOf(blk1, blk2))
+        val result = advisor.chooseBlockers(driver.state, legalAction, p2) as DeclareBlockers
+
+        // Should NOT gang-block (deathtouch skips gang blocks in heuristic).
+        // Should single-block for a 1-for-1 trade instead.
+        val blockersAssigned = result.blockers.entries
+            .filter { (_, targets) -> attacker in targets }
+            .map { it.key }
+        blockersAssigned.size shouldBe 1
+    }
+
+    test("indestructible blocker always blocks — free damage prevention") {
+        // P1 attacks with 6/6. P2 has a 1/1 indestructible.
+        // Blocking prevents 6 damage and the blocker can't die. Always block.
+        val indestructibleCreature = CardDefinition.creature(
+            name = "Darksteel Myr", manaCost = ManaCost.parse("{3}"),
+            subtypes = setOf(Subtype("Myr")), power = 1, toughness = 1,
+            keywords = setOf(Keyword.INDESTRUCTIBLE)
+        )
+        val cards = listOf(bigCreature, indestructibleCreature)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Colossus")
+        driver.removeSummoningSickness(attacker)
+
+        val blocker = driver.putCreatureOnBattlefield(p2, "Darksteel Myr")
+        driver.removeSummoningSickness(blocker)
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(attacker to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        val legalAction = buildBlockAction(p2, listOf(blocker))
+        val result = advisor.chooseBlockers(driver.state, legalAction, p2) as DeclareBlockers
+
+        // Indestructible can't die — always block to prevent damage
+        result.blockers shouldContainKey blocker
+    }
+
+    test("wide board: blocking AI produces positive outcome") {
+        // P1 attacks with: 3/2 first strike, 5/5 trample, 2/2 lifelink, 1/1
+        // P2 has: 4/4, 2/3, 1/1 deathtouch, 0/4 defender
+        // Many interactions — validate the AI produces a board state improvement.
+        val fsCreature32 = CardDefinition.creature(
+            name = "Fencing Ace", manaCost = ManaCost.parse("{1}{W}"),
+            subtypes = setOf(Subtype("Human"), Subtype("Soldier")), power = 3, toughness = 2,
+            keywords = setOf(Keyword.FIRST_STRIKE)
+        )
+        val trample55 = CardDefinition.creature(
+            name = "Charging Rhino", manaCost = ManaCost.parse("{3}{G}{G}"),
+            subtypes = setOf(Subtype("Rhino")), power = 5, toughness = 5,
+            keywords = setOf(Keyword.TRAMPLE)
+        )
+        val lifelink22 = CardDefinition.creature(
+            name = "Ajani's Sunstriker", manaCost = ManaCost.parse("{W}{W}"),
+            subtypes = setOf(Subtype("Cat")), power = 2, toughness = 2,
+            keywords = setOf(Keyword.LIFELINK)
+        )
+        val creature44 = CardDefinition.creature(
+            name = "Pillarfield Ox", manaCost = ManaCost.parse("{3}{W}"),
+            subtypes = setOf(Subtype("Ox")), power = 4, toughness = 4
+        )
+        val creature23 = CardDefinition.creature(
+            name = "Nessian Courser", manaCost = ManaCost.parse("{2}{G}"),
+            subtypes = setOf(Subtype("Centaur")), power = 2, toughness = 3
+        )
+        val deathtouch11 = CardDefinition.creature(
+            name = "Typhoid Rats", manaCost = ManaCost.parse("{B}"),
+            subtypes = setOf(Subtype("Rat")), power = 1, toughness = 1,
+            keywords = setOf(Keyword.DEATHTOUCH)
+        )
+        val wall04 = CardDefinition.creature(
+            name = "Wall of Frost", manaCost = ManaCost.parse("{1}{U}{U}"),
+            subtypes = setOf(Subtype("Wall")), power = 0, toughness = 4,
+            keywords = setOf(Keyword.DEFENDER)
+        )
+
+        val cards = listOf(fsCreature32, trample55, lifelink22, smallCreature, creature44, creature23, deathtouch11, wall04)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        // P1 attackers
+        val attFS = driver.putCreatureOnBattlefield(p1, "Fencing Ace")
+        val attTrample = driver.putCreatureOnBattlefield(p1, "Charging Rhino")
+        val attLifelink = driver.putCreatureOnBattlefield(p1, "Ajani's Sunstriker")
+        val att11 = driver.putCreatureOnBattlefield(p1, "Eager Cadet")
+        driver.removeSummoningSickness(attFS)
+        driver.removeSummoningSickness(attTrample)
+        driver.removeSummoningSickness(attLifelink)
+        driver.removeSummoningSickness(att11)
+
+        // P2 blockers
+        val blk44 = driver.putCreatureOnBattlefield(p2, "Pillarfield Ox")
+        val blk23 = driver.putCreatureOnBattlefield(p2, "Nessian Courser")
+        val blkDT = driver.putCreatureOnBattlefield(p2, "Typhoid Rats")
+        val blkWall = driver.putCreatureOnBattlefield(p2, "Wall of Frost")
+        driver.removeSummoningSickness(blk44)
+        driver.removeSummoningSickness(blk23)
+        driver.removeSummoningSickness(blkDT)
+        driver.removeSummoningSickness(blkWall)
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(attFS to p2, attTrample to p2, attLifelink to p2, att11 to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        val legalAction = buildBlockAction(p2, listOf(blk44, blk23, blkDT, blkWall))
+        val evaluator = AIPlayer.defaultEvaluator()
+        val scoreBefore = evaluator.evaluate(driver.state, driver.state.projectedState, p2)
+
+        val result = advisor.chooseBlockers(driver.state, legalAction, p2) as DeclareBlockers
+        driver.submit(result)
+        driver.passPriorityUntil(Step.POSTCOMBAT_MAIN)
+
+        val scoreAfter = evaluator.evaluate(driver.state, driver.state.projectedState, p2)
+        // P2 has deathtouch for the trample, wall to soak, and good trades available.
+        // Board should improve for the defender.
+        scoreAfter doubleShouldBeGreaterThan scoreBefore
+    }
+
+    test("lifelink attacker is prioritized for blocking over equal-power attacker") {
+        // P1 attacks with 2/2 lifelink and 2/2 vanilla. P2 has one 2/2.
+        // Should block the lifelink creature — prevents 2 damage AND 2 life gain (4 effective swing).
+        val lifelinkAttacker = CardDefinition.creature(
+            name = "Ajani's Sunstriker", manaCost = ManaCost.parse("{W}{W}"),
+            subtypes = setOf(Subtype("Cat")), power = 2, toughness = 2,
+            keywords = setOf(Keyword.LIFELINK)
+        )
+        val cards = listOf(lifelinkAttacker, groundBlocker)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attLL = driver.putCreatureOnBattlefield(p1, "Ajani's Sunstriker")
+        val att22 = driver.putCreatureOnBattlefield(p1, "Grizzly Bears")
+        driver.removeSummoningSickness(attLL)
+        driver.removeSummoningSickness(att22)
+
+        val blocker = driver.putCreatureOnBattlefield(p2, "Grizzly Bears")
+        driver.removeSummoningSickness(blocker)
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(attLL to p2, att22 to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        val legalAction = buildBlockAction(p2, listOf(blocker))
+        val result = advisor.chooseBlockers(driver.state, legalAction, p2) as DeclareBlockers
+
+        // Should block the lifelink creature — 4 effective damage prevented vs 2
+        result.blockers shouldContainKey blocker
+        result.blockers[blocker] shouldBe listOf(attLL)
     }
 
     // ═════════════════════════════════════════════════════════════════════

@@ -4,7 +4,9 @@ import com.wingedsheep.engine.ai.advisor.modules.BloomburrowAdvisorModule
 import com.wingedsheep.engine.core.*
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.GameState
+import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.identity.LifeTotalComponent
+import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.mtg.sets.definitions.bloomburrow.BloomburrowSet
 import com.wingedsheep.sdk.model.CardDefinition
 import com.wingedsheep.sdk.model.Deck
@@ -113,6 +115,15 @@ class AdvisorBenchmark : FunSpec({
             println("Advised wins:   $advisedWins (${String.format("%.1f", advisedWinRate)}%)")
             println("Generic wins:   $genericWins (${String.format("%.1f", genericWinRate)}%)")
             println("Draws:          $draws")
+            if (draws > 0) {
+                val reasons = allGames.filter { !it.advisedWon && !it.genericWon && it.drawReason.isNotEmpty() }
+                    .groupBy { it.drawReason }
+                    .mapValues { it.value.size }
+                    .entries.sortedByDescending { it.value }
+                for ((reason, count) in reasons) {
+                    println("  $count × $reason")
+                }
+            }
             println()
             println("Advised as P1 (first):  $advisedWinsAsP1 / ${asP1.size} wins")
             println("Advised as P2 (second): $advisedWinsAsP2 / ${asP2.size} wins")
@@ -144,7 +155,8 @@ private data class GameResultAdvisor(
     val id: Int, val turns: Int, val actions: Int, val durationMs: Long,
     val advisedWon: Boolean, val genericWon: Boolean,
     val advisedLife: Int, val genericLife: Int,
-    val gameOver: Boolean, val winnerLabel: String
+    val gameOver: Boolean, val winnerLabel: String,
+    val drawReason: String = ""
 )
 
 private fun playAdvisorGame(
@@ -177,34 +189,128 @@ private fun playAdvisorGame(
     var state: GameState = result.state
     var lastProgressTurn = 0
     var lastProgressAction = 0
-    var stuckCount = 0
+    var drawReason = ""
+    val recentActions = ArrayDeque<String>(32)
 
     val duration = measureTime {
         while (!state.gameOver && turns < maxTurns) {
-            if (actionCount - lastProgressAction > 1000 && turns == lastProgressTurn) {
-                stuckCount++
-                if (stuckCount >= 3) break
+            if (actionCount - lastProgressAction > 200 && turns == lastProgressTurn) {
+                val step = state.step.name
+                val phase = state.phase.name
+                val decision = state.pendingDecision?.javaClass?.simpleName ?: "none"
+                val priority = if (state.priorityPlayerId == advisedId) "advised" else "generic"
+                drawReason = "stuck turn=$turns step=$step decision=$decision priority=$priority"
+                println("  [STUCK] Game $id: turn=$turns phase=$phase step=$step decision=$decision priority=$priority actions=$actionCount")
+                println("  [STUCK] Last 20 actions:")
+                recentActions.takeLast(20).forEach { println("    $it") }
+                // Dump battlefield state
+                val proj = state.projectedState
+                for (pid in listOf(p1, p2)) {
+                    val label = if (pid == advisedId) "Advised" else "Generic"
+                    val creatures = proj.getBattlefieldControlledBy(pid)
+                        .filter { proj.isCreature(it) }
+                        .map { eid ->
+                            val card = state.getEntity(eid)?.get<com.wingedsheep.engine.state.components.identity.CardComponent>()
+                            val tapped = state.getEntity(eid)?.has<TappedComponent>() == true
+                            val attacking = state.getEntity(eid)?.has<com.wingedsheep.engine.state.components.combat.AttackingComponent>() == true
+                            val pt = "${proj.getPower(eid) ?: "?"}/${proj.getToughness(eid) ?: "?"}"
+                            val kw = proj.getKeywords(eid).joinToString(",")
+                            "${card?.name ?: "?"} $pt${if (tapped) " T" else ""}${if (attacking) " ATK" else ""}${if (kw.isNotEmpty()) " [$kw]" else ""}"
+                        }
+                    println("  [STUCK] $label creatures: $creatures")
+                }
+                // Dump legal actions
+                val legalActions = try { advisedAi.let { _ ->
+                    val sim = GameSimulator(registry)
+                    val priorityPid = state.priorityPlayerId
+                    if (priorityPid != null) sim.getLegalActions(state, priorityPid) else emptyList()
+                } } catch (_: Exception) { emptyList() }
+                println("  [STUCK] Legal actions for priority player: ${legalActions.map { la ->
+                    val desc = la.actionType
+                    val extra = when {
+                        la.validAttackers != null -> " validAtk=${la.validAttackers!!.size} mandatoryAtk=${la.mandatoryAttackers?.size ?: 0}"
+                        la.validBlockers != null -> " validBlk=${la.validBlockers!!.size} mandatoryBlk=${la.mandatoryBlockerAssignments?.size ?: 0}"
+                        else -> ""
+                    }
+                    "$desc$extra"
+                }}")
+                break
             }
             if (turns > lastProgressTurn) {
                 lastProgressTurn = turns
                 lastProgressAction = actionCount
-                stuckCount = 0
             }
 
             val d = state.pendingDecision
             val next: GameState? = if (d != null) {
                 actionCount++
                 val ai = aiFor(d.playerId)
-                val r = processor.process(state, SubmitDecision(d.playerId, ai.respondToDecision(state, d)))
-                if (r.error != null) null else r.state
-            } else when (state.priorityPlayerId) {
-                p1 -> { actionCount++; aiFor(p1).playPriorityWindow(state, processor) }
-                p2 -> { actionCount++; aiFor(p2).playPriorityWindow(state, processor) }
-                else -> null
+                val response = ai.respondToDecision(state, d)
+                recentActions.addLast("#$actionCount Decision(${d.javaClass.simpleName} player=${if (d.playerId == advisedId) "adv" else "gen"}) -> ${response.javaClass.simpleName}")
+                if (recentActions.size > 30) recentActions.removeFirst()
+                val r = processor.process(state, SubmitDecision(d.playerId, response))
+                if (r.error != null) {
+                    recentActions.addLast("  ERROR: ${r.error}")
+                    drawReason = "error(${r.error})"
+                    null
+                } else r.state
+            } else when (val prioId = state.priorityPlayerId) {
+                null -> { drawReason = "noPriority(turn=$turns)"; null }
+                else -> {
+                    actionCount++
+                    val label = if (prioId == advisedId) "adv" else "gen"
+                    val ai = aiFor(prioId)
+                    val action = ai.chooseAction(state)
+                    val actionDesc = action.javaClass.simpleName
+                    recentActions.addLast("#$actionCount Action($label) step=${state.step.name} -> $actionDesc")
+                    if (recentActions.size > 50) recentActions.removeFirst()
+                    val r = processor.process(state, action)
+                    if (r.error != null) {
+                        recentActions.addLast("  ERROR: ${r.error}")
+                        // Try safe fallback depending on step
+                        val fallbackAction: GameAction = when {
+                            state.step == Step.DECLARE_BLOCKERS && state.activePlayerId != prioId -> {
+                                val sim = GameSimulator(registry)
+                                val la = sim.getLegalActions(state, prioId).find { it.actionType == "DeclareBlockers" }
+                                val mandatory = la?.mandatoryBlockerAssignments ?: emptyMap()
+                                DeclareBlockers(prioId, mandatory.mapValues { (_, targets) ->
+                                    if (targets.isNotEmpty()) listOf(targets.first()) else emptyList()
+                                })
+                            }
+                            state.step == Step.DECLARE_ATTACKERS && state.activePlayerId == prioId -> {
+                                val sim = GameSimulator(registry)
+                                val la = sim.getLegalActions(state, prioId).find { it.actionType == "DeclareAttackers" }
+                                val mandatory = la?.mandatoryAttackers ?: emptyList()
+                                val opponentId = state.turnOrder.firstOrNull { it != prioId }
+                                DeclareAttackers(prioId, if (mandatory.isNotEmpty() && opponentId != null) mandatory.associateWith { opponentId } else emptyMap())
+                            }
+                            else -> PassPriority(prioId)
+                        }
+                        val fallback = processor.process(state, fallbackAction)
+                        if (fallback.error != null) {
+                            drawReason = "error(${r.error} + fallback: ${fallback.error})"
+                            null
+                        } else fallback.state
+                    } else {
+                        recentActions.addLast("  -> step=${r.state.step.name} phase=${r.state.phase.name} pending=${r.state.pendingDecision?.javaClass?.simpleName ?: "none"}")
+                        r.state
+                    }
+                }
             }
             if (next == null) break
+            if (next === state) {
+                // State didn't change — avoid infinite loop
+                drawReason = "noProgress turn=$turns step=${state.step.name} decision=${state.pendingDecision?.javaClass?.simpleName ?: "none"}"
+                println("  [NO_PROGRESS] Game $id: $drawReason")
+                println("  [NO_PROGRESS] Last 10 actions:")
+                recentActions.takeLast(10).forEach { println("    $it") }
+                break
+            }
             state = next
             if (state.turnNumber > turns) turns = state.turnNumber
+        }
+        if (!state.gameOver && drawReason.isEmpty()) {
+            drawReason = "maxTurns($maxTurns)"
         }
     }
 
@@ -222,7 +328,8 @@ private fun playAdvisorGame(
             advisedWon -> "advised"
             genericWon -> "generic"
             else -> "draw"
-        }
+        },
+        drawReason = drawReason
     )
 }
 
