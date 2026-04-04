@@ -135,12 +135,15 @@ class MiscContinuationResumer(
         var currentState = state
 
         // Create the copy with the selected targets
+        val copyIndex = continuation.totalCopies - continuation.remainingCopies + 1
         val copyAbility = TriggeredAbilityOnStackComponent(
             sourceId = continuation.sourceId,
             sourceName = continuation.spellName,
             controllerId = continuation.controllerId,
             effect = continuation.spellEffect,
-            description = "Storm copy of ${continuation.spellName}"
+            description = "Storm copy of ${continuation.spellName}",
+            copyIndex = copyIndex,
+            copyTotal = continuation.totalCopies
         )
         val stackResult = services.stackResolver.putTriggeredAbility(
             currentState, copyAbility, selectedTargets, continuation.spellTargetRequirements
@@ -177,7 +180,8 @@ class MiscContinuationResumer(
             spellTargetRequirements = continuation.spellTargetRequirements,
             spellName = continuation.spellName,
             controllerId = continuation.controllerId,
-            sourceId = continuation.sourceId
+            sourceId = continuation.sourceId,
+            totalCopies = continuation.totalCopies
         )
         val targetReqInfos = continuation.spellTargetRequirements.mapIndexed { index, req ->
             TargetRequirementInfo(

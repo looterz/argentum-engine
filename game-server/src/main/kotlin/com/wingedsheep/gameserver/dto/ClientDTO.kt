@@ -181,6 +181,12 @@ data class ClientCard(
     /** Chosen X value for spells with X in their cost (only present on stack) */
     val chosenX: Int? = null,
 
+    /** Copy index for storm/copy effects on the stack (1, 2, 3...) */
+    val copyIndex: Int? = null,
+
+    /** Total number of copies for storm/copy effects on the stack */
+    val copyTotal: Int? = null,
+
     /** Chosen creature type for "as enters, choose a creature type" permanents (e.g., Doom Cannon) */
     val chosenCreatureType: String? = null,
 

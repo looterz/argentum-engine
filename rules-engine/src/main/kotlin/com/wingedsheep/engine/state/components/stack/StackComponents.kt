@@ -43,7 +43,9 @@ data class TriggeredAbilityOnStackComponent(
     val triggeringPlayerId: EntityId? = null,
     val xValue: Int? = null,
     val triggerCounterCount: Int? = null,
-    val damageDistribution: Map<EntityId, Int>? = null  // For DividedDamageEffect - pre-chosen damage allocation
+    val damageDistribution: Map<EntityId, Int>? = null,  // For DividedDamageEffect - pre-chosen damage allocation
+    val copyIndex: Int? = null,    // Which copy number this is (1, 2, 3...) for storm/copy effects
+    val copyTotal: Int? = null     // Total number of copies being created
 ) : Component {
     val hasTargets: Boolean = false  // Will be updated based on effect
 }

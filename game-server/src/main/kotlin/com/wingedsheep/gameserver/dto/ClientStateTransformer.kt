@@ -375,7 +375,7 @@ class ClientStateTransformer(
                 attachments = emptyList(),
                 isFaceDown = false,
                 targets = targets,
-                imageUri = cardDef?.metadata?.imageUri,
+                imageUri = cardDef?.metadata?.imageUri ?: sourceCard?.imageUri,
                 chosenX = activatedAbility.xValue
             )
         }
@@ -431,8 +431,10 @@ class ClientStateTransformer(
                 isFaceDown = false,
                 targets = targets,
                 triggeringEntityId = triggeringId,
-                imageUri = cardDef?.metadata?.imageUri,
-                sourceZone = sourceZone
+                imageUri = cardDef?.metadata?.imageUri ?: sourceCard?.imageUri,
+                sourceZone = sourceZone,
+                copyIndex = triggeredAbility.copyIndex,
+                copyTotal = triggeredAbility.copyTotal
             )
         }
 
@@ -1138,6 +1140,30 @@ class ClientStateTransformer(
                     icon = "emblem"
                 )
             )
+        }
+
+        // Check for granted spell keywords (emblems like "spells you cast have storm")
+        val playerContainer = state.getEntity(playerId)
+        val grantedKeywords = playerContainer?.get<GrantedSpellKeywordsComponent>()
+        if (grantedKeywords != null) {
+            for (grant in grantedKeywords.grants) {
+                val spellTypeDesc = when (grant.spellFilter) {
+                    com.wingedsheep.sdk.scripting.events.SpellTypeFilter.ANY -> "Spells"
+                    com.wingedsheep.sdk.scripting.events.SpellTypeFilter.CREATURE -> "Creature spells"
+                    com.wingedsheep.sdk.scripting.events.SpellTypeFilter.NONCREATURE -> "Noncreature spells"
+                    com.wingedsheep.sdk.scripting.events.SpellTypeFilter.INSTANT_OR_SORCERY -> "Instant and sorcery spells"
+                    com.wingedsheep.sdk.scripting.events.SpellTypeFilter.ENCHANTMENT -> "Enchantment spells"
+                    com.wingedsheep.sdk.scripting.events.SpellTypeFilter.HISTORIC -> "Historic spells"
+                }
+                effects.add(
+                    ClientPlayerEffect(
+                        effectId = "emblem_spell_keyword_${grant.keyword.name.lowercase()}",
+                        name = "Emblem",
+                        description = "$spellTypeDesc you cast have ${grant.keyword.name.lowercase()}.",
+                        icon = "emblem"
+                    )
+                )
+            }
         }
 
         return effects

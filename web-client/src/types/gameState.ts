@@ -160,6 +160,12 @@ export interface ClientCard {
   /** Chosen X value for spells with X in their cost (only present on stack) */
   readonly chosenX?: number | null
 
+  /** Copy index for storm/copy effects on the stack (1, 2, 3...) */
+  readonly copyIndex?: number | null
+
+  /** Total number of copies for storm/copy effects on the stack */
+  readonly copyTotal?: number | null
+
   /** Chosen creature type for "as enters, choose a creature type" permanents (e.g., Doom Cannon) */
   readonly chosenCreatureType?: string | null
 

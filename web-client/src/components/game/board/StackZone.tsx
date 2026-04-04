@@ -121,9 +121,11 @@ export function StackDisplay() {
                     ...(isValidTarget && !isSelectedTarget ? {
                       boxShadow: '0 0 12px 4px rgba(255, 200, 0, 0.8)',
                       borderRadius: 6,
-                    } : {}),
-                    ...(isSelectedTarget ? {
+                    } : isSelectedTarget ? {
                       boxShadow: '0 0 12px 4px rgba(0, 255, 100, 0.8)',
+                      borderRadius: 6,
+                    } : card.copyIndex != null ? {
+                      boxShadow: '0 0 8px 2px rgba(60, 140, 255, 0.5)',
                       borderRadius: 6,
                     } : {}),
                   }}
@@ -157,6 +159,12 @@ export function StackDisplay() {
                   {card.wasKicked && (
                     <div style={styles.stackKickedBadge}>
                       Kicked
+                    </div>
+                  )}
+                  {/* Show copy badge for storm/copy effects */}
+                  {card.copyIndex != null && card.copyTotal != null && (
+                    <div style={styles.stackCopyBadge}>
+                      Copy {card.copyIndex}/{card.copyTotal}
                     </div>
                   )}
                   {/* Show chosen creature type for spells like Aphetto Dredging */}

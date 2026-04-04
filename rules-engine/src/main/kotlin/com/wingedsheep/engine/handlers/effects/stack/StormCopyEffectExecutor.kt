@@ -63,7 +63,9 @@ class StormCopyEffectExecutor(
                 sourceName = effect.spellName,
                 controllerId = context.controllerId,
                 effect = effect.spellEffect,
-                description = "Storm copy of ${effect.spellName} ($i/${effect.copyCount})"
+                description = "Storm copy of ${effect.spellName} ($i/${effect.copyCount})",
+                copyIndex = i,
+                copyTotal = effect.copyCount
             )
             val result = stackResolver.putTriggeredAbility(currentState, copyAbility)
             if (!result.isSuccess) return result
@@ -105,7 +107,8 @@ class StormCopyEffectExecutor(
             spellTargetRequirements = effect.spellTargetRequirements,
             spellName = effect.spellName,
             controllerId = context.controllerId,
-            sourceId = context.sourceId ?: EntityId.generate()
+            sourceId = context.sourceId ?: EntityId.generate(),
+            totalCopies = effect.copyCount
         )
         val targetReqInfos = effect.spellTargetRequirements.mapIndexed { index, req ->
             TargetRequirementInfo(

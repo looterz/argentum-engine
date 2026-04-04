@@ -91,7 +91,8 @@ data class StormCopyTargetContinuation(
     val spellTargetRequirements: List<TargetRequirement>,
     val spellName: String,
     val controllerId: EntityId,
-    val sourceId: EntityId
+    val sourceId: EntityId,
+    val totalCopies: Int = remainingCopies  // Original total copies (defaults to remainingCopies for backward compat)
 ) : ContinuationFrame
 
 /**
