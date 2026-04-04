@@ -93,6 +93,9 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
             val textReplacement = container.get<TextReplacementComponent>()
 
             for (ability in nonManaAbilities) {
+                // Sorcery-speed abilities: skip during non-main phases / opponent's turn
+                if (ability.timing == TimingRule.SorcerySpeed && !context.canPlaySorcerySpeed) continue
+
                 // Planeswalker loyalty abilities: sorcery speed + once per turn + loyalty cost check
                 if (ability.isPlaneswalkerAbility) {
                     if (!context.canPlaySorcerySpeed) continue
