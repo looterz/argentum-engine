@@ -24,6 +24,7 @@ import com.wingedsheep.sdk.scripting.effects.AddAnyColorManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddColorlessManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddDynamicManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaEffect
+import com.wingedsheep.sdk.scripting.effects.AddManaOfChosenColorEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaOfColorAmongEffect
 import com.wingedsheep.sdk.scripting.effects.ManaRestriction
 import com.wingedsheep.sdk.scripting.ActivatedAbility
@@ -31,6 +32,7 @@ import com.wingedsheep.sdk.scripting.AdditionalManaOnTap
 import com.wingedsheep.sdk.scripting.DampLandManaProduction
 import com.wingedsheep.sdk.scripting.GrantActivatedAbilityToCreatureGroup
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
+import com.wingedsheep.engine.state.components.identity.ChosenColorComponent
 import com.wingedsheep.engine.state.components.identity.FaceDownComponent
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
@@ -577,6 +579,16 @@ class ManaSolver(
                         }
                         if (combinedColors.isNotEmpty()) {
                             maxManaAmount = maxOf(maxManaAmount, 1)
+                        }
+                        effect.restriction
+                    }
+                    is AddManaOfChosenColorEffect -> {
+                        val chosenColor = state.getEntity(entityId)
+                            ?.get<ChosenColorComponent>()?.color
+                        if (chosenColor != null) {
+                            combinedColors.add(chosenColor)
+                            val manaAmount = (effect.amount as? DynamicAmount.Fixed)?.amount ?: 1
+                            maxManaAmount = maxOf(maxManaAmount, manaAmount)
                         }
                         effect.restriction
                     }
