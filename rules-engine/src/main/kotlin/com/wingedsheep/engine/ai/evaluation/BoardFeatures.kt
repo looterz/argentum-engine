@@ -149,7 +149,7 @@ object BoardPresence : BoardFeature {
 
         // Summoning sickness reduces immediate threat
         if (container.has<SummoningSicknessComponent>() && Keyword.HASTE.name !in keywords) {
-            value *= 0.65
+            value *= 0.85
         }
 
         // Tapped creatures can't block and already attacked

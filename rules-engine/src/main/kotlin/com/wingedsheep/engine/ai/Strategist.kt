@@ -122,7 +122,7 @@ class Strategist(
     ): LegalAction {
         val action = when (legalAction.actionType) {
             "DeclareAttackers" -> combatAdvisor.chooseAttackers(state, legalAction, playerId)
-            "DeclareBlockers" -> combatAdvisor.chooseBlockers(state, legalAction, playerId)
+            "DeclareBlockers" -> combatAdvisor.chooseBlockers(state, legalAction, playerId, useSimulation = true)
             else -> legalAction.action
         }
         return legalAction.copy(action = action)

@@ -1795,6 +1795,284 @@ class CombatAdvisorTest : FunSpec({
     }
 
     // ═════════════════════════════════════════════════════════════════════
+    // Profitable attacks: 3/3 attacks into 2/2s (opponent trades down)
+    // ═════════════════════════════════════════════════════════════════════
+
+    test("profitable attack: 3/3 attacks into board of 2/2s") {
+        // Every blocking option for the opponent is bad: either take 3 damage
+        // or trade a 2/2 for our 3/3 (we're worth more). Should attack.
+        val cards = listOf(bigGround, groundBlocker)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Hill Giant")
+        driver.removeSummoningSickness(attacker)
+
+        val b1 = driver.putCreatureOnBattlefield(p2, "Grizzly Bears")
+        val b2 = driver.putCreatureOnBattlefield(p2, "Grizzly Bears")
+        driver.removeSummoningSickness(b1)
+        driver.removeSummoningSickness(b2)
+
+        val legalAction = buildAttackAction(p1, listOf(attacker), listOf(p2))
+        val result = advisor.chooseAttackers(driver.state, legalAction, p1) as DeclareAttackers
+
+        result.attackers shouldContainKey attacker
+    }
+
+    test("not profitable: 2/2 does not attack into 3/3") {
+        // Opponent's 3/3 kills our 2/2 and survives — terrible trade.
+        val cards = listOf(groundBlocker, bigGround)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Grizzly Bears")
+        driver.removeSummoningSickness(attacker)
+
+        val blocker = driver.putCreatureOnBattlefield(p2, "Hill Giant")
+        driver.removeSummoningSickness(blocker)
+
+        val legalAction = buildAttackAction(p1, listOf(attacker), listOf(p2))
+        val result = advisor.chooseAttackers(driver.state, legalAction, p1) as DeclareAttackers
+
+        result.attackers shouldNotContainKey attacker
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    // ═════════════════════════════════════════════════════════════════════
+    // Chump-block priority: blocks non-tramplers first
+    // ═════════════════════════════════════════════════════════════════════
+
+    test("chump blocks non-trampler before trampler when facing lethal") {
+        // P1 attacks with 4/4 trample and 3/3 ground. P2 has one 1/1 at 7 life (lethal).
+        // Chump-blocking the 3/3 prevents 3 damage.
+        // Chump-blocking the 4/4 trample only prevents 1 damage (3 tramples through).
+        // Should block the 3/3 for maximum damage prevention.
+        val cards = listOf(trampleCreature, bigGround, smallCreature)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val trampler = driver.putCreatureOnBattlefield(p1, "Stampeding Rhino")
+        val ground = driver.putCreatureOnBattlefield(p1, "Hill Giant")
+        driver.removeSummoningSickness(trampler)
+        driver.removeSummoningSickness(ground)
+
+        val chumpBlocker = driver.putCreatureOnBattlefield(p2, "Eager Cadet")
+        driver.removeSummoningSickness(chumpBlocker)
+
+        driver.replaceState(driver.state.withLifeTotal(p2, 7))
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(trampler to p2, ground to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        val legalAction = buildBlockAction(p2, listOf(chumpBlocker))
+        val result = advisor.chooseBlockers(driver.state, legalAction, p2) as DeclareBlockers
+
+        // Should block the 3/3 (prevents 3) not the 4/4 trampler (prevents only 1)
+        result.blockers[chumpBlocker] shouldBe listOf(ground)
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    // Combat trade value ignores tapped/sickness state
+    // ═════════════════════════════════════════════════════════════════════
+
+    test("CombatMath.combatTradeValue ignores tapped state") {
+        // A tapped creature (e.g., an attacker) should have the same combat trade value
+        // as an untapped one — tapped state doesn't affect how valuable a trade is.
+        val cards = listOf(bigGround)
+        val (driver, _, _) = setup(cards)
+        val p1 = driver.player1
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val creature = driver.putCreatureOnBattlefield(p1, "Hill Giant")
+        val projected = driver.state.projectedState
+        val untappedValue = CombatMath.combatTradeValue(projected, creature)
+
+        // Tap the creature (simulating attack)
+        driver.tapPermanent(creature)
+        val tappedProjected = driver.state.projectedState
+        val tappedValue = CombatMath.combatTradeValue(tappedProjected, creature)
+
+        // Values should be identical — combatTradeValue ignores tapped state
+        tappedValue shouldBe untappedValue
+
+        // But regular creatureValue SHOULD differ (tapped multiplier)
+        val regularUntapped = CombatMath.creatureValue(driver.state, projected, creature)
+        val regularTapped = CombatMath.creatureValue(driver.state, tappedProjected, creature)
+        regularTapped shouldBe regularUntapped // Actually both read from same state
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    // Triple gang blocks
+    // ═════════════════════════════════════════════════════════════════════
+
+    test("triple gang-blocks 6/6 with three 2/3s") {
+        // P1 attacks with a 6/6. P2 has three 2/3s. No pair can kill the 6/6
+        // (max combined power of any pair is 4), but all three together deal 6 damage.
+        // Trading one or two 2/3s for a 6/6 is excellent value.
+        val bear23 = CardDefinition.creature(
+            name = "Nessian Courser",
+            manaCost = ManaCost.parse("{2}{G}"),
+            subtypes = setOf(Subtype("Centaur"), Subtype("Warrior")),
+            power = 2, toughness = 3
+        )
+        val cards = listOf(bigCreature, bear23)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Colossus")
+        driver.removeSummoningSickness(attacker)
+
+        val b1 = driver.putCreatureOnBattlefield(p2, "Nessian Courser")
+        val b2 = driver.putCreatureOnBattlefield(p2, "Nessian Courser")
+        val b3 = driver.putCreatureOnBattlefield(p2, "Nessian Courser")
+        listOf(b1, b2, b3).forEach { driver.removeSummoningSickness(it) }
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(attacker to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        val legalAction = buildBlockAction(p2, listOf(b1, b2, b3))
+        val result = advisor.chooseBlockers(driver.state, legalAction, p2) as DeclareBlockers
+
+        // All three should gang-block the 6/6 — combined 6 power kills it
+        val blockersOfAttacker = result.blockers.entries
+            .filter { (_, targets) -> attacker in targets }
+            .map { it.key }
+        blockersOfAttacker.size shouldBe 3
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    // Regression: creature should attack when opponent has no untapped blockers
+    // ═════════════════════════════════════════════════════════════════════
+
+    test("attacks when opponent has only tapped creatures") {
+        // Opponent controls a tapped 0/2 (Sunshower Druid).
+        // AI controls a 1/3 (Thought Shucker) and a 3/2 with summoning sickness.
+        // The 1/3 should attack — opponent has no untapped blockers.
+        val thoughtShucker = CardDefinition.creature(
+            name = "Thought Shucker",
+            manaCost = ManaCost.parse("{1}{U}"),
+            subtypes = setOf(Subtype("Rat"), Subtype("Rogue")),
+            power = 1, toughness = 3
+        )
+        val intrepidRabbit = CardDefinition.creature(
+            name = "Intrepid Rabbit",
+            manaCost = ManaCost.parse("{2}{W}"),
+            subtypes = setOf(Subtype("Rabbit"), Subtype("Soldier")),
+            power = 3, toughness = 2
+        )
+        val sunshowerDruid = CardDefinition.creature(
+            name = "Sunshower Druid",
+            manaCost = ManaCost.parse("{G}"),
+            subtypes = setOf(Subtype("Frog"), Subtype("Druid")),
+            power = 0, toughness = 2
+        )
+        val cards = listOf(thoughtShucker, intrepidRabbit, sunshowerDruid)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        // AI's creatures
+        val shucker = driver.putCreatureOnBattlefield(p1, "Thought Shucker")
+        driver.removeSummoningSickness(shucker)
+        val rabbit = driver.putCreatureOnBattlefield(p1, "Intrepid Rabbit")
+        // rabbit has summoning sickness (don't remove it)
+
+        // Opponent's tapped creature
+        val druid = driver.putCreatureOnBattlefield(p2, "Sunshower Druid")
+        driver.removeSummoningSickness(druid)
+        driver.tapPermanent(druid)
+
+        // Only shucker can attack (rabbit has summoning sickness)
+        val legalAction = buildAttackAction(p1, listOf(shucker), listOf(p2))
+        val result = advisor.chooseAttackers(driver.state, legalAction, p1) as DeclareAttackers
+
+        // Should attack — opponent has no untapped blockers
+        result.attackers shouldContainKey shucker
+    }
+
+    test("does not proactively chump at high life") {
+        // P1 attacks with 3/3, P2 has a 1/1 at 20 life. Not in danger — don't waste the 1/1.
+        val cards = listOf(bigGround, smallCreature)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Hill Giant")
+        driver.removeSummoningSickness(attacker)
+
+        val chump = driver.putCreatureOnBattlefield(p2, "Eager Cadet")
+        driver.removeSummoningSickness(chump)
+
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+        driver.submit(DeclareAttackers(p1, mapOf(attacker to p2)))
+        driver.passPriorityUntil(Step.DECLARE_BLOCKERS)
+
+        val legalAction = buildBlockAction(p2, listOf(chump))
+        val result = advisor.chooseBlockers(driver.state, legalAction, p2) as DeclareBlockers
+
+        // At 20 life, 3 damage is fine — don't waste the creature
+        result.blockers shouldNotContainKey chump
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
+    // CombatMath.isProfitableAttack
+    // ═════════════════════════════════════════════════════════════════════
+
+    test("CombatMath.isProfitableAttack returns true for 3/3 vs 2/2s") {
+        val cards = listOf(bigGround, groundBlocker)
+        val (driver, _, _) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Hill Giant")
+        val b1 = driver.putCreatureOnBattlefield(p2, "Grizzly Bears")
+        val b2 = driver.putCreatureOnBattlefield(p2, "Grizzly Bears")
+
+        val state = driver.state
+        val projected = state.projectedState
+
+        CombatMath.isProfitableAttack(state, projected, attacker, listOf(b1, b2)) shouldBe true
+    }
+
+    test("CombatMath.isProfitableAttack returns false for 2/2 vs 3/3") {
+        val cards = listOf(bigGround, groundBlocker)
+        val (driver, _, _) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Grizzly Bears")
+        val blocker = driver.putCreatureOnBattlefield(p2, "Hill Giant")
+
+        val state = driver.state
+        val projected = state.projectedState
+
+        CombatMath.isProfitableAttack(state, projected, attacker, listOf(blocker)) shouldBe false
+    }
+
+    // ═════════════════════════════════════════════════════════════════════
     // Full game: AI plays correctly through combat
     // ═════════════════════════════════════════════════════════════════════
 

@@ -649,11 +649,81 @@ object CombatMath {
         }
     }
 
+    // ── Profitable Attack Analysis ───────────────────────────────────────
+
+    /**
+     * Returns true if attacking with [attacker] is "profitable" — meaning every possible
+     * blocking response by the opponent is worse for them than just taking the damage.
+     *
+     * An attack is profitable when for every valid blocker:
+     * - If the blocker can kill the attacker: the blocker's value exceeds the attacker's value
+     *   (opponent trades down)
+     * - If the blocker survives: blocking only prevents damage, not worth tying up a creature
+     *   (skipped — this case is handled by local search)
+     *
+     * In short: no opponent creature can profitably trade with or eat the attacker.
+     */
+    fun isProfitableAttack(
+        state: GameState,
+        projected: ProjectedState,
+        attacker: EntityId,
+        opponentBlockers: List<EntityId>,
+        cardRegistry: CardRegistry? = null
+    ): Boolean {
+        val attackerValue = creatureValue(state, projected, attacker)
+        val aPower = projected.getPower(attacker) ?: 0
+        if (aPower <= 0) return false
+
+        val validBlockers = opponentBlockers.filter { canBeBlockedBy(state, projected, attacker, it, cardRegistry) }
+        if (validBlockers.isEmpty()) return true // unblockable = always profitable
+
+        for (blocker in validBlockers) {
+            val blockerKillsUs = wouldKillInCombat(state, projected, blocker, attacker)
+            if (!blockerKillsUs) continue // blocker can't kill us — opponent just absorbs damage, not a problem
+
+            // Blocker can kill us — is the trade favorable for us?
+            val blockerValue = creatureValue(state, projected, blocker)
+            val weKillBlocker = wouldKillInCombat(state, projected, attacker, blocker)
+
+            if (weKillBlocker) {
+                // Mutual trade: only profitable if their creature is worth more
+                if (blockerValue >= attackerValue) return false // opponent can trade evenly or up
+            } else {
+                // They kill us and survive — bad for us
+                return false
+            }
+        }
+
+        return true
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────
 
     fun creatureValue(state: GameState, projected: ProjectedState, entityId: EntityId): Double {
         val card = state.getEntity(entityId)?.get<CardComponent>() ?: return 0.0
         return com.wingedsheep.engine.ai.evaluation.BoardPresence.permanentValue(state, projected, entityId, card)
+    }
+
+    /**
+     * Intrinsic creature value for combat trade evaluation, ignoring state
+     * multipliers (tapped, summoning sickness, damage). Attacking creatures
+     * are always tapped, so using [creatureValue] would undervalue them.
+     */
+    fun combatTradeValue(projected: ProjectedState, entityId: EntityId): Double {
+        val power = (projected.getPower(entityId) ?: 0).toDouble()
+        val toughness = (projected.getToughness(entityId) ?: 0).toDouble()
+        val keywords = projected.getKeywords(entityId)
+        var value = power * 1.0 + toughness * 0.4
+        if (Keyword.FLYING.name in keywords) value += 1.5 + power * 0.3
+        if (Keyword.DEATHTOUCH.name in keywords) value += 2.0
+        if (Keyword.FIRST_STRIKE.name in keywords) value += 1.0 + power * 0.2
+        if (Keyword.DOUBLE_STRIKE.name in keywords) value += 2.0 + power * 0.5
+        if (Keyword.LIFELINK.name in keywords) value += 0.5 + power * 0.3
+        if (Keyword.TRAMPLE.name in keywords) value += 0.5 + power * 0.2
+        if (Keyword.INDESTRUCTIBLE.name in keywords) value += 3.0
+        if (Keyword.HEXPROOF.name in keywords) value += 1.5
+        if (Keyword.VIGILANCE.name in keywords) value += 0.8
+        return value
     }
 
     /**

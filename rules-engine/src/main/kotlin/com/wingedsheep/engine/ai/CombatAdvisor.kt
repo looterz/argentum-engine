@@ -30,6 +30,11 @@ class CombatAdvisor(
     private val cardRegistry: CardRegistry? = null,
     private val advisorRegistry: CardAdvisorRegistry = CardAdvisorRegistry()
 ) {
+    companion object {
+        /** Max engine simulations for blocking local search. Keeps decision time bounded. */
+        const val MAX_BLOCK_SIMULATIONS = 10
+    }
+
     /**
      * Build a DeclareAttackers action choosing which creatures to send in.
      *
@@ -86,7 +91,7 @@ class CombatAdvisor(
                 continue
             }
 
-            // Attack if we survive any single blocker (toughness > all opponent power)
+            // Attack if we survive any single blocker
             val survivesAllBlockers = opponentCreatures.all { blockerId ->
                 val bPower = projected.getPower(blockerId) ?: 0
                 toughness > bPower
@@ -107,28 +112,47 @@ class CombatAdvisor(
                     continue
                 }
             }
+
+            // Attack if every blocking option is worse for the opponent than taking the damage
+            // (e.g., a 3/3 into a board of 2/2s — opponent must take 3 or trade down)
+            if (CombatMath.isProfitableAttack(state, projected, entityId, opponentCreatures, cardRegistry)) {
+                seedMap[entityId] = opponentId
+                continue
+            }
         }
 
         // Attack if we have more attackers than they have blockers (excess gets through)
         if (seedMap.size < validAttackers.size) {
             val unblockedSlots = validAttackers.size - opponentCreatures.size
             if (unblockedSlots > 0) {
+                // Sort remaining by value ascending — send cheapest creatures first,
+                // hold back the most valuable ones in case we need a blocker
                 val remaining = validAttackers
                     .filter { it !in seedMap && (projected.getPower(it) ?: 0) > 0 }
-                    .sortedByDescending { projected.getPower(it) ?: 0 }
+                    .sortedBy { CombatMath.creatureValue(state, projected, it) }
 
-                // Estimate opponent's crack-back: all their creatures could attack next turn
+                // Estimate opponent's crack-back damage through our optimal blocking.
+                // Accounts for evasion — flying creatures we can't block deal guaranteed damage.
                 val myLife = state.getEntity(playerId)?.get<LifeTotalComponent>()?.life ?: 20
-                val allOpponentCreatures = projected.getBattlefieldControlledBy(opponentId).filter {
+                val allOpponentAttackers = projected.getBattlefieldControlledBy(opponentId).filter {
                     projected.isCreature(it) && Keyword.DEFENDER.name !in projected.getKeywords(it)
                 }
-                val opponentTotalPower = allOpponentCreatures.sumOf {
-                    (projected.getPower(it) ?: 0).coerceAtLeast(0)
-                }
+                val myPotentialBlockers = validAttackers.filter { it !in seedMap }
+                val crackBackDamage = if (allOpponentAttackers.isNotEmpty()) {
+                    CombatMath.calculateDamageThroughOptimalBlocking(
+                        state, projected, allOpponentAttackers, myPotentialBlockers
+                    )
+                } else 0
 
-                // If opponent can threaten lethal next turn, hold back our best blocker
-                val holdBack = if (opponentTotalPower > 0 && myLife <= opponentTotalPower * 2) {
-                    remaining.maxByOrNull { projected.getToughness(it) ?: 0 }
+                // If opponent threatens significant damage next turn, hold back our best blocker.
+                // Prefer deathtouch creatures as hold-backs (they trade with anything).
+                val holdBack = if (crackBackDamage > 0 && myLife <= crackBackDamage * 2) {
+                    remaining.maxByOrNull { entityId ->
+                        val keywords = projected.getKeywords(entityId)
+                        val hasDeathtouch = Keyword.DEATHTOUCH.name in keywords
+                        val toughness = projected.getToughness(entityId) ?: 0
+                        if (hasDeathtouch) 1000 + toughness else toughness
+                    }
                 } else null
 
                 for (entityId in remaining) {
@@ -225,14 +249,53 @@ class CombatAdvisor(
         if (incomingDamage >= myLife) {
             val unblockedAttackers = attackers
                 .filter { attacker -> bestMap.values.none { attacker in it } }
-                .sortedByDescending { CombatMath.effectiveDamage(projected, it) }
 
-            for (attacker in unblockedAttackers) {
+            // Sort by damage actually prevented by a chump block: non-tramplers first
+            // (chump blocks all damage) then tramplers (only prevents blocker toughness).
+            // Among each group, prefer blocking higher-power attackers.
+            val sortedUnblocked = unblockedAttackers.sortedByDescending { attacker ->
+                val aKeywords = projected.getKeywords(attacker)
+                val aPower = projected.getPower(attacker) ?: 0
+                if (Keyword.TRAMPLE.name in aKeywords) {
+                    // Trample: chump only prevents ~1-2 damage (blocker toughness)
+                    // Use negative power so tramplers sort after non-tramplers
+                    aPower * -1
+                } else {
+                    // Non-trampler: chump prevents ALL damage
+                    aPower * 1000
+                }
+            }
+
+            for (attacker in sortedUnblocked) {
                 val available = availableBlockersFor(state, projected, attacker, validBlockers, assignedBlockers)
                     .sortedBy { CombatMath.creatureValue(state, projected, it) }
                 val cheapest = available.firstOrNull() ?: continue
                 bestMap[cheapest] = listOf(attacker)
                 assignedBlockers.add(cheapest)
+            }
+        }
+
+        // ── Proactive chump-block: if facing lethal within 2 turns, sacrifice low-value creatures ──
+        // Only do this when NOT already facing immediate lethal (that's handled above).
+        if (incomingDamage < myLife) {
+            val inDanger = isLifeInDanger(state, projected, attackers, bestMap, myLife, playerId)
+            if (inDanger) {
+                val unblockedAttackers = attackers
+                    .filter { attacker -> bestMap.values.none { attacker in it } }
+                    .sortedByDescending { attacker ->
+                        val aKeywords = projected.getKeywords(attacker)
+                        val aPower = projected.getPower(attacker) ?: 0
+                        if (Keyword.TRAMPLE.name in aKeywords) aPower * -1 else aPower * 1000
+                    }
+
+                for (attacker in unblockedAttackers) {
+                    val available = availableBlockersFor(state, projected, attacker, validBlockers, assignedBlockers)
+                        .filter { CombatMath.creatureValue(state, projected, it) < 2.0 }
+                        .sortedBy { CombatMath.creatureValue(state, projected, it) }
+                    val cheapest = available.firstOrNull() ?: continue
+                    bestMap[cheapest] = listOf(attacker)
+                    assignedBlockers.add(cheapest)
+                }
             }
         }
 
@@ -284,16 +347,15 @@ class CombatAdvisor(
     }
 
     /**
-     * Local search: starting from the heuristic seed plan, try small mutations
-     * and simulate each through the engine. Keep improvements until convergence
-     * or time budget is exhausted.
+     * Local search: starting from the heuristic seed plan, try targeted mutations
+     * and simulate each through the engine. Keep improvements until convergence.
      *
-     * Mutations tried per iteration:
-     * - Remove each non-mandatory blocker
-     * - Move each non-mandatory blocker to a different attacker
-     * - Add each unassigned blocker to each attacker
+     * Instead of exhaustively trying all possible mutations (O(B×A) simulations),
+     * generates only the most promising candidates using combat math as a filter.
+     * Each candidate is then validated via full engine simulation to catch triggers,
+     * replacement effects, and keyword interactions that math alone would miss.
      *
-     * Typically converges in 1-3 iterations with ~10-20 total simulations.
+     * Caps at [MAX_BLOCK_SIMULATIONS] total simulations to keep decision time bounded.
      */
     private fun improveViaLocalSearch(
         state: GameState,
@@ -304,25 +366,25 @@ class CombatAdvisor(
         mandatoryBlockerIds: Set<EntityId>,
         seedMap: MutableMap<EntityId, List<EntityId>>
     ): MutableMap<EntityId, List<EntityId>> {
-        val deadline = System.currentTimeMillis() + 200 // 200ms budget
         var currentPlan = seedMap.toMutableMap()
         var currentScore = evaluateBlockingPlan(state, playerId, currentPlan) ?: return currentPlan
-        val maxIterations = 3
+        var simulationsLeft = MAX_BLOCK_SIMULATIONS
 
+        val maxIterations = 2
         for (iteration in 1..maxIterations) {
-            if (System.currentTimeMillis() > deadline) break
-            var improved = false
+            if (simulationsLeft <= 0) break
 
-            // Try each mutation, keep the best improvement
+            val mutations = generateBlockMutations(
+                state, projected, attackers, validBlockers,
+                mandatoryBlockerIds, currentPlan
+            )
+
             var bestMutation: MutableMap<EntityId, List<EntityId>>? = null
             var bestScore = currentScore
 
-            // Mutation 1: Remove each non-mandatory blocker
-            for (blockerId in currentPlan.keys.toList()) {
-                if (System.currentTimeMillis() > deadline) break
-                if (blockerId in mandatoryBlockerIds) continue
-                val mutation = currentPlan.toMutableMap()
-                mutation.remove(blockerId)
+            for (mutation in mutations) {
+                if (simulationsLeft <= 0) break
+                simulationsLeft--
                 val score = evaluateBlockingPlan(state, playerId, mutation) ?: continue
                 if (score > bestScore) {
                     bestScore = score
@@ -330,51 +392,88 @@ class CombatAdvisor(
                 }
             }
 
-            // Mutation 2: Move each non-mandatory blocker to a different attacker
-            for (blockerId in currentPlan.keys.toList()) {
-                if (System.currentTimeMillis() > deadline) break
-                if (blockerId in mandatoryBlockerIds) continue
-                val currentTarget = currentPlan[blockerId]?.firstOrNull() ?: continue
-                for (attacker in attackers) {
-                    if (attacker == currentTarget) continue
-                    if (!CombatMath.canBeBlockedBy(state, projected, attacker, blockerId, cardRegistry)) continue
-                    val mutation = currentPlan.toMutableMap()
-                    mutation[blockerId] = listOf(attacker)
-                    val score = evaluateBlockingPlan(state, playerId, mutation) ?: continue
-                    if (score > bestScore) {
-                        bestScore = score
-                        bestMutation = mutation
-                    }
-                }
-            }
-
-            // Mutation 3: Add each unassigned blocker to each attacker
-            val assigned = currentPlan.keys
-            for (blockerId in validBlockers) {
-                if (System.currentTimeMillis() > deadline) break
-                if (blockerId in assigned) continue
-                for (attacker in attackers) {
-                    if (!CombatMath.canBeBlockedBy(state, projected, attacker, blockerId, cardRegistry)) continue
-                    val mutation = currentPlan.toMutableMap()
-                    mutation[blockerId] = listOf(attacker)
-                    val score = evaluateBlockingPlan(state, playerId, mutation) ?: continue
-                    if (score > bestScore) {
-                        bestScore = score
-                        bestMutation = mutation
-                    }
-                }
-            }
-
             if (bestMutation != null) {
                 currentPlan = bestMutation
                 currentScore = bestScore
-                improved = true
+            } else {
+                break // converged
             }
-
-            if (!improved) break // converged
         }
 
         return currentPlan
+    }
+
+    /**
+     * Generate a small set of promising blocking mutations from the current plan.
+     * Uses combat math to filter out obviously bad candidates before expensive simulation.
+     *
+     * Returns at most ~8-12 candidate plans.
+     */
+    private fun generateBlockMutations(
+        state: GameState,
+        projected: ProjectedState,
+        attackers: List<EntityId>,
+        validBlockers: List<EntityId>,
+        mandatoryBlockerIds: Set<EntityId>,
+        currentPlan: Map<EntityId, List<EntityId>>
+    ): List<MutableMap<EntityId, List<EntityId>>> {
+        val mutations = mutableListOf<MutableMap<EntityId, List<EntityId>>>()
+
+        val blockedAttackerIds = currentPlan.values.flatten().toSet()
+        val assignedBlockerIds = currentPlan.keys
+
+        // 1. Remove: try removing blockers assigned to low-value attackers
+        //    (the heuristic might have over-blocked)
+        for (blockerId in currentPlan.keys) {
+            if (blockerId in mandatoryBlockerIds) continue
+            val targetAttacker = currentPlan[blockerId]?.firstOrNull() ?: continue
+            val blockerValue = CombatMath.creatureValue(state, projected, blockerId)
+            val attackerValue = CombatMath.creatureValue(state, projected, targetAttacker)
+            // Only try removing if the blocker is more valuable than what it's blocking
+            // or if the blocker doesn't kill the attacker
+            val kills = CombatMath.wouldKillInCombat(state, projected, blockerId, targetAttacker)
+            if (blockerValue > attackerValue || !kills) {
+                val mutation = currentPlan.toMutableMap()
+                mutation.remove(blockerId)
+                mutations.add(mutation)
+            }
+        }
+
+        // 2. Add: try assigning unassigned blockers to unblocked attackers
+        //    (the heuristic might have under-blocked)
+        val unblockedAttackers = attackers.filter { it !in blockedAttackerIds }
+            .sortedByDescending { CombatMath.effectiveDamage(projected, it) }
+        val unassignedBlockers = validBlockers.filter { it !in assignedBlockerIds }
+            .sortedBy { CombatMath.creatureValue(state, projected, it) }
+
+        for (attacker in unblockedAttackers.take(3)) {
+            for (blocker in unassignedBlockers.take(3)) {
+                if (!CombatMath.canBeBlockedBy(state, projected, attacker, blocker, cardRegistry)) continue
+                val mutation = currentPlan.toMutableMap()
+                mutation[blocker] = listOf(attacker)
+                mutations.add(mutation)
+            }
+        }
+
+        // 3. Move: try moving a blocker from a low-value assignment to an unblocked attacker
+        if (unblockedAttackers.isNotEmpty()) {
+            val worstAssignment = currentPlan.entries
+                .filter { it.key !in mandatoryBlockerIds }
+                .minByOrNull { (_, targets) ->
+                    val attacker = targets.firstOrNull() ?: return@minByOrNull Double.MAX_VALUE
+                    CombatMath.creatureValue(state, projected, attacker)
+                }
+            if (worstAssignment != null) {
+                val bestUnblocked = unblockedAttackers.first()
+                if (CombatMath.canBeBlockedBy(state, projected, bestUnblocked, worstAssignment.key, cardRegistry)) {
+                    val mutation = currentPlan.toMutableMap()
+                    mutation[worstAssignment.key] = listOf(bestUnblocked)
+                    mutations.add(mutation)
+                }
+            }
+        }
+
+        return mutations
     }
 
     /**
@@ -413,7 +512,7 @@ class CombatAdvisor(
         // ── Pass 2: Profitable trades — blocker kills attacker but dies ──
         for (attacker in sortedAttackers) {
             if (attacker in blockedAttackers) continue
-            val attackerValue = CombatMath.creatureValue(state, projected, attacker)
+            val attackerValue = CombatMath.combatTradeValue(projected, attacker)
 
             val blocker = findSingleBlocker(state, projected, attacker, validBlockers, assignedBlockers) { info ->
                 info.effectivelyKillThem && !info.weSurvive &&
@@ -449,7 +548,7 @@ class CombatAdvisor(
             val aPower = projected.getPower(attacker) ?: 0
             val aToughness = projected.getToughness(attacker) ?: 0
             val aHasFirstStrike = Keyword.FIRST_STRIKE.name in aKeywords || Keyword.DOUBLE_STRIKE.name in aKeywords
-            val attackerValue = CombatMath.creatureValue(state, projected, attacker)
+            val attackerValue = CombatMath.combatTradeValue(projected, attacker)
 
             val available = availableBlockersFor(state, projected, attacker, validBlockers, assignedBlockers)
             if (available.size < 2) continue
@@ -465,11 +564,22 @@ class CombatAdvisor(
                     if (aHasFirstStrike) {
                         val b1Survives = !CombatMath.wouldKillInCombat(state, projected, attacker, b1)
                         val b2Survives = !CombatMath.wouldKillInCombat(state, projected, attacker, b2)
-                        if (!b1Survives || !b2Survives) continue
+                        // Check if surviving blockers still have enough power to kill the attacker.
+                        // A blocker that dies to first strike is fine if the other one finishes the job.
+                        // Also count power from a dying blocker if it has first/double strike itself
+                        // (it deals damage simultaneously in the first-strike step).
+                        val b1Keywords = projected.getKeywords(b1)
+                        val b2Keywords = projected.getKeywords(b2)
+                        val b1HasFS = Keyword.FIRST_STRIKE.name in b1Keywords || Keyword.DOUBLE_STRIKE.name in b1Keywords
+                        val b2HasFS = Keyword.FIRST_STRIKE.name in b2Keywords || Keyword.DOUBLE_STRIKE.name in b2Keywords
+                        val survivingPower =
+                            (if (b1Survives || b1HasFS) projected.getPower(b1) ?: 0 else 0) +
+                            (if (b2Survives || b2HasFS) projected.getPower(b2) ?: 0 else 0)
+                        if (survivingPower < aToughness) continue
                     }
 
                     val dyingBlocker = if ((projected.getToughness(b1) ?: 0) <= aPower) b1 else b2
-                    val dyingValue = CombatMath.creatureValue(state, projected, dyingBlocker)
+                    val dyingValue = CombatMath.combatTradeValue(projected, dyingBlocker)
                     if (attackerValue > dyingValue * 1.2) {
                         blockerMap[b1] = listOf(attacker)
                         blockerMap[b2] = listOf(attacker)
@@ -480,6 +590,74 @@ class CombatAdvisor(
                     }
                 }
                 if (attacker in blockedAttackers) break
+            }
+        }
+
+        // ── Pass 5: Triple gang blocks for large creatures that pairs can't kill ──
+        for (attacker in sortedAttackers) {
+            if (attacker in blockedAttackers) continue
+            val aKeywords = projected.getKeywords(attacker)
+            if (Keyword.DEATHTOUCH.name in aKeywords) continue
+
+            val aPower = projected.getPower(attacker) ?: 0
+            val aToughness = projected.getToughness(attacker) ?: 0
+            val aHasFirstStrike = Keyword.FIRST_STRIKE.name in aKeywords || Keyword.DOUBLE_STRIKE.name in aKeywords
+            val attackerValue = CombatMath.combatTradeValue(projected, attacker)
+
+            val available = availableBlockersFor(state, projected, attacker, validBlockers, assignedBlockers)
+            if (available.size < 3) continue
+
+            // Cap candidates to keep combinatorics reasonable (C(8,3) = 56)
+            val sorted = available
+                .sortedBy { CombatMath.combatTradeValue(projected, it) }
+                .take(8)
+
+            var found = false
+            for (i in sorted.indices) {
+                if (found) break
+                for (j in i + 1 until sorted.size) {
+                    if (found) break
+                    for (k in j + 1 until sorted.size) {
+                        val b1 = sorted[i]; val b2 = sorted[j]; val b3 = sorted[k]
+                        val combinedPower = (projected.getPower(b1) ?: 0) +
+                            (projected.getPower(b2) ?: 0) + (projected.getPower(b3) ?: 0)
+                        if (combinedPower < aToughness) continue
+
+                        if (aHasFirstStrike) {
+                            val survivors = listOf(b1, b2, b3).filter { blocker ->
+                                !CombatMath.wouldKillInCombat(state, projected, attacker, blocker) ||
+                                    Keyword.FIRST_STRIKE.name in projected.getKeywords(blocker) ||
+                                    Keyword.DOUBLE_STRIKE.name in projected.getKeywords(blocker)
+                            }
+                            val survivingPower = survivors.sumOf { projected.getPower(it) ?: 0 }
+                            if (survivingPower < aToughness) continue
+                        }
+
+                        // Value check: attacker must be worth more than the blockers we lose.
+                        // Use combatTradeValue (ignores tapped/sickness state multipliers).
+                        val blockersByToughness = listOf(b1, b2, b3)
+                            .sortedBy { projected.getToughness(it) ?: 0 }
+                        var damageLeft = aPower
+                        var dyingValue = 0.0
+                        for (b in blockersByToughness) {
+                            val bToughness = projected.getToughness(b) ?: 0
+                            if (damageLeft >= bToughness) {
+                                dyingValue += CombatMath.combatTradeValue(projected, b)
+                                damageLeft -= bToughness
+                            }
+                        }
+                        if (attackerValue > dyingValue * 1.2) {
+                            blockerMap[b1] = listOf(attacker)
+                            blockerMap[b2] = listOf(attacker)
+                            blockerMap[b3] = listOf(attacker)
+                            assignedBlockers.add(b1)
+                            assignedBlockers.add(b2)
+                            assignedBlockers.add(b3)
+                            blockedAttackers.add(attacker)
+                            found = true
+                        }
+                    }
+                }
             }
         }
     }
@@ -519,7 +697,7 @@ class CombatAdvisor(
                 val bKeywords = projected.getKeywords(blockerId)
                 val bHasDeathtouch = Keyword.DEATHTOUCH.name in bKeywords
                 val bHasFirstStrike = Keyword.FIRST_STRIKE.name in bKeywords || Keyword.DOUBLE_STRIKE.name in bKeywords
-                val blockerValue = CombatMath.creatureValue(state, projected, blockerId)
+                val blockerValue = CombatMath.combatTradeValue(projected, blockerId)
 
                 val weKillThem = bPower >= aToughness || bHasDeathtouch
                 val bIsIndestructible = Keyword.INDESTRUCTIBLE.name in bKeywords
@@ -567,7 +745,29 @@ class CombatAdvisor(
             if (current.phase != Phase.COMBAT) break
         }
 
-        return evaluator.evaluate(current, current.projectedState, playerId)
+        val postProjected = current.projectedState
+        val baseScore = evaluator.evaluate(current, postProjected, playerId)
+
+        // Estimate our next-turn attack potential: what damage can we push through?
+        val opponentId = state.getOpponent(playerId) ?: return baseScore
+        val myAttackers = CombatMath.getCreaturesThatCanAttack(current, postProjected, playerId)
+        val opponentBlockers = CombatMath.getOpponentUntappedCreatures(current, postProjected, opponentId)
+        val ourDamageThrough = if (myAttackers.isNotEmpty()) {
+            CombatMath.calculateDamageThroughOptimalBlocking(current, postProjected, myAttackers, opponentBlockers)
+        } else 0
+        val opponentLife = current.getEntity(opponentId)?.get<LifeTotalComponent>()?.life ?: 20
+
+        // Small bonus for blocking plans that preserve our attack potential.
+        // Nudges the AI toward blocks that keep our counter-attack alive.
+        val counterAttackBonus = if (ourDamageThrough >= opponentLife) {
+            3.0
+        } else if (ourDamageThrough > 0) {
+            ourDamageThrough.toDouble() * 0.15
+        } else {
+            0.0
+        }
+
+        return baseScore + counterAttackBonus
     }
 
     /**
@@ -715,10 +915,9 @@ class CombatAdvisor(
 
     /**
      * Evaluate an attack plan by simulating it through the engine.
-     * Returns the board score from the attacker's perspective, or null on failure.
-     */
-    /**
-     * Evaluate an attack plan by simulating it through the engine.
+     * After this combat resolves, also estimates the opponent's counter-attack
+     * on their next turn using [CombatMath] (no recursive simulation — just math).
+     *
      * Returns the board score from the attacker's perspective, or null on failure.
      */
     private fun evaluateAttackPlan(
@@ -728,8 +927,28 @@ class CombatAdvisor(
         attackerMap: Map<EntityId, EntityId>
     ): Double? {
         val postCombat = simulateFullAttack(state, playerId, opponentId, attackerMap)
-        if (postCombat == null) return null
-        return evaluator.evaluate(postCombat, postCombat.projectedState, playerId)
+            ?: return null
+        val postProjected = postCombat.projectedState
+        val baseScore = evaluator.evaluate(postCombat, postProjected, playerId)
+
+        // Estimate next-turn counter-attack: what damage can the opponent deal through our blocks?
+        val myBlockers = postProjected.getBattlefieldControlledBy(playerId).filter { entityId ->
+            postProjected.isCreature(entityId) &&
+                postCombat.getEntity(entityId)?.has<TappedComponent>() != true
+        }
+        val nextTurnDamage = CombatMath.estimateNextTurnDamage(postCombat, postProjected, opponentId, myBlockers)
+        val myLife = postCombat.getEntity(playerId)?.get<LifeTotalComponent>()?.life ?: 20
+
+        // Light penalty for plans that leave us dead to the crack-back.
+        // Keep this small — the base evaluator already scores life totals and threats.
+        // This just nudges the AI to prefer attack plans that don't leave us wide open.
+        val crackBackPenalty = if (nextTurnDamage >= myLife) {
+            -3.0
+        } else {
+            0.0
+        }
+
+        return baseScore + crackBackPenalty
     }
 
     /**
