@@ -239,6 +239,7 @@ export function OrderBlockersUI({ decision, responsive }: OrderBlockersUIProps) 
         >
           {orderedBlockers.map((blockerId, index) => {
             const cardInfo = decision.cardInfo?.[blockerId]
+            const stateCard = gameState?.cards[blockerId]
             const isDragging = draggedIndex === index
             const isDragOver = dragOverIndex === index
 
@@ -266,6 +267,7 @@ export function OrderBlockersUI({ decision, responsive }: OrderBlockersUIProps) 
                 <BlockerCard
                   blockerId={blockerId}
                   cardInfo={cardInfo}
+                  stateCard={stateCard}
                   index={index}
                   cardWidth={cardWidth}
                   isMobile={responsive.isMobile}
@@ -347,6 +349,7 @@ export function OrderBlockersUI({ decision, responsive }: OrderBlockersUIProps) 
 function BlockerCard({
   blockerId: _blockerId,
   cardInfo,
+  stateCard,
   index: _index,
   cardWidth,
   isMobile,
@@ -366,6 +369,7 @@ function BlockerCard({
 }: {
   blockerId: EntityId
   cardInfo: SearchCardInfo | undefined
+  stateCard: ClientCard | undefined
   index: number
   cardWidth: number
   isMobile: boolean
@@ -383,9 +387,15 @@ function BlockerCard({
   onMouseEnter: (e: React.MouseEvent) => void
   onMouseLeave: () => void
 }) {
-  const cardName = cardInfo?.name || 'Unknown Card'
-  // Use the imageUri from cardInfo if available, otherwise fall back to Scryfall API
-  const cardImageUrl = cardInfo?.imageUri || `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}&format=image&version=normal`
+  const cardName = stateCard?.name || cardInfo?.name || 'Unknown Card'
+  const imageUri = stateCard?.imageUri || cardInfo?.imageUri
+  const cardImageUrl = imageUri || `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}&format=image&version=normal`
+  const power = stateCard?.power
+  const toughness = stateCard?.toughness
+  const hasDamage = stateCard?.damage != null && stateCard.damage > 0
+  const effectiveToughness = toughness != null && stateCard?.damage != null
+    ? toughness - stateCard.damage
+    : toughness
 
   const cardRatio = 1.4
   const cardHeight = Math.round(cardWidth * cardRatio)
@@ -559,6 +569,63 @@ function BlockerCard({
           <div style={{ width: 4, height: 4, backgroundColor: '#666', borderRadius: 2 }} />
           <div style={{ width: 4, height: 4, backgroundColor: '#666', borderRadius: 2 }} />
         </div>
+
+        {/* Power/Toughness badge */}
+        {power != null && toughness != null && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: -6,
+              right: -6,
+              backgroundColor: hasDamage ? '#dc2626' : '#1a1a1a',
+              border: `2px solid ${hasDamage ? '#f87171' : '#888'}`,
+              borderRadius: 6,
+              padding: isMobile ? '1px 4px' : '2px 6px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.5)',
+            }}
+          >
+            <span
+              style={{
+                color: 'white',
+                fontSize: isMobile ? 12 : 14,
+                fontWeight: 700,
+              }}
+            >
+              {power}
+            </span>
+            <span
+              style={{
+                color: '#888',
+                fontSize: isMobile ? 10 : 12,
+              }}
+            >
+              /
+            </span>
+            <span
+              style={{
+                color: hasDamage ? '#f87171' : 'white',
+                fontSize: isMobile ? 12 : 14,
+                fontWeight: 700,
+              }}
+            >
+              {effectiveToughness}
+            </span>
+            {hasDamage && (
+              <span
+                style={{
+                  color: '#888',
+                  fontSize: isMobile ? 8 : 10,
+                  marginLeft: 1,
+                }}
+              >
+                ({toughness})
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
