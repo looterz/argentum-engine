@@ -19,6 +19,7 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.AddAnyColorManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaOfColorAmongEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
+import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
  * Enumerates mana abilities on battlefield permanents controlled by the player.
@@ -80,18 +81,19 @@ class ManaAbilityEnumerator : ActionEnumerator {
                 var tapCost: AbilityCost.TapPermanents? = null
                 var sacrificeTargets: List<EntityId>? = null
                 var sacrificeCost: AbilityCost.Sacrifice? = null
+                var affordable = true
 
                 when (effectiveCost) {
                     is AbilityCost.Tap -> {
-                        if (!context.costUtils.canPayTapCost(state, entityId)) continue
+                        if (!context.costUtils.canPayTapCost(state, entityId)) affordable = false
                     }
                     is AbilityCost.TapAttachedCreature -> {
-                        if (!context.costUtils.canPayTapAttachedCreatureCost(state, entityId)) continue
+                        if (!context.costUtils.canPayTapAttachedCreatureCost(state, entityId)) affordable = false
                     }
                     is AbilityCost.TapPermanents -> {
                         tapCost = effectiveCost
                         tapTargets = context.costUtils.findAbilityTapTargets(state, playerId, tapCost.filter)
-                        if (tapTargets.size < tapCost.count) continue
+                        if (tapTargets.size < tapCost.count) affordable = false
                     }
                     is AbilityCost.Sacrifice -> {
                         sacrificeCost = effectiveCost
@@ -99,19 +101,21 @@ class ManaAbilityEnumerator : ActionEnumerator {
                             state, playerId, sacrificeCost.filter,
                             if (sacrificeCost.excludeSelf) entityId else null
                         )
-                        if (sacrificeTargets.size < sacrificeCost.count) continue
+                        if (sacrificeTargets.size < sacrificeCost.count) affordable = false
                     }
                     is AbilityCost.SacrificeChosenCreatureType -> {
                         val chosenType = container.get<ChosenCreatureTypeComponent>()?.creatureType
-                            ?: continue
-                        val dynamicFilter = GameObjectFilter.Creature.withSubtype(chosenType)
-                        sacrificeCost = AbilityCost.Sacrifice(dynamicFilter)
-                        sacrificeTargets = context.costUtils.findAbilitySacrificeTargets(state, playerId, dynamicFilter)
-                        if (sacrificeTargets.isEmpty()) continue
+                        if (chosenType == null) {
+                            affordable = false
+                        } else {
+                            val dynamicFilter = GameObjectFilter.Creature.withSubtype(chosenType)
+                            sacrificeCost = AbilityCost.Sacrifice(dynamicFilter)
+                            sacrificeTargets = context.costUtils.findAbilitySacrificeTargets(state, playerId, dynamicFilter)
+                            if (sacrificeTargets.isEmpty()) affordable = false
+                        }
                     }
                     is AbilityCost.Composite -> {
                         val compositeCost = effectiveCost
-                        var costCanBePaid = true
                         // If composite cost includes Tap, exclude the source from mana solving
                         val hasTapCost = compositeCost.costs.any { it is AbilityCost.Tap }
                         val excludeFromMana = if (hasTapCost) setOf(entityId) else emptySet()
@@ -119,19 +123,19 @@ class ManaAbilityEnumerator : ActionEnumerator {
                             when (subCost) {
                                 is AbilityCost.Tap -> {
                                     if (container.has<TappedComponent>()) {
-                                        costCanBePaid = false; break
+                                        affordable = false; break
                                     }
                                     if (!cardComponent.typeLine.isLand && cardComponent.typeLine.isCreature) {
                                         val hasSummoningSickness = container.has<SummoningSicknessComponent>()
                                         val hasHaste = cardComponent.baseKeywords.contains(Keyword.HASTE)
                                         if (hasSummoningSickness && !hasHaste) {
-                                            costCanBePaid = false; break
+                                            affordable = false; break
                                         }
                                     }
                                 }
                                 is AbilityCost.Mana -> {
                                     if (!context.manaSolver.canPay(state, playerId, subCost.cost, excludeSources = excludeFromMana)) {
-                                        costCanBePaid = false; break
+                                        affordable = false; break
                                     }
                                 }
                                 is AbilityCost.Sacrifice -> {
@@ -141,19 +145,19 @@ class ManaAbilityEnumerator : ActionEnumerator {
                                         if (subCost.excludeSelf) entityId else null
                                     )
                                     if (sacrificeTargets.size < subCost.count) {
-                                        costCanBePaid = false; break
+                                        affordable = false; break
                                     }
                                 }
                                 is AbilityCost.SacrificeChosenCreatureType -> {
                                     val chosenType = container.get<ChosenCreatureTypeComponent>()?.creatureType
                                     if (chosenType == null) {
-                                        costCanBePaid = false; break
+                                        affordable = false; break
                                     }
                                     val dynamicFilter = GameObjectFilter.Creature.withSubtype(chosenType)
                                     sacrificeCost = AbilityCost.Sacrifice(dynamicFilter)
                                     sacrificeTargets = context.costUtils.findAbilitySacrificeTargets(state, playerId, dynamicFilter)
                                     if (sacrificeTargets.isEmpty()) {
-                                        costCanBePaid = false; break
+                                        affordable = false; break
                                     }
                                 }
                                 is AbilityCost.SacrificeSelf -> {
@@ -161,14 +165,14 @@ class ManaAbilityEnumerator : ActionEnumerator {
                                 }
                                 is AbilityCost.TapAttachedCreature -> {
                                     if (!context.costUtils.canPayTapAttachedCreatureCost(state, entityId)) {
-                                        costCanBePaid = false; break
+                                        affordable = false; break
                                     }
                                 }
                                 is AbilityCost.TapPermanents -> {
                                     tapCost = subCost
                                     tapTargets = context.costUtils.findAbilityTapTargets(state, playerId, subCost.filter)
                                     if (tapTargets.size < subCost.count) {
-                                        costCanBePaid = false; break
+                                        affordable = false; break
                                     }
                                 }
                                 is AbilityCost.ReturnToHand -> {
@@ -177,7 +181,6 @@ class ManaAbilityEnumerator : ActionEnumerator {
                                 else -> {}
                             }
                         }
-                        if (!costCanBePaid) continue
                     }
                     else -> {
                         // Other cost types — allow for now, engine will validate
@@ -207,11 +210,15 @@ class ManaAbilityEnumerator : ActionEnumerator {
                     else -> null
                 }
 
+                // Compute runtime description for abilities with dynamic mana amounts
+                val description = runtimeDescription(ability, state, entityId, playerId)
+
                 result.add(
                     LegalAction(
                         actionType = "ActivateAbility",
-                        description = ability.description,
+                        description = description,
                         action = ActivateAbility(playerId, entityId, ability.id),
+                        affordable = affordable,
                         isManaAbility = true,
                         additionalCostInfo = costInfo,
                         requiresManaColorChoice = ability.effect is AddAnyColorManaEffect ||
@@ -225,5 +232,43 @@ class ManaAbilityEnumerator : ActionEnumerator {
         }
 
         return result
+    }
+
+    /**
+     * Computes a runtime description for mana abilities that produce a dynamic amount of mana,
+     * replacing the generic text with the actual creature count and chosen type.
+     */
+    private fun runtimeDescription(
+        ability: com.wingedsheep.sdk.scripting.ActivatedAbility,
+        state: com.wingedsheep.engine.state.GameState,
+        entityId: EntityId,
+        playerId: EntityId
+    ): String {
+        val effect = ability.effect
+        val amount = when (effect) {
+            is AddAnyColorManaEffect -> effect.amount
+            else -> null
+        }
+        if (amount !is DynamicAmount.CountCreaturesOfSourceChosenType) {
+            return ability.description
+        }
+
+        val chosenType = state.getEntity(entityId)
+            ?.get<ChosenCreatureTypeComponent>()?.creatureType
+        if (chosenType == null) {
+            return ability.description
+        }
+
+        val projected = state.projectedState
+        val count = state.getBattlefield().count { eid ->
+            val controllerId = projected.getController(eid)
+                ?: state.getEntity(eid)?.get<ControllerComponent>()?.playerId
+            if (controllerId != playerId) return@count false
+            if ("CREATURE" !in projected.getTypes(eid)) return@count false
+            chosenType in projected.getSubtypes(eid)
+        }
+
+        val costDesc = ability.cost.description
+        return "$costDesc: Add $count mana of any color ($count ${chosenType}s)"
     }
 }

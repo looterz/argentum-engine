@@ -524,9 +524,10 @@ class ManaSolver(
             val perColorRestrictions = mutableMapOf<Color, ManaRestriction?>()
 
             for (ability in manaAbilities) {
-                // Detect pain cost in mana abilities
+                // Detect pain cost and mana activation cost in mana abilities
                 var abilityHasPainCost = false
                 var abilityPainAmount = 0
+                var abilityActivationManaCost = 0
                 val abilityCanBeUsed = when (val cost = ability.cost) {
                     is AbilityCost.Tap -> true
                     is AbilityCost.PayLife -> {
@@ -542,6 +543,9 @@ class ManaSolver(
                                 is AbilityCost.PayLife -> {
                                     abilityHasPainCost = true
                                     abilityPainAmount = maxOf(abilityPainAmount, subCost.amount)
+                                }
+                                is AbilityCost.Mana -> {
+                                    abilityActivationManaCost += subCost.cost.cmc
                                 }
                                 else -> {}
                             }
@@ -563,27 +567,30 @@ class ManaSolver(
                 if (!abilityHasPainCost) anyAbilityHasNoPainCost = true
                 if (abilityHasPainCost) minPainAmount = minOf(minPainAmount, abilityPainAmount)
 
-                // Accumulate production from effect
+                // Accumulate production from effect (subtract activation mana cost for net output)
                 val effectColors = mutableSetOf<Color>()
                 val effectRestriction: ManaRestriction? = when (val effect = ability.effect) {
                     is AddManaEffect -> {
                         combinedColors.add(effect.color)
                         effectColors.add(effect.color)
                         val manaAmount = (effect.amount as? DynamicAmount.Fixed)?.amount ?: 1
-                        maxManaAmount = maxOf(maxManaAmount, manaAmount)
+                        val netMana = maxOf(0, manaAmount - abilityActivationManaCost)
+                        maxManaAmount = maxOf(maxManaAmount, netMana)
                         effect.restriction
                     }
                     is AddColorlessManaEffect -> {
                         producesColorless = true
                         val manaAmount = (effect.amount as? DynamicAmount.Fixed)?.amount ?: 1
-                        maxManaAmount = maxOf(maxManaAmount, manaAmount)
+                        val netMana = maxOf(0, manaAmount - abilityActivationManaCost)
+                        maxManaAmount = maxOf(maxManaAmount, netMana)
                         effect.restriction
                     }
                     is AddAnyColorManaEffect -> {
                         combinedColors.addAll(Color.entries)
                         effectColors.addAll(Color.entries)
-                        val manaAmount = (effect.amount as? DynamicAmount.Fixed)?.amount ?: 1
-                        maxManaAmount = maxOf(maxManaAmount, manaAmount)
+                        val manaAmount = evaluateManaAmount(effect.amount, state, entityId, playerId)
+                        val netMana = maxOf(0, manaAmount - abilityActivationManaCost)
+                        maxManaAmount = maxOf(maxManaAmount, netMana)
                         effect.restriction
                     }
                     is AddManaOfColorAmongEffect -> {
@@ -602,7 +609,8 @@ class ManaSolver(
                             }
                         }
                         if (combinedColors.isNotEmpty()) {
-                            maxManaAmount = maxOf(maxManaAmount, 1)
+                            val netMana = maxOf(0, 1 - abilityActivationManaCost)
+                            maxManaAmount = maxOf(maxManaAmount, netMana)
                         }
                         effect.restriction
                     }
@@ -613,7 +621,8 @@ class ManaSolver(
                             combinedColors.add(chosenColor)
                             effectColors.add(chosenColor)
                             val manaAmount = (effect.amount as? DynamicAmount.Fixed)?.amount ?: 1
-                            maxManaAmount = maxOf(maxManaAmount, manaAmount)
+                            val netMana = maxOf(0, manaAmount - abilityActivationManaCost)
+                            maxManaAmount = maxOf(maxManaAmount, netMana)
                         }
                         effect.restriction
                     }
@@ -621,7 +630,8 @@ class ManaSolver(
                         combinedColors.addAll(effect.allowedColors)
                         effectColors.addAll(effect.allowedColors)
                         val manaAmount = (effect.amountSource as? DynamicAmount.Fixed)?.amount ?: 1
-                        maxManaAmount = maxOf(maxManaAmount, manaAmount)
+                        val netMana = maxOf(0, manaAmount - abilityActivationManaCost)
+                        maxManaAmount = maxOf(maxManaAmount, netMana)
                         effect.restriction
                     }
                     else -> null
@@ -714,6 +724,28 @@ class ManaSolver(
             .let { sources ->
                 if (hasDampLandManaProduction(state)) applyLandManaDampening(sources) else sources
             }
+    }
+
+    /**
+     * Evaluates a DynamicAmount for a mana ability, returning the actual mana count.
+     * Returns 0 when the amount evaluates to zero (e.g., no creatures of the chosen type).
+     */
+    private fun evaluateManaAmount(
+        amount: DynamicAmount,
+        state: GameState,
+        sourceId: EntityId,
+        playerId: EntityId
+    ): Int {
+        if (amount is DynamicAmount.Fixed) return amount.amount
+        val opponentId = state.turnOrder.firstOrNull { it != playerId }
+        val context = EffectContext(
+            sourceId = sourceId,
+            controllerId = playerId,
+            opponentId = opponentId,
+            targets = emptyList(),
+            xValue = null
+        )
+        return maxOf(0, dynamicAmountEvaluator.evaluate(state, amount, context))
     }
 
     /**
