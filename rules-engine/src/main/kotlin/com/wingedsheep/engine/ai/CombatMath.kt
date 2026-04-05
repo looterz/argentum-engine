@@ -621,34 +621,6 @@ object CombatMath {
 
     // ── Combat Trick Estimation ─────────────────────────────────────────
 
-    /**
-     * Estimate the potential pump bonus an opponent could apply based on untapped mana.
-     * Returns a (power bonus, toughness bonus) pair.
-     */
-    fun estimateCombatTrickBonus(
-        state: GameState,
-        projected: ProjectedState,
-        opponentId: EntityId
-    ): Pair<Int, Int> {
-        val untappedLands = projected.getBattlefieldControlledBy(opponentId).count { entityId ->
-            val card = state.getEntity(entityId)?.get<CardComponent>()
-            card != null && card.isLand && state.getEntity(entityId)?.has<TappedComponent>() != true
-        }
-        val cardsInHand = state.getHand(opponentId).size
-
-        if (cardsInHand == 0) return 0 to 0
-
-        // Conservative estimate: most combat tricks cost 1-2 mana and give +2/+2 or +3/+3.
-        // But assuming the worst case every time makes the AI too passive — discount by
-        // the probability the opponent actually has a trick (roughly 1-in-4 cards).
-        return when {
-            untappedLands >= 3 && cardsInHand >= 3 -> 2 to 2
-            untappedLands >= 2 && cardsInHand >= 2 -> 1 to 1
-            untappedLands >= 1 -> 1 to 1
-            else -> 0 to 0
-        }
-    }
-
     // ── Profitable Attack Analysis ───────────────────────────────────────
 
     /**

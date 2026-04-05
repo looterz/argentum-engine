@@ -35,7 +35,7 @@ object LifeDifferential : BoardFeature {
         life <= 3 -> life * 3.0
         life <= 7 -> 9.0 + (life - 3) * 2.0
         life <= 15 -> 17.0 + (life - 7) * 1.0
-        else -> 25.0 + (life - 15) * 0.3
+        else -> 25.0 + (life - 15) * 0.5
     }
 }
 
@@ -152,9 +152,9 @@ object BoardPresence : BoardFeature {
             value *= 0.85
         }
 
-        // Tapped creatures can't block and already attacked
+        // Tapped creatures can't block, but tapping is temporary — light discount
         if (container.has<TappedComponent>()) {
-            value *= 0.75
+            value *= 0.9
         }
 
         // Damaged creatures are closer to dying
