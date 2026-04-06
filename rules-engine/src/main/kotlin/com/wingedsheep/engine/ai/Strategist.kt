@@ -3,12 +3,16 @@ package com.wingedsheep.engine.ai
 import com.wingedsheep.engine.ai.advisor.CardAdvisorRegistry
 import com.wingedsheep.engine.ai.advisor.CastContext
 import com.wingedsheep.engine.ai.evaluation.BoardEvaluator
+import com.wingedsheep.engine.ai.evaluation.BoardPresence
 import com.wingedsheep.engine.core.ActivateAbility
 import com.wingedsheep.engine.core.CastSpell
 import com.wingedsheep.engine.legalactions.LegalAction
+import com.wingedsheep.engine.legalactions.TargetInfo
 import com.wingedsheep.engine.state.GameState
 import com.wingedsheep.engine.state.components.identity.CardComponent
+import com.wingedsheep.engine.state.components.stack.ChosenTarget
 import com.wingedsheep.sdk.core.Step
+import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.model.EntityId
 
 /**
@@ -80,7 +84,14 @@ class Strategist(
 
         val best = finalScored.maxByOrNull { it.second }
         return if (best != null && best.second > adjustedPassScore) {
-            best.first
+            // Fill in targets on the returned action so the processor can execute it
+            val chosen = best.first
+            if (chosen.requiresTargets) {
+                val resolvedAction = resolveTargetsForSimulation(state, chosen, playerId)
+                chosen.copy(action = resolvedAction)
+            } else {
+                chosen
+            }
         } else {
             pass ?: legalActions.first()
         }
@@ -129,7 +140,11 @@ class Strategist(
     }
 
     private fun evaluate1Ply(state: GameState, action: LegalAction, playerId: EntityId, passScore: Double? = null): Double {
-        val result = simulator.simulate(state, action.action)
+        // For targeted spells, fill in heuristic targets before simulating.
+        // Without this, the CastSpellHandler rejects the action ("No valid targets")
+        // and the spell always scores the same as passing.
+        val simulationAction = resolveTargetsForSimulation(state, action, playerId)
+        val result = simulator.simulate(state, simulationAction)
         val defaultScore = evaluator.evaluate(result.state, result.state.projectedState, playerId)
 
         // Check for card-specific advisor override
@@ -146,6 +161,87 @@ class Strategist(
             simulator = simulator
         )
         return advisor.evaluateCast(context) ?: defaultScore
+    }
+
+    /**
+     * For spells/abilities that require target selection, fill in heuristic
+     * targets so the simulation can actually resolve the spell.
+     *
+     * Multi-target spells: for each requirement, pick the highest-value
+     * opponent creature (or lowest-value own creature, depending on context).
+     * Single-target spells: pick the best target by creature value.
+     *
+     * The advisor's [CardAdvisor.respondToDecision] refines target selection
+     * during actual gameplay — this is just for scoring purposes.
+     */
+    private fun resolveTargetsForSimulation(
+        state: GameState,
+        action: LegalAction,
+        playerId: EntityId
+    ): com.wingedsheep.engine.core.GameAction {
+        if (!action.requiresTargets) return action.action
+        val castSpell = action.action as? CastSpell ?: return action.action
+        if (castSpell.targets.isNotEmpty()) return action.action
+
+        val projected = state.projectedState
+
+        // Build target info list: prefer targetRequirements (multi-target), fall back to validTargets
+        val targetInfos: List<TargetInfo> = action.targetRequirements
+            ?: action.validTargets?.let { targets ->
+                listOf(TargetInfo(
+                    index = 0,
+                    description = action.targetDescription ?: "",
+                    minTargets = action.minTargets,
+                    maxTargets = action.targetCount,
+                    validTargets = targets,
+                    targetZone = null
+                ))
+            }
+            ?: return action.action
+
+        if (targetInfos.any { it.validTargets.isEmpty() }) return action.action
+
+        // For each requirement, pick the best target using a heuristic
+        val chosenTargets = targetInfos.map { info ->
+            val best = info.validTargets.maxByOrNull { entityId ->
+                val controller = projected.getController(entityId)
+                val isOpponent = controller != null && controller != playerId
+                val isPlayer = state.getEntity(entityId)?.get<com.wingedsheep.engine.state.components.identity.PlayerComponent>() != null
+
+                if (isPlayer) {
+                    // Player target — prefer opponent
+                    if (isOpponent) 5.0 else -5.0
+                } else if (projected.isCreature(entityId)) {
+                    val card = state.getEntity(entityId)?.get<CardComponent>()
+                    val value = if (card != null) {
+                        BoardPresence.permanentValue(state, projected, entityId, card)
+                    } else 0.0
+                    // Opponent creatures: higher value = better target for removal
+                    // Own creatures: higher value = better target for pump/bite source
+                    if (isOpponent) value + 10.0 else -value
+                } else {
+                    0.0
+                }
+            } ?: info.validTargets.first()
+
+            // Build the right ChosenTarget variant based on zone
+            when (info.targetZone) {
+                "GRAVEYARD" -> {
+                    val ownerId = state.getEntity(best)
+                        ?.get<com.wingedsheep.engine.state.components.identity.OwnerComponent>()?.playerId
+                        ?: playerId
+                    ChosenTarget.Card(best, ownerId, Zone.GRAVEYARD)
+                }
+                "STACK" -> ChosenTarget.Spell(best)
+                else -> {
+                    val isPlayer = state.getEntity(best)?.get<com.wingedsheep.engine.state.components.identity.PlayerComponent>() != null
+                    if (isPlayer) ChosenTarget.Player(best)
+                    else ChosenTarget.Permanent(best)
+                }
+            }
+        }
+
+        return castSpell.copy(targets = chosenTargets)
     }
 
     /** Resolve the card name from a legal action's underlying GameAction. */

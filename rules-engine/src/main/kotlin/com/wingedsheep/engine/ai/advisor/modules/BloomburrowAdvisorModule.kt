@@ -243,11 +243,11 @@ object InstantRemovalAdvisor : CardAdvisor {
         // Let simulation decide freely.
         if (isOpponentsTurn(state, playerId)) return null
 
-        // Own main phase: moderate penalty — prefer holding for combat,
-        // but don't completely block it when the target is high-value
+        // Own main phase: light penalty — prefer holding for combat,
+        // but don't block it when the target is high-value
         // (e.g., killing a tapped 5/5 is still worth it).
         if (isOwnMainPhase(state, playerId)) {
-            return context.defaultScore - 2.0
+            return context.defaultScore - 1.0
         }
 
         return null
@@ -710,6 +710,29 @@ object BiteSpellAdvisor : CardAdvisor {
         "Longstalk Brawl",
         "Hunter's Talent",
     )
+
+    override fun evaluateCast(context: CastContext): Double? {
+        val state = context.state
+        val playerId = context.playerId
+
+        // During combat: bite/fight spells are devastating — our creature
+        // survives and theirs dies. Give a strong bonus.
+        if (isCombatStep(state)) {
+            return context.defaultScore + 1.5
+        }
+
+        // Opponent's turn outside combat: good timing — let simulation decide.
+        if (isOpponentsTurn(state, playerId)) return null
+
+        // Own main phase: light penalty — prefer holding for combat timing
+        // but don't hoard forever. Bite spells are efficient removal (we
+        // keep our creature) so the penalty is lighter than pure removal.
+        if (isOwnMainPhase(state, playerId)) {
+            return context.defaultScore - 0.5
+        }
+
+        return null
+    }
 
     override fun respondToDecision(context: AdvisorDecisionContext): DecisionResponse? {
         // Handle gift mode choice for Longstalk Brawl

@@ -2168,6 +2168,42 @@ class CombatAdvisorTest : FunSpec({
 
         turns shouldBeGreaterThan 0
     }
+    // ═════════════════════════════════════════════════════════════════════
+    // Regression: creature with no blockers must attack
+    // ═════════════════════════════════════════════════════════════════════
+
+    test("small creature attacks into empty board — local search must not override") {
+        // A 2/2 menace creature with zero opposing blockers should always attack.
+        // Regression: the local search evaluated "don't attack" higher because
+        // ThreatAssessment penalized the tapped creature (0 attack potential),
+        // even though it will untap next turn.
+        val menaceCreature = CardDefinition.creature(
+            name = "Ravine Raider",
+            manaCost = ManaCost.parse("{B}"),
+            subtypes = setOf(Subtype("Lizard"), Subtype("Rogue")),
+            power = 2, toughness = 2,
+            keywords = setOf(Keyword.MENACE)
+        )
+        val cards = listOf(menaceCreature)
+        val (driver, _, advisor) = setup(cards)
+        val p1 = driver.player1
+        val p2 = driver.player2
+
+        driver.passPriorityUntil(Step.PRECOMBAT_MAIN)
+
+        val attacker = driver.putCreatureOnBattlefield(p1, "Ravine Raider")
+        driver.removeSummoningSickness(attacker)
+
+        // Opponent has no creatures — wide open
+        // Advance to DECLARE_ATTACKERS so local search (simulation) runs
+        driver.passPriorityUntil(Step.DECLARE_ATTACKERS)
+
+        val legalAction = buildAttackAction(p1, listOf(attacker), listOf(p2))
+        val result = advisor.chooseAttackers(driver.state, legalAction, p1) as DeclareAttackers
+
+        // Must attack — free damage with no risk
+        result.attackers shouldContainKey attacker
+    }
 })
 
 /**

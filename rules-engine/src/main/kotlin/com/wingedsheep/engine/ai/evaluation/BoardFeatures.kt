@@ -247,12 +247,15 @@ object ThreatAssessment : BoardFeature {
     }
 
     private fun attackPotential(state: GameState, projected: ProjectedState, playerId: EntityId): Int {
+        // Don't filter by TappedComponent — tapped creatures untap on the next
+        // turn and can attack again. Filtering them out massively penalizes the
+        // post-combat state (where our creatures are tapped from attacking),
+        // making the AI think attacking reduced its clock to zero.
         return projected.getBattlefieldControlledBy(playerId)
             .filter { entityId ->
                 projected.isCreature(entityId) &&
                     !projected.cantAttack(entityId) &&
-                    state.getEntity(entityId)?.has<SummoningSicknessComponent>() != true &&
-                    state.getEntity(entityId)?.has<TappedComponent>() != true
+                    state.getEntity(entityId)?.has<SummoningSicknessComponent>() != true
             }
             .sumOf { (projected.getPower(it) ?: 0).coerceAtLeast(0) }
     }
