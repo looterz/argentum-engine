@@ -1,7 +1,7 @@
 package com.wingedsheep.gameserver.ai.decision.handlers
 
-import com.wingedsheep.engine.core.CardsSelectedResponse
 import com.wingedsheep.engine.core.DecisionResponse
+import com.wingedsheep.engine.core.OrderedResponse
 import com.wingedsheep.engine.core.ReorderLibraryDecision
 import com.wingedsheep.gameserver.ai.AiResponseParser
 import com.wingedsheep.gameserver.ai.GameStateFormatter
@@ -39,10 +39,10 @@ class ReorderLibraryHandler : AiDecisionHandler<ReorderLibraryDecision> {
         parser: AiResponseParser
     ): DecisionResponse? {
         val ordering = parser.parseOrdering(response, decision.cards.size) ?: return null
-        return CardsSelectedResponse(decisionId = decision.id, selectedCards = ordering.map { decision.cards[it] })
+        return OrderedResponse(decisionId = decision.id, orderedObjects = ordering.map { decision.cards[it] })
     }
 
     override fun heuristic(decision: ReorderLibraryDecision, state: ClientGameState): DecisionResponse {
-        return CardsSelectedResponse(decisionId = decision.id, selectedCards = decision.cards)
+        return OrderedResponse(decisionId = decision.id, orderedObjects = decision.cards)
     }
 }
