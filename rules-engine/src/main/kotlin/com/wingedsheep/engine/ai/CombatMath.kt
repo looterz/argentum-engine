@@ -640,7 +640,9 @@ object CombatMath {
         projected: ProjectedState,
         attacker: EntityId,
         opponentBlockers: List<EntityId>,
-        cardRegistry: CardRegistry? = null
+        cardRegistry: CardRegistry? = null,
+        myCreatureCount: Int = 0,
+        opponentCreatureCount: Int = 0
     ): Boolean {
         val attackerValue = creatureValue(state, projected, attacker)
         val aPower = projected.getPower(attacker) ?: 0
@@ -648,6 +650,9 @@ object CombatMath {
 
         val validBlockers = opponentBlockers.filter { canBeBlockedBy(state, projected, attacker, it, cardRegistry) }
         if (validBlockers.isEmpty()) return true // unblockable = always profitable
+
+        // When we have more creatures, even trades thin the opponent's board faster
+        val hasCreatureAdvantage = myCreatureCount > opponentCreatureCount
 
         for (blocker in validBlockers) {
             val blockerKillsUs = wouldKillInCombat(state, projected, blocker, attacker)
@@ -658,8 +663,9 @@ object CombatMath {
             val weKillBlocker = wouldKillInCombat(state, projected, attacker, blocker)
 
             if (weKillBlocker) {
-                // Mutual trade: only profitable if their creature is worth more
-                if (blockerValue >= attackerValue) return false // opponent can trade evenly or up
+                // Mutual trade: profitable if their creature is worth more,
+                // or if we have more creatures (even trades favor the larger army)
+                if (blockerValue >= attackerValue && !hasCreatureAdvantage) return false
             } else {
                 // They kill us and survive — bad for us
                 return false

@@ -115,7 +115,12 @@ class CombatAdvisor(
 
             // Attack if every blocking option is worse for the opponent than taking the damage
             // (e.g., a 3/3 into a board of 2/2s — opponent must take 3 or trade down)
-            if (CombatMath.isProfitableAttack(state, projected, entityId, opponentCreatures, cardRegistry)) {
+            // Accept even trades when we have more creatures — trading favors the larger army
+            if (CombatMath.isProfitableAttack(
+                    state, projected, entityId, opponentCreatures, cardRegistry,
+                    myCreatureCount = validAttackers.size,
+                    opponentCreatureCount = opponentCreatures.size
+                )) {
                 seedMap[entityId] = opponentId
                 continue
             }
@@ -144,9 +149,9 @@ class CombatAdvisor(
                     )
                 } else 0
 
-                // If opponent threatens significant damage next turn, hold back our best blocker.
+                // If opponent threatens near-lethal damage next turn, hold back our best blocker.
                 // Prefer deathtouch creatures as hold-backs (they trade with anything).
-                val holdBack = if (crackBackDamage > 0 && myLife <= crackBackDamage * 2) {
+                val holdBack = if (crackBackDamage > 0 && myLife <= crackBackDamage * 1.5) {
                     remaining.maxByOrNull { entityId ->
                         val keywords = projected.getKeywords(entityId)
                         val hasDeathtouch = Keyword.DEATHTOUCH.name in keywords
