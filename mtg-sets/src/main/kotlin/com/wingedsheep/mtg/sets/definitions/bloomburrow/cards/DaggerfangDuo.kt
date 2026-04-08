@@ -5,6 +5,7 @@ import com.wingedsheep.sdk.dsl.EffectPatterns
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
+import com.wingedsheep.sdk.scripting.effects.MayEffect
 
 /**
  * Daggerfang Duo
@@ -19,13 +20,16 @@ val DaggerfangDuo = card("Daggerfang Duo") {
     typeLine = "Creature — Rat Squirrel"
     power = 3
     toughness = 2
-    oracleText = "Deathtouch\nWhen this creature enters, mill two cards."
+    oracleText = "Deathtouch\nWhen this creature enters, you may mill two cards."
 
     keywords(Keyword.DEATHTOUCH)
 
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        effect = EffectPatterns.mill(2)
+        effect = MayEffect(
+            effect = EffectPatterns.mill(2),
+            description_override = "You may mill two cards."
+        )
     }
 
     metadata {
