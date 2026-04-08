@@ -88,6 +88,7 @@ export function GraveyardTargetingUI({
 
   // Lift selection state to persist across tab switches
   const [selectedCards, setSelectedCards] = useState<EntityId[]>([])
+  const [minimized, setMinimized] = useState(false)
 
   // If only one graveyard, use simple UI
   if (ownerIds.length <= 1) {
@@ -105,6 +106,18 @@ export function GraveyardTargetingUI({
         useGlobalHover={true}
         onCancel={decision.canCancel ? () => submitCancelDecision() : undefined}
       />
+    )
+  }
+
+  // When minimized, show floating button to restore
+  if (minimized) {
+    return (
+      <button
+        className={styles.floatingReturnButton}
+        onClick={() => setMinimized(false)}
+      >
+        Return to Card Selection
+      </button>
     )
   }
 
@@ -164,6 +177,7 @@ export function GraveyardTargetingUI({
         maxSelections={maxTargets}
         responsive={responsive}
         onConfirm={handleConfirm}
+        onMinimize={() => setMinimized(true)}
       />
     </div>
   )
@@ -181,6 +195,7 @@ function GraveyardCardSelection({
   maxSelections,
   responsive,
   onConfirm,
+  onMinimize,
 }: {
   cards: ZoneCardInfo[]
   selectedCards: EntityId[]
@@ -189,6 +204,7 @@ function GraveyardCardSelection({
   maxSelections: number
   responsive: ResponsiveSizes
   onConfirm: (selectedCards: EntityId[]) => void
+  onMinimize: () => void
 }) {
   const [hoveredCardId, setHoveredCardId] = useState<EntityId | null>(null)
   const hoverCard = useGameStore((s) => s.hoverCard)
@@ -297,14 +313,22 @@ function GraveyardCardSelection({
         </p>
       )}
 
-      {/* Confirm button */}
-      <button
-        onClick={handleConfirmClick}
-        disabled={!canConfirm}
-        className={styles.confirmButton}
-      >
-        {selectedCards.length === 0 && minSelections === 0 ? 'Decline' : 'Confirm Target'}
-      </button>
+      {/* Action buttons */}
+      <div className={styles.optionButtonRow}>
+        <button
+          onClick={onMinimize}
+          className={styles.viewBattlefieldButton}
+        >
+          View Battlefield
+        </button>
+        <button
+          onClick={handleConfirmClick}
+          disabled={!canConfirm}
+          className={styles.confirmButton}
+        >
+          {selectedCards.length === 0 && minSelections === 0 ? 'Decline' : 'Confirm Target'}
+        </button>
+      </div>
       {/* Card preview is handled by the global CardPreview component in GameBoard */}
     </>
   )
