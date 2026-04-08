@@ -5,6 +5,7 @@ import com.wingedsheep.engine.core.ZoneChangeEvent
 import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.handlers.effects.EffectExecutor
 import com.wingedsheep.engine.handlers.effects.TargetResolutionUtils
+import com.wingedsheep.engine.mechanics.layers.StaticAbilityHandler
 import com.wingedsheep.engine.registry.CardRegistry
 import com.wingedsheep.engine.state.ComponentContainer
 import com.wingedsheep.engine.state.GameState
@@ -28,7 +29,8 @@ import kotlin.reflect.KClass
  * method to `Effects.kt` — no new executor needed.
  */
 class CreatePredefinedTokenExecutor(
-    private val cardRegistry: CardRegistry
+    private val cardRegistry: CardRegistry,
+    private val staticAbilityHandler: StaticAbilityHandler? = null
 ) : EffectExecutor<CreatePredefinedTokenEffect> {
 
     override val effectType: KClass<CreatePredefinedTokenEffect> = CreatePredefinedTokenEffect::class
@@ -65,11 +67,19 @@ class CreatePredefinedTokenExecutor(
                 imageUri = cardDef.metadata.imageUri
             )
 
-            val container = ComponentContainer.of(
+            var container = ComponentContainer.of(
                 tokenComponent,
                 TokenComponent,
                 ControllerComponent(tokenControllerId)
             )
+
+            // Wire up static abilities (e.g., equip bonuses, lord effects) from the
+            // predefined token's CardDefinition into a ContinuousEffectSourceComponent
+            // so the StateProjector applies them.
+            if (staticAbilityHandler != null) {
+                container = staticAbilityHandler.addContinuousEffectComponent(container, cardDef)
+                container = staticAbilityHandler.addReplacementEffectComponent(container, cardDef)
+            }
 
             newState = newState.withEntity(tokenId, container)
 
