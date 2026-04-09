@@ -810,6 +810,8 @@ class TriggeredAbilityBuilder {
     var controlledByTriggeringEntityController: Boolean = false
     /** When true, this triggered ability triggers at most once each turn. */
     var oncePerTurn: Boolean = false
+    /** Optional human-readable description that overrides the auto-generated one. */
+    var description: String? = null
 
     private val namedTargets = mutableListOf<Pair<String, TargetRequirement>>()
 
@@ -846,7 +848,8 @@ class TriggeredAbilityBuilder {
             activeZone = triggerZone,
             triggerCondition = triggerCondition,
             controlledByTriggeringEntityController = controlledByTriggeringEntityController,
-            oncePerTurn = oncePerTurn
+            oncePerTurn = oncePerTurn,
+            descriptionOverride = description
         )
     }
 }

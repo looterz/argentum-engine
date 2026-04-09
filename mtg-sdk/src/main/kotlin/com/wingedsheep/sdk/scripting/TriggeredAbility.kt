@@ -36,14 +36,16 @@ data class TriggeredAbility(
     val controlledByTriggeringEntityController: Boolean = false,
     /** When true, this triggered ability triggers at most once each turn.
      * Used for cards like Scavenger's Talent: "This ability triggers only once each turn." */
-    val oncePerTurn: Boolean = false
+    val oncePerTurn: Boolean = false,
+    /** Optional human-readable description that overrides the auto-generated one. */
+    val descriptionOverride: String? = null
 ) : TextReplaceable<TriggeredAbility> {
     /** All target requirements for this ability (primary + additional). */
     val allTargetRequirements: List<TargetRequirement>
         get() = listOfNotNull(targetRequirement) + additionalTargetRequirements
 
     val description: String
-        get() = buildString {
+        get() = descriptionOverride ?: buildString {
             append(trigger.description)
             if (triggerCondition != null) {
                 append(", ")
@@ -101,7 +103,8 @@ data class TriggeredAbility(
             activeZone: Zone = Zone.BATTLEFIELD,
             triggerCondition: Condition? = null,
             controlledByTriggeringEntityController: Boolean = false,
-            oncePerTurn: Boolean = false
+            oncePerTurn: Boolean = false,
+            descriptionOverride: String? = null
         ): TriggeredAbility =
             TriggeredAbility(
                 id = AbilityId.generate(),
@@ -115,7 +118,8 @@ data class TriggeredAbility(
                 activeZone = activeZone,
                 triggerCondition = triggerCondition,
                 controlledByTriggeringEntityController = controlledByTriggeringEntityController,
-                oncePerTurn = oncePerTurn
+                oncePerTurn = oncePerTurn,
+                descriptionOverride = descriptionOverride
             )
     }
 }
