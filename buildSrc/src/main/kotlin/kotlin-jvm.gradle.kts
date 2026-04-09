@@ -24,6 +24,15 @@ tasks.withType<Test>().configureEach {
     // Forward benchmark flags so benchmark tests can check them
     systemProperty("benchmark", System.getProperty("benchmark") ?: "false")
     systemProperty("benchmarkGames", System.getProperty("benchmarkGames") ?: "10")
+    systemProperty("benchmarkMaxTurns", System.getProperty("benchmarkMaxTurns") ?: "50")
+    systemProperty("benchmarkOutputDir", System.getProperty("benchmarkOutputDir") ?: System.getProperty("java.io.tmpdir"))
+
+    // Forward per-player benchmark config
+    for (prefix in listOf("p1", "p2")) {
+        for (suffix in listOf("Type", "Model", "BaseUrl", "ApiKey", "DeckBuilder", "ReasoningEffort")) {
+            System.getProperty("$prefix$suffix")?.let { systemProperty("$prefix$suffix", it) }
+        }
+    }
 
     // Log information about all test results, not only the failed ones.
     testLogging {
