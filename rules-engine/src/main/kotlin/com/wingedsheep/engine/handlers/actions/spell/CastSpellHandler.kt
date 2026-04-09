@@ -403,7 +403,16 @@ class CastSpellHandler(
                         return "Mana source is already tapped: $sourceId"
                     }
                 }
-                null
+                // Verify the chosen sources can actually pay the colored cost.
+                // Ask the solver to pay using ONLY the chosen sources by excluding all others.
+                val chosen = action.paymentStrategy.manaAbilitiesToActivate.toSet()
+                val excluded = manaSolver.findAvailableManaSources(state, action.playerId)
+                    .map { it.entityId }
+                    .filter { it !in chosen }
+                    .toSet()
+                if (manaSolver.solve(state, action.playerId, cost, xValue, excludeSources = excluded, spellContext = spellCtx) == null) {
+                    "Selected mana sources cannot pay this spell's cost"
+                } else null
             }
         }
     }

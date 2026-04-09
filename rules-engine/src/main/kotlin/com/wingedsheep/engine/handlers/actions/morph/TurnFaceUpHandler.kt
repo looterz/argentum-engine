@@ -121,6 +121,17 @@ class TurnFaceUpHandler(
                                 return "Mana source is already tapped: $sourceId"
                             }
                         }
+                        // Verify the chosen sources can actually pay the colored cost.
+                        // We do this by asking the solver to pay using ONLY the chosen sources
+                        // (excluding everything else from consideration).
+                        val chosen = action.paymentStrategy.manaAbilitiesToActivate.toSet()
+                        val excluded = manaSolver.findAvailableManaSources(state, action.playerId)
+                            .map { it.entityId }
+                            .filter { it !in chosen }
+                            .toSet()
+                        if (manaSolver.solve(state, action.playerId, manaCost, xValue, excludeSources = excluded) == null) {
+                            return "Selected mana sources cannot pay the morph cost"
+                        }
                     }
                 }
             }
