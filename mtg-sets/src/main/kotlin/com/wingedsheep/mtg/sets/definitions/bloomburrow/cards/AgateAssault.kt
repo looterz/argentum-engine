@@ -4,6 +4,7 @@ import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
+import com.wingedsheep.sdk.scripting.effects.MarkExileOnDeathEffect
 import com.wingedsheep.sdk.scripting.effects.ModalEffect
 import com.wingedsheep.sdk.scripting.effects.Mode
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
@@ -18,8 +19,6 @@ import com.wingedsheep.sdk.scripting.targets.EffectTarget
  *   this turn, exile it instead.
  * • Exile target artifact.
  *
- * Note: The "exile instead of die" replacement effect on mode 1 is approximated
- * as just dealing 4 damage. The exile-on-death is rarely mechanically relevant.
  */
 val AgateAssault = card("Agate Assault") {
     manaCost = "{2}{R}"
@@ -31,7 +30,8 @@ val AgateAssault = card("Agate Assault") {
         effect = ModalEffect.chooseOne(
             // Mode 1: Deal 4 damage to target creature
             Mode.withTarget(
-                Effects.DealDamage(4, EffectTarget.ContextTarget(0)),
+                MarkExileOnDeathEffect(EffectTarget.ContextTarget(0))
+                    .then(Effects.DealDamage(4, EffectTarget.ContextTarget(0))),
                 Targets.Creature,
                 "Deal 4 damage to target creature"
             ),
