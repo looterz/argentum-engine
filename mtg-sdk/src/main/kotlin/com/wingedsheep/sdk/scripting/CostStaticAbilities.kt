@@ -230,6 +230,24 @@ sealed interface CostReductionSource {
     ) : CostReductionSource {
         override val description: String = "${filter.description} you control with a $counterType counter on it"
     }
+
+    /**
+     * Reduces cost by a fixed amount if the spell targets any object matching the filter.
+     * Used for cards like Dire Downdraft ("This spell costs {1} less to cast if it targets
+     * an attacking or tapped creature").
+     *
+     * At cast resolution, the reduction applies if any of the spell's chosen targets match.
+     * For affordability enumeration (before targets are chosen), the reduction is treated as
+     * applicable if at least one legal target exists on the battlefield.
+     */
+    @SerialName("FixedIfAnyTargetMatches")
+    @Serializable
+    data class FixedIfAnyTargetMatches(
+        val amount: Int,
+        val filter: GameObjectFilter
+    ) : CostReductionSource {
+        override val description: String = "$amount if it targets ${filter.description}"
+    }
 }
 
 /**

@@ -233,7 +233,12 @@ class CastSpellHandler(
                 }
             }
         } else if (cardDef != null) {
-            costCalculator.calculateEffectiveCost(state, cardDef, action.playerId)
+            costCalculator.calculateEffectiveCost(
+                state,
+                cardDef,
+                action.playerId,
+                action.targets.map { it.toEntityId() }
+            )
         } else {
             cardComponent.manaCost
         }
@@ -678,7 +683,12 @@ class CastSpellHandler(
         } else if (action.castFaceDown) {
             costCalculator.calculateFaceDownCost(currentState, action.playerId)
         } else if (cardDef != null) {
-            costCalculator.calculateEffectiveCost(currentState, cardDef, action.playerId)
+            costCalculator.calculateEffectiveCost(
+                currentState,
+                cardDef,
+                action.playerId,
+                action.targets.map { it.toEntityId() }
+            )
         } else {
             cardComponent.manaCost
         }

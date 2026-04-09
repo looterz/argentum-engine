@@ -4,6 +4,10 @@ import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Targets
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
+import com.wingedsheep.sdk.scripting.CostReductionSource
+import com.wingedsheep.sdk.scripting.GameObjectFilter
+import com.wingedsheep.sdk.scripting.SpellCostReduction
+import com.wingedsheep.sdk.scripting.predicates.StatePredicate
 
 /**
  * Dire Downdraft
@@ -12,9 +16,6 @@ import com.wingedsheep.sdk.model.Rarity
  *
  * This spell costs {1} less to cast if it targets an attacking or tapped creature.
  * Target creature's owner puts it on their choice of the top or bottom of their library.
- *
- * Note: The conditional cost reduction (costs {1} less if targeting attacking/tapped creature)
- * is not yet implemented — target-conditional cost reduction is not supported.
  */
 val DireDowndraft = card("Dire Downdraft") {
     manaCost = "{3}{U}"
@@ -24,6 +25,19 @@ val DireDowndraft = card("Dire Downdraft") {
     spell {
         val creature = target("creature", Targets.Creature)
         effect = Effects.PutOnTopOrBottomOfLibrary(creature)
+    }
+
+    staticAbility {
+        ability = SpellCostReduction(
+            CostReductionSource.FixedIfAnyTargetMatches(
+                amount = 1,
+                filter = GameObjectFilter.Creature.copy(
+                    statePredicates = listOf(
+                        StatePredicate.Or(listOf(StatePredicate.IsAttacking, StatePredicate.IsTapped))
+                    )
+                )
+            )
+        )
     }
 
     metadata {

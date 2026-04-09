@@ -123,8 +123,10 @@ class CastSpellEnumerator : ActionEnumerator {
             }
             if (!canPayAdditionalCosts) continue
 
-            // Calculate effective cost after reductions (e.g., Goblin Warchief)
-            var effectiveCost = context.costCalculator.calculateEffectiveCost(state, cardDef, playerId)
+            // Calculate effective cost after reductions (e.g., Goblin Warchief).
+            // Uses minimum possible cost so target-conditional reductions (e.g., Dire Downdraft)
+            // mark the spell as castable when a valid discounted target exists on the battlefield.
+            var effectiveCost = context.costCalculator.calculateMinPossibleCost(state, cardDef, playerId)
 
             // Apply maximum possible sacrifice cost reduction for affordability check
             if (variableSacrificeTargets.isNotEmpty() && variableSacrificeReduction > 0) {

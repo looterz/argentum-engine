@@ -28,6 +28,8 @@ import com.wingedsheep.sdk.scripting.ReduceSpellCostByFilter
 import com.wingedsheep.sdk.scripting.ReduceSpellColoredCostBySubtype
 import com.wingedsheep.sdk.scripting.ReduceSpellCostBySubtype
 import com.wingedsheep.sdk.scripting.SpellCostReduction
+import com.wingedsheep.engine.handlers.PredicateEvaluator
+import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.sdk.scripting.predicates.CardPredicate
 
 /**
@@ -41,7 +43,8 @@ import com.wingedsheep.sdk.scripting.predicates.CardPredicate
  * A spell's cost can never be reduced below its colored mana requirements.
  */
 class CostCalculator(
-    private val cardRegistry: CardRegistry
+    private val cardRegistry: CardRegistry,
+    private val predicateEvaluator: PredicateEvaluator = PredicateEvaluator()
 ) {
 
     /**
@@ -55,14 +58,15 @@ class CostCalculator(
     fun calculateEffectiveCost(
         state: GameState,
         cardDef: CardDefinition,
-        casterId: EntityId
+        casterId: EntityId,
+        chosenTargets: List<EntityId> = emptyList()
     ): ManaCost {
         var totalReduction = 0
 
         // Evaluate SpellCostReduction static abilities
         for (ability in cardDef.script.staticAbilities) {
             if (ability is SpellCostReduction) {
-                totalReduction += evaluateReduction(state, ability.reductionSource, casterId)
+                totalReduction += evaluateReduction(state, ability.reductionSource, casterId, chosenTargets)
             }
         }
 
@@ -103,7 +107,8 @@ class CostCalculator(
     private fun evaluateReduction(
         state: GameState,
         source: CostReductionSource,
-        playerId: EntityId
+        playerId: EntityId,
+        chosenTargets: List<EntityId> = emptyList()
     ): Int {
         return when (source) {
             is CostReductionSource.Fixed -> source.amount
@@ -126,7 +131,75 @@ class CostCalculator(
             is CostReductionSource.PermanentsWithCounterYouControl -> {
                 countPermanentsWithCounter(state, playerId, source.filter, source.counterType)
             }
+            is CostReductionSource.FixedIfAnyTargetMatches -> {
+                if (chosenTargets.isEmpty()) 0
+                else if (anyTargetMatchesFilter(state, playerId, chosenTargets, source.filter)) source.amount
+                else 0
+            }
         }
+    }
+
+    /**
+     * Calculate the minimum possible cost for affordability gating during legal-action
+     * enumeration. For target-conditional reductions, this assumes the reduction WILL apply
+     * iff at least one legal target matching the filter currently exists on the battlefield.
+     *
+     * Used by CastSpellEnumerator so spells like Dire Downdraft show as castable when a
+     * discounted target exists, even though the actual cost is locked from chosen targets
+     * at cast time.
+     */
+    fun calculateMinPossibleCost(
+        state: GameState,
+        cardDef: CardDefinition,
+        casterId: EntityId
+    ): ManaCost {
+        val optimisticTargets = mutableListOf<EntityId>()
+        for (ability in cardDef.script.staticAbilities) {
+            if (ability is SpellCostReduction) {
+                val src = ability.reductionSource
+                if (src is CostReductionSource.FixedIfAnyTargetMatches) {
+                    val match = findAnyBattlefieldMatch(state, casterId, src.filter)
+                    if (match != null) optimisticTargets += match
+                }
+            }
+        }
+        return calculateEffectiveCost(state, cardDef, casterId, optimisticTargets)
+    }
+
+    /**
+     * Check whether any of the given targets (which may be in any zone, but typically
+     * battlefield permanents) satisfies the filter. Uses projected state.
+     */
+    private fun anyTargetMatchesFilter(
+        state: GameState,
+        playerId: EntityId,
+        targets: List<EntityId>,
+        filter: GameObjectFilter
+    ): Boolean {
+        val projected = state.projectedState
+        val context = PredicateContext(controllerId = playerId)
+        return targets.any { entityId ->
+            predicateEvaluator.matchesWithProjection(state, projected, entityId, filter, context)
+        }
+    }
+
+    /**
+     * Find any battlefield permanent matching the filter (both players' battlefields).
+     * Used by calculateMinPossibleCost to check if a legal discounted target exists.
+     */
+    private fun findAnyBattlefieldMatch(
+        state: GameState,
+        playerId: EntityId,
+        filter: GameObjectFilter
+    ): EntityId? {
+        val projected = state.projectedState
+        val context = PredicateContext(controllerId = playerId)
+        for (entityId in state.getBattlefield()) {
+            if (predicateEvaluator.matchesWithProjection(state, projected, entityId, filter, context)) {
+                return entityId
+            }
+        }
+        return null
     }
 
     /**
