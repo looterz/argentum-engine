@@ -1,10 +1,10 @@
 package com.wingedsheep.mtg.sets.definitions.legions.cards
 
+import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.CantAttackUnless
 import com.wingedsheep.sdk.scripting.CantBlockUnless
-import com.wingedsheep.sdk.scripting.CombatCondition
 
 /**
  * Goblin Goon
@@ -22,11 +22,11 @@ val GoblinGoon = card("Goblin Goon") {
     oracleText = "Goblin Goon can't attack unless you control more creatures than defending player.\nGoblin Goon can't block unless you control more creatures than attacking player."
 
     staticAbility {
-        ability = CantAttackUnless(CombatCondition.ControlMoreCreatures)
+        ability = CantAttackUnless(Conditions.ControlMoreCreatures)
     }
 
     staticAbility {
-        ability = CantBlockUnless(CombatCondition.ControlMoreCreatures)
+        ability = CantBlockUnless(Conditions.ControlMoreCreatures)
     }
 
     metadata {

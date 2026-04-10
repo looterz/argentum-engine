@@ -1,5 +1,7 @@
 package com.wingedsheep.engine.mechanics.combat.rules
 
+import com.wingedsheep.engine.handlers.ConditionEvaluator
+import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.engine.state.components.battlefield.SummoningSicknessComponent
 import com.wingedsheep.engine.state.components.battlefield.TappedComponent
 import com.wingedsheep.engine.state.components.combat.AttackingComponent
@@ -11,7 +13,6 @@ import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.model.EntityId
 import com.wingedsheep.sdk.scripting.CantAttackUnless
 import com.wingedsheep.sdk.scripting.CantBeAttackedWithout
-import com.wingedsheep.sdk.scripting.CombatCondition
 import com.wingedsheep.sdk.scripting.StaticTarget
 
 // =========================================================================
@@ -136,10 +137,19 @@ class CantAttackUnlessDefenderRule : AttackDefenderRule {
 
         val defendingPlayer = findDefendingPlayer(ctx, defenderId)
 
-        if (!evaluateCombatCondition(restriction.condition, ctx, defendingPlayer)) {
+        val effectContext = EffectContext(
+            sourceId = ctx.attackerId,
+            controllerId = ctx.attackingPlayer,
+            opponentId = defendingPlayer
+        )
+        if (!conditionEvaluator.evaluate(ctx.state, restriction.condition, effectContext)) {
             return "${cardComponent.name} ${restriction.description}"
         }
         return null
+    }
+
+    companion object {
+        private val conditionEvaluator = ConditionEvaluator()
     }
 }
 
@@ -179,29 +189,6 @@ private fun findDefendingPlayer(ctx: AttackCheckContext, defenderId: EntityId): 
         return defenderId
     }
     return ctx.state.getEntity(defenderId)?.get<ControllerComponent>()?.playerId ?: defenderId
-}
-
-private fun evaluateCombatCondition(
-    condition: CombatCondition,
-    ctx: AttackCheckContext,
-    opponentId: EntityId
-): Boolean = when (condition) {
-    is CombatCondition.ControlMoreCreatures -> {
-        countCreatures(ctx, ctx.attackingPlayer) > countCreatures(ctx, opponentId)
-    }
-    is CombatCondition.OpponentControlsLandType -> {
-        ctx.state.getBattlefield().any { entityId ->
-            ctx.projected.getController(entityId) == opponentId &&
-                ctx.projected.getProjectedValues(entityId)?.subtypes
-                    ?.any { it.equals(condition.landType, ignoreCase = true) } == true
-        }
-    }
-}
-
-private fun countCreatures(ctx: AttackCheckContext, playerId: EntityId): Int {
-    return ctx.state.getBattlefield().count { entityId ->
-        ctx.projected.isCreature(entityId) && ctx.projected.getController(entityId) == playerId
-    }
 }
 
 // =========================================================================

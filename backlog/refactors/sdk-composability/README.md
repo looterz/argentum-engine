@@ -9,14 +9,14 @@ These are the patterns most likely to block new card definitions. Fix first.
 - ~~[Remove GlobalEffectType enum](remove-global-effect-type.md) — delete redundant enum, use existing group static abilities~~ **DONE**
 - ~~[Replace SpellTypeFilter with GameObjectFilter](replace-spell-type-filter.md) — `SpellCastEvent` should use composable filters, not a closed enum + inline fields~~ **DONE**
 - ~~[Unify blocking evasion](unify-blocking-evasion.md) — collapse 12+ blocking restriction classes into 2 parameterized types~~ **DONE**
-- ~~[Generic DynamicAmount](generic-dynamic-amount.md) — replace ~10 card-specific counting variants with generic primitives~~ **DONE** (Phase 1: turn-tracking counters unified)
+- ~~[Generic DynamicAmount](generic-dynamic-amount.md) — replace 10 card-specific counting variants with generic primitives~~ **DONE** (Phase 1: turn-tracking counters unified)
 
 ## Tier 2 — Blocks specific card patterns
 
 These affect specific mechanics. Lower urgency but still require code changes for new cards using these patterns.
 
 - [Generic ChainCopyEffect](generic-chain-copy.md) — replace `ChainAction` enum + `ChainCopyCost` with generic `Effect` + `PayCost`
-- [Unify CombatCondition](unify-combat-condition.md) — replace 2-variant sealed interface with existing `Condition` system
+- ~~[Unify CombatCondition](unify-combat-condition.md) — replace 2-variant sealed interface with existing `Condition` system~~ **DONE**
 - [Merge EntersWith*Choice](merge-enters-with-choice.md) — merge 3 replacement effects into single `EntersWithChoice(choiceType)`
 - [Compose bespoke stat abilities](compose-bespoke-stat-abilities.md) — `ModifyStatsForChosenCreatureType`, `ModifyStatsByCounterOnSource`, `ModifyStatsPerSharedCreatureType` → generic composition
 

@@ -1,9 +1,9 @@
 package com.wingedsheep.mtg.sets.definitions.portal.cards
 
+import com.wingedsheep.sdk.dsl.Conditions
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.CantAttackUnless
-import com.wingedsheep.sdk.scripting.CombatCondition
 
 /**
  * Deep-Sea Serpent
@@ -19,7 +19,7 @@ val DeepSeaSerpent = card("Deep-Sea Serpent") {
     toughness = 5
 
     staticAbility {
-        ability = CantAttackUnless(CombatCondition.OpponentControlsLandType("Island"))
+        ability = CantAttackUnless(Conditions.OpponentControlsLandType("Island"))
     }
 
     metadata {

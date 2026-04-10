@@ -21,10 +21,11 @@ import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.ManaCost
 import com.wingedsheep.sdk.core.ManaSymbol
 import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.engine.handlers.ConditionEvaluator
+import com.wingedsheep.engine.handlers.EffectContext
 import com.wingedsheep.sdk.scripting.CanBlockAnyNumber
 import com.wingedsheep.sdk.scripting.CantBlock
 import com.wingedsheep.sdk.scripting.CantBlockUnless
-import com.wingedsheep.sdk.scripting.CombatCondition
 import com.wingedsheep.sdk.scripting.StaticTarget
 import java.util.UUID
 
@@ -45,6 +46,7 @@ internal class BlockPhaseManager(
     private val cardRegistry: CardRegistry,
     private val blockEvasionRules: List<BlockEvasionRule>,
 ) {
+    private val conditionEvaluator = ConditionEvaluator()
 
     /**
      * Validate and declare blockers.
@@ -836,7 +838,12 @@ internal class BlockPhaseManager(
         val anyAttacker = attackers.keys.first()
         val attackingPlayer = projected.getController(anyAttacker) ?: return null
 
-        if (!evaluateCombatCondition(restriction.condition, state, blockingPlayer, attackingPlayer, projected)) {
+        val effectContext = EffectContext(
+            sourceId = blockerId,
+            controllerId = blockingPlayer,
+            opponentId = attackingPlayer
+        )
+        if (!conditionEvaluator.evaluate(state, restriction.condition, effectContext)) {
             return "${cardComponent.name} ${restriction.description}"
         }
 
@@ -867,32 +874,12 @@ internal class BlockPhaseManager(
         val anyAttacker = attackers.keys.first()
         val attackingPlayer = projected.getController(anyAttacker) ?: return false
 
-        return !evaluateCombatCondition(restriction.condition, state, blockingPlayer, attackingPlayer, projected)
-    }
-
-    private fun evaluateCombatCondition(
-        condition: CombatCondition,
-        state: GameState,
-        controllerId: EntityId,
-        opponentId: EntityId,
-        projected: ProjectedState
-    ): Boolean = when (condition) {
-        is CombatCondition.ControlMoreCreatures -> {
-            countCreatures(state, controllerId, projected) > countCreatures(state, opponentId, projected)
-        }
-        is CombatCondition.OpponentControlsLandType -> {
-            state.getBattlefield().any { entityId ->
-                projected.getController(entityId) == opponentId &&
-                    projected.getProjectedValues(entityId)?.subtypes
-                        ?.any { it.equals(condition.landType, ignoreCase = true) } == true
-            }
-        }
-    }
-
-    private fun countCreatures(state: GameState, playerId: EntityId, projected: ProjectedState): Int {
-        return state.getBattlefield().count { entityId ->
-            projected.isCreature(entityId) && projected.getController(entityId) == playerId
-        }
+        val effectContext = EffectContext(
+            sourceId = blockerId,
+            controllerId = blockingPlayer,
+            opponentId = attackingPlayer
+        )
+        return !conditionEvaluator.evaluate(state, restriction.condition, effectContext)
     }
 
     // =========================================================================

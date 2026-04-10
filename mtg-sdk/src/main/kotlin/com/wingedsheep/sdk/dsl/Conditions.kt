@@ -63,6 +63,24 @@ object Conditions {
         )
 
     /**
+     * If you control more creatures than opponent.
+     * Used for CantAttackUnless / CantBlockUnless (e.g. Goblin Goon).
+     */
+    val ControlMoreCreatures: ConditionInterface =
+        Compare(
+            DynamicAmount.AggregateBattlefield(Player.You, GameObjectFilter.Creature),
+            ComparisonOperator.GT,
+            DynamicAmount.AggregateBattlefield(Player.Opponent, GameObjectFilter.Creature)
+        )
+
+    /**
+     * If opponent controls a land of a specific subtype.
+     * Used for CantAttackUnless (e.g. Deep-Sea Serpent, Slipstream Eel).
+     */
+    fun OpponentControlsLandType(landType: String): ConditionInterface =
+        Exists(Player.Opponent, Zone.BATTLEFIELD, GameObjectFilter.Land.withSubtype(landType))
+
+    /**
      * If an opponent controls a creature.
      */
     val OpponentControlsCreature: ConditionInterface =
