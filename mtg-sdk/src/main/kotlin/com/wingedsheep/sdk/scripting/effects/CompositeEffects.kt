@@ -339,7 +339,13 @@ data class CreateDelayedTriggerEffect(
     /**
      * For event-based delayed triggers: when the ability is removed.
      */
-    val expiry: DelayedTriggerExpiry = DelayedTriggerExpiry.EndOfTurn
+    val expiry: DelayedTriggerExpiry = DelayedTriggerExpiry.EndOfTurn,
+    /**
+     * If true, the delayed trigger won't fire until the controller's next turn.
+     * Used for "at the beginning of your next end step" effects where "next"
+     * means the end step of the controller's following turn, not the current one.
+     */
+    val onControllerNextTurn: Boolean = false
 ) : Effect {
     override val description: String = when {
         trigger != null -> "create a delayed trigger that fires on ${trigger.event::class.simpleName}"

@@ -10,6 +10,7 @@ import com.wingedsheep.engine.state.components.identity.CardComponent
 import com.wingedsheep.sdk.scripting.effects.AddCountersEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.CreateDelayedTriggerEffect
+import com.wingedsheep.sdk.scripting.effects.DealDamagePerEntityInZoneEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.DestroyAllEquipmentOnTargetEffect
 import com.wingedsheep.sdk.scripting.effects.MayEffect
@@ -53,6 +54,15 @@ class CreateDelayedTriggerExecutor : EffectExecutor<CreateDelayedTriggerEffect> 
         // entity id so matching later is cheap and doesn't need the original context.
         val watchedEntityId = effect.watchedTarget?.let { resolveTarget(it, context) }
 
+        // Calculate notBeforeTurn for "your next end step" effects.
+        // turnNumber increments once per full round (when turnOrder[0] starts),
+        // so the controller's next turn is always turnNumber + 1.
+        val notBeforeTurn = if (effect.onControllerNextTurn) {
+            state.turnNumber + 1
+        } else {
+            null
+        }
+
         val delayedTrigger = DelayedTriggeredAbility(
             id = UUID.randomUUID().toString(),
             effect = resolvedEffect,
@@ -63,7 +73,8 @@ class CreateDelayedTriggerExecutor : EffectExecutor<CreateDelayedTriggerEffect> 
             fireOnlyOnControllersTurn = effect.fireOnlyOnControllersTurn,
             trigger = effect.trigger,
             watchedEntityId = watchedEntityId,
-            expiry = if (effect.trigger != null) effect.expiry else null
+            expiry = if (effect.trigger != null) effect.expiry else null,
+            notBeforeTurn = notBeforeTurn
         )
 
         return ExecutionResult.success(state.addDelayedTrigger(delayedTrigger))
@@ -103,6 +114,20 @@ class CreateDelayedTriggerExecutor : EffectExecutor<CreateDelayedTriggerEffect> 
             is AddCountersEffect -> {
                 val resolvedId = resolveTarget(effect.target, context)
                 if (resolvedId != null) effect.copy(target = EffectTarget.SpecificEntity(resolvedId)) else effect
+            }
+            is DealDamagePerEntityInZoneEffect -> {
+                // Resolve collection name to concrete entity IDs from the pipeline
+                val resolvedIds = effect.collectionName?.let { name ->
+                    context.pipeline.storedCollections[name]
+                } ?: effect.entityIds
+                val resolvedSource = effect.damageSource?.let { ds ->
+                    resolveTarget(ds, context)?.let { EffectTarget.SpecificEntity(it) }
+                }
+                effect.copy(
+                    entityIds = resolvedIds,
+                    collectionName = null,
+                    damageSource = resolvedSource ?: effect.damageSource
+                )
             }
             is CompositeEffect -> effect.copy(
                 effects = effect.effects.map { resolveContextTargets(it, context) }

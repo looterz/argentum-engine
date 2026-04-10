@@ -43,5 +43,7 @@ data class DelayedTriggeredAbility(
      */
     val watchedEntityId: EntityId? = null,
     /** For event-based delayed triggers: the expiry rule. */
-    val expiry: DelayedTriggerExpiry? = null
+    val expiry: DelayedTriggerExpiry? = null,
+    /** If set, this trigger won't fire before this turn number. Used for "your next end step" effects. */
+    val notBeforeTurn: Int? = null
 )

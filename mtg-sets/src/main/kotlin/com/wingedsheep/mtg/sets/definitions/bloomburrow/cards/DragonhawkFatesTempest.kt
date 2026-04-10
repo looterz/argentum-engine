@@ -1,6 +1,7 @@
 package com.wingedsheep.mtg.sets.definitions.bloomburrow.cards
 
 import com.wingedsheep.sdk.core.Keyword
+import com.wingedsheep.sdk.core.Step
 import com.wingedsheep.sdk.core.Zone
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
@@ -9,11 +10,14 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.CardDestination
 import com.wingedsheep.sdk.scripting.effects.CardSource
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
+import com.wingedsheep.sdk.scripting.effects.CreateDelayedTriggerEffect
+import com.wingedsheep.sdk.scripting.effects.DealDamagePerEntityInZoneEffect
 import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
 import com.wingedsheep.sdk.scripting.effects.GrantMayPlayFromExileEffect
 import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
 import com.wingedsheep.sdk.scripting.references.Player
+import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
@@ -26,9 +30,6 @@ import com.wingedsheep.sdk.scripting.values.DynamicAmount
  * where X is the number of creatures you control with power 4 or greater. You may
  * play those cards until your next end step. At the beginning of your next end step,
  * Dragonhawk deals 2 damage to each opponent for each of those cards that are still exiled.
- *
- * Note: The delayed end-step damage trigger for still-exiled cards is not yet implemented.
- * The impulse draw portion works correctly — exiled cards can be played until next end step.
  */
 val DragonhawkFatesTempest = card("Dragonhawk, Fate's Tempest") {
     manaCost = "{3}{R}{R}"
@@ -53,8 +54,19 @@ val DragonhawkFatesTempest = card("Dragonhawk, Fate's Tempest") {
             from = "exiledCards",
             destination = CardDestination.ToZone(Zone.EXILE)
         ),
-        GrantMayPlayFromExileEffect("exiledCards", untilEndOfNextTurn = true)
-        // TODO: Add delayed end-step trigger to deal 2 damage per still-exiled card
+        GrantMayPlayFromExileEffect("exiledCards", untilEndOfNextTurn = true),
+        CreateDelayedTriggerEffect(
+            step = Step.END,
+            fireOnlyOnControllersTurn = true,
+            onControllerNextTurn = true,
+            effect = DealDamagePerEntityInZoneEffect(
+                collectionName = "exiledCards",
+                zone = Zone.EXILE,
+                damagePerEntity = 2,
+                target = EffectTarget.PlayerRef(Player.EachOpponent),
+                damageSource = EffectTarget.Self
+            )
+        )
     ))
 
     // When Dragonhawk enters the battlefield

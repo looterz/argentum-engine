@@ -1,5 +1,8 @@
 package com.wingedsheep.sdk.scripting.effects
 
+import com.wingedsheep.sdk.core.Zone
+import com.wingedsheep.sdk.model.EntityId
+import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.text.TextReplacer
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
@@ -86,6 +89,37 @@ data class FightEffect(
     val target2: EffectTarget
 ) : Effect {
     override val description: String = "${target1.description} fights ${target2.description}"
+
+    override fun applyTextReplacement(replacer: TextReplacer): Effect = this
+}
+
+/**
+ * Deal damage to a target for each entity from a tracked collection that is still in a given zone.
+ * Used for Dragonhawk-style "deal 2 damage to each opponent for each of those cards that are still exiled."
+ *
+ * At definition time, [collectionName] references a pipeline collection (e.g., "exiledCards").
+ * When a delayed trigger is created, [CreateDelayedTriggerExecutor] resolves the collection
+ * to concrete [entityIds] so the delayed trigger can check zone membership without the original context.
+ *
+ * @property entityIds Concrete entity IDs to check (populated at delayed trigger creation time)
+ * @property collectionName Pipeline collection name to resolve into entityIds (used at definition time)
+ * @property zone The zone to check for remaining entities
+ * @property damagePerEntity Damage dealt per entity still in the zone
+ * @property target Who receives the damage (e.g., PlayerRef(Player.EachOpponent))
+ * @property damageSource Optional override for the damage source
+ */
+@SerialName("DealDamagePerEntityInZone")
+@Serializable
+data class DealDamagePerEntityInZoneEffect(
+    val entityIds: List<EntityId> = emptyList(),
+    val collectionName: String? = null,
+    val zone: Zone = Zone.EXILE,
+    val damagePerEntity: Int = 1,
+    val target: EffectTarget = EffectTarget.PlayerRef(Player.EachOpponent),
+    val damageSource: EffectTarget? = null
+) : Effect {
+    override val description: String =
+        "Deal $damagePerEntity damage to ${target.description} for each card still in ${zone.name.lowercase()}"
 
     override fun applyTextReplacement(replacer: TextReplacer): Effect = this
 }

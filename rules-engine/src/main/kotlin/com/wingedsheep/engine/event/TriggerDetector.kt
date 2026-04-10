@@ -252,7 +252,8 @@ class TriggerDetector(
         val matching = state.delayedTriggers.filter { delayed ->
             delayed.trigger == null &&
                 delayed.fireAtStep == step &&
-                (!delayed.fireOnlyOnControllersTurn || delayed.controllerId == activePlayer)
+                (!delayed.fireOnlyOnControllersTurn || delayed.controllerId == activePlayer) &&
+                (delayed.notBeforeTurn == null || state.turnNumber >= delayed.notBeforeTurn)
         }
         if (matching.isEmpty()) return emptyList<PendingTrigger>() to emptySet()
 

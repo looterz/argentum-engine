@@ -14,6 +14,7 @@ class DamageExecutors(
 ) : ExecutorModule {
     override fun executors(): List<EffectExecutor<*>> = listOf(
         DealDamageExecutor(amountEvaluator),
+        DealDamagePerEntityInZoneExecutor(),
         DividedDamageExecutor(decisionHandler),
         FightEffectExecutor()
     )
