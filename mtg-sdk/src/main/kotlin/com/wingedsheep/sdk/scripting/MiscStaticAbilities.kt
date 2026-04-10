@@ -309,6 +309,28 @@ data class AdditionalETBTriggers(
 }
 
 /**
+ * You may play additional lands on each of your turns.
+ * Used for permanents like Hugs, Grisly Guardian and Oracle of Mul Daya.
+ *
+ * This is a continuous effect — the bonus applies as long as the permanent is on the
+ * battlefield. If the permanent enters mid-turn, the extra land drop is immediately
+ * available. If it leaves, the bonus is immediately lost.
+ *
+ * Multiple copies are additive: two copies yield two additional land drops.
+ *
+ * @property count The number of additional land drops granted each turn (default 1)
+ */
+@SerialName("GrantAdditionalLandDrop")
+@Serializable
+data class GrantAdditionalLandDrop(
+    val count: Int = 1
+) : StaticAbility {
+    override val description: String =
+        "You may play ${if (count == 1) "an additional land" else "$count additional lands"} on each of your turns"
+    override fun applyTextReplacement(replacer: TextReplacer): StaticAbility = this
+}
+
+/**
  * If a source you control would deal noncombat damage to an opponent or a permanent
  * an opponent controls, it deals that much damage plus the bonus amount instead.
  *

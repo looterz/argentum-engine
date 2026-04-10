@@ -49,10 +49,12 @@ class EnumerationContext(
         state.step.isMainPhase && state.stack.isEmpty() && state.activePlayerId == playerId
     }
 
-    // Land drop availability
+    // Land drop availability (accounts for static ability bonuses like GrantAdditionalLandDrop)
     val canPlayLand: Boolean by lazy {
         val landDrops = state.getEntity(playerId)?.get<LandDropsComponent>()
-        canPlaySorcerySpeed && (landDrops?.canPlayLand ?: false)
+        val remaining = landDrops?.remaining ?: 0
+        val staticBonus = castPermissionUtils.getAdditionalLandDrops(state, playerId)
+        canPlaySorcerySpeed && (remaining + staticBonus > 0)
     }
 
     // Cast restrictions

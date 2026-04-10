@@ -2,7 +2,6 @@ package com.wingedsheep.mtg.sets.definitions.bloomburrow.cards
 
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Zone
-import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.Triggers
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
@@ -12,7 +11,7 @@ import com.wingedsheep.sdk.scripting.effects.CompositeEffect
 import com.wingedsheep.sdk.scripting.effects.GatherCardsEffect
 import com.wingedsheep.sdk.scripting.effects.GrantMayPlayFromExileEffect
 import com.wingedsheep.sdk.scripting.effects.MoveCollectionEffect
-import com.wingedsheep.sdk.scripting.effects.PlayAdditionalLandsEffect
+import com.wingedsheep.sdk.scripting.GrantAdditionalLandDrop
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
@@ -62,10 +61,8 @@ val HugsGrislyGuardian = card("Hugs, Grisly Guardian") {
     }
 
     // You may play an additional land on each of your turns.
-    // Modeled as a beginning-of-turn trigger that grants an extra land drop.
-    triggeredAbility {
-        trigger = Triggers.FirstMainPhase
-        effect = PlayAdditionalLandsEffect(count = 1)
+    staticAbility {
+        ability = GrantAdditionalLandDrop(count = 1)
     }
 
     metadata {

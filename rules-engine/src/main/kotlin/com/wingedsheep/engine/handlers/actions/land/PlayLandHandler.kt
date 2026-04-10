@@ -25,6 +25,7 @@ import com.wingedsheep.sdk.scripting.EntersTapped
 import com.wingedsheep.sdk.scripting.EntersWithColorChoice
 import com.wingedsheep.sdk.scripting.EntersWithCreatureTypeChoice
 import com.wingedsheep.sdk.scripting.MayPlayPermanentsFromGraveyard
+import com.wingedsheep.engine.legalactions.utils.LandDropUtils
 import com.wingedsheep.sdk.scripting.PlayFromTopOfLibrary
 import com.wingedsheep.sdk.scripting.PlayLandsAndCastFilteredFromTopOfLibrary
 import kotlin.reflect.KClass
@@ -53,10 +54,11 @@ class PlayLandHandler(
             return "You can only play lands when the stack is empty"
         }
 
-        // Check land drop availability
+        // Check land drop availability (accounts for static ability bonuses)
         val landDrops = state.getEntity(action.playerId)?.get<LandDropsComponent>()
             ?: LandDropsComponent()
-        if (!landDrops.canPlayLand) {
+        val staticBonus = LandDropUtils.getAdditionalLandDrops(state, action.playerId, cardRegistry)
+        if (landDrops.remaining + staticBonus <= 0) {
             return "You have already played a land this turn"
         }
 

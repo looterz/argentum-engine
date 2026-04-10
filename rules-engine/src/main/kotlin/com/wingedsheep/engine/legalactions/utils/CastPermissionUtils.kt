@@ -206,6 +206,15 @@ class CastPermissionUtils(
         return false
     }
 
+    /**
+     * Count additional land drops granted by static abilities on permanents
+     * controlled by the given player (e.g., GrantAdditionalLandDrop from Hugs, Grisly Guardian).
+     * Multiple sources are additive.
+     */
+    fun getAdditionalLandDrops(state: GameState, playerId: EntityId): Int {
+        return LandDropUtils.getAdditionalLandDrops(state, playerId, cardRegistry)
+    }
+
     fun getMaxLoyaltyActivations(state: GameState, playerId: EntityId): Int {
         for (permanentId in state.getBattlefield()) {
             val container = state.getEntity(permanentId) ?: continue
