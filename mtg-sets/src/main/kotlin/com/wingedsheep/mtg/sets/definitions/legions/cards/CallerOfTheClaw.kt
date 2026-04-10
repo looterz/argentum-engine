@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.effects.CreateTokenEffect
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import com.wingedsheep.sdk.scripting.values.TurnTracker
 
 /**
  * Caller of the Claw
@@ -30,7 +31,7 @@ val CallerOfTheClaw = card("Caller of the Claw") {
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
         effect = CreateTokenEffect(
-            count = DynamicAmount.NonTokenCreaturesDiedThisTurn(Player.You),
+            count = DynamicAmount.TurnTracking(Player.You, TurnTracker.NONTOKEN_CREATURES_DIED),
             power = 2,
             toughness = 2,
             colors = setOf(Color.GREEN),

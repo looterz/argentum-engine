@@ -11,6 +11,7 @@ import com.wingedsheep.sdk.scripting.values.EntityReference
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 import com.wingedsheep.sdk.scripting.references.Player
+import com.wingedsheep.sdk.scripting.values.TurnTracker
 
 /**
  * Convenience factory for common DynamicAmount expressions.
@@ -188,17 +189,23 @@ object DynamicAmounts {
     // =========================================================================
 
     fun damageDealtToTargetPlayerThisTurn(targetIndex: Int = 0): DynamicAmount =
-        DynamicAmount.DamageDealtToTargetPlayerThisTurn(targetIndex)
+        DynamicAmount.TurnTracking(Player.ContextPlayer(targetIndex), TurnTracker.DAMAGE_RECEIVED)
 
     // =========================================================================
-    // Turn-based death tracking
+    // Turn-based tracking
     // =========================================================================
 
     fun nonTokenCreaturesDiedThisTurn(player: Player = Player.You): DynamicAmount =
-        DynamicAmount.NonTokenCreaturesDiedThisTurn(player)
+        DynamicAmount.TurnTracking(player, TurnTracker.NONTOKEN_CREATURES_DIED)
 
     fun creaturesDiedThisTurn(player: Player = Player.You): DynamicAmount =
-        DynamicAmount.CreaturesDiedThisTurn(player)
+        DynamicAmount.TurnTracking(player, TurnTracker.CREATURES_DIED)
+
+    fun opponentsWhoLostLifeThisTurn(): DynamicAmount =
+        DynamicAmount.TurnTracking(Player.You, TurnTracker.OPPONENTS_WHO_LOST_LIFE)
+
+    fun opponentCreaturesExiledThisTurn(): DynamicAmount =
+        DynamicAmount.TurnTracking(Player.You, TurnTracker.OPPONENT_CREATURES_EXILED)
 
     // =========================================================================
     // Entity property shortcuts (composable entity + property)

@@ -12,7 +12,9 @@ import com.wingedsheep.sdk.scripting.EntersWithDynamicCounters
 import com.wingedsheep.sdk.scripting.GameEvent
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.KeywordAbility
+import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import com.wingedsheep.sdk.scripting.values.TurnTracker
 
 /**
  * Gev, Scaled Scorch
@@ -41,7 +43,7 @@ val GevScaledScorch = card("Gev, Scaled Scorch") {
     // Other creatures you control enter with +1/+1 counters
     replacementEffect(
         EntersWithDynamicCounters(
-            count = DynamicAmount.OpponentsWhoLostLifeThisTurn,
+            count = DynamicAmount.TurnTracking(Player.You, TurnTracker.OPPONENTS_WHO_LOST_LIFE),
             otherOnly = true,
             appliesTo = GameEvent.ZoneChangeEvent(
                 filter = GameObjectFilter.Creature.youControl(),

@@ -13,6 +13,33 @@ import kotlinx.serialization.Serializable
 // Note: Player, Zone, and GameObjectFilter are in the same package (com.wingedsheep.sdk.scripting)
 
 /**
+ * Trackable per-player statistics that reset at end of turn.
+ *
+ * Used by [DynamicAmount.TurnTracking] to read turn-tracking counters from player components.
+ */
+@Serializable
+enum class TurnTracker {
+    /** Count of all creatures (including tokens) that died under a player's control this turn. */
+    CREATURES_DIED,
+    /** Count of nontoken creatures put into a player's graveyard from the battlefield this turn. */
+    NONTOKEN_CREATURES_DIED,
+    /** Count of creatures exiled from opponents' control this turn. */
+    OPPONENT_CREATURES_EXILED,
+    /** Count of opponents who lost life this turn. */
+    OPPONENTS_WHO_LOST_LIFE,
+    /** Total damage received by the player this turn. */
+    DAMAGE_RECEIVED;
+
+    fun descriptionFor(player: Player): String = when (this) {
+        CREATURES_DIED -> "the number of creatures that died under ${player.possessive} control this turn"
+        NONTOKEN_CREATURES_DIED -> "the number of nontoken creatures put into ${player.possessive} graveyard from the battlefield this turn"
+        OPPONENT_CREATURES_EXILED -> "the number of creatures that were exiled under your opponents' control this turn"
+        OPPONENTS_WHO_LOST_LIFE -> "the number of opponents who lost life this turn"
+        DAMAGE_RECEIVED -> "the damage already dealt to that player this turn"
+    }
+}
+
+/**
  * Sources for dynamic values in effects.
  */
 @Serializable
@@ -576,16 +603,19 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
     }
 
     /**
-     * Total damage dealt to a target player this turn.
-     * Used for Final Punishment: "Target player loses life equal to the damage
-     * already dealt to that player this turn."
+     * Reads a per-player turn-tracking counter.
      *
-     * @param targetIndex Index into the context targets array to find the player
+     * Unifies CreaturesDiedThisTurn, NonTokenCreaturesDiedThisTurn, OpponentCreaturesExiledThisTurn,
+     * OpponentsWhoLostLifeThisTurn, and DamageDealtToTargetPlayerThisTurn into a single parameterized variant.
+     *
+     * @param player Which player(s) to read the counter from. Use [Player.ContextPlayer] with a target
+     *   index when the player comes from a targeting context (e.g., "damage dealt to target player").
+     * @param tracker Which turn-tracking stat to read
      */
-    @SerialName("DamageDealtToTargetPlayerThisTurn")
+    @SerialName("TurnTracking")
     @Serializable
-    data class DamageDealtToTargetPlayerThisTurn(val targetIndex: Int = 0) : DynamicAmount {
-        override val description: String = "the damage already dealt to that player this turn"
+    data class TurnTracking(val player: Player, val tracker: TurnTracker) : DynamicAmount {
+        override val description: String = tracker.descriptionFor(player)
         override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
     }
 
@@ -600,58 +630,6 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
         override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
     }
 
-    /**
-     * Count of nontoken creatures put into a player's graveyard from the battlefield this turn.
-     * Used for Caller of the Claw: "create a 2/2 green Bear creature token for each nontoken creature
-     * put into your graveyard from the battlefield this turn."
-     *
-     * Reads from NonTokenCreaturesDiedThisTurnComponent on the player entity.
-     */
-    @SerialName("NonTokenCreaturesDiedThisTurn")
-    @Serializable
-    data class NonTokenCreaturesDiedThisTurn(val player: Player) : DynamicAmount {
-        override val description: String = "the number of nontoken creatures put into ${player.possessive} graveyard from the battlefield this turn"
-        override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
-    }
-
-    /**
-     * Count of all creatures (including tokens) that died under a player's control this turn.
-     * Used for Season of Loss: "Draw a card for each creature that died under your control this turn."
-     *
-     * Reads from CreaturesDiedThisTurnComponent on the player entity.
-     */
-    @SerialName("CreaturesDiedThisTurn")
-    @Serializable
-    data class CreaturesDiedThisTurn(val player: Player) : DynamicAmount {
-        override val description: String = "the number of creatures that died under ${player.possessive} control this turn"
-        override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
-    }
-
-    /**
-     * Count of opponents who lost life this turn.
-     * Used for Gev, Scaled Scorch: "for each opponent who lost life this turn"
-     *
-     * Reads from LifeLostThisTurnComponent on each opponent entity.
-     */
-    @SerialName("OpponentsWhoLostLifeThisTurn")
-    @Serializable
-    data object OpponentsWhoLostLifeThisTurn : DynamicAmount {
-        override val description: String = "the number of opponents who lost life this turn"
-        override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
-    }
-
-    /**
-     * Count of creatures that were exiled from opponents' control this turn.
-     * Used for Vren, the Relentless.
-     *
-     * Reads from OpponentCreaturesExiledThisTurnComponent on the player entity.
-     */
-    @SerialName("OpponentCreaturesExiledThisTurn")
-    @Serializable
-    data object OpponentCreaturesExiledThisTurn : DynamicAmount {
-        override val description: String = "the number of creatures that were exiled under your opponents' control this turn"
-        override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
-    }
 
     /**
      * Count creatures the controller controls that have the creature type chosen by the source permanent.

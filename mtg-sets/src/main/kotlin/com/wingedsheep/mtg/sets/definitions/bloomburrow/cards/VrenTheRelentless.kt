@@ -14,6 +14,7 @@ import com.wingedsheep.sdk.scripting.StaticTarget
 import com.wingedsheep.sdk.scripting.effects.CreateTokenEffect
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import com.wingedsheep.sdk.scripting.values.TurnTracker
 
 /**
  * Vren, the Relentless
@@ -55,7 +56,7 @@ val VrenTheRelentless = card("Vren, the Relentless") {
     triggeredAbility {
         trigger = Triggers.EachEndStep
         effect = CreateTokenEffect(
-            count = DynamicAmount.OpponentCreaturesExiledThisTurn,
+            count = DynamicAmount.TurnTracking(Player.You, TurnTracker.OPPONENT_CREATURES_EXILED),
             power = 1,
             toughness = 1,
             colors = setOf(Color.BLACK),

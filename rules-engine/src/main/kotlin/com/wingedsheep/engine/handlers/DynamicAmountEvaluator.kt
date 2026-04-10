@@ -18,6 +18,7 @@ import com.wingedsheep.sdk.scripting.values.CardNumericProperty
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 import com.wingedsheep.sdk.scripting.values.EntityNumericProperty
 import com.wingedsheep.sdk.scripting.values.EntityReference
+import com.wingedsheep.sdk.scripting.values.TurnTracker
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 import com.wingedsheep.sdk.scripting.references.Player
@@ -181,49 +182,39 @@ class DynamicAmountEvaluator(
                 }
             }
 
-            is DynamicAmount.DamageDealtToTargetPlayerThisTurn -> {
-                val target = context.targets.getOrNull(amount.targetIndex) ?: return 0
-                val playerId = when (target) {
-                    is com.wingedsheep.engine.state.components.stack.ChosenTarget.Player -> target.playerId
-                    else -> return 0
-                }
-                state.getEntity(playerId)
-                    ?.get<com.wingedsheep.engine.state.components.player.DamageReceivedThisTurnComponent>()
-                    ?.amount ?: 0
-            }
-
-            is DynamicAmount.NonTokenCreaturesDiedThisTurn -> {
+            is DynamicAmount.TurnTracking -> {
                 val playerIds = resolveUnifiedPlayerIds(state, amount.player, context)
-                playerIds.sumOf { playerId ->
-                    state.getEntity(playerId)
-                        ?.get<com.wingedsheep.engine.state.components.player.NonTokenCreaturesDiedThisTurnComponent>()
-                        ?.count ?: 0
-                }
-            }
-
-            is DynamicAmount.CreaturesDiedThisTurn -> {
-                val playerIds = resolveUnifiedPlayerIds(state, amount.player, context)
-                playerIds.sumOf { playerId ->
-                    state.getEntity(playerId)
-                        ?.get<com.wingedsheep.engine.state.components.player.CreaturesDiedThisTurnComponent>()
-                        ?.count ?: 0
-                }
-            }
-
-            is DynamicAmount.OpponentsWhoLostLifeThisTurn -> {
-                val controllerId = context.controllerId
-                state.turnOrder
-                    .filter { it != controllerId }
-                    .count { opponentId ->
-                        state.getEntity(opponentId)
-                            ?.get<com.wingedsheep.engine.state.components.player.LifeLostThisTurnComponent>() != null
+                when (amount.tracker) {
+                    TurnTracker.CREATURES_DIED -> playerIds.sumOf { playerId ->
+                        state.getEntity(playerId)
+                            ?.get<com.wingedsheep.engine.state.components.player.CreaturesDiedThisTurnComponent>()
+                            ?.count ?: 0
                     }
-            }
-
-            is DynamicAmount.OpponentCreaturesExiledThisTurn -> {
-                state.getEntity(context.controllerId)
-                    ?.get<com.wingedsheep.engine.state.components.player.OpponentCreaturesExiledThisTurnComponent>()
-                    ?.count ?: 0
+                    TurnTracker.NONTOKEN_CREATURES_DIED -> playerIds.sumOf { playerId ->
+                        state.getEntity(playerId)
+                            ?.get<com.wingedsheep.engine.state.components.player.NonTokenCreaturesDiedThisTurnComponent>()
+                            ?.count ?: 0
+                    }
+                    TurnTracker.OPPONENT_CREATURES_EXILED -> playerIds.sumOf { playerId ->
+                        state.getEntity(playerId)
+                            ?.get<com.wingedsheep.engine.state.components.player.OpponentCreaturesExiledThisTurnComponent>()
+                            ?.count ?: 0
+                    }
+                    TurnTracker.OPPONENTS_WHO_LOST_LIFE -> {
+                        val controllerId = context.controllerId
+                        state.turnOrder
+                            .filter { it != controllerId }
+                            .count { opponentId ->
+                                state.getEntity(opponentId)
+                                    ?.get<com.wingedsheep.engine.state.components.player.LifeLostThisTurnComponent>() != null
+                            }
+                    }
+                    TurnTracker.DAMAGE_RECEIVED -> playerIds.sumOf { playerId ->
+                        state.getEntity(playerId)
+                            ?.get<com.wingedsheep.engine.state.components.player.DamageReceivedThisTurnComponent>()
+                            ?.amount ?: 0
+                    }
+                }
             }
 
             is DynamicAmount.CreaturesSharingTypeWithTriggeringEntity -> {
@@ -443,9 +434,11 @@ class DynamicAmountEvaluator(
             is Player.Each -> state.turnOrder
             is Player.Any -> state.turnOrder
             is Player.ContextPlayer -> {
-                // ContextPlayer resolves from context targets, but targets are ChosenTargets
-                // (not EffectTargets), so player resolution is not supported here
-                emptyList()
+                val target = context.targets.getOrNull(player.index) ?: return emptyList()
+                when (target) {
+                    is com.wingedsheep.engine.state.components.stack.ChosenTarget.Player -> listOf(target.playerId)
+                    else -> emptyList()
+                }
             }
             is Player.ControllerOf -> {
                 // Would need to resolve the target and find its controller

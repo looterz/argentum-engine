@@ -15,6 +15,7 @@ import com.wingedsheep.sdk.scripting.effects.LoseLifeEffect
 import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
+import com.wingedsheep.sdk.scripting.values.TurnTracker
 
 
 /**
@@ -56,7 +57,7 @@ val SeasonOfLoss = card("Season of Loss") {
                 BudgetMode(
                     cost = 2,
                     effect = DrawCardsEffect(
-                        count = DynamicAmount.CreaturesDiedThisTurn(Player.You),
+                        count = DynamicAmount.TurnTracking(Player.You, TurnTracker.CREATURES_DIED),
                         target = EffectTarget.Controller
                     ),
                     description = "Draw a card for each creature that died under your control this turn"
