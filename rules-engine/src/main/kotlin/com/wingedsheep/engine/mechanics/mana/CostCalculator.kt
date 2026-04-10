@@ -678,6 +678,8 @@ class CostCalculator(
             }
 
             CardPredicate.SharesCreatureTypeWithTriggeringEntity -> true // Not applicable in cost calculation
+            CardPredicate.HasChosenSubtype -> true // Not applicable in cost calculation
+            is CardPredicate.SharesCreatureTypeWith -> true // Not applicable in cost calculation
 
             // Context-relative predicates — not applicable in cost calculation (no pipeline context)
             is CardPredicate.HasSubtypeFromVariable -> true

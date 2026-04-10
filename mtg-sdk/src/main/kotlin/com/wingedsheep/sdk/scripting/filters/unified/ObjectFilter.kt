@@ -8,6 +8,7 @@ import com.wingedsheep.sdk.scripting.predicates.ControllerPredicate
 import com.wingedsheep.sdk.scripting.predicates.StatePredicate
 import com.wingedsheep.sdk.scripting.text.TextReplaceable
 import com.wingedsheep.sdk.scripting.text.TextReplacer
+import com.wingedsheep.sdk.scripting.values.EntityReference
 import kotlinx.serialization.Serializable
 
 /**
@@ -261,6 +262,16 @@ data class GameObjectFilter(
     /** Must have any one of the given subtypes (OR logic) */
     fun withAnyOfSubtypes(subtypes: List<Subtype>) = copy(
         cardPredicates = cardPredicates + CardPredicate.HasAnyOfSubtypes(subtypes)
+    )
+
+    /** Must have the subtype chosen on the source permanent */
+    fun withChosenSubtype() = copy(
+        cardPredicates = cardPredicates + CardPredicate.HasChosenSubtype
+    )
+
+    /** Must share a creature type with the referenced entity */
+    fun sharingCreatureTypeWith(entity: EntityReference) = copy(
+        cardPredicates = cardPredicates + CardPredicate.SharesCreatureTypeWith(entity)
     )
 
     // =============================================================================

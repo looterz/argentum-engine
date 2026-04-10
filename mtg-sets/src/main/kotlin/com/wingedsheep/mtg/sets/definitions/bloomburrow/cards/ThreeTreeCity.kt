@@ -7,8 +7,10 @@ import com.wingedsheep.sdk.scripting.AbilityCost
 import com.wingedsheep.sdk.scripting.ChoiceType
 import com.wingedsheep.sdk.scripting.EntersWithChoice
 import com.wingedsheep.sdk.scripting.TimingRule
+import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.AddAnyColorManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddColorlessManaEffect
+import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
@@ -36,7 +38,10 @@ val ThreeTreeCity = card("Three Tree City") {
     activatedAbility {
         cost = Costs.Composite(Costs.Mana("{2}"), Costs.Tap)
         effect = AddAnyColorManaEffect(
-            amount = DynamicAmount.CountCreaturesOfSourceChosenType
+            amount = DynamicAmount.AggregateBattlefield(
+                player = Player.You,
+                filter = GameObjectFilter.Creature.withChosenSubtype()
+            )
         )
         manaAbility = true
         timing = TimingRule.ManaAbility

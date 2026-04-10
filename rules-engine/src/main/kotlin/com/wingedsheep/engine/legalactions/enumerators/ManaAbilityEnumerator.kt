@@ -19,6 +19,7 @@ import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.effects.AddAnyColorManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddManaOfColorAmongEffect
 import com.wingedsheep.sdk.scripting.effects.CompositeEffect
+import com.wingedsheep.sdk.scripting.predicates.CardPredicate
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
 
 /**
@@ -249,7 +250,11 @@ class ManaAbilityEnumerator : ActionEnumerator {
             is AddAnyColorManaEffect -> effect.amount
             else -> null
         }
-        if (amount !is DynamicAmount.CountCreaturesOfSourceChosenType) {
+
+        // Detect AggregateBattlefield with HasChosenSubtype predicate (e.g., Three Tree City)
+        val hasChosenSubtypeFilter = amount is DynamicAmount.AggregateBattlefield &&
+            amount.filter.cardPredicates.any { it is CardPredicate.HasChosenSubtype }
+        if (!hasChosenSubtypeFilter) {
             return ability.description
         }
 

@@ -217,65 +217,34 @@ class DynamicAmountEvaluator(
                 }
             }
 
-            is DynamicAmount.CreaturesSharingTypeWithTriggeringEntity -> {
-                val triggeringId = context.triggeringEntityId ?: return 0
-                // Get the triggering creature's subtypes from projected state
-                val projected = if (projectForBattlefieldCounting) {
-                    state.projectedState
-                } else null
+            is DynamicAmount.CreaturesSharingTypeWithEntity -> {
+                val entityId = resolveEntityId(amount.entity, context) ?: return 0
+                val projected = if (projectForBattlefieldCounting) state.projectedState else null
 
-                val triggeringSubtypes = if (projected != null) {
-                    projected.getSubtypes(triggeringId)
+                val entitySubtypes = if (projected != null) {
+                    projected.getSubtypes(entityId)
                 } else {
-                    val card = state.getEntity(triggeringId)?.get<CardComponent>() ?: return 0
+                    val card = state.getEntity(entityId)?.get<CardComponent>() ?: return 0
                     card.typeLine.subtypes.map { it.value }.toSet()
                 }
-                if (triggeringSubtypes.isEmpty()) return 0
+                if (entitySubtypes.isEmpty()) return 0
 
-                // Count creatures the controller controls that share at least one subtype
-                state.getBattlefield().count { entityId ->
-                    val controllerId = projected?.getController(entityId)
-                        ?: state.getEntity(entityId)?.get<ControllerComponent>()?.playerId
-                    if (controllerId != context.controllerId) return@count false
+                // Count all other creatures on the battlefield that share at least one subtype
+                state.getBattlefield().count { otherId ->
+                    if (otherId == entityId) return@count false
                     val isCreature = if (projected != null) {
-                        "CREATURE" in projected.getTypes(entityId)
+                        "CREATURE" in projected.getTypes(otherId)
                     } else {
-                        state.getEntity(entityId)?.get<CardComponent>()?.typeLine?.isCreature ?: false
+                        state.getEntity(otherId)?.get<CardComponent>()?.typeLine?.isCreature ?: false
                     }
                     if (!isCreature) return@count false
-                    val subtypes = projected?.getSubtypes(entityId)
-                        ?: state.getEntity(entityId)?.get<CardComponent>()?.typeLine?.subtypes?.map { it.value }?.toSet()
+                    val subtypes = projected?.getSubtypes(otherId)
+                        ?: state.getEntity(otherId)?.get<CardComponent>()?.typeLine?.subtypes?.map { it.value }?.toSet()
                         ?: return@count false
-                    subtypes.intersect(triggeringSubtypes).isNotEmpty()
+                    subtypes.any { it in entitySubtypes }
                 }
             }
 
-            is DynamicAmount.CountCreaturesOfSourceChosenType -> {
-                val sourceId = context.sourceId ?: return 0
-                val chosenType = state.getEntity(sourceId)
-                    ?.get<com.wingedsheep.engine.state.components.identity.ChosenCreatureTypeComponent>()
-                    ?.creatureType ?: return 0
-
-                val projected = if (projectForBattlefieldCounting) {
-                    state.projectedState
-                } else null
-
-                state.getBattlefield().count { entityId ->
-                    val controllerId = projected?.getController(entityId)
-                        ?: state.getEntity(entityId)?.get<ControllerComponent>()?.playerId
-                    if (controllerId != context.controllerId) return@count false
-                    val isCreature = if (projected != null) {
-                        "CREATURE" in projected.getTypes(entityId)
-                    } else {
-                        state.getEntity(entityId)?.get<CardComponent>()?.typeLine?.isCreature ?: false
-                    }
-                    if (!isCreature) return@count false
-                    val subtypes = projected?.getSubtypes(entityId)
-                        ?: state.getEntity(entityId)?.get<CardComponent>()?.typeLine?.subtypes?.map { it.value }?.toSet()
-                        ?: return@count false
-                    chosenType in subtypes
-                }
-            }
         }
     }
 
@@ -508,6 +477,7 @@ class DynamicAmountEvaluator(
             is EntityReference.Sacrificed -> context.sacrificedPermanents.getOrNull(ref.index)
             is EntityReference.TappedAsCost -> context.tappedPermanents.getOrNull(ref.index)
             is EntityReference.Triggering -> context.triggeringEntityId
+            is EntityReference.AffectedEntity -> context.affectedEntityId
         }
 
     // =========================================================================

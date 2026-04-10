@@ -5,6 +5,7 @@ import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.core.Subtype
 import com.wingedsheep.sdk.scripting.text.TextReplaceable
 import com.wingedsheep.sdk.scripting.text.TextReplacer
+import com.wingedsheep.sdk.scripting.values.EntityReference
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -377,6 +378,26 @@ sealed interface CardPredicate : TextReplaceable<CardPredicate> {
     @Serializable
     data object SharesCreatureTypeWithTriggeringEntity : CardPredicate {
         override val description: String = "that shares a creature type with it"
+        override fun applyTextReplacement(replacer: TextReplacer): CardPredicate = this
+    }
+
+    /** Matches creatures that have the subtype chosen on the source permanent (ChosenCreatureTypeComponent) */
+    @SerialName("HasChosenSubtype")
+    @Serializable
+    data object HasChosenSubtype : CardPredicate {
+        override val description: String = "of the chosen type"
+        override fun applyTextReplacement(replacer: TextReplacer): CardPredicate = this
+    }
+
+    /** Matches creatures that share a creature subtype with the referenced entity */
+    @SerialName("SharesCreatureTypeWith")
+    @Serializable
+    data class SharesCreatureTypeWith(val entity: EntityReference) : CardPredicate {
+        override val description: String = when (entity) {
+            is EntityReference.Source -> "that shares a creature type with this creature"
+            is EntityReference.Triggering -> "that shares a creature type with it"
+            else -> "that shares a creature type with ${entity.description}"
+        }
         override fun applyTextReplacement(replacer: TextReplacer): CardPredicate = this
     }
 

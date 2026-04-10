@@ -620,28 +620,14 @@ sealed interface DynamicAmount : TextReplaceable<DynamicAmount> {
     }
 
     /**
-     * Count creatures the controller controls that share a creature type with the triggering entity.
-     * Used for Mana Echoes: "add {C} equal to the number of creatures you control that share a creature type with it."
+     * Count other creatures on the battlefield that share a creature type with the referenced entity.
+     * Used for Alpha Status: "+2/+2 for each other creature that shares a creature type with it."
      */
-    @SerialName("CreaturesSharingTypeWithTriggeringEntity")
+    @SerialName("CreaturesSharingTypeWithEntity")
     @Serializable
-    data object CreaturesSharingTypeWithTriggeringEntity : DynamicAmount {
-        override val description: String = "the number of creatures you control that share a creature type with it"
+    data class CreaturesSharingTypeWithEntity(val entity: EntityReference) : DynamicAmount {
+        override val description: String = "the number of other creatures that share a creature type with ${entity.description}"
         override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
     }
 
-
-    /**
-     * Count creatures the controller controls that have the creature type chosen by the source permanent.
-     * Used for Three Tree City: "Add an amount of mana of that color equal to the number of creatures
-     * you control of the chosen type."
-     *
-     * Reads ChosenCreatureTypeComponent from the source entity.
-     */
-    @SerialName("CountCreaturesOfSourceChosenType")
-    @Serializable
-    data object CountCreaturesOfSourceChosenType : DynamicAmount {
-        override val description: String = "the number of creatures you control of the chosen type"
-        override fun applyTextReplacement(replacer: TextReplacer): DynamicAmount = this
-    }
 }

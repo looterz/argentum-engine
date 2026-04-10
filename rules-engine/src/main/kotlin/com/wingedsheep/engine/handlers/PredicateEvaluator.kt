@@ -26,6 +26,7 @@ import com.wingedsheep.sdk.scripting.predicates.CardPredicate
 import com.wingedsheep.sdk.scripting.predicates.ControllerPredicate
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.predicates.StatePredicate
+import com.wingedsheep.sdk.scripting.values.EntityReference
 import com.wingedsheep.engine.state.CastSpellRecord
 
 /**
@@ -312,6 +313,28 @@ class PredicateEvaluator {
                 }
             }
 
+            CardPredicate.HasChosenSubtype -> {
+                val sourceId = context?.sourceId ?: return false
+                val chosenType = state.getEntity(sourceId)
+                    ?.get<ChosenCreatureTypeComponent>()?.creatureType
+                    ?: return false
+                val entitySubtypes = projectedValues?.subtypes ?: card.typeLine.subtypes.map { it.value }.toSet()
+                entitySubtypes.any { it.equals(chosenType, ignoreCase = true) }
+            }
+
+            is CardPredicate.SharesCreatureTypeWith -> {
+                val referenceId = resolveEntityReference(predicate.entity, context) ?: return false
+                val referenceSubtypes = projected.getSubtypes(referenceId).ifEmpty {
+                    state.getEntity(referenceId)?.get<CardComponent>()?.typeLine?.subtypes?.map { it.value }?.toSet()
+                        ?: emptySet()
+                }
+                if (referenceSubtypes.isEmpty()) return false
+                val entitySubtypes = projectedValues?.subtypes ?: card.typeLine.subtypes.map { it.value }.toSet()
+                entitySubtypes.any { entitySubtype ->
+                    referenceSubtypes.any { it.equals(entitySubtype, ignoreCase = true) }
+                }
+            }
+
             // Context-relative predicates (pipeline variable references)
             is CardPredicate.HasSubtypeFromVariable -> {
                 val chosenType = context?.chosenValues?.get(predicate.variableName) ?: return false
@@ -528,6 +551,25 @@ class PredicateEvaluator {
                 }
             }
 
+            CardPredicate.HasChosenSubtype -> {
+                val sourceId = context?.sourceId ?: return false
+                val chosenType = state.getEntity(sourceId)
+                    ?.get<ChosenCreatureTypeComponent>()?.creatureType
+                    ?: return false
+                card.typeLine.subtypes.any { it.value.equals(chosenType, ignoreCase = true) }
+            }
+
+            is CardPredicate.SharesCreatureTypeWith -> {
+                val referenceId = resolveEntityReference(predicate.entity, context) ?: return false
+                val referenceCard = state.getEntity(referenceId)?.get<CardComponent>() ?: return false
+                val referenceSubtypes = referenceCard.typeLine.subtypes
+                if (referenceSubtypes.isEmpty()) return false
+                val entitySubtypes = card.typeLine.subtypes
+                entitySubtypes.any { entitySubtype ->
+                    referenceSubtypes.any { it.value.equals(entitySubtype.value, ignoreCase = true) }
+                }
+            }
+
             // Context-relative predicates (pipeline variable references)
             is CardPredicate.HasSubtypeFromVariable -> {
                 val chosenType = context?.chosenValues?.get(predicate.variableName) ?: return false
@@ -554,6 +596,20 @@ class PredicateEvaluator {
 
             // Handled before CardComponent check above — unreachable here
             CardPredicate.IsActivatedOrTriggeredAbility -> false
+        }
+    }
+
+    /**
+     * Resolve an EntityReference to an EntityId using the predicate context.
+     */
+    private fun resolveEntityReference(ref: EntityReference, context: PredicateContext?): EntityId? {
+        return when (ref) {
+            is EntityReference.Source -> context?.sourceId
+            is EntityReference.Triggering -> context?.triggeringEntityId
+            is EntityReference.Target -> null // Not available in predicate context
+            is EntityReference.Sacrificed -> null
+            is EntityReference.TappedAsCost -> null
+            is EntityReference.AffectedEntity -> null // Only available during projection
         }
     }
 
@@ -799,7 +855,8 @@ class PredicateEvaluator {
 
             // Source-relative and context predicates — not applicable
             CardPredicate.NotOfSourceChosenType, CardPredicate.SharesCreatureTypeWithSource,
-            CardPredicate.SharesCreatureTypeWithTriggeringEntity -> false
+            CardPredicate.SharesCreatureTypeWithTriggeringEntity, CardPredicate.HasChosenSubtype,
+            is CardPredicate.SharesCreatureTypeWith -> false
             is CardPredicate.HasSubtypeFromVariable, is CardPredicate.HasSubtypeInStoredList -> false
 
             // Stack ability check — cast spells are not abilities
