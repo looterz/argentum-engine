@@ -18,7 +18,7 @@ val HighStride = card("High Stride") {
     oracleText = "Target creature gets +1/+3 and gains reach until end of turn. Untap it."
 
     spell {
-        val t = target("target", TargetCreature())
+        val t = target("target creature to get +1/+3 and reach", TargetCreature())
         effect = Effects.ModifyStats(1, 3, t)
             .then(Effects.GrantKeyword(Keyword.REACH, t))
             .then(Effects.Untap(t))

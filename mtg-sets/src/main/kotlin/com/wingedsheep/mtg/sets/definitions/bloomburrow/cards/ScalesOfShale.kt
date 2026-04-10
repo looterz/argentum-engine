@@ -25,7 +25,7 @@ val ScalesOfShale = card("Scales of Shale") {
     keywordAbility(KeywordAbility.AffinityForSubtype(Subtype.LIZARD))
 
     spell {
-        val t = target("creature", TargetCreature())
+        val t = target("target creature to get +2/+0, lifelink, and indestructible", TargetCreature())
         effect = Effects.ModifyStats(2, 0, t)
             .then(Effects.GrantKeyword(Keyword.LIFELINK, t))
             .then(Effects.GrantKeyword(Keyword.INDESTRUCTIBLE, t))

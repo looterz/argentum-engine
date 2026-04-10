@@ -24,7 +24,7 @@ val MightOfTheMeek = card("Might of the Meek") {
     oracleText = "Target creature gains trample until end of turn. It also gets +1/+0 until end of turn if you control a Mouse.\nDraw a card."
 
     spell {
-        val creature = target("target creature", Targets.Creature)
+        val creature = target("target creature to gain trample", Targets.Creature)
         effect = Effects.GrantKeyword(Keyword.TRAMPLE, creature)
             .then(
                 ConditionalEffect(

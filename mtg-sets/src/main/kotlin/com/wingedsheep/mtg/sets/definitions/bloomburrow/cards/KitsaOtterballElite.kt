@@ -47,7 +47,7 @@ val KitsaOtterballElite = card("Kitsa, Otterball Elite") {
     // Activate only if Kitsa's power is 3 or greater.
     activatedAbility {
         cost = Costs.Composite(Costs.Mana("{2}"), Costs.Tap)
-        val spell = target("spell", Targets.InstantOrSorcerySpellYouControl)
+        val spell = target("target instant or sorcery spell you control to copy", Targets.InstantOrSorcerySpellYouControl)
         effect = Effects.CopyTargetSpell(spell)
         holdPriority = true
         restrictions = listOf(

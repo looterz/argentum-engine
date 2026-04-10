@@ -19,7 +19,7 @@ val Savor = card("Savor") {
     oracleText = "Target creature gets -2/-2 until end of turn. Create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")"
 
     spell {
-        val creature = target("creature", Targets.Creature)
+        val creature = target("target creature to get -2/-2", Targets.Creature)
         effect = Effects.ModifyStats(-2, -2, creature)
             .then(Effects.CreateFood(1))
     }

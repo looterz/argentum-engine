@@ -41,7 +41,7 @@ val IntrepidRabbit = card("Intrepid Rabbit") {
     // ETB: target creature you control gets +1/+1 until end of turn
     triggeredAbility {
         trigger = Triggers.EntersBattlefield
-        val creature = target("creature you control", Targets.CreatureYouControl)
+        val creature = target("target creature you control to get +1/+1", Targets.CreatureYouControl)
         effect = Effects.ModifyStats(1, 1, creature)
     }
 

@@ -23,7 +23,7 @@ val DireDowndraft = card("Dire Downdraft") {
     oracleText = "This spell costs {1} less to cast if it targets an attacking or tapped creature.\nTarget creature's owner puts it on their choice of the top or bottom of their library."
 
     spell {
-        val creature = target("creature", Targets.Creature)
+        val creature = target("target creature to put on top or bottom of library", Targets.Creature)
         effect = Effects.PutOnTopOrBottomOfLibrary(creature)
     }
 

@@ -17,7 +17,7 @@ val Fell = card("Fell") {
     oracleText = "Destroy target creature."
 
     spell {
-        val creature = target("target creature", Targets.Creature)
+        val creature = target("target creature to destroy", Targets.Creature)
         effect = Effects.Destroy(creature)
     }
 

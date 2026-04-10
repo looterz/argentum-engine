@@ -27,11 +27,11 @@ val EarlyWinter = card("Early Winter") {
     spell {
         modal(chooseCount = 1) {
             mode("Exile target creature") {
-                val t = target("creature", Targets.Creature)
+                val t = target("target creature to exile", Targets.Creature)
                 effect = Effects.Exile(t)
             }
             mode("Exile target enchantment an opponent controls") {
-                val t = target("enchantment", TargetObject(
+                val t = target("target enchantment to exile", TargetObject(
                     filter = TargetFilter.Enchantment.opponentControls()
                 ))
                 effect = Effects.Exile(t)
