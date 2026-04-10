@@ -870,6 +870,7 @@ class ActivatedAbilityBuilder {
     var promptOnDraw: Boolean = false
     var description: String? = null
     var hasConvoke: Boolean = false
+    var holdPriority: Boolean = false
 
     // Named target bindings (for multi-target abilities)
     private val namedTargets: MutableList<Pair<String, TargetRequirement>> = mutableListOf()
@@ -907,7 +908,8 @@ class ActivatedAbilityBuilder {
             activateFromZone = activateFromZone,
             promptOnDraw = promptOnDraw,
             descriptionOverride = description,
-            hasConvoke = hasConvoke
+            hasConvoke = hasConvoke,
+            holdPriority = holdPriority
         )
     }
 }

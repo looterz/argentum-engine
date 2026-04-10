@@ -74,7 +74,10 @@ data class LegalAction(
     val requiresForage: Boolean = false,
 
     // Additional life cost (e.g., Festival of Embers graveyard casting)
-    val additionalLifeCost: Int = 0
+    val additionalLifeCost: Int = 0,
+
+    // When true, prevents auto-pass whenever this action is available
+    val holdPriority: Boolean = false
 )
 
 /**

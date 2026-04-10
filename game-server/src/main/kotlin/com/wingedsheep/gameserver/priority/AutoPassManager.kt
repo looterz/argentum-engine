@@ -92,7 +92,13 @@ class AutoPassManager {
             val topController = getStackItemController(state, topOfStack)
 
             if (topController == playerId) {
-                // Our own spell/ability is on top - auto-pass to let opponent respond
+                // Our own spell/ability is on top - auto-pass to let opponent respond,
+                // unless an available action has holdPriority set (e.g., copy-spell abilities)
+                val shouldHold = meaningfulActions.any { it.holdPriority }
+                if (shouldHold) {
+                    logger.debug("STOP: Own spell/ability on top of stack but player has holdPriority action")
+                    return false
+                }
                 logger.debug("AUTO-PASS: Own spell/ability on top of stack")
                 return true
             } else {

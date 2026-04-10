@@ -983,7 +983,9 @@ data class LegalActionInfo(
     /** The crew power requirement (N in "Crew N") */
     val crewPower: Int? = null,
     /** Creatures that can be tapped to crew this vehicle */
-    val validCrewCreatures: List<CrewCreatureInfo>? = null
+    val validCrewCreatures: List<CrewCreatureInfo>? = null,
+    /** When true, prevents auto-pass whenever this action is available */
+    val holdPriority: Boolean = false
 )
 
 /**

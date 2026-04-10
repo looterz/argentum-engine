@@ -26,7 +26,11 @@ data class ActivatedAbility(
     val activateFromZone: Zone = Zone.BATTLEFIELD,
     val promptOnDraw: Boolean = false,
     val descriptionOverride: String? = null,
-    val hasConvoke: Boolean = false
+    val hasConvoke: Boolean = false,
+    /** When true, prevents auto-pass whenever this ability is available.
+     *  Used for abilities that interact with transient game state the player would miss,
+     *  such as copying a spell on the stack. */
+    val holdPriority: Boolean = false
 ) : TextReplaceable<ActivatedAbility> {
     /** Backward-compatible secondary constructor for single-target abilities. */
     constructor(

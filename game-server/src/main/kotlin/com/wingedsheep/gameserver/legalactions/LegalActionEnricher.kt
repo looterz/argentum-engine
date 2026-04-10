@@ -72,7 +72,8 @@ class LegalActionEnricher(
             hasCrew = action.hasCrew,
             crewPower = action.crewPower,
             validCrewCreatures = action.crewCreatures?.map { it.toDto() },
-            maxRepeatableActivations = action.maxRepeatableActivations
+            maxRepeatableActivations = action.maxRepeatableActivations,
+            holdPriority = action.holdPriority
         )
     }
 

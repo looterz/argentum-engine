@@ -504,7 +504,8 @@ class ActivatedAbilityEnumerator : ActionEnumerator {
                             autoTapPreview = abilityAutoTapPreview,
                             manaCostString = abilityManaCostString,
                             hasConvoke = ability.hasConvoke,
-                            convokeCreatures = abilityConvokeCreatures
+                            convokeCreatures = abilityConvokeCreatures,
+                            holdPriority = ability.holdPriority
                         ))
                     }
                 } else {

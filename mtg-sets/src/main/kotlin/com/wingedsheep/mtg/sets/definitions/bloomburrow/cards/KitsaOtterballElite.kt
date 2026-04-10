@@ -49,6 +49,7 @@ val KitsaOtterballElite = card("Kitsa, Otterball Elite") {
         cost = Costs.Composite(Costs.Mana("{2}"), Costs.Tap)
         val spell = target("spell", Targets.InstantOrSorcerySpellYouControl)
         effect = Effects.CopyTargetSpell(spell)
+        holdPriority = true
         restrictions = listOf(
             ActivationRestriction.OnlyIfCondition(
                 Compare(
