@@ -43,9 +43,10 @@ import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 import com.wingedsheep.sdk.scripting.EntersAsCopy
 import com.wingedsheep.engine.handlers.effects.ReplacementEffectUtils
 import com.wingedsheep.sdk.scripting.EntersTapped
+import com.wingedsheep.sdk.scripting.EntersWithChoice
 import com.wingedsheep.sdk.scripting.EntersWithCounters
-import com.wingedsheep.sdk.scripting.EntersWithCreatureTypeChoice
 import com.wingedsheep.sdk.scripting.EntersWithDynamicCounters
+import com.wingedsheep.sdk.scripting.ChoiceType
 import com.wingedsheep.engine.handlers.DynamicAmountEvaluator
 import com.wingedsheep.engine.handlers.PredicateContext
 import com.wingedsheep.engine.handlers.PredicateEvaluator
@@ -478,112 +479,18 @@ class StackResolver(
                 // No matching permanents on battlefield - fall through to enter as itself (0/0)
             }
 
-            // Check for EntersWithColorChoice replacement effect (must be before creature type choice)
-            val entersWithColorChoice = cardDef.script.replacementEffects.filterIsInstance<com.wingedsheep.sdk.scripting.EntersWithColorChoice>().firstOrNull()
-            if (entersWithColorChoice != null) {
-                val decisionId = "choose-color-enters-${spellId.value}"
-                val decision = ChooseColorDecision(
-                    id = decisionId,
-                    playerId = controllerId,
-                    prompt = "Choose a color",
-                    context = DecisionContext(
-                        sourceId = spellId,
-                        sourceName = cardComponent.name,
-                        phase = DecisionPhase.RESOLUTION
-                    )
-                )
-
-                val continuation = ChooseColorEntersContinuation(
-                    decisionId = decisionId,
-                    spellId = spellId,
-                    controllerId = controllerId,
-                    ownerId = ownerId
-                )
-
-                val pausedState = state
-                    .pushContinuation(continuation)
-                    .withPendingDecision(decision)
-                return ExecutionResult.paused(pausedState, decision)
-            }
-
-            // Check for EntersWithCreatureTypeChoice replacement effect
-            val entersWithChoice = cardDef.script.replacementEffects.filterIsInstance<EntersWithCreatureTypeChoice>().firstOrNull()
-            if (entersWithChoice != null) {
-                val allCreatureTypes = com.wingedsheep.sdk.core.Subtype.ALL_CREATURE_TYPES
-                val chooserId = if (entersWithChoice.opponentChooses) {
-                    state.turnOrder.firstOrNull { it != controllerId } ?: controllerId
-                } else {
-                    controllerId
-                }
-                val decisionId = "choose-creature-type-enters-${spellId.value}"
-                val decision = ChooseOptionDecision(
-                    id = decisionId,
-                    playerId = chooserId,
-                    prompt = "Choose a creature type",
-                    context = DecisionContext(
-                        sourceId = spellId,
-                        sourceName = cardComponent.name,
-                        phase = DecisionPhase.RESOLUTION
-                    ),
-                    options = allCreatureTypes,
-                    defaultSearch = ""
-                )
-
-                val continuation = ChooseCreatureTypeEntersContinuation(
-                    decisionId = decisionId,
-                    spellId = spellId,
-                    controllerId = controllerId,
-                    ownerId = ownerId,
-                    creatureTypes = allCreatureTypes
-                )
-
-                val pausedState = state
-                    .pushContinuation(continuation)
-                    .withPendingDecision(decision)
-                return ExecutionResult.paused(pausedState, decision)
-            }
-
-            // Check for EntersWithCreatureChoice replacement effect
-            val entersWithCreatureChoice = cardDef.script.replacementEffects.filterIsInstance<com.wingedsheep.sdk.scripting.EntersWithCreatureChoice>().firstOrNull()
-            if (entersWithCreatureChoice != null) {
-                // Find other creatures the controller controls on the battlefield
-                val battlefieldCreatures = state.getBattlefield().filter { entityId ->
-                    val container = state.getEntity(entityId) ?: return@filter false
-                    val card = container.get<CardComponent>() ?: return@filter false
-                    val controller = container.get<com.wingedsheep.engine.state.components.identity.ControllerComponent>()?.playerId ?: return@filter false
-                    controller == controllerId && card.typeLine.isCreature && entityId != spellId
-                }
-
-                if (battlefieldCreatures.isNotEmpty()) {
-                    val decisionId = "choose-creature-enters-${spellId.value}"
-                    val decision = SelectCardsDecision(
-                        id = decisionId,
-                        playerId = controllerId,
-                        prompt = "Choose another creature you control",
-                        context = DecisionContext(
-                            sourceId = spellId,
-                            sourceName = cardComponent.name,
-                            phase = DecisionPhase.RESOLUTION
-                        ),
-                        options = battlefieldCreatures,
-                        minSelections = 1,
-                        maxSelections = 1,
-                        useTargetingUI = true
-                    )
-
-                    val continuation = ChooseCreatureEntersContinuation(
-                        decisionId = decisionId,
-                        spellId = spellId,
-                        controllerId = controllerId,
-                        ownerId = ownerId
-                    )
-
-                    val pausedState = state
-                        .pushContinuation(continuation)
-                        .withPendingDecision(decision)
-                    return ExecutionResult.paused(pausedState, decision)
-                }
-                // No other creatures on battlefield — enter without a chosen creature
+            // Check for EntersWithChoice replacement effects (color first, then creature type, then creature)
+            // Process in priority order: COLOR → CREATURE_TYPE → CREATURE_ON_BATTLEFIELD
+            // When a card has multiple choices (e.g., Riptide Replicator: color + creature type),
+            // the first one pauses; its continuation resumer chains to the next.
+            val entersWithChoices = cardDef.script.replacementEffects.filterIsInstance<EntersWithChoice>()
+            val firstChoice = entersWithChoices
+                .sortedBy { it.choiceType.ordinal }
+                .firstOrNull()
+            if (firstChoice != null) {
+                val result = pauseForEntersWithChoice(state, spellId, controllerId, ownerId, cardComponent, firstChoice)
+                if (result != null) return result
+                // null means choice couldn't be presented (e.g., no creatures on battlefield) — fall through
             }
 
             // Check for Amplify replacement effect
@@ -1695,6 +1602,117 @@ class StackResolver(
             val existing = container.get<TargetedByControllerThisTurnComponent>()
                 ?: TargetedByControllerThisTurnComponent()
             container.with(existing.withController(controllerId))
+        }
+    }
+
+    /**
+     * Create the appropriate decision and continuation for an EntersWithChoice replacement effect.
+     * Returns null if the choice cannot be presented (e.g., no creatures on battlefield for CREATURE_ON_BATTLEFIELD).
+     */
+    internal fun pauseForEntersWithChoice(
+        state: GameState,
+        spellId: EntityId,
+        controllerId: EntityId,
+        ownerId: EntityId,
+        cardComponent: CardComponent,
+        choice: EntersWithChoice
+    ): ExecutionResult? {
+        val chooserId = when (choice.chooser) {
+            com.wingedsheep.sdk.scripting.references.Player.Opponent ->
+                state.turnOrder.firstOrNull { it != controllerId } ?: controllerId
+            else -> controllerId
+        }
+
+        return when (choice.choiceType) {
+            ChoiceType.COLOR -> {
+                val decisionId = "choose-color-enters-${spellId.value}"
+                val decision = ChooseColorDecision(
+                    id = decisionId,
+                    playerId = chooserId,
+                    prompt = "Choose a color",
+                    context = DecisionContext(
+                        sourceId = spellId,
+                        sourceName = cardComponent.name,
+                        phase = DecisionPhase.RESOLUTION
+                    )
+                )
+                val continuation = EntersWithChoiceSpellContinuation(
+                    decisionId = decisionId,
+                    spellId = spellId,
+                    controllerId = controllerId,
+                    ownerId = ownerId,
+                    choiceType = ChoiceType.COLOR
+                )
+                val pausedState = state
+                    .pushContinuation(continuation)
+                    .withPendingDecision(decision)
+                ExecutionResult.paused(pausedState, decision)
+            }
+
+            ChoiceType.CREATURE_TYPE -> {
+                val allCreatureTypes = com.wingedsheep.sdk.core.Subtype.ALL_CREATURE_TYPES
+                val decisionId = "choose-creature-type-enters-${spellId.value}"
+                val decision = ChooseOptionDecision(
+                    id = decisionId,
+                    playerId = chooserId,
+                    prompt = "Choose a creature type",
+                    context = DecisionContext(
+                        sourceId = spellId,
+                        sourceName = cardComponent.name,
+                        phase = DecisionPhase.RESOLUTION
+                    ),
+                    options = allCreatureTypes,
+                    defaultSearch = ""
+                )
+                val continuation = EntersWithChoiceSpellContinuation(
+                    decisionId = decisionId,
+                    spellId = spellId,
+                    controllerId = controllerId,
+                    ownerId = ownerId,
+                    choiceType = ChoiceType.CREATURE_TYPE,
+                    creatureTypes = allCreatureTypes
+                )
+                val pausedState = state
+                    .pushContinuation(continuation)
+                    .withPendingDecision(decision)
+                ExecutionResult.paused(pausedState, decision)
+            }
+
+            ChoiceType.CREATURE_ON_BATTLEFIELD -> {
+                val battlefieldCreatures = state.getBattlefield().filter { entityId ->
+                    val container = state.getEntity(entityId) ?: return@filter false
+                    val card = container.get<CardComponent>() ?: return@filter false
+                    val controller = container.get<com.wingedsheep.engine.state.components.identity.ControllerComponent>()?.playerId ?: return@filter false
+                    controller == controllerId && card.typeLine.isCreature && entityId != spellId
+                }
+                if (battlefieldCreatures.isEmpty()) return null // No creatures — enter without choice
+                val decisionId = "choose-creature-enters-${spellId.value}"
+                val decision = SelectCardsDecision(
+                    id = decisionId,
+                    playerId = controllerId,
+                    prompt = "Choose another creature you control",
+                    context = DecisionContext(
+                        sourceId = spellId,
+                        sourceName = cardComponent.name,
+                        phase = DecisionPhase.RESOLUTION
+                    ),
+                    options = battlefieldCreatures,
+                    minSelections = 1,
+                    maxSelections = 1,
+                    useTargetingUI = true
+                )
+                val continuation = EntersWithChoiceSpellContinuation(
+                    decisionId = decisionId,
+                    spellId = spellId,
+                    controllerId = controllerId,
+                    ownerId = ownerId,
+                    choiceType = ChoiceType.CREATURE_ON_BATTLEFIELD
+                )
+                val pausedState = state
+                    .pushContinuation(continuation)
+                    .withPendingDecision(decision)
+                ExecutionResult.paused(pausedState, decision)
+            }
         }
     }
 }

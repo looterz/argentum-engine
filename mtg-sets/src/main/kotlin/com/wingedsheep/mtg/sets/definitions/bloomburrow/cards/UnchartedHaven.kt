@@ -4,7 +4,8 @@ import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.EntersWithColorChoice
+import com.wingedsheep.sdk.scripting.ChoiceType
+import com.wingedsheep.sdk.scripting.EntersWithChoice
 import com.wingedsheep.sdk.scripting.EntersTapped
 
 /**
@@ -19,7 +20,7 @@ val UnchartedHaven = card("Uncharted Haven") {
     oracleText = "This land enters tapped.\nAs it enters, choose a color.\n{T}: Add one mana of the chosen color."
 
     replacementEffect(EntersTapped())
-    replacementEffect(EntersWithColorChoice())
+    replacementEffect(EntersWithChoice(ChoiceType.COLOR))
 
     // {T}: Add one mana of the chosen color
     activatedAbility {

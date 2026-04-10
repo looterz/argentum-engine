@@ -7,6 +7,7 @@ import com.wingedsheep.sdk.scripting.effects.Effect
 import com.wingedsheep.sdk.scripting.events.CounterTypeFilter
 import com.wingedsheep.sdk.scripting.events.RecipientFilter
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
+import com.wingedsheep.sdk.scripting.references.Player
 import com.wingedsheep.sdk.scripting.text.TextReplaceable
 import com.wingedsheep.sdk.scripting.text.TextReplacer
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
@@ -582,78 +583,60 @@ data class EntersAsCopy(
 }
 
 // =============================================================================
-// Color Choice Replacement Effects
+// Enter-With-Choice Replacement Effects
 // =============================================================================
 
 /**
- * As this permanent enters, choose a color.
- * The chosen color is stored on the permanent for use by other abilities.
- * Example: Riptide Replicator
+ * What the player chooses as the permanent enters.
  */
-@SerialName("EntersWithColorChoice")
 @Serializable
-data class EntersWithColorChoice(
-    override val appliesTo: GameEvent = GameEvent.ZoneChangeEvent(
-        filter = GameObjectFilter.Any,
-        to = Zone.BATTLEFIELD
-    )
-) : ReplacementEffect {
-    override val description: String = "As this permanent enters, choose a color"
-
-    override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
-        val newAppliesTo = appliesTo.applyTextReplacement(replacer)
-        return if (newAppliesTo !== appliesTo) copy(appliesTo = newAppliesTo) else this
-    }
+enum class ChoiceType {
+    /** Choose a color (e.g., Riptide Replicator, Ward Sliver) */
+    COLOR,
+    /** Choose a creature type (e.g., Doom Cannon, Cover of Darkness) */
+    CREATURE_TYPE,
+    /** Choose another creature you control (e.g., Dauntless Bodyguard) */
+    CREATURE_ON_BATTLEFIELD
 }
 
-// =============================================================================
-// Creature Type Choice Replacement Effects
-// =============================================================================
-
 /**
- * As this permanent enters, choose a creature type.
- * The chosen type is stored on the permanent for use by other abilities.
- * Example: Doom Cannon, Cover of Darkness, Steely Resolve
+ * As this permanent enters, make a choice. The chosen value is stored on
+ * the permanent for use by other abilities.
+ *
+ * Replaces the former EntersWithColorChoice, EntersWithCreatureTypeChoice,
+ * and EntersWithCreatureChoice with a single parameterized type.
+ *
+ * @param choiceType What kind of choice to present
+ * @param chooser Who makes the choice (default: controller)
+ *
+ * Examples:
+ * - Riptide Replicator: `EntersWithChoice(ChoiceType.COLOR)`
+ * - Callous Oppressor: `EntersWithChoice(ChoiceType.CREATURE_TYPE, chooser = Player.Opponent)`
+ * - Dauntless Bodyguard: `EntersWithChoice(ChoiceType.CREATURE_ON_BATTLEFIELD)`
  */
-@SerialName("EntersWithCreatureTypeChoice")
+@SerialName("EntersWithChoice")
 @Serializable
-data class EntersWithCreatureTypeChoice(
-    val opponentChooses: Boolean = false,
+data class EntersWithChoice(
+    val choiceType: ChoiceType,
+    val chooser: Player = Player.You,
     override val appliesTo: GameEvent = GameEvent.ZoneChangeEvent(
         filter = GameObjectFilter.Any,
         to = Zone.BATTLEFIELD
     )
 ) : ReplacementEffect {
-    override val description: String = if (opponentChooses) {
-        "As this permanent enters, an opponent chooses a creature type"
-    } else {
-        "As this permanent enters, choose a creature type"
+    override val description: String = when (choiceType) {
+        ChoiceType.COLOR -> if (chooser == Player.Opponent) {
+            "As this permanent enters, an opponent chooses a color"
+        } else {
+            "As this permanent enters, choose a color"
+        }
+        ChoiceType.CREATURE_TYPE -> if (chooser == Player.Opponent) {
+            "As this permanent enters, an opponent chooses a creature type"
+        } else {
+            "As this permanent enters, choose a creature type"
+        }
+        ChoiceType.CREATURE_ON_BATTLEFIELD -> "As this creature enters, choose another creature you control"
     }
-
-    override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
-        val newAppliesTo = appliesTo.applyTextReplacement(replacer)
-        return if (newAppliesTo !== appliesTo) copy(appliesTo = newAppliesTo) else this
-    }
-}
-
-// =============================================================================
-// Creature Choice Replacement Effects
-// =============================================================================
-
-/**
- * As this permanent enters, choose another creature you control.
- * The chosen creature's EntityId is stored on the permanent for use by other abilities.
- * Example: Dauntless Bodyguard ("As this creature enters, choose another creature you control")
- */
-@SerialName("EntersWithCreatureChoice")
-@Serializable
-data class EntersWithCreatureChoice(
-    override val appliesTo: GameEvent = GameEvent.ZoneChangeEvent(
-        filter = GameObjectFilter.Any,
-        to = Zone.BATTLEFIELD
-    )
-) : ReplacementEffect {
-    override val description: String = "As this creature enters, choose another creature you control"
 
     override fun applyTextReplacement(replacer: TextReplacer): ReplacementEffect {
         val newAppliesTo = appliesTo.applyTextReplacement(replacer)

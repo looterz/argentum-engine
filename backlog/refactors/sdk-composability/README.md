@@ -17,7 +17,7 @@ These affect specific mechanics. Lower urgency but still require code changes fo
 
 - ~~[Generic ChainCopyEffect](generic-chain-copy.md) — replace `ChainAction` enum + `ChainCopyCost` with generic `Effect` + `PayCost`~~ **DONE**
 - ~~[Unify CombatCondition](unify-combat-condition.md) — replace 2-variant sealed interface with existing `Condition` system~~ **DONE**
-- [Merge EntersWith*Choice](merge-enters-with-choice.md) — merge 3 replacement effects into single `EntersWithChoice(choiceType)`
+- ~~[Merge EntersWith*Choice](merge-enters-with-choice.md) — merge 3 replacement effects into single `EntersWithChoice(choiceType)`~~ **DONE**
 - [Compose bespoke stat abilities](compose-bespoke-stat-abilities.md) — `ModifyStatsForChosenCreatureType`, `ModifyStatsByCounterOnSource`, `ModifyStatsPerSharedCreatureType` → generic composition
 
 ## Tier 3 — Niche or unused

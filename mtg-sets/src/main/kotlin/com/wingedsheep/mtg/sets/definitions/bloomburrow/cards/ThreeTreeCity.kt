@@ -4,7 +4,8 @@ import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.AbilityCost
-import com.wingedsheep.sdk.scripting.EntersWithCreatureTypeChoice
+import com.wingedsheep.sdk.scripting.ChoiceType
+import com.wingedsheep.sdk.scripting.EntersWithChoice
 import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.effects.AddAnyColorManaEffect
 import com.wingedsheep.sdk.scripting.effects.AddColorlessManaEffect
@@ -23,7 +24,7 @@ val ThreeTreeCity = card("Three Tree City") {
     typeLine = "Legendary Land"
     oracleText = "As Three Tree City enters, choose a creature type.\n{T}: Add {C}.\n{2}, {T}: Choose a color. Add an amount of mana of that color equal to the number of creatures you control of the chosen type."
 
-    replacementEffect(EntersWithCreatureTypeChoice())
+    replacementEffect(EntersWithChoice(ChoiceType.CREATURE_TYPE))
 
     activatedAbility {
         cost = AbilityCost.Tap

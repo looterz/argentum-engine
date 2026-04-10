@@ -4,7 +4,8 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.GrantProtectionFromChosenColorToGroup
-import com.wingedsheep.sdk.scripting.EntersWithColorChoice
+import com.wingedsheep.sdk.scripting.ChoiceType
+import com.wingedsheep.sdk.scripting.EntersWithChoice
 import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 
 /**
@@ -22,7 +23,7 @@ val WardSliver = card("Ward Sliver") {
     toughness = 2
     oracleText = "As this creature enters, choose a color. All Slivers have protection from the chosen color."
 
-    replacementEffect(EntersWithColorChoice())
+    replacementEffect(EntersWithChoice(ChoiceType.COLOR))
 
     staticAbility {
         ability = GrantProtectionFromChosenColorToGroup(

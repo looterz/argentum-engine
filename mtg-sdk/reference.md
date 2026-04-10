@@ -988,17 +988,15 @@ Set via `staticAbility { ability = ... }`:
 - `GrantActivatedAbilityToCreatureGroup(ability: ActivatedAbility, filter: GroupFilter)` — activated ability to group (e.g., Spectral Sliver granting pump to all Slivers)
 - `GrantActivatedAbilityToAttachedCreature(ability: ActivatedAbility)` — activated ability to attached creature (e.g., Singing Bell Strike granting "{6}: Untap this creature")
 - `GrantCantBeBlockedExceptBySubtype(filter: GroupFilter, requiredSubtype: String)` — "can't be blocked except by [subtype]" to group (e.g., Shifting Sliver)
-- `GrantKeywordForChosenCreatureType(keyword)` — keyword to chosen creature type
 - `GrantKeywordByCounter(keyword, counterType)` — grant keyword when counter present
 - `ModifyStats(powerBonus, toughnessBonus, target: StaticTarget)` — P/T bonus
-- `ModifyStatsForCreatureGroup(powerBonus, toughnessBonus, filter: AffectsFilter)` — P/T to group
+- `ModifyStatsForCreatureGroup(powerBonus, toughnessBonus, filter: GroupFilter)` — P/T to group (use `GroupFilter.ChosenSubtypeCreatures()` for chosen-type lord effects)
 - `SetBaseToughnessForCreatureGroup(toughness, filter: GroupFilter)` — set base toughness for a group (Layer 7b SET_VALUES)
-- `ModifyStatsForChosenCreatureType(powerBonus, toughnessBonus)` — P/T to chosen type
 - `ModifyStatsByCounterOnSource(counterType, powerModPerCounter, toughnessModPerCounter, target)` — P/T per counter
 - `ModifyStatsPerSharedCreatureType(powerModPerCreature, toughnessModPerCreature, target)` — P/T per creature sharing a type
 - `GrantDynamicStatsEffect(target, powerBonus: DynamicAmount, toughnessBonus: DynamicAmount)`
 - `GrantProtection(color, target)` — grant protection from color
-- `GrantProtectionFromChosenColorToGroup(filter: GroupFilter)` — grant protection from chosen color (via `EntersWithColorChoice`) to a group
+- `GrantProtectionFromChosenColorToGroup(filter: GroupFilter)` — grant protection from chosen color (via `EntersWithChoice(ChoiceType.COLOR)`) to a group
 
 ### Land Animation
 
@@ -1117,9 +1115,7 @@ Used in card definitions for effects that intercept events before they happen:
 - `EntersWithDynamicCounters(counterType, count: DynamicAmount, appliesTo)` — dynamic counter entry
 - `UndyingEffect(appliesTo)` / `PersistEffect(appliesTo)`
 - `EntersAsCopy(optional, copyFilter, filterByTotalManaSpent, additionalSubtypes, additionalKeywords, appliesTo)` — clone effects (copyFilter defaults to Creature; use `GameObjectFilter.NonlandPermanent` for Clever Impersonator; `filterByTotalManaSpent` for X-cost clones like Mockingbird; `additionalSubtypes`/`additionalKeywords` for "except it's a Bird and has flying")
-- `EntersWithColorChoice(appliesTo)` — choose color on entry
-- `EntersWithCreatureTypeChoice(opponentChooses, appliesTo)` — choose creature type on entry
-- `EntersWithCreatureChoice(appliesTo)` — choose another creature you control on entry (Dauntless Bodyguard). Stores chosen creature as `ChosenCreatureComponent`. Reference via `EffectTarget.ChosenCreature`
+- `EntersWithChoice(choiceType, chooser?, appliesTo)` — unified "as enters, choose X" effect. `choiceType`: `ChoiceType.COLOR`, `ChoiceType.CREATURE_TYPE`, or `ChoiceType.CREATURE_ON_BATTLEFIELD`. `chooser` defaults to `Player.You`; use `Player.Opponent` for Callous Oppressor. Stores chosen value as `ChosenColorComponent`, `ChosenCreatureTypeComponent`, or `ChosenCreatureComponent`. Reference chosen creature via `EffectTarget.ChosenCreature`
 - `AmplifyEffect(countersPerReveal, appliesTo)` — Amplify N: reveal cards sharing creature type from hand, put N +1/+1 counters per card
 
 ### Damage

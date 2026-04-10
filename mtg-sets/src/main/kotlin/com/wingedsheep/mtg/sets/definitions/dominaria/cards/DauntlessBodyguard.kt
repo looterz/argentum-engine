@@ -5,7 +5,8 @@ import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.Effects
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.EntersWithCreatureChoice
+import com.wingedsheep.sdk.scripting.ChoiceType
+import com.wingedsheep.sdk.scripting.EntersWithChoice
 import com.wingedsheep.sdk.scripting.targets.EffectTarget
 
 /**
@@ -23,7 +24,7 @@ val DauntlessBodyguard = card("Dauntless Bodyguard") {
     toughness = 1
     oracleText = "As Dauntless Bodyguard enters the battlefield, choose another creature you control.\nSacrifice Dauntless Bodyguard: The chosen creature gains indestructible until end of turn."
 
-    replacementEffect(EntersWithCreatureChoice())
+    replacementEffect(EntersWithChoice(ChoiceType.CREATURE_ON_BATTLEFIELD))
 
     activatedAbility {
         cost = Costs.SacrificeSelf

@@ -3,8 +3,10 @@ package com.wingedsheep.mtg.sets.definitions.onslaught.cards
 import com.wingedsheep.sdk.core.Keyword
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.EntersWithCreatureTypeChoice
-import com.wingedsheep.sdk.scripting.GrantKeywordForChosenCreatureType
+import com.wingedsheep.sdk.scripting.ChoiceType
+import com.wingedsheep.sdk.scripting.EntersWithChoice
+import com.wingedsheep.sdk.scripting.GrantKeywordToCreatureGroup
+import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 
 /**
  * Steely Resolve
@@ -18,10 +20,10 @@ val SteelyResolve = card("Steely Resolve") {
     typeLine = "Enchantment"
     oracleText = "As Steely Resolve enters the battlefield, choose a creature type.\nCreatures of the chosen type have shroud."
 
-    replacementEffect(EntersWithCreatureTypeChoice())
+    replacementEffect(EntersWithChoice(ChoiceType.CREATURE_TYPE))
 
     staticAbility {
-        ability = GrantKeywordForChosenCreatureType(Keyword.SHROUD)
+        ability = GrantKeywordToCreatureGroup(Keyword.SHROUD, GroupFilter.ChosenSubtypeCreatures())
     }
 
     metadata {

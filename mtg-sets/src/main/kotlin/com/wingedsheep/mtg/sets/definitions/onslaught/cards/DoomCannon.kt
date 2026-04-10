@@ -5,7 +5,8 @@ import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.effects.DealDamageEffect
 import com.wingedsheep.sdk.scripting.values.DynamicAmount
-import com.wingedsheep.sdk.scripting.EntersWithCreatureTypeChoice
+import com.wingedsheep.sdk.scripting.ChoiceType
+import com.wingedsheep.sdk.scripting.EntersWithChoice
 import com.wingedsheep.sdk.scripting.targets.AnyTarget
 
 /**
@@ -20,7 +21,7 @@ val DoomCannon = card("Doom Cannon") {
     typeLine = "Artifact"
     oracleText = "As Doom Cannon enters the battlefield, choose a creature type.\n{3}, {T}, Sacrifice a creature of the chosen type: Doom Cannon deals 3 damage to any target."
 
-    replacementEffect(EntersWithCreatureTypeChoice())
+    replacementEffect(EntersWithChoice(ChoiceType.CREATURE_TYPE))
 
     activatedAbility {
         cost = Costs.Composite(

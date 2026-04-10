@@ -3,8 +3,10 @@ package com.wingedsheep.mtg.sets.definitions.bloomburrow.cards
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.AbilityCost
-import com.wingedsheep.sdk.scripting.EntersWithCreatureTypeChoice
-import com.wingedsheep.sdk.scripting.ModifyStatsForChosenCreatureType
+import com.wingedsheep.sdk.scripting.ChoiceType
+import com.wingedsheep.sdk.scripting.EntersWithChoice
+import com.wingedsheep.sdk.scripting.ModifyStatsForCreatureGroup
+import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 import com.wingedsheep.sdk.scripting.TimingRule
 import com.wingedsheep.sdk.scripting.effects.AddAnyColorManaEffect
 
@@ -22,13 +24,13 @@ val PatchworkBanner = card("Patchwork Banner") {
     typeLine = "Artifact"
     oracleText = "As this artifact enters, choose a creature type.\nCreatures you control of the chosen type get +1/+1.\n{T}: Add one mana of any color."
 
-    replacementEffect(EntersWithCreatureTypeChoice())
+    replacementEffect(EntersWithChoice(ChoiceType.CREATURE_TYPE))
 
     staticAbility {
-        ability = ModifyStatsForChosenCreatureType(
+        ability = ModifyStatsForCreatureGroup(
             powerBonus = 1,
             toughnessBonus = 1,
-            youControlOnly = true
+            filter = GroupFilter.ChosenSubtypeCreatures().youControl()
         )
     }
 

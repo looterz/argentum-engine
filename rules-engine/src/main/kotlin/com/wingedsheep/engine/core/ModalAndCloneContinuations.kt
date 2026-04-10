@@ -91,98 +91,48 @@ data class CloneEntersContinuation(
 ) : ContinuationFrame
 
 /**
- * Resume after player chooses a color for an "as enters, choose a color" effect.
+ * Resume after player makes an "as enters" choice for a spell being resolved.
  *
- * When a permanent with EntersWithColorChoice resolves, the player is asked to choose
- * a color. This continuation handles the response and stores the chosen color.
- * If the permanent also has EntersWithCreatureTypeChoice, it chains to that decision next.
- *
- * @property spellId The spell entity being resolved
- * @property controllerId The player who cast the spell
- * @property ownerId The owner of the card
- */
-@Serializable
-data class ChooseColorEntersContinuation(
-    override val decisionId: String,
-    val spellId: EntityId,
-    val controllerId: EntityId,
-    val ownerId: EntityId
-) : ContinuationFrame
-
-/**
- * Resume after player chooses a creature type for an "as enters, choose a creature type" effect.
- *
- * When a permanent with EntersWithCreatureTypeChoice resolves, the player is asked to choose
- * a creature type. This continuation handles the response and completes the permanent's
- * entry to the battlefield with the chosen type stored as a component.
+ * Handles all choice types (color, creature type, creature on battlefield) via
+ * the [choiceType] discriminator. For creature type choices, [creatureTypes] holds
+ * the options presented. After storing the chosen value, checks for chained choices
+ * (e.g., Riptide Replicator needs both color AND creature type).
  *
  * @property spellId The spell entity being resolved
  * @property controllerId The player who cast the spell
  * @property ownerId The owner of the card
- * @property creatureTypes The list of creature types presented to the player
+ * @property choiceType What kind of choice was presented
+ * @property creatureTypes For CREATURE_TYPE choices, the list of options presented
  */
 @Serializable
-data class ChooseCreatureTypeEntersContinuation(
+data class EntersWithChoiceSpellContinuation(
     override val decisionId: String,
     val spellId: EntityId,
     val controllerId: EntityId,
     val ownerId: EntityId,
-    val creatureTypes: List<String>
+    val choiceType: com.wingedsheep.sdk.scripting.ChoiceType,
+    val creatureTypes: List<String> = emptyList()
 ) : ContinuationFrame
 
 /**
- * Resume after player chooses a color for a land with "as enters, choose a color".
+ * Resume after player makes an "as enters" choice for a land played directly to the battlefield.
  *
- * Unlike [ChooseColorEntersContinuation] (used for spells), this is used for lands
- * that are played directly to the battlefield. The land is already on the battlefield when
- * this continuation fires — it just needs the ChosenColorComponent stored.
+ * Unlike [EntersWithChoiceSpellContinuation] (used for spells), the land is already on
+ * the battlefield when this continuation fires — it just needs the chosen value stored.
+ * After storing, checks for chained choices (e.g., a land with both color and creature type).
  *
  * @property landId The land entity already on the battlefield
  * @property controllerId The player who played the land
+ * @property choiceType What kind of choice was presented
+ * @property creatureTypes For CREATURE_TYPE choices, the list of options presented
  */
 @Serializable
-data class ChooseColorLandEntersContinuation(
-    override val decisionId: String,
-    val landId: EntityId,
-    val controllerId: EntityId
-) : ContinuationFrame
-
-/**
- * Resume after player chooses a creature type for a land with "as enters, choose a creature type".
- *
- * Unlike [ChooseCreatureTypeEntersContinuation] (used for spells), this is used for lands
- * that are played directly to the battlefield. The land is already on the battlefield when
- * this continuation fires — it just needs the ChosenCreatureTypeComponent stored.
- *
- * @property landId The land entity already on the battlefield
- * @property controllerId The player who played the land
- * @property creatureTypes The list of creature types presented to the player
- */
-@Serializable
-data class ChooseCreatureTypeLandEntersContinuation(
+data class EntersWithChoiceLandContinuation(
     override val decisionId: String,
     val landId: EntityId,
     val controllerId: EntityId,
-    val creatureTypes: List<String>
-) : ContinuationFrame
-
-/**
- * Resume after player chooses a creature for an "as enters, choose another creature you control" effect.
- *
- * When a permanent with EntersWithCreatureChoice resolves, the player is asked to choose
- * another creature they control. This continuation handles the response and stores the
- * chosen creature's EntityId as a component.
- *
- * @property spellId The spell entity being resolved
- * @property controllerId The player who cast the spell
- * @property ownerId The owner of the card
- */
-@Serializable
-data class ChooseCreatureEntersContinuation(
-    override val decisionId: String,
-    val spellId: EntityId,
-    val controllerId: EntityId,
-    val ownerId: EntityId
+    val choiceType: com.wingedsheep.sdk.scripting.ChoiceType,
+    val creatureTypes: List<String> = emptyList()
 ) : ContinuationFrame
 
 /**

@@ -5,7 +5,8 @@ import com.wingedsheep.sdk.dsl.Costs
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
 import com.wingedsheep.sdk.scripting.Duration
-import com.wingedsheep.sdk.scripting.EntersWithCreatureTypeChoice
+import com.wingedsheep.sdk.scripting.ChoiceType
+import com.wingedsheep.sdk.scripting.EntersWithChoice
 import com.wingedsheep.sdk.scripting.effects.GainControlEffect
 import com.wingedsheep.sdk.scripting.GameObjectFilter
 import com.wingedsheep.sdk.scripting.filters.unified.TargetFilter
@@ -29,7 +30,7 @@ val CallousOppressor = card("Callous Oppressor") {
     oracleText = "You may choose not to untap Callous Oppressor during your untap step.\nAs Callous Oppressor enters the battlefield, an opponent chooses a creature type.\n{T}: Gain control of target creature that isn't of the chosen type for as long as Callous Oppressor remains tapped."
 
     flags(AbilityFlag.MAY_NOT_UNTAP)
-    replacementEffect(EntersWithCreatureTypeChoice(opponentChooses = true))
+    replacementEffect(EntersWithChoice(ChoiceType.CREATURE_TYPE, chooser = com.wingedsheep.sdk.scripting.references.Player.Opponent))
 
     activatedAbility {
         cost = Costs.Tap

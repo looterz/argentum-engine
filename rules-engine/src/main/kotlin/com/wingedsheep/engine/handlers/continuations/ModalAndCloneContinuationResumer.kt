@@ -20,11 +20,8 @@ class ModalAndCloneContinuationResumer(
         resumer(ModalContinuation::class, ::resumeModal),
         resumer(ModalTargetContinuation::class, ::resumeModalTarget),
         resumer(CloneEntersContinuation::class, ::resumeCloneEnters),
-        resumer(ChooseColorEntersContinuation::class, ::resumeChooseColorEnters),
-        resumer(ChooseCreatureTypeEntersContinuation::class, ::resumeChooseCreatureTypeEnters),
-        resumer(ChooseColorLandEntersContinuation::class, ::resumeChooseColorLandEnters),
-        resumer(ChooseCreatureTypeLandEntersContinuation::class, ::resumeChooseCreatureTypeLandEnters),
-        resumer(ChooseCreatureEntersContinuation::class, ::resumeChooseCreatureEnters),
+        resumer(EntersWithChoiceSpellContinuation::class, ::resumeEntersWithChoiceSpell),
+        resumer(EntersWithChoiceLandContinuation::class, ::resumeEntersWithChoiceLand),
         resumer(AmplifyEntersContinuation::class, ::resumeAmplifyEnters),
         resumer(CastWithCreatureTypeContinuation::class, ::resumeCastWithCreatureType),
         resumer(BudgetModalContinuation::class, ::resumeBudgetModal),
@@ -315,299 +312,182 @@ class ModalAndCloneContinuationResumer(
     }
 
     /**
-     * Resume after player chooses a color for an "as enters, choose a color" effect (e.g., Riptide Replicator).
-     * After storing the color, checks if the card also has EntersWithCreatureTypeChoice and chains to that.
+     * Resume after player makes an "as enters" choice for a spell being resolved.
+     * Dispatches on choiceType to store the right component, then checks for chained
+     * choices before completing the permanent entry.
      */
-    fun resumeChooseColorEnters(
+    fun resumeEntersWithChoiceSpell(
         state: GameState,
-        continuation: ChooseColorEntersContinuation,
+        continuation: EntersWithChoiceSpellContinuation,
         response: DecisionResponse,
         checkForMore: CheckForMore
     ): ExecutionResult {
-        if (response !is ColorChosenResponse) {
-            return ExecutionResult.error(state, "Expected color choice response for color enters effect")
-        }
-
-        val chosenColor = response.color
         val spellId = continuation.spellId
         val controllerId = continuation.controllerId
         val ownerId = continuation.ownerId
 
-        // Store the chosen color on the entity
-        var newState = state.updateEntity(spellId) { c ->
-            c.with(com.wingedsheep.engine.state.components.identity.ChosenColorComponent(chosenColor))
+        // Store the chosen value based on choice type
+        var newState = when (continuation.choiceType) {
+            com.wingedsheep.sdk.scripting.ChoiceType.COLOR -> {
+                if (response !is ColorChosenResponse) {
+                    return ExecutionResult.error(state, "Expected color choice response")
+                }
+                state.updateEntity(spellId) { c ->
+                    c.with(com.wingedsheep.engine.state.components.identity.ChosenColorComponent(response.color))
+                }
+            }
+            com.wingedsheep.sdk.scripting.ChoiceType.CREATURE_TYPE -> {
+                if (response !is OptionChosenResponse) {
+                    return ExecutionResult.error(state, "Expected option chosen response for creature type choice")
+                }
+                val chosenType = continuation.creatureTypes.getOrNull(response.optionIndex)
+                    ?: return ExecutionResult.error(state, "Invalid creature type index: ${response.optionIndex}")
+                state.updateEntity(spellId) { c ->
+                    c.with(com.wingedsheep.engine.state.components.identity.ChosenCreatureTypeComponent(chosenType))
+                }
+            }
+            com.wingedsheep.sdk.scripting.ChoiceType.CREATURE_ON_BATTLEFIELD -> {
+                if (response !is CardsSelectedResponse) {
+                    return ExecutionResult.error(state, "Expected cards selected response for creature choice")
+                }
+                val chosenCreatureId = response.selectedCards.firstOrNull()
+                    ?: return ExecutionResult.error(state, "No creature selected")
+                state.updateEntity(spellId) { c ->
+                    c.with(com.wingedsheep.engine.state.components.identity.ChosenCreatureComponent(chosenCreatureId))
+                }
+            }
         }
 
+        // Check if the card has remaining choices to chain to
         val spellContainer = newState.getEntity(spellId)
             ?: return ExecutionResult.error(state, "Spell entity not found: $spellId")
-
         val cardComponent = spellContainer.get<CardComponent>()
             ?: return ExecutionResult.error(state, "Spell has no CardComponent")
-
-        // Check if the card also needs a creature type choice
         val cardDef = services.cardRegistry.getCard(cardComponent.cardDefinitionId)
-        val entersWithCreatureTypeChoice = cardDef?.script?.replacementEffects
-            ?.filterIsInstance<com.wingedsheep.sdk.scripting.EntersWithCreatureTypeChoice>()?.firstOrNull()
 
-        if (entersWithCreatureTypeChoice != null) {
-            // Chain to creature type choice
-            val allCreatureTypes = com.wingedsheep.sdk.core.Subtype.ALL_CREATURE_TYPES
-            val chooserId = if (entersWithCreatureTypeChoice.opponentChooses) {
-                newState.turnOrder.firstOrNull { it != controllerId } ?: controllerId
-            } else {
-                controllerId
+        val nextChoice = cardDef?.script?.replacementEffects
+            ?.filterIsInstance<com.wingedsheep.sdk.scripting.EntersWithChoice>()
+            ?.sortedBy { it.choiceType.ordinal }
+            ?.firstOrNull { it.choiceType.ordinal > continuation.choiceType.ordinal }
+
+        if (nextChoice != null) {
+            val result = services.stackResolver.pauseForEntersWithChoice(
+                newState, spellId, controllerId, ownerId, cardComponent, nextChoice
+            )
+            if (result != null) return result
+        }
+
+        // No more choices — complete the permanent entry
+        val spellComponent = spellContainer.get<SpellOnStackComponent>()
+            ?: return ExecutionResult.error(state, "Spell has no SpellOnStackComponent")
+
+        val (enterState, enterEvents) = services.stackResolver.enterPermanentOnBattlefield(
+            newState, spellId, spellComponent, cardComponent, cardDef
+        )
+        newState = enterState
+
+        val events = mutableListOf<GameEvent>()
+        events.addAll(enterEvents)
+        events.add(ResolvedEvent(spellId, cardComponent.name))
+        events.add(
+            ZoneChangeEvent(
+                spellId,
+                cardComponent.name,
+                null,
+                Zone.BATTLEFIELD,
+                ownerId
+            )
+        )
+
+        return checkForMore(newState, events)
+    }
+
+    /**
+     * Resume after player makes an "as enters" choice for a land played directly to the battlefield.
+     * The land is already on the battlefield — just store the chosen value and check for chained choices.
+     */
+    fun resumeEntersWithChoiceLand(
+        state: GameState,
+        continuation: EntersWithChoiceLandContinuation,
+        response: DecisionResponse,
+        checkForMore: CheckForMore
+    ): ExecutionResult {
+        // Store the chosen value based on choice type
+        var newState = when (continuation.choiceType) {
+            com.wingedsheep.sdk.scripting.ChoiceType.COLOR -> {
+                if (response !is ColorChosenResponse) {
+                    return ExecutionResult.error(state, "Expected color choice response")
+                }
+                state.updateEntity(continuation.landId) { c ->
+                    c.with(com.wingedsheep.engine.state.components.identity.ChosenColorComponent(response.color))
+                }
             }
-            val decisionId = "choose-creature-type-enters-${spellId.value}"
-            val decision = ChooseOptionDecision(
-                id = decisionId,
-                playerId = chooserId,
-                prompt = "Choose a creature type",
-                context = DecisionContext(
-                    sourceId = spellId,
-                    sourceName = cardComponent.name,
-                    phase = DecisionPhase.RESOLUTION
-                ),
-                options = allCreatureTypes,
-                defaultSearch = ""
-            )
-
-            val creatureTypeContinuation = ChooseCreatureTypeEntersContinuation(
-                decisionId = decisionId,
-                spellId = spellId,
-                controllerId = controllerId,
-                ownerId = ownerId,
-                creatureTypes = allCreatureTypes
-            )
-
-            val pausedState = newState
-                .pushContinuation(creatureTypeContinuation)
-                .withPendingDecision(decision)
-            return ExecutionResult.paused(pausedState, decision)
+            com.wingedsheep.sdk.scripting.ChoiceType.CREATURE_TYPE -> {
+                if (response !is OptionChosenResponse) {
+                    return ExecutionResult.error(state, "Expected option chosen response for creature type choice")
+                }
+                val chosenType = continuation.creatureTypes.getOrNull(response.optionIndex)
+                    ?: return ExecutionResult.error(state, "Invalid creature type index: ${response.optionIndex}")
+                state.updateEntity(continuation.landId) { c ->
+                    c.with(com.wingedsheep.engine.state.components.identity.ChosenCreatureTypeComponent(chosenType))
+                }
+            }
+            com.wingedsheep.sdk.scripting.ChoiceType.CREATURE_ON_BATTLEFIELD -> {
+                // Lands don't use this choice type, but handle gracefully
+                return checkForMore(state, emptyList())
+            }
         }
 
-        // No creature type choice needed - complete the permanent entry
-        val spellComponent = spellContainer.get<SpellOnStackComponent>()
-            ?: return ExecutionResult.error(state, "Spell has no SpellOnStackComponent")
-
-        val (enterState1, enterEvents1) = services.stackResolver.enterPermanentOnBattlefield(
-            newState, spellId, spellComponent, cardComponent, cardDef
-        )
-        newState = enterState1
-
-        val events = mutableListOf<GameEvent>()
-        events.addAll(enterEvents1)
-        events.add(ResolvedEvent(spellId, cardComponent.name))
-        events.add(
-            ZoneChangeEvent(
-                spellId,
-                cardComponent.name,
-                null,
-                Zone.BATTLEFIELD,
-                ownerId
-            )
-        )
-
-        return checkForMore(newState, events)
-    }
-
-    /**
-     * Resume after player chooses a creature type for an "as enters" effect (e.g., Doom Cannon).
-     */
-    fun resumeChooseCreatureTypeEnters(
-        state: GameState,
-        continuation: ChooseCreatureTypeEntersContinuation,
-        response: DecisionResponse,
-        checkForMore: CheckForMore
-    ): ExecutionResult {
-        if (response !is OptionChosenResponse) {
-            return ExecutionResult.error(state, "Expected option chosen response for creature type choice")
-        }
-
-        val chosenType = continuation.creatureTypes.getOrNull(response.optionIndex)
-            ?: return ExecutionResult.error(state, "Invalid creature type index: ${response.optionIndex}")
-
-        val spellId = continuation.spellId
-        val controllerId = continuation.controllerId
-        val ownerId = continuation.ownerId
-        val events = mutableListOf<GameEvent>()
-
-        val spellContainer = state.getEntity(spellId)
-            ?: return ExecutionResult.error(state, "Spell entity not found: $spellId")
-
-        val cardComponent = spellContainer.get<CardComponent>()
-            ?: return ExecutionResult.error(state, "Spell has no CardComponent")
-
-        val spellComponent = spellContainer.get<SpellOnStackComponent>()
-            ?: return ExecutionResult.error(state, "Spell has no SpellOnStackComponent")
-
-        // Store the chosen creature type on the entity
-        var newState = state.updateEntity(spellId) { c ->
-            c.with(com.wingedsheep.engine.state.components.identity.ChosenCreatureTypeComponent(chosenType))
-        }
-
-        // Complete the permanent entry
-        val cardDef = services.cardRegistry.getCard(cardComponent.cardDefinitionId)
-        val (enterState2, enterEvents2) = services.stackResolver.enterPermanentOnBattlefield(
-            newState, spellId, spellComponent, cardComponent, cardDef
-        )
-        newState = enterState2
-        events.addAll(enterEvents2)
-
-        events.add(ResolvedEvent(spellId, cardComponent.name))
-        events.add(
-            ZoneChangeEvent(
-                spellId,
-                cardComponent.name,
-                null,
-                Zone.BATTLEFIELD,
-                ownerId
-            )
-        )
-
-        return checkForMore(newState, events)
-    }
-
-    /**
-     * Resume after player chooses a color for a land with "as enters, choose a color"
-     * (e.g., Uncharted Haven). The land is already on the battlefield — just store the chosen color.
-     */
-    fun resumeChooseColorLandEnters(
-        state: GameState,
-        continuation: ChooseColorLandEntersContinuation,
-        response: DecisionResponse,
-        checkForMore: CheckForMore
-    ): ExecutionResult {
-        if (response !is ColorChosenResponse) {
-            return ExecutionResult.error(state, "Expected color choice response for land color enters effect")
-        }
-
-        var newState = state.updateEntity(continuation.landId) { c ->
-            c.with(com.wingedsheep.engine.state.components.identity.ChosenColorComponent(response.color))
-        }
-
-        // Check if the land also needs a creature type choice
+        // Check if the land has remaining choices to chain to
         val landContainer = newState.getEntity(continuation.landId)
         val cardComponent = landContainer?.get<CardComponent>()
         val cardDef = cardComponent?.let { services.cardRegistry.getCard(it.cardDefinitionId) }
-        val entersWithCreatureTypeChoice = cardDef?.script?.replacementEffects
-            ?.filterIsInstance<com.wingedsheep.sdk.scripting.EntersWithCreatureTypeChoice>()?.firstOrNull()
 
-        if (entersWithCreatureTypeChoice != null) {
-            val allCreatureTypes = com.wingedsheep.sdk.core.Subtype.ALL_CREATURE_TYPES
-            val chooserId = if (entersWithCreatureTypeChoice.opponentChooses) {
-                newState.turnOrder.firstOrNull { it != continuation.controllerId } ?: continuation.controllerId
-            } else {
-                continuation.controllerId
+        val nextChoice = cardDef?.script?.replacementEffects
+            ?.filterIsInstance<com.wingedsheep.sdk.scripting.EntersWithChoice>()
+            ?.sortedBy { it.choiceType.ordinal }
+            ?.firstOrNull { it.choiceType.ordinal > continuation.choiceType.ordinal }
+
+        if (nextChoice != null) {
+            val chooserId = when (nextChoice.chooser) {
+                com.wingedsheep.sdk.scripting.references.Player.Opponent ->
+                    newState.turnOrder.firstOrNull { it != continuation.controllerId } ?: continuation.controllerId
+                else -> continuation.controllerId
             }
-            val decisionId = "choose-creature-type-land-enters-${continuation.landId.value}"
-            val decision = ChooseOptionDecision(
-                id = decisionId,
-                playerId = chooserId,
-                prompt = "Choose a creature type",
-                context = DecisionContext(
-                    sourceId = continuation.landId,
-                    sourceName = cardComponent.name,
-                    phase = DecisionPhase.RESOLUTION
-                ),
-                options = allCreatureTypes,
-                defaultSearch = ""
-            )
 
-            val creatureTypeContinuation = ChooseCreatureTypeLandEntersContinuation(
-                decisionId = decisionId,
-                landId = continuation.landId,
-                controllerId = continuation.controllerId,
-                creatureTypes = allCreatureTypes
-            )
-
-            val pausedState = newState
-                .pushContinuation(creatureTypeContinuation)
-                .withPendingDecision(decision)
-            return ExecutionResult.paused(pausedState, decision)
+            when (nextChoice.choiceType) {
+                com.wingedsheep.sdk.scripting.ChoiceType.CREATURE_TYPE -> {
+                    val allCreatureTypes = com.wingedsheep.sdk.core.Subtype.ALL_CREATURE_TYPES
+                    val decisionId = "choose-creature-type-land-enters-${continuation.landId.value}"
+                    val decision = ChooseOptionDecision(
+                        id = decisionId,
+                        playerId = chooserId,
+                        prompt = "Choose a creature type",
+                        context = DecisionContext(
+                            sourceId = continuation.landId,
+                            sourceName = cardComponent.name,
+                            phase = DecisionPhase.RESOLUTION
+                        ),
+                        options = allCreatureTypes,
+                        defaultSearch = ""
+                    )
+                    val nextContinuation = EntersWithChoiceLandContinuation(
+                        decisionId = decisionId,
+                        landId = continuation.landId,
+                        controllerId = continuation.controllerId,
+                        choiceType = com.wingedsheep.sdk.scripting.ChoiceType.CREATURE_TYPE,
+                        creatureTypes = allCreatureTypes
+                    )
+                    val pausedState = newState
+                        .pushContinuation(nextContinuation)
+                        .withPendingDecision(decision)
+                    return ExecutionResult.paused(pausedState, decision)
+                }
+                else -> { /* No other chaining needed for lands */ }
+            }
         }
 
         return checkForMore(newState, emptyList())
-    }
-
-    /**
-     * Resume after player chooses a creature type for a land with "as enters, choose a creature type"
-     * (e.g., Three Tree City). The land is already on the battlefield — just store the chosen type.
-     */
-    fun resumeChooseCreatureTypeLandEnters(
-        state: GameState,
-        continuation: ChooseCreatureTypeLandEntersContinuation,
-        response: DecisionResponse,
-        checkForMore: CheckForMore
-    ): ExecutionResult {
-        if (response !is OptionChosenResponse) {
-            return ExecutionResult.error(state, "Expected option chosen response for creature type choice")
-        }
-
-        val chosenType = continuation.creatureTypes.getOrNull(response.optionIndex)
-            ?: return ExecutionResult.error(state, "Invalid creature type index: ${response.optionIndex}")
-
-        val newState = state.updateEntity(continuation.landId) { c ->
-            c.with(com.wingedsheep.engine.state.components.identity.ChosenCreatureTypeComponent(chosenType))
-        }
-
-        return checkForMore(newState, emptyList())
-    }
-
-    /**
-     * Resume after player chooses a creature for an "as enters, choose another creature" effect
-     * (e.g., Dauntless Bodyguard).
-     */
-    fun resumeChooseCreatureEnters(
-        state: GameState,
-        continuation: ChooseCreatureEntersContinuation,
-        response: DecisionResponse,
-        checkForMore: CheckForMore
-    ): ExecutionResult {
-        if (response !is CardsSelectedResponse) {
-            return ExecutionResult.error(state, "Expected cards selected response for creature choice")
-        }
-
-        val chosenCreatureId = response.selectedCards.firstOrNull()
-            ?: return ExecutionResult.error(state, "No creature selected")
-
-        val spellId = continuation.spellId
-        val ownerId = continuation.ownerId
-        val events = mutableListOf<GameEvent>()
-
-        val spellContainer = state.getEntity(spellId)
-            ?: return ExecutionResult.error(state, "Spell entity not found: $spellId")
-
-        val cardComponent = spellContainer.get<CardComponent>()
-            ?: return ExecutionResult.error(state, "Spell has no CardComponent")
-
-        val spellComponent = spellContainer.get<SpellOnStackComponent>()
-            ?: return ExecutionResult.error(state, "Spell has no SpellOnStackComponent")
-
-        // Store the chosen creature on the entity
-        var newState = state.updateEntity(spellId) { c ->
-            c.with(com.wingedsheep.engine.state.components.identity.ChosenCreatureComponent(chosenCreatureId))
-        }
-
-        // Complete the permanent entry
-        val cardDef = services.cardRegistry.getCard(cardComponent.cardDefinitionId)
-        val (enterState3, enterEvents3) = services.stackResolver.enterPermanentOnBattlefield(
-            newState, spellId, spellComponent, cardComponent, cardDef
-        )
-        newState = enterState3
-        events.addAll(enterEvents3)
-
-        events.add(ResolvedEvent(spellId, cardComponent.name))
-        events.add(
-            ZoneChangeEvent(
-                spellId,
-                cardComponent.name,
-                null,
-                Zone.BATTLEFIELD,
-                ownerId
-            )
-        )
-
-        return checkForMore(newState, events)
     }
 
     /**

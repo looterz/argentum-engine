@@ -2,8 +2,10 @@ package com.wingedsheep.mtg.sets.definitions.onslaught.cards
 
 import com.wingedsheep.sdk.dsl.card
 import com.wingedsheep.sdk.model.Rarity
-import com.wingedsheep.sdk.scripting.EntersWithCreatureTypeChoice
-import com.wingedsheep.sdk.scripting.ModifyStatsForChosenCreatureType
+import com.wingedsheep.sdk.scripting.ChoiceType
+import com.wingedsheep.sdk.scripting.EntersWithChoice
+import com.wingedsheep.sdk.scripting.ModifyStatsForCreatureGroup
+import com.wingedsheep.sdk.scripting.filters.unified.GroupFilter
 
 /**
  * Shared Triumph
@@ -17,12 +19,13 @@ val SharedTriumph = card("Shared Triumph") {
     typeLine = "Enchantment"
     oracleText = "As Shared Triumph enters the battlefield, choose a creature type.\nCreatures of the chosen type get +1/+1."
 
-    replacementEffect(EntersWithCreatureTypeChoice())
+    replacementEffect(EntersWithChoice(ChoiceType.CREATURE_TYPE))
 
     staticAbility {
-        ability = ModifyStatsForChosenCreatureType(
+        ability = ModifyStatsForCreatureGroup(
             powerBonus = 1,
-            toughnessBonus = 1
+            toughnessBonus = 1,
+            filter = GroupFilter.ChosenSubtypeCreatures()
         )
     }
 
